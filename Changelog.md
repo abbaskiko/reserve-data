@@ -2,20 +2,11 @@
 
 ## Unreleased
 
-## Features:
-
-### Bug fixes:
-
-### Improvements
-
-### Compatibility
-
-## 0.11.0 (2018-07-03)
-
 ### Features:
 
 - add "creation_time" field to Token info
 - add /btc-feed API (#453)
+- add feed configuration APIs (#455)
 - add feed configuration API set (#455)
 - support btc orderbook (#2188)
 
@@ -28,6 +19,9 @@
 - switch default endpoint to alchemyapi (#466)
 
 ### Compatibility
+
+- KyberNetwork smart contracts (>= 0.3.0)
+- KyberNetwork analytic (0.11.0)
 
 ## 0.11.0 (2018-07-03)
 
