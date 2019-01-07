@@ -45,10 +45,6 @@ type SettingPaths struct {
 	feePath               string
 	dataStoragePath       string
 	analyticStoragePath   string
-	statStoragePath       string
-	logStoragePath        string
-	rateStoragePath       string
-	userStoragePath       string
 	feeSetRateStoragePath string
 	secretPath            string
 	endPoint              string
@@ -57,8 +53,8 @@ type SettingPaths struct {
 
 // NewSettingPaths creates new SettingPaths instance from given parameters.
 func NewSettingPaths(
-	settingPath, feePath, dataStoragePath, analyticStoragePath, statStoragePath,
-	logStoragePath, rateStoragePath, userStoragePath, feeSetRateStoragePath, secretPath, endPoint string,
+	settingPath, feePath, dataStoragePath, analyticStoragePath,
+	feeSetRateStoragePath, secretPath, endPoint string,
 	bkendpoints []string) SettingPaths {
 	cmdDir := common.CmdDirLocation()
 	return SettingPaths{
@@ -66,10 +62,6 @@ func NewSettingPaths(
 		feePath:               filepath.Join(cmdDir, feePath),
 		dataStoragePath:       filepath.Join(cmdDir, dataStoragePath),
 		analyticStoragePath:   filepath.Join(cmdDir, analyticStoragePath),
-		statStoragePath:       filepath.Join(cmdDir, statStoragePath),
-		logStoragePath:        filepath.Join(cmdDir, logStoragePath),
-		rateStoragePath:       filepath.Join(cmdDir, rateStoragePath),
-		userStoragePath:       filepath.Join(cmdDir, userStoragePath),
 		feeSetRateStoragePath: filepath.Join(cmdDir, feeSetRateStoragePath),
 		secretPath:            filepath.Join(cmdDir, secretPath),
 		endPoint:              endPoint,
@@ -187,10 +179,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"dev.db",
 		"dev_analytics.db",
-		"dev_stats.db",
-		"dev_logs.db",
-		"dev_rates.db",
-		"dev_users.db",
 		"dev_fee_setrate.db",
 		"config.json",
 		infuraMainnetEndpoint,
@@ -206,10 +194,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"kovan.db",
 		"kovan_analytics.db",
-		"kovan_stats.db",
-		"kovan_logs.db",
-		"kovan_rates.db",
-		"kovan_users.db",
 		"kovan_fee_setrate.db",
 		"config.json",
 		infuraKovanEndpoint,
@@ -220,10 +204,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"mainnet.db",
 		"mainnet_analytics.db",
-		"mainnet_stats.db",
-		"mainnet_logs.db",
-		"mainnet_rates.db",
-		"mainnet_users.db",
 		"mainnet_fee_setrate.db",
 		"mainnet_config.json",
 		alchemyapiMainnetEndpoint,
@@ -241,10 +221,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"mainnet.db",
 		"mainnet_analytics.db",
-		"mainnet_stats.db",
-		"mainnet_logs.db",
-		"mainnet_rates.db",
-		"mainnet_users.db",
 		"mainnet_fee_setrate.db",
 		"mainnet_config.json",
 		alchemyapiMainnetEndpoint,
@@ -262,10 +238,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"staging.db",
 		"staging_analytics.db",
-		"staging_stats.db",
-		"staging_logs.db",
-		"staging_rates.db",
-		"staging_users.db",
 		"staging_fee_setrate.db",
 		"staging_config.json",
 		alchemyapiMainnetEndpoint,
@@ -283,10 +255,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"core.db",
 		"core_analytics.db",
-		"core_stats.db",
-		"core_logs.db",
-		"core_rates.db",
-		"core_users.db",
 		"core_fee_setrate.db",
 		"config.json",
 		localDevChainEndpoint,
@@ -299,10 +267,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"ropsten.db",
 		"ropsten_analytics.db",
-		"ropsten_stats.db",
-		"ropsten_logs.db",
-		"ropsten_rates.db",
-		"ropsten_users.db",
 		"ropsten_fee_setrate.db",
 		"config.json",
 		infuraRopstenEndpoint,
@@ -315,10 +279,6 @@ var ConfigPaths = map[string]SettingPaths{
 		"fee.json",
 		"core.db",
 		"core_analytics.db",
-		"core_stats.db",
-		"core_logs.db",
-		"core_rates.db",
-		"core_users.db",
 		"core_fee_setrate.db",
 		"config.json",
 		localDevChainEndpoint,
