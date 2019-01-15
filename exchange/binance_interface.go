@@ -9,7 +9,7 @@ import (
 
 // BinanceInterface contains the methods to interact with Binance centralized exchange.
 type BinanceInterface interface {
-	GetDepthOnePair(pair common.TokenPair) (Binaresp, error)
+	GetDepthOnePair(baseID, quoteID string) (Binaresp, error)
 
 	OpenOrdersForOnePair(pair common.TokenPair) (Binaorders, error)
 
