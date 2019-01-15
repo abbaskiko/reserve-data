@@ -335,7 +335,11 @@ func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]co
 			pair := pairs[x]
 			baseID, quoteID := pair.GetBaseQuoteID()
 			go self.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
+			wait.Add(1)
+			go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
 		}
+		wait.Add(1)
+		go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
 		wait.Wait()
 		i = x
 	}

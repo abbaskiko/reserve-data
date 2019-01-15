@@ -98,12 +98,12 @@ func (self *BittrexEndpoint) GetExchangeInfo() (exchange.BittExchangeInfo, error
 	return result, err
 }
 
-func (self *BittrexEndpoint) FetchOnePairData(pair common.TokenPair) (exchange.Bittresp, error) {
+func (self *BittrexEndpoint) FetchOnePairData(baseID, quoteID string) (exchange.Bittresp, error) {
 	data := exchange.Bittresp{}
 	respBody, err := self.GetResponse(
 		mustAddPath(self.interf.PublicEndpoint(), "getorderbook"),
 		map[string]string{
-			"market": fmt.Sprintf("%s-%s", pair.Quote.ID, pair.Base.ID),
+			"market": fmt.Sprintf("%s-%s", quoteID, baseID),
 			"type":   "both",
 		},
 		false,
