@@ -18,4 +18,5 @@ type Setting interface {
 	UpdateDepositAddress(name settings.ExchangeName, addrs common.ExchangeAddresses, timestamp uint64) error
 	GetExchangeInfo(ex settings.ExchangeName) (common.ExchangeInfo, error)
 	UpdateExchangeInfo(ex settings.ExchangeName, exInfo common.ExchangeInfo, timestamp uint64) error
+	ETHToken() common.Token
 }
