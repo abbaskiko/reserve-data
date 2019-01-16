@@ -260,10 +260,10 @@ func (self *Fetcher) FetchAuthDataFromBlockchain(
 	// 3. Get list of pending activity status again (C)
 	// 4. if C != A, repeat 1, otherwise return A, B
 	var balances map[string]common.BalanceEntry
-	var statuses map[common.ActivityID]common.ActivityStatus
+	var preStatuses, statuses map[common.ActivityID]common.ActivityStatus
 	var err error
 	for {
-		preStatuses, err := self.FetchStatusFromBlockchain(pendings)
+		preStatuses, err = self.FetchStatusFromBlockchain(pendings)
 		if err != nil {
 			log.Printf("Fetching blockchain status failed:  %v", err)
 			break
