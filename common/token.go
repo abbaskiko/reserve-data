@@ -64,6 +64,11 @@ func (self *TokenPair) PairID() TokenPairID {
 	return NewTokenPairID(self.Base.ID, self.Quote.ID)
 }
 
+// GetBaseQuoteID return base and quoteID as strings
+func (tp *TokenPair) GetBaseQuoteID() (string, string) {
+	return tp.Base.ID, tp.Quote.ID
+}
+
 func GetTokenAddressesList(tokens []Token) []ethereum.Address {
 	tokenAddrs := []ethereum.Address{}
 	for _, tok := range tokens {

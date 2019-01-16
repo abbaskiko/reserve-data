@@ -19,7 +19,7 @@ type testBittrexInterface struct {
 	DepositHistoryMock string
 }
 
-func (self testBittrexInterface) FetchOnePairData(pair common.TokenPair) (Bittresp, error) {
+func (self testBittrexInterface) FetchOnePairData(baseID, quoteID string) (Bittresp, error) {
 	return Bittresp{}, nil
 }
 func (self testBittrexInterface) GetExchangeInfo() (BittExchangeInfo, error) {
