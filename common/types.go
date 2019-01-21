@@ -1007,3 +1007,8 @@ func NewExportedReserverRateRecord(addr ethereum.Address, rate ReserveRates, tim
 		Timestamp:      timestamp,
 	}
 }
+
+//BTCFetcherConfigurationRequest request for configuration of btc fetcher
+type BTCFetcherConfigurationRequest struct {
+	BTC bool `json:"btc" form:"btc" binding:"exists"`
+}

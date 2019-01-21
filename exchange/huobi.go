@@ -324,7 +324,7 @@ func (self *Huobi) FetchOnePairData(
 	data.Store(common.NewTokenPairID(baseID, quoteID), result)
 }
 
-func (self *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (self *Huobi) FetchPriceData(timepoint uint64, fetchPriceData bool) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := self.TokenPairs()
@@ -335,11 +335,15 @@ func (self *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]comm
 		wait.Add(1)
 		baseID, quoteID := pair.GetBaseQuoteID()
 		go self.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
-		wait.Add(1)
-		go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+		if fetchPriceData {
+			wait.Add(1)
+			go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+		}
 	}
-	wait.Add(1)
-	go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
+	if fetchPriceData {
+		wait.Add(1)
+		go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
+	}
 	wait.Wait()
 	result := map[common.TokenPairID]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {

@@ -77,6 +77,9 @@ type ReserveData interface {
 
 	GetTradeHistory(fromTime, toTime uint64) (common.AllTradeHistory, error)
 
+	UpdateBTCFetcherConfiguration(common.BTCFetcherConfigurationRequest) error
+	GetBTCFetcherConfiguration() (common.BTCFetcherConfigurationRequest, error)
+
 	Run() error
 	RunStorageController() error
 	Stop() error

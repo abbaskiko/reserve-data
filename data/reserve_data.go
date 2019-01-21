@@ -356,6 +356,17 @@ func (self ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTrad
 	return data, nil
 }
 
+// UpdateBTCFetcherConfiguration save btc fetcher configuration to db
+// and return new configuration
+func (rd ReserveData) UpdateBTCFetcherConfiguration(query common.BTCFetcherConfigurationRequest) error {
+	return rd.globalStorage.UpdateBTCFetcherConfiguration(query)
+}
+
+// GetBTCFetcherConfiguration returns current btc fetcher configuration
+func (rd ReserveData) GetBTCFetcherConfiguration() (common.BTCFetcherConfigurationRequest, error) {
+	return rd.globalStorage.GetBTCFetcherConfiguration()
+}
+
 func (self ReserveData) RunStorageController() error {
 	if err := self.storageController.Runner.Start(); err != nil {
 		log.Fatalf("Storage controller runner error: %s", err.Error())

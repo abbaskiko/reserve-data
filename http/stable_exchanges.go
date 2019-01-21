@@ -2,8 +2,9 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/KyberNetwork/reserve-data/common"
 	"log"
+
+	"github.com/KyberNetwork/reserve-data/common"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/gin-gonic/gin"
