@@ -358,17 +358,12 @@ func (self ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTrad
 
 // UpdateFetcherConfiguration save btc fetcher configuration to db
 // and return new configuration
-func (rd ReserveData) UpdateFetcherConfiguration(query common.FetcherConfigurationRequest) error {
+func (rd ReserveData) UpdateFetcherConfiguration(query common.FetcherConfiguration) error {
 	return rd.globalStorage.UpdateFetcherConfiguration(query)
 }
 
-// GetFetcherConfiguration returns current fetcher configuration for a token
-func (rd ReserveData) GetFetcherConfiguration(token string) (bool, error) {
-	return rd.globalStorage.GetFetcherConfiguration(token)
-}
-
 // GetAllFetcherConfiguration returns current fetcher configuration for all tokens
-func (rd ReserveData) GetAllFetcherConfiguration() (common.FetcherConfigurationRequest, error) {
+func (rd ReserveData) GetAllFetcherConfiguration() (common.FetcherConfiguration, error) {
 	return rd.globalStorage.GetAllFetcherConfiguration()
 }
 

@@ -9,5 +9,5 @@ type GlobalStorage interface {
 	StoreGoldInfo(data common.GoldData) error
 	StoreBTCInfo(data common.BTCData) error
 
-	GetFetcherConfiguration(token string) (bool, error)
+	GetAllFetcherConfiguration() (common.FetcherConfiguration, error)
 }

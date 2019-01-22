@@ -7,12 +7,8 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-const (
-	btcFetcherConfig = "btcFetcherConfig"
-)
-
 //UpdateFetcherConfiguration save btc fetcher config to db
-func (bs *BoltStorage) UpdateFetcherConfiguration(config common.FetcherConfigurationRequest) (err error) {
+func (bs *BoltStorage) UpdateFetcherConfiguration(config common.FetcherConfiguration) (err error) {
 	err = bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(btcFetcherConfigurationBucket))
 		for k, v := range config.Config {
@@ -30,23 +26,8 @@ func (bs *BoltStorage) UpdateFetcherConfiguration(config common.FetcherConfigura
 	return err
 }
 
-//GetFetcherConfiguration returns config for btc fetcher
-func (bs *BoltStorage) GetFetcherConfiguration(token string) (config bool, err error) {
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(btcFetcherConfigurationBucket))
-		v := b.Get([]byte(token))
-		if v != nil {
-			if uErr := json.Unmarshal(v, &config); uErr != nil {
-				return uErr
-			}
-		}
-		return nil
-	})
-	return config, err
-}
-
 //GetAllFetcherConfiguration returns config for fetcher
-func (bs *BoltStorage) GetAllFetcherConfiguration() (config common.FetcherConfigurationRequest, err error) {
+func (bs *BoltStorage) GetAllFetcherConfiguration() (config common.FetcherConfiguration, err error) {
 	var (
 		configValue bool
 	)
