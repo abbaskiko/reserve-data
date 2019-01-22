@@ -15,6 +15,7 @@ type GlobalStorage interface {
 	UpdateFeedConfiguration(string, bool) error
 	GetFeedConfiguration() ([]common.FeedConfiguration, error)
 
-	UpdateBTCFetcherConfiguration(common.BTCFetcherConfigurationRequest) error
-	GetBTCFetcherConfiguration() (common.BTCFetcherConfigurationRequest, error)
+	UpdateFetcherConfiguration(common.FetcherConfigurationRequest) error
+	GetAllFetcherConfiguration() (common.FetcherConfigurationRequest, error)
+	GetFetcherConfiguration(token string) (bool, error)
 }
