@@ -4,6 +4,14 @@
 
 ### Features:
 
+### Bug fixes:
+
+### Improvements: 
+
+### Compatibility:
+
+### Features:
+
 - add "creation_time" field to Token info
 - add /btc-feed API (#453)
 - add feed configuration APIs (#455)
