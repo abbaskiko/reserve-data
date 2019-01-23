@@ -8,4 +8,6 @@ import (
 type GlobalStorage interface {
 	StoreGoldInfo(data common.GoldData) error
 	StoreBTCInfo(data common.BTCData) error
+
+	GetAllFetcherConfiguration() (common.FetcherConfiguration, error)
 }

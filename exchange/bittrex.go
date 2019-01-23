@@ -370,7 +370,8 @@ func (self *Bittrex) FetchOnePairData(wq *sync.WaitGroup, baseID, quoteID string
 	data.Store(common.NewTokenPairID(baseID, quoteID), result)
 }
 
-func (self *Bittrex) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+// FetchPriceData return price data of token pairs (token-eth, token-btc)
+func (self *Bittrex) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := self.TokenPairs()
@@ -381,11 +382,15 @@ func (self *Bittrex) FetchPriceData(timepoint uint64) (map[common.TokenPairID]co
 		wait.Add(1)
 		baseID, quoteID := pair.GetBaseQuoteID()
 		go self.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
-		wait.Add(1)
-		go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+		if fetchBTCPrice {
+			wait.Add(1)
+			go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+		}
 	}
-	wait.Add(1)
-	go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
+	if fetchBTCPrice {
+		wait.Add(1)
+		go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
+	}
 	wait.Wait()
 	result := map[common.TokenPairID]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {

@@ -14,6 +14,7 @@
 
 - add "creation_time" field to Token info
 - add /btc-feed API (#453)
+- add fetcher configuration APIs (#477)
 - add feed configuration APIs (#455)
 - add feed configuration API set (#455)
 - support btc orderbook (#2188)
