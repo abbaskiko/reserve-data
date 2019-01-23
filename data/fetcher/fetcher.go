@@ -752,11 +752,11 @@ func (self *Fetcher) FetchOrderbook(timepoint uint64) {
 
 func (self *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, data *ConcurrentAllPriceData, timepoint uint64) {
 	defer wg.Done()
-	fetchBTCPrice, err := self.globalStorage.GetAllFetcherConfiguration()
+	fetchConfig, err := self.globalStorage.GetAllFetcherConfiguration()
 	if err != nil {
-		log.Printf("cannot get btc fetcher configuration")
+		log.Fatal("cannot get btc fetcher configuration")
 	}
-	exdata, err := exchange.FetchPriceData(timepoint, fetchBTCPrice.Config["btc"])
+	exdata, err := exchange.FetchPriceData(timepoint, fetchConfig.BTC)
 	if err != nil {
 		log.Printf("Fetching data from %s failed: %v\n", exchange.Name(), err)
 	}
