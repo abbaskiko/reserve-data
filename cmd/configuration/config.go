@@ -28,6 +28,7 @@ import (
 )
 
 const (
+	alchemyapiMainnetEndpoint = "https://eth-mainnet.alchemyapi.io/jsonrpc/V1GjKybGLx6rzSu517KSWpSrTSIIXmV7"
 	infuraMainnetEndpoint     = "https://mainnet.infura.io"
 	infuraKovanEndpoint       = "https://kovan.infura.io"
 	infuraRopstenEndpoint     = "https://ropsten.infura.io"
@@ -303,8 +304,10 @@ var ConfigPaths = map[string]SettingPaths{
 		"mainnet_users.db",
 		"mainnet_fee_setrate.db",
 		"mainnet_config.json",
-		infuraMainnetEndpoint,
+		alchemyapiMainnetEndpoint,
 		[]string{
+			alchemyapiMainnetEndpoint,
+			infuraMainnetEndpoint,
 			semidNodeKyberEndpoint,
 			myCryptoAPIEndpoint,
 			myEtherAPIMainnetEndpoint,
@@ -322,8 +325,9 @@ var ConfigPaths = map[string]SettingPaths{
 		"mainnet_users.db",
 		"mainnet_fee_setrate.db",
 		"mainnet_config.json",
-		infuraMainnetEndpoint,
+		alchemyapiMainnetEndpoint,
 		[]string{
+			alchemyapiMainnetEndpoint,
 			infuraMainnetEndpoint,
 			semidNodeKyberEndpoint,
 			myCryptoAPIEndpoint,
@@ -342,8 +346,9 @@ var ConfigPaths = map[string]SettingPaths{
 		"staging_users.db",
 		"staging_fee_setrate.db",
 		"staging_config.json",
-		infuraMainnetEndpoint,
+		alchemyapiMainnetEndpoint,
 		[]string{
+			alchemyapiMainnetEndpoint,
 			infuraMainnetEndpoint,
 			semidNodeKyberEndpoint,
 			myCryptoAPIEndpoint,
