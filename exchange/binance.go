@@ -320,7 +320,7 @@ func (self *Binance) FetchOnePairData(
 	data.Store(common.NewTokenPairID(baseID, quoteID), result)
 }
 
-func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (self *Binance) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := self.TokenPairs()
@@ -335,11 +335,15 @@ func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]co
 			pair := pairs[x]
 			baseID, quoteID := pair.GetBaseQuoteID()
 			go self.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
-			wait.Add(1)
-			go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+			if fetchBTCPrice {
+				wait.Add(1)
+				go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+			}
 		}
-		wait.Add(1)
-		go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
+		if fetchBTCPrice {
+			wait.Add(1)
+			go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
+		}
 		wait.Wait()
 		i = x
 	}

@@ -1538,6 +1538,9 @@ func (self *HTTPServer) register() {
 		self.r.GET("/btc-feed", self.GetBTCData)
 		self.r.POST("/set-feed-configuration", self.UpdateFeedConfiguration)
 		self.r.GET("/get-feed-configuration", self.GetFeedConfiguration)
+
+		self.r.POST("/set-fetcher-configuration", self.UpdateFetcherConfiguration)
+		self.r.GET("/get-all-fetcher-configuration", self.GetAllFetcherConfiguration)
 	}
 
 	if self.stat != nil {

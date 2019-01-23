@@ -56,6 +56,9 @@ const (
 	pendingRebalanceQuadratic = "pending_rebalance_quadratic"
 	// rebalanceQuadratic stores rebalance quadratic equation
 	rebalanceQuadratic = "rebalance_quadratic"
+
+	//btcFetcherConfiguration stores configuration for btc fetcher
+	fetcherConfigurationBucket = "btc_fetcher_configuration"
 )
 
 // BoltStorage is the storage implementation of data.Storage interface
@@ -151,6 +154,10 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			return cErr
 		}
 		if _, cErr := tx.CreateBucketIfNotExists([]byte(rebalanceQuadratic)); cErr != nil {
+			return cErr
+		}
+
+		if _, cErr := tx.CreateBucketIfNotExists([]byte(fetcherConfigurationBucket)); cErr != nil {
 			return cErr
 		}
 		return nil
