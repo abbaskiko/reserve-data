@@ -2,17 +2,30 @@
 
 ## Unreleased
 
+## Features:
+
+### Bug fixes:
+
+### Improvements
+
+### Compatibility
+
+## 0.11.0 (2018-07-03)
+
 ### Features:
 
-- add /get-step-function-data API for fetching tokens step function configuration
 - add "creation_time" field to Token info
 - add /btc-feed API (#453)
+- add feed configuration API set (#455)
+- support btc orderbook (#2188)
 
 ### Bug fixes:
 
 ### Improvements: 
+
 - change MEW endpoint to new endpoint (#425)
-- remove unused step function data endpoint (#465)
+- improve set rate strategy (#458)
+- switch default endpoint to alchemyapi (#466)
 
 ### Compatibility
 
