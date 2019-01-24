@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
@@ -19,9 +18,7 @@ func (h *HTTPServer) UpdateFetcherConfiguration(c *gin.Context) {
 	if !ok {
 		return
 	}
-	log.Printf("%+v", postForm)
 	value := []byte(postForm.Get("value"))
-	log.Printf("%s", value)
 	if err := json.Unmarshal(value, &query); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
