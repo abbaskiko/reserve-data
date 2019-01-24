@@ -1,9 +1,8 @@
 package http
 
 import (
-	"net/http"
-
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,37 +13,22 @@ func (h *HTTPServer) UpdateFetcherConfiguration(c *gin.Context) {
 		query common.FetcherConfiguration
 	)
 	if err := c.ShouldBindJSON(&query); err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	if err := h.app.UpdateFetcherConfiguration(query); err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		query,
-	)
+	httputil.ResponseSuccess(c)
 }
 
 //GetAllFetcherConfiguration returns all fetcher config
 func (h *HTTPServer) GetAllFetcherConfiguration(c *gin.Context) {
 	config, err := h.app.GetAllFetcherConfiguration()
 	if err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		config,
-	)
+	httputil.ResponseSuccess(c, httputil.WithData(config))
 }
