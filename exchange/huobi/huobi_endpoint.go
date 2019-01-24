@@ -360,7 +360,7 @@ func (self *HuobiEndpoint) GetDepositAddress(asset string) (exchange.HuobiDeposi
 	result := exchange.HuobiDepositAddress{}
 	respBody, err := self.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/v1/dw/deposit-virtual/addresses",
+		"https://www.hbg.com/-/x/pro/"+"v1/dw/deposit-virtual/addresses",
 		map[string]string{
 			"currency": asset,
 		},
