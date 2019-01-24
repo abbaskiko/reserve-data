@@ -91,10 +91,16 @@ func EthToWei(n float64) *big.Int {
 // 	return true
 // }
 
-// CombineErr return a combination of error between action error and storage error
-func CombineErr(err, sErr error) error {
+// CombineActivityStorageErrs return a combination of error between action error and storage error
+func CombineActivityStorageErrs(err, sErr error) error {
 	if err == nil && sErr == nil {
 		return nil
+	}
+	if err != nil && sErr == nil {
+		return err
+	}
+	if err == nil && sErr != nil {
+		return sErr
 	}
 	return fmt.Errorf("action error: %s, storage error: %s", ErrorToString(err), ErrorToString(sErr))
 }
