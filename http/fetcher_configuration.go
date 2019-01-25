@@ -1,7 +1,7 @@
 package http
 
 import (
-	"encoding/json"
+	"strconv"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
@@ -18,11 +18,12 @@ func (h *HTTPServer) UpdateFetcherConfiguration(c *gin.Context) {
 	if !ok {
 		return
 	}
-	value := []byte(postForm.Get("value"))
-	if err := json.Unmarshal(value, &query); err != nil {
+	value := postForm.Get("btc")
+	btcConfig, err := strconv.ParseBool(value)
+	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
 	}
+	query.BTC = btcConfig
 	if err := h.app.UpdateFetcherConfiguration(query); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
