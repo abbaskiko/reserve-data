@@ -27,12 +27,32 @@ func (self ReserveData) CurrentGoldInfoVersion(timepoint uint64) (common.Version
 	return self.globalStorage.CurrentGoldInfoVersion(timepoint)
 }
 
+func (self ReserveData) CurrentBTCInfoVersion(timepoint uint64) (common.Version, error) {
+	return self.globalStorage.CurrentBTCInfoVersion(timepoint)
+}
+
 func (self ReserveData) GetGoldData(timestamp uint64) (common.GoldData, error) {
 	version, err := self.CurrentGoldInfoVersion(timestamp)
 	if err != nil {
 		return common.GoldData{}, nil
 	}
 	return self.globalStorage.GetGoldInfo(version)
+}
+
+func (self ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
+	version, err := self.CurrentBTCInfoVersion(timestamp)
+	if err != nil {
+		return common.BTCData{}, nil
+	}
+	return self.globalStorage.GetBTCInfo(version)
+}
+
+func (self ReserveData) UpdateFeedConfiguration(name string, enabled bool) error {
+	return self.globalStorage.UpdateFeedConfiguration(name, enabled)
+}
+
+func (self ReserveData) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
+	return self.globalStorage.GetFeedConfiguration()
 }
 
 func (self ReserveData) CurrentPriceVersion(timepoint uint64) (common.Version, error) {
@@ -334,6 +354,17 @@ func (self ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTrad
 	}
 	data.Timestamp = common.GetTimestamp()
 	return data, nil
+}
+
+// UpdateFetcherConfiguration save btc fetcher configuration to db
+// and return new configuration
+func (rd ReserveData) UpdateFetcherConfiguration(query common.FetcherConfiguration) error {
+	return rd.globalStorage.UpdateFetcherConfiguration(query)
+}
+
+// GetAllFetcherConfiguration returns current fetcher configuration for all tokens
+func (rd ReserveData) GetAllFetcherConfiguration() (common.FetcherConfiguration, error) {
+	return rd.globalStorage.GetAllFetcherConfiguration()
 }
 
 func (self ReserveData) RunStorageController() error {

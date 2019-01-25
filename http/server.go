@@ -741,17 +741,6 @@ func (self *HTTPServer) GetTradeHistory(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
-func (self *HTTPServer) GetGoldData(c *gin.Context) {
-	log.Printf("Getting gold data")
-
-	data, err := self.app.GetGoldData(getTimePoint(c, true))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
 func (self *HTTPServer) GetTimeServer(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(common.GetTimestamp()))
 }
@@ -1374,6 +1363,7 @@ func (self *HTTPServer) SetTargetQtyV2(c *gin.Context) {
 
 	for tokenID := range tokenTargetQty {
 		if _, err := self.setting.GetInternalTokenByID(tokenID); err != nil {
+			err = fmt.Errorf("TokenID: %s, error: %s", tokenID, err)
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
@@ -1545,6 +1535,12 @@ func (self *HTTPServer) register() {
 		self.r.GET("/stable-token-params", self.GetStableTokenParams)
 
 		self.r.GET("/gold-feed", self.GetGoldData)
+		self.r.GET("/btc-feed", self.GetBTCData)
+		self.r.POST("/set-feed-configuration", self.UpdateFeedConfiguration)
+		self.r.GET("/get-feed-configuration", self.GetFeedConfiguration)
+
+		self.r.POST("/set-fetcher-configuration", self.UpdateFetcherConfiguration)
+		self.r.GET("/get-all-fetcher-configuration", self.GetAllFetcherConfiguration)
 	}
 
 	if self.stat != nil {

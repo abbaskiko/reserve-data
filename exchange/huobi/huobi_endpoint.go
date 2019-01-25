@@ -124,12 +124,12 @@ func (self *HuobiEndpoint) GetAccounts() (exchange.HuobiAccounts, error) {
 }
 
 func (self *HuobiEndpoint) GetDepthOnePair(
-	pair common.TokenPair) (exchange.HuobiDepth, error) {
+	baseID, quoteID string) (exchange.HuobiDepth, error) {
 
 	respBody, err := self.GetResponse(
 		"GET", self.interf.PublicEndpoint()+"/market/depth",
 		map[string]string{
-			"symbol": fmt.Sprintf("%s%s", strings.ToLower(pair.Base.ID), strings.ToLower(pair.Quote.ID)),
+			"symbol": fmt.Sprintf("%s%s", strings.ToLower(baseID), strings.ToLower(quoteID)),
 			"type":   "step0",
 		},
 		false,

@@ -3,6 +3,7 @@ package exchange
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 
@@ -19,7 +20,8 @@ func (self *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
 	// returning admin multisig. In case anyone sent dgx to this address,
 	// we can still get it.
 	return map[string]ethereum.Address{
-		"DGX": ethereum.HexToAddress("0xFDF28Bf25779ED4cA74e958d54653260af604C20"),
+		"DGX":  ethereum.HexToAddress("0xFDF28Bf25779ED4cA74e958d54653260af604C20"),
+		"WBTC": ethereum.HexToAddress("0xFDF28Bf25779ED4cA74e958d54653260af604C20"),
 	}, nil
 }
 
@@ -45,7 +47,17 @@ func (self *StableEx) GetInfo() (common.ExchangeInfo, error) {
 }
 
 func (self *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
-	return common.ExchangeInfo{}, errors.New("Stable exchange doesn't support live token")
+	log.Print("WARNING stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
+	result := make(common.ExchangeInfo)
+	for _, tokenPairID := range tokenPairIDs {
+		result[tokenPairID] = common.ExchangePrecisionLimit{
+			Precision:   common.TokenPairPrecision{},
+			AmountLimit: common.TokenPairAmountLimit{},
+			PriceLimit:  common.TokenPairPriceLimit{},
+			MinNotional: 0,
+		}
+	}
+	return result, nil
 }
 
 func (self *StableEx) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
@@ -120,7 +132,7 @@ func (self *StableEx) CancelOrder(id, base, quote string) error {
 	return errors.New("Dgx doesn't support trade cancelling")
 }
 
-func (self *StableEx) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (self *StableEx) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[common.TokenPairID]common.ExchangePrice, error) {
 	result := map[common.TokenPairID]common.ExchangePrice{}
 	// TODO: Get price data from dgx connector and construct valid orderbooks
 	return result, nil

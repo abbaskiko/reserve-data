@@ -35,7 +35,6 @@ func (self *BinanceEndpoint) fillRequest(req *http.Request, signNeeded bool, tim
 		req.Header.Add("User-Agent", "binance/go")
 	}
 	req.Header.Add("Accept", "application/json")
-	log.Printf("Bin Time Delta: %d", self.timeDelta)
 	if signNeeded {
 		q := req.URL.Query()
 		sig := url.Values{}
@@ -112,12 +111,12 @@ func (self *BinanceEndpoint) GetResponse(
 	return respBody, err
 }
 
-func (self *BinanceEndpoint) GetDepthOnePair(pair common.TokenPair) (exchange.Binaresp, error) {
+func (self *BinanceEndpoint) GetDepthOnePair(baseID, quoteID string) (exchange.Binaresp, error) {
 
 	respBody, err := self.GetResponse(
 		"GET", self.interf.PublicEndpoint()+"/api/v1/depth",
 		map[string]string{
-			"symbol": fmt.Sprintf("%s%s", pair.Base.ID, pair.Quote.ID),
+			"symbol": fmt.Sprintf("%s%s", baseID, quoteID),
 			"limit":  "100",
 		},
 		false,

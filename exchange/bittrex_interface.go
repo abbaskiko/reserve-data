@@ -9,7 +9,7 @@ import (
 
 // BittrexInterface contains the methods to interact with Bittrex centralized exchange.
 type BittrexInterface interface {
-	FetchOnePairData(pair common.TokenPair) (Bittresp, error)
+	FetchOnePairData(baseID, quoteID string) (Bittresp, error)
 
 	GetInfo() (Bittinfo, error)
 

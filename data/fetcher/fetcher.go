@@ -102,11 +102,25 @@ func (self *Fetcher) RunGlobalDataFetcher() {
 }
 
 func (self *Fetcher) FetchGlobalData(timepoint uint64) {
-	data, _ := self.theworld.GetGoldInfo()
-	data.Timestamp = common.GetTimepoint()
-	err := self.globalStorage.StoreGoldInfo(data)
+	goldData, err := self.theworld.GetGoldInfo()
 	if err != nil {
+		log.Printf("failed to fetch Gold Info: %s", err.Error())
+		return
+	}
+	goldData.Timestamp = common.GetTimepoint()
+
+	if err = self.globalStorage.StoreGoldInfo(goldData); err != nil {
 		log.Printf("Storing gold info failed: %s", err.Error())
+	}
+
+	btcData, err := self.theworld.GetBTCInfo()
+	if err != nil {
+		log.Printf("failed to fetch BTC Info: %s", err.Error())
+		return
+	}
+	btcData.Timestamp = common.GetTimepoint()
+	if err = self.globalStorage.StoreBTCInfo(btcData); err != nil {
+		log.Printf("Storing BTC info failed: %s", err.Error())
 	}
 }
 
@@ -738,7 +752,11 @@ func (self *Fetcher) FetchOrderbook(timepoint uint64) {
 
 func (self *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, data *ConcurrentAllPriceData, timepoint uint64) {
 	defer wg.Done()
-	exdata, err := exchange.FetchPriceData(timepoint)
+	fetchConfig, err := self.globalStorage.GetAllFetcherConfiguration()
+	if err != nil {
+		log.Fatal("cannot get btc fetcher configuration")
+	}
+	exdata, err := exchange.FetchPriceData(timepoint, fetchConfig.BTC)
 	if err != nil {
 		log.Printf("Fetching data from %s failed: %v\n", exchange.Name(), err)
 	}

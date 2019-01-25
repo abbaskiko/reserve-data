@@ -272,7 +272,7 @@ func (self *Binance) CancelOrder(id string, base, quote string) error {
 
 func (self *Binance) FetchOnePairData(
 	wg *sync.WaitGroup,
-	pair common.TokenPair,
+	baseID, quoteID string,
 	data *sync.Map,
 	timepoint uint64) {
 
@@ -282,7 +282,7 @@ func (self *Binance) FetchOnePairData(
 	timestamp := common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Timestamp = timestamp
 	result.Valid = true
-	resp_data, err := self.interf.GetDepthOnePair(pair)
+	resp_data, err := self.interf.GetDepthOnePair(baseID, quoteID)
 	returnTime := common.GetTimestamp()
 	result.ReturnTime = returnTime
 	if err != nil {
@@ -317,10 +317,10 @@ func (self *Binance) FetchOnePairData(
 			}
 		}
 	}
-	data.Store(pair.PairID(), result)
+	data.Store(common.NewTokenPairID(baseID, quoteID), result)
 }
 
-func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (self *Binance) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := self.TokenPairs()
@@ -333,7 +333,16 @@ func (self *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]co
 		for x = i; x < len(pairs) && x < i+batchSize; x++ {
 			wait.Add(1)
 			pair := pairs[x]
-			go self.FetchOnePairData(&wait, pair, &data, timepoint)
+			baseID, quoteID := pair.GetBaseQuoteID()
+			go self.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
+			if fetchBTCPrice {
+				wait.Add(1)
+				go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+			}
+		}
+		if fetchBTCPrice {
+			wait.Add(1)
+			go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
 		}
 		wait.Wait()
 		i = x

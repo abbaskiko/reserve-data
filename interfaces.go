@@ -64,6 +64,11 @@ type ReserveData interface {
 
 	GetGoldData(timepoint uint64) (common.GoldData, error)
 
+	GetBTCData(timepoint uint64) (common.BTCData, error)
+
+	UpdateFeedConfiguration(string, bool) error
+	GetFeedConfiguration() ([]common.FeedConfiguration, error)
+
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error
 
@@ -71,6 +76,9 @@ type ReserveData interface {
 	GetNotifications() (common.ExchangeNotifications, error)
 
 	GetTradeHistory(fromTime, toTime uint64) (common.AllTradeHistory, error)
+
+	UpdateFetcherConfiguration(common.FetcherConfiguration) error
+	GetAllFetcherConfiguration() (common.FetcherConfiguration, error)
 
 	Run() error
 	RunStorageController() error

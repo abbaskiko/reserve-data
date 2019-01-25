@@ -15,6 +15,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/world"
 	"github.com/boltdb/bolt"
 )
 
@@ -37,6 +38,8 @@ const (
 	stableTokenParamsBucket         string = "stable-token-params"
 	pendingStatbleTokenParamsBucket string = "pending-stable-token-params"
 	goldBucket                      string = "gold_feeds"
+	btcBucket                       string = "btc_feeds"
+	disabledFeedsBucket             string = "disabled_feeds"
 
 	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
 	pendingTargetQuantityV2 string = "pending_target_qty_v2"
@@ -53,6 +56,9 @@ const (
 	pendingRebalanceQuadratic = "pending_rebalance_quadratic"
 	// rebalanceQuadratic stores rebalance quadratic equation
 	rebalanceQuadratic = "rebalance_quadratic"
+
+	//btcFetcherConfiguration stores configuration for btc fetcher
+	fetcherConfigurationBucket = "btc_fetcher_configuration"
 )
 
 // BoltStorage is the storage implementation of data.Storage interface
@@ -75,6 +81,14 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 	// init buckets
 	err = db.Update(func(tx *bolt.Tx) error {
 		if _, cErr := tx.CreateBucketIfNotExists([]byte(goldBucket)); cErr != nil {
+			return cErr
+		}
+
+		if _, cErr := tx.CreateBucketIfNotExists([]byte(btcBucket)); cErr != nil {
+			return cErr
+		}
+
+		if _, cErr := tx.CreateBucketIfNotExists([]byte(disabledFeedsBucket)); cErr != nil {
 			return cErr
 		}
 
@@ -140,6 +154,10 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			return cErr
 		}
 		if _, cErr := tx.CreateBucketIfNotExists([]byte(rebalanceQuadratic)); cErr != nil {
+			return cErr
+		}
+
+		if _, cErr := tx.CreateBucketIfNotExists([]byte(fetcherConfigurationBucket)); cErr != nil {
 			return cErr
 		}
 		return nil
@@ -213,6 +231,115 @@ func (self *BoltStorage) StoreGoldInfo(data common.GoldData) error {
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		var dataJSON []byte
 		b := tx.Bucket([]byte(goldBucket))
+		dataJSON, uErr := json.Marshal(data)
+		if uErr != nil {
+			return uErr
+		}
+		return b.Put(boltutil.Uint64ToBytes(timepoint), dataJSON)
+	})
+	return err
+}
+
+// CurrentBTCInfoVersion returns the most recent time point of gold info record.
+// It implements data.GlobalStorage interface.
+func (self *BoltStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, error) {
+	var result uint64
+	var err error
+	err = self.db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket([]byte(btcBucket)).Cursor()
+		result, err = reverseSeek(timepoint, c)
+		return nil
+	})
+	return common.Version(result), err
+}
+
+func (self *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error {
+	const disableValue = "disabled"
+	var (
+		allFeeds = world.AllFeeds()
+		exists   = false
+	)
+
+	for _, feed := range allFeeds {
+		if strings.ToLower(name) == strings.ToLower(feed) {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		return fmt.Errorf("unknown feed: %q", name)
+	}
+
+	return self.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(disabledFeedsBucket))
+		if v := b.Get([]byte(name)); v == nil {
+			// feed does not exists in disabled feeds bucket yet
+			if !enabled {
+				return b.Put([]byte(name), []byte(disableValue))
+			}
+			return nil
+		}
+
+		if enabled {
+			return b.Delete([]byte(name))
+		}
+		return nil
+	})
+}
+
+func (self *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
+	var (
+		err      error
+		allFeeds = world.AllFeeds()
+		results  []common.FeedConfiguration
+	)
+
+	for _, feed := range allFeeds {
+		results = append(results, common.FeedConfiguration{Name: feed, Enabled: true})
+	}
+
+	err = self.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(disabledFeedsBucket))
+		return b.ForEach(func(k, _ []byte) error {
+			for i := range results {
+				if strings.ToLower(results[i].Name) == strings.ToLower(string(k)) {
+					results[i].Enabled = false
+					break
+				}
+			}
+			return nil
+		})
+	})
+
+	return results, err
+}
+
+// GetBTCInfo returns BTC info at given time point. It implements data.GlobalStorage interface.
+func (self *BoltStorage) GetBTCInfo(version common.Version) (common.BTCData, error) {
+	var (
+		err    error
+		result = common.BTCData{}
+	)
+	err = self.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(btcBucket))
+		data := b.Get(boltutil.Uint64ToBytes(uint64(version)))
+		if data == nil {
+			return fmt.Errorf("version %s doesn't exist", string(version))
+		}
+		return json.Unmarshal(data, &result)
+	})
+	return result, err
+}
+
+// StoreBTCInfo stores the given BTC information to database. It implements fetcher.GlobalStorage interface.
+func (self *BoltStorage) StoreBTCInfo(data common.BTCData) error {
+	var (
+		err       error
+		timepoint = data.Timestamp
+	)
+	err = self.db.Update(func(tx *bolt.Tx) error {
+		var dataJSON []byte
+		b := tx.Bucket([]byte(btcBucket))
 		dataJSON, uErr := json.Marshal(data)
 		if uErr != nil {
 			return uErr

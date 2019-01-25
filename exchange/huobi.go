@@ -277,7 +277,7 @@ func (self *Huobi) CancelOrder(id, base, quote string) error {
 
 func (self *Huobi) FetchOnePairData(
 	wg *sync.WaitGroup,
-	pair common.TokenPair,
+	baseID, quoteID string,
 	data *sync.Map,
 	timepoint uint64) {
 
@@ -287,7 +287,7 @@ func (self *Huobi) FetchOnePairData(
 	timestamp := common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Timestamp = timestamp
 	result.Valid = true
-	resp_data, err := self.interf.GetDepthOnePair(pair)
+	resp_data, err := self.interf.GetDepthOnePair(baseID, quoteID)
 	returnTime := common.GetTimestamp()
 	result.ReturnTime = returnTime
 	if err != nil {
@@ -321,10 +321,10 @@ func (self *Huobi) FetchOnePairData(
 			}
 		}
 	}
-	data.Store(pair.PairID(), result)
+	data.Store(common.NewTokenPairID(baseID, quoteID), result)
 }
 
-func (self *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (self *Huobi) FetchPriceData(timepoint uint64, fetchPriceData bool) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := self.TokenPairs()
@@ -333,7 +333,16 @@ func (self *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]comm
 	}
 	for _, pair := range pairs {
 		wait.Add(1)
-		go self.FetchOnePairData(&wait, pair, &data, timepoint)
+		baseID, quoteID := pair.GetBaseQuoteID()
+		go self.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
+		if fetchPriceData {
+			wait.Add(1)
+			go self.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
+		}
+	}
+	if fetchPriceData {
+		wait.Add(1)
+		go self.FetchOnePairData(&wait, self.setting.ETHToken().ID, BtcID, &data, timepoint)
 	}
 	wait.Wait()
 	result := map[common.TokenPairID]common.ExchangePrice{}

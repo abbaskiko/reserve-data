@@ -5,6 +5,24 @@ import (
 	"io/ioutil"
 )
 
+var (
+	allFeeds = []string{
+		"DGX",
+		"OneForgeETH",
+		"OneForgeUSD",
+		"GDAX",
+		"Kraken",
+		"Gemini",
+		"bitfinex",
+		"binance",
+	}
+)
+
+// AllFeeds returns all configured feed sources.
+func AllFeeds() []string {
+	return allFeeds
+}
+
 // Endpoint returns all API endpoints to use in TheWorld struct.
 type Endpoint interface {
 	GoldDataEndpoint() string
@@ -13,6 +31,9 @@ type Endpoint interface {
 	GDAXDataEndpoint() string
 	KrakenDataEndpoint() string
 	GeminiDataEndpoint() string
+
+	BitfinexEndpoint() string
+	BinanceEndpoint() string
 }
 
 type RealEndpoint struct {
@@ -32,7 +53,7 @@ func (self RealEndpoint) OneForgeGoldUSDDataEndpoint() string {
 }
 
 func (self RealEndpoint) GDAXDataEndpoint() string {
-	return "https://api.gdax.com/products/eth-usd/ticker"
+	return "https://api.pro.coinbase.com/products/eth-usd/ticker"
 }
 
 func (self RealEndpoint) KrakenDataEndpoint() string {
@@ -41,6 +62,14 @@ func (self RealEndpoint) KrakenDataEndpoint() string {
 
 func (self RealEndpoint) GeminiDataEndpoint() string {
 	return "https://api.gemini.com/v1/pubticker/ethusd"
+}
+
+func (self RealEndpoint) BitfinexEndpoint() string {
+	return "https://api.bitfinex.com/v1/pubticker/ethbtc"
+}
+
+func (self RealEndpoint) BinanceEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHBTC"
 }
 
 func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
@@ -78,4 +107,12 @@ func (self SimulatedEndpoint) KrakenDataEndpoint() string {
 
 func (self SimulatedEndpoint) GeminiDataEndpoint() string {
 	return "http://simulator:5800/v1/pubticker/ethusd"
+}
+
+func (self SimulatedEndpoint) BitfinexEndpoint() string {
+	return "http://simulator:5900/v1/pubticker/ethbtc"
+}
+
+func (self SimulatedEndpoint) BinanceEndpoint() string {
+	return "http://simulator:5100/api/v3/ticker/bookTicker?symbol=ETHBTC"
 }
