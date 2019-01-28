@@ -4,18 +4,33 @@
 
 ### Features:
 
-- add /get-step-function-data API for fetching tokens step function configuration
+### Bug fixes:
+
+### Improvements: 
+
+### Compatibility:
+
+### Features:
+
 - add "creation_time" field to Token info
 - add /btc-feed API (#453)
 - add fetcher configuration APIs (#477)
+- add feed configuration APIs (#455)
+- add feed configuration API set (#455)
+- support btc orderbook (#2188)
 
 ### Bug fixes:
 
 ### Improvements: 
+
 - change MEW endpoint to new endpoint (#425)
-- remove unused step function data endpoint (#465)
+- improve set rate strategy (#458)
+- switch default endpoint to alchemyapi (#466)
 
 ### Compatibility
+
+- KyberNetwork smart contracts (>= 0.3.0)
+- KyberNetwork analytic (0.11.0)
 
 ## 0.11.0 (2018-07-03)
 
