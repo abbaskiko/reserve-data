@@ -15,15 +15,14 @@ env:
 install:
   - ./.travis/gometalinter-install.sh
   - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
-  - go get github.com/mattn/goveralls
-  
-cache: 
+
+cache:
   directories:
-  - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+    - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 script:
   - GO111MODULE=off gometalinter --config=gometalinter.json ./...
-  - $GOPATH/bin/goveralls -v -race -service=travis-ci
+  - go test -v -race -mode vendor ./...
 
 after_success:
   - docker --version
@@ -34,4 +33,3 @@ deploy:
   script: bash .travis/docker_push
   on:
     all_branches: true
-
