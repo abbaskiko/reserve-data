@@ -22,7 +22,7 @@ cache:
   - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 script:
-  - gometalinter --config=gometalinter.json ./...
+  - GO111MODULE=off gometalinter --config=gometalinter.json ./...
   - $GOPATH/bin/goveralls -v -race -service=travis-ci
 
 after_success:
