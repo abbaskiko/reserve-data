@@ -6,7 +6,6 @@
     "gotype",
     "vet",
     "gotypex",
-    "vet",
     "unused",
     "errcheck",
     "vetshadow"
