@@ -360,7 +360,7 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 			}
 			status, blockNum, err = self.blockchain.TxStatus(tx)
 			if err != nil {
-				return result, fmt.Errorf("TX_STATUS: Getting tx status failed, tx will be considered as pending: %s", err)
+				return result, fmt.Errorf("TX_STATUS: Getting tx status failed: %s", err)
 			}
 
 			switch status {
