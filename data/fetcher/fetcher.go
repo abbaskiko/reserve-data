@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"sync"
@@ -352,7 +351,8 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 			var err error
 			txStr, ok := activity.Result["tx"].(string)
 			if !ok {
-				return result, fmt.Errorf("TX_STATUS: cannot convert activity.Result[tx] (value %v) to string type", activity.Result["tx"])
+				log.Printf("TX_STATUS: ERROR cannot convert activity.Result[tx] (value %v) to string type", activity.Result["tx"])
+				continue
 			}
 			tx := ethereum.HexToHash(txStr)
 			if tx.Big().IsInt64() && tx.Big().Int64() == 0 {
@@ -360,7 +360,8 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 			}
 			status, blockNum, err = self.blockchain.TxStatus(tx)
 			if err != nil {
-				return result, fmt.Errorf("TX_STATUS: Getting tx status failed: %s", err)
+				log.Printf("TX_STATUS: ERROR Getting tx status failed: %s", err)
+				continue
 			}
 
 			switch status {
