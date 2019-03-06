@@ -3,7 +3,6 @@ package common
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
 	"math/big"
 	"strconv"
 	"strings"
@@ -27,11 +26,6 @@ func (self Timestamp) MustToUint64() uint64 {
 func GetTimestamp() Timestamp {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	return Timestamp(strconv.Itoa(int(timestamp)))
-}
-
-func GetTimepointInMicrosecond() uint64 {
-	timestamp := time.Now().UnixNano() / int64(time.Microsecond)
-	return uint64(timestamp)
 }
 
 func GetTimepoint() uint64 {
@@ -370,10 +364,6 @@ type ExchangePrice struct {
 	ReturnTime Timestamp
 }
 
-func AddrToString(addr ethereum.Address) string {
-	return strings.ToLower(addr.String())
-}
-
 type RawBalance big.Int
 
 func (self *RawBalance) ToFloat(decimal int64) float64 {
@@ -614,14 +604,6 @@ type AllTradeHistory struct {
 	Data      map[ExchangeID]ExchangeTradeHistory
 }
 
-// NewAllTradeHistory creates a new AllTradeHistory instance.
-func NewAllTradeHistory(timestamp Timestamp, data map[ExchangeID]ExchangeTradeHistory) AllTradeHistory {
-	return AllTradeHistory{
-		Timestamp: timestamp,
-		Data:      data,
-	}
-}
-
 type ExStatus struct {
 	Timestamp uint64 `json:"timestamp"`
 	Status    bool   `json:"status"`
@@ -663,31 +645,6 @@ type StoreSetRateTx struct {
 	TimeStamp uint64 `json:"timeStamp"`
 	GasPrice  uint64 `json:"gasPrice"`
 	GasUsed   uint64 `json:"gasUsed"`
-}
-
-func GetStoreTx(tx SetRateTxInfo) (StoreSetRateTx, error) {
-	var storeTx StoreSetRateTx
-	gasPriceUint, err := strconv.ParseUint(tx.GasPrice, 10, 64)
-	if err != nil {
-		log.Printf("Cant convert %s to uint64", tx.GasPrice)
-		return storeTx, err
-	}
-	gasUsedUint, err := strconv.ParseUint(tx.GasUsed, 10, 64)
-	if err != nil {
-		log.Printf("Cant convert %s to uint64", tx.GasUsed)
-		return storeTx, err
-	}
-	timeStampUint, err := strconv.ParseUint(tx.TimeStamp, 10, 64)
-	if err != nil {
-		log.Printf("Cant convert %s to uint64", tx.TimeStamp)
-		return storeTx, err
-	}
-	storeTx = StoreSetRateTx{
-		TimeStamp: timeStampUint,
-		GasPrice:  gasPriceUint,
-		GasUsed:   gasUsedUint,
-	}
-	return storeTx, nil
 }
 
 type FeeSetRate struct {
@@ -764,20 +721,6 @@ type ImbalanceStepFunction struct {
 type StepFunctionResponse struct {
 	QuantityStepResponse  QuantityStepFunction  `json:"quantity_step_function"`
 	ImbalanceStepResponse ImbalanceStepFunction `json:"imbalance_step_function"`
-}
-
-type ExportedReserverRateRecord struct {
-	ReserveAddress string
-	Rate           ReserveRates
-	Timestamp      uint64
-}
-
-func NewExportedReserverRateRecord(addr ethereum.Address, rate ReserveRates, timestamp uint64) ExportedReserverRateRecord {
-	return ExportedReserverRateRecord{
-		ReserveAddress: addr.Hex(),
-		Rate:           rate,
-		Timestamp:      timestamp,
-	}
 }
 
 //FetcherConfiguration is configuration of fetcher

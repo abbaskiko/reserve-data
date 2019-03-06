@@ -17,13 +17,13 @@ require (
 	github.com/golang/protobuf v0.0.0-20170920220647-130e6b02ab05 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3
+	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3 // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/kisielk/errcheck v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.0-20170925054904-a5cdd64afdee // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/oschwald/geoip2-golang v1.2.1
+	github.com/oschwald/geoip2-golang v1.2.1 // indirect
 	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
 	github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
