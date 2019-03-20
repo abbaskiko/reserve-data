@@ -28,10 +28,12 @@ import (
 )
 
 const (
+	infuraProjectID = "/v3/59d9e06a1abe487e8e74664c06b337f9"
+
 	alchemyapiMainnetEndpoint = "https://eth-mainnet.alchemyapi.io/jsonrpc/V1GjKybGLx6rzSu517KSWpSrTSIIXmV7"
-	infuraMainnetEndpoint     = "https://mainnet.infura.io"
-	infuraKovanEndpoint       = "https://kovan.infura.io"
-	infuraRopstenEndpoint     = "https://ropsten.infura.io"
+	infuraMainnetEndpoint     = "https://mainnet.infura.io" + infuraProjectID
+	infuraKovanEndpoint       = "https://kovan.infura.io" + infuraProjectID
+	infuraRopstenEndpoint     = "https://ropsten.infura.io" + infuraProjectID
 	myEtherAPIMainnetEndpoint = "https://api.myetherwallet.com/eth"
 	myEtherAPIRopstenEndpoint = "https://api.myetherwallet.com/rop"
 	semidNodeKyberEndpoint    = "https://semi-node.kyber.network"
