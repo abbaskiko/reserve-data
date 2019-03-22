@@ -4,8 +4,8 @@
   "Enable": [
     "gofmt",
     "gotype",
-    "gotypex",
     "vet",
+    "gotypex",
     "unused",
     "errcheck",
     "vetshadow"

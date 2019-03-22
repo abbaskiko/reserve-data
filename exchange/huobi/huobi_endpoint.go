@@ -19,6 +19,10 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
+const (
+	huobiDepositEndpoint = "https://www.hbg.com/-/x/pro/"
+)
+
 //HuobiEndpoint endpoint object
 type HuobiEndpoint struct {
 	signer Signer
@@ -360,7 +364,7 @@ func (self *HuobiEndpoint) GetDepositAddress(asset string) (exchange.HuobiDeposi
 	result := exchange.HuobiDepositAddress{}
 	respBody, err := self.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/v1/dw/deposit-virtual/addresses",
+		huobiDepositEndpoint+"v1/dw/deposit-virtual/addresses",
 		map[string]string{
 			"currency": asset,
 		},
