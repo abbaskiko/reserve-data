@@ -1,25 +1,28 @@
-sudo: required
-
-go_import_path: github.com/KyberNetwork/reserve-data
-
 language: go
+
+go:
+  - "1.11.x"
 
 services:
   - docker
 
+env:
+  global:
+    - GOMETALINTER_VERSION=2.0.11
+    - GO111MODULE=on
+    - PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+
 install:
-  - export GOMETALINTER_VERSION=2.0.11
   - ./.travis/gometalinter-install.sh
   - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
-  - go get github.com/mattn/goveralls
-  
-cache: 
+
+cache:
   directories:
-  - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+    - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 script:
-  - gometalinter --config=gometalinter.json ./...
-  - $GOPATH/bin/goveralls -v -race -service=travis-ci
+  - GO111MODULE=off gometalinter --config=gometalinter.json ./...
+  - go test -v -race -mode vendor ./...
 
 after_success:
   - docker --version
@@ -30,6 +33,3 @@ deploy:
   script: bash .travis/docker_push
   on:
     all_branches: true
-
-go:
-  - "1.10.x"

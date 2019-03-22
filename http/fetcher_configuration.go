@@ -1,9 +1,10 @@
 package http
 
 import (
-	"net/http"
+	"strconv"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,38 +14,33 @@ func (h *HTTPServer) UpdateFetcherConfiguration(c *gin.Context) {
 	var (
 		query common.FetcherConfiguration
 	)
-	if err := c.ShouldBindJSON(&query); err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{"error": err.Error()},
-		)
+	postForm, ok := h.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
+	if !ok {
 		return
 	}
+	value := postForm.Get("btc")
+	btcConfig, err := strconv.ParseBool(value)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	query.BTC = btcConfig
 	if err := h.app.UpdateFetcherConfiguration(query); err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		query,
-	)
+	httputil.ResponseSuccess(c)
 }
 
 //GetAllFetcherConfiguration returns all fetcher config
 func (h *HTTPServer) GetAllFetcherConfiguration(c *gin.Context) {
-	config, err := h.app.GetAllFetcherConfiguration()
-	if err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{"error": err.Error()},
-		)
+	_, ok := h.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission})
+	if !ok {
 		return
 	}
-	c.JSON(
-		http.StatusOK,
-		config,
-	)
+	config, err := h.app.GetAllFetcherConfiguration()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(config))
 }

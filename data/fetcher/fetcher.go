@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"sync"
@@ -259,16 +260,24 @@ func (self *Fetcher) FetchAuthDataFromBlockchain(
 	// 3. Get list of pending activity status again (C)
 	// 4. if C != A, repeat 1, otherwise return A, B
 	var balances map[string]common.BalanceEntry
-	var statuses map[common.ActivityID]common.ActivityStatus
+	var preStatuses, statuses map[common.ActivityID]common.ActivityStatus
 	var err error
 	for {
-		preStatuses := self.FetchStatusFromBlockchain(pendings)
+		preStatuses, err = self.FetchStatusFromBlockchain(pendings)
+		if err != nil {
+			log.Printf("Fetching blockchain status failed:  %v", err)
+			break
+		}
 		balances, err = self.FetchBalanceFromBlockchain()
 		if err != nil {
 			log.Printf("Fetching blockchain balances failed: %v", err)
 			break
 		}
-		statuses = self.FetchStatusFromBlockchain(pendings)
+		statuses, err = self.FetchStatusFromBlockchain(pendings)
+		if err != nil {
+			log.Printf("Fetching blockchain status failed:  %v", err)
+			break
+		}
 		if unchanged(preStatuses, statuses) {
 			break
 		}
@@ -332,7 +341,7 @@ func (self *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 	}
 }
 
-func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) map[common.ActivityID]common.ActivityStatus {
+func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (map[common.ActivityID]common.ActivityStatus, error) {
 	result := map[common.ActivityID]common.ActivityStatus{}
 	nonceValidator := self.newNonceValidator()
 
@@ -343,7 +352,7 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 			var err error
 			txStr, ok := activity.Result["tx"].(string)
 			if !ok {
-				log.Printf("WARNING: cannot convert activity.Result[tx] (value %v) to string type", activity.Result["tx"])
+				log.Printf("TX_STATUS: WARNING cannot convert activity.Result[tx] (value %v) to string type", activity.Result["tx"])
 				continue
 			}
 			tx := ethereum.HexToHash(txStr)
@@ -352,22 +361,15 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 			}
 			status, blockNum, err = self.blockchain.TxStatus(tx)
 			if err != nil {
-				log.Printf("Getting tx status failed, tx will be considered as pending: %s", err)
+				return result, fmt.Errorf("TX_STATUS: ERROR Getting tx status failed: %s", err)
 			}
+
 			switch status {
-			case "":
-				if nonceValidator(activity) {
-					result[activity.ID] = common.NewActivityStatus(
-						activity.ExchangeStatus,
-						txStr,
-						blockNum,
-						common.MiningStatusFailed,
-						err,
-					)
-				}
+			case common.MiningStatusPending:
+				log.Printf("TX_STATUS: tx (%s) status is pending", tx)
 			case common.MiningStatusMined:
 				if activity.Action == common.ActionSetrate {
-					log.Printf("set rate transaction is mined, id: %s", activity.ID.EID)
+					log.Printf("TX_STATUS set rate transaction is mined, id: %s", activity.ID.EID)
 				}
 				result[activity.ID] = common.NewActivityStatus(
 					activity.ExchangeStatus,
@@ -386,8 +388,8 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 				)
 			case common.MiningStatusLost:
 				var (
-					// expiredDuration is the amount of time in millisecond after that if a transaction
-					//doesn't appear, it is considered failed
+					// expiredDuration is the amount of time after that if a transaction doesn't appear,
+					// it is considered failed
 					expiredDuration = 15 * time.Minute / time.Millisecond
 					txFailed        = false
 				)
@@ -396,7 +398,7 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 				} else {
 					elapsed := common.GetTimepoint() - activity.Timestamp.MustToUint64()
 					if elapsed > uint64(expiredDuration) {
-						log.Printf("Fetcher tx status: tx(%s) is lost, elapsed time: %d", txStr, elapsed)
+						log.Printf("TX_STATUS: tx(%s) is lost, elapsed time: %d", txStr, elapsed)
 						txFailed = true
 					}
 				}
@@ -410,10 +412,12 @@ func (self *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord)
 						err,
 					)
 				}
+			default:
+				log.Printf("TX_STATUS: tx (%s) status is not available. Wait till next try", tx)
 			}
 		}
 	}
-	return result
+	return result, nil
 }
 
 func unchanged(pre, post map[common.ActivityID]common.ActivityStatus) bool {
