@@ -237,8 +237,10 @@ func (self *Fetcher) FetchAllAuthData(timepoint uint64) {
 		}
 	}
 
-	self.FetchAuthDataFromBlockchain(
-		bbalances, &bstatuses, pendings)
+	if err = self.FetchAuthDataFromBlockchain(bbalances, &bstatuses, pendings); err != nil {
+		snapshot.Error = err.Error()
+		snapshot.Valid = false
+	}
 	snapshot.Block = self.currentBlock
 	snapshot.ReturnTime = common.GetTimestamp()
 	err = self.PersistSnapshot(
@@ -253,7 +255,7 @@ func (self *Fetcher) FetchAllAuthData(timepoint uint64) {
 func (self *Fetcher) FetchAuthDataFromBlockchain(
 	allBalances map[string]common.BalanceEntry,
 	allStatuses *sync.Map,
-	pendings []common.ActivityRecord) {
+	pendings []common.ActivityRecord) error {
 	// we apply double check strategy to mitigate race condition on exchange side like this:
 	// 1. Get list of pending activity status (A)
 	// 2. Get list of balances (B)
@@ -266,30 +268,29 @@ func (self *Fetcher) FetchAuthDataFromBlockchain(
 		preStatuses, err = self.FetchStatusFromBlockchain(pendings)
 		if err != nil {
 			log.Printf("Fetching blockchain status failed:  %v", err)
-			break
+			return err
 		}
 		balances, err = self.FetchBalanceFromBlockchain()
 		if err != nil {
 			log.Printf("Fetching blockchain balances failed: %v", err)
-			break
+			return err
 		}
 		statuses, err = self.FetchStatusFromBlockchain(pendings)
 		if err != nil {
 			log.Printf("Fetching blockchain status failed:  %v", err)
-			break
+			return err
 		}
 		if unchanged(preStatuses, statuses) {
 			break
 		}
 	}
-	if err == nil {
-		for k, v := range balances {
-			allBalances[k] = v
-		}
-		for id, activityStatus := range statuses {
-			allStatuses.Store(id, activityStatus)
-		}
+	for k, v := range balances {
+		allBalances[k] = v
 	}
+	for id, activityStatus := range statuses {
+		allStatuses.Store(id, activityStatus)
+	}
+	return nil
 }
 
 func (self *Fetcher) FetchCurrentBlock(timepoint uint64) {
