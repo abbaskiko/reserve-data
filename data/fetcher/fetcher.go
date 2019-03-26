@@ -267,8 +267,7 @@ func (self *Fetcher) FetchAuthDataFromBlockchain(
 	for {
 		preStatuses, err = self.FetchStatusFromBlockchain(pendings)
 		if err != nil {
-			log.Printf("Fetching blockchain status failed:  %v", err)
-			return err
+			log.Printf("Fetching blockchain pre statuses failed:  %v, retrying", err)
 		}
 		balances, err = self.FetchBalanceFromBlockchain()
 		if err != nil {
@@ -277,8 +276,7 @@ func (self *Fetcher) FetchAuthDataFromBlockchain(
 		}
 		statuses, err = self.FetchStatusFromBlockchain(pendings)
 		if err != nil {
-			log.Printf("Fetching blockchain status failed:  %v", err)
-			return err
+			log.Printf("Fetching blockchain statuses failed:  %v, retrying", err)
 		}
 		if unchanged(preStatuses, statuses) {
 			break
