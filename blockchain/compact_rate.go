@@ -22,11 +22,10 @@ func BigIntToCompactRate(rate *big.Int, base *big.Int) (compactrate *CompactRate
 			return &CompactRate{
 				rate, 0,
 			}, false
-		} else {
-			return &CompactRate{
-				rate, 0,
-			}, true
 		}
+		return &CompactRate{
+			rate, 0,
+		}, true
 	}
 	// rate = base * (1 + compact/1000)
 	// compact = (rate / base - 1) * 1000
@@ -43,12 +42,11 @@ func BigIntToCompactRate(rate *big.Int, base *big.Int) (compactrate *CompactRate
 		return &CompactRate{
 			base, byte(intComp),
 		}, false
-	} else {
-		// incapable to change compact, need to change base
-		return &CompactRate{
-			rate, 0,
-		}, true
 	}
+	// incapable to change compact, need to change base
+	return &CompactRate{
+		rate, 0,
+	}, true
 }
 
 type bulk struct {

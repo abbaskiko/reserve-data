@@ -19,17 +19,17 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-// BinanceEndpoint object stand for Binance endpoint
+// Endpoint object stand for Binance endpoint
 // including signer for api call authentication,
 // interf for calling api in different env
 // timedelta to make sure calling api in time
-type BinanceEndpoint struct {
+type Endpoint struct {
 	signer    Signer
 	interf    Interface
 	timeDelta int64
 }
 
-func (self *BinanceEndpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
+func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
 	if req.Method == "POST" || req.Method == "PUT" || req.Method == "DELETE" {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Add("User-Agent", "binance/go")
@@ -38,10 +38,10 @@ func (self *BinanceEndpoint) fillRequest(req *http.Request, signNeeded bool, tim
 	if signNeeded {
 		q := req.URL.Query()
 		sig := url.Values{}
-		req.Header.Set("X-MBX-APIKEY", self.signer.GetKey())
-		q.Set("timestamp", fmt.Sprintf("%d", int64(timepoint)+self.timeDelta-1000))
+		req.Header.Set("X-MBX-APIKEY", ep.signer.GetKey())
+		q.Set("timestamp", fmt.Sprintf("%d", int64(timepoint)+ep.timeDelta-1000))
 		q.Set("recvWindow", "5000")
-		sig.Set("signature", self.signer.Sign(q.Encode()))
+		sig.Set("signature", ep.signer.Sign(q.Encode()))
 		// Using separated values map for signature to ensure it is at the end
 		// of the query. This is required for /wapi apis from binance without
 		// any damn documentation about it!!!
@@ -49,7 +49,7 @@ func (self *BinanceEndpoint) fillRequest(req *http.Request, signNeeded bool, tim
 	}
 }
 
-func (self *BinanceEndpoint) GetResponse(
+func (ep *Endpoint) GetResponse(
 	method string, url string,
 	params map[string]string, signNeeded bool, timepoint uint64) ([]byte, error) {
 	var (
@@ -57,7 +57,7 @@ func (self *BinanceEndpoint) GetResponse(
 		respBody []byte
 	)
 	client := &http.Client{
-		Timeout: time.Duration(30 * time.Second),
+		Timeout: 30 * time.Second,
 	}
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
@@ -70,7 +70,7 @@ func (self *BinanceEndpoint) GetResponse(
 		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
-	self.fillRequest(req, signNeeded, timepoint)
+	ep.fillRequest(req, signNeeded, timepoint)
 
 	log.Printf("request to binance: %s\n", req.URL)
 	resp, err := client.Do(req)
@@ -85,25 +85,20 @@ func (self *BinanceEndpoint) GetResponse(
 	switch resp.StatusCode {
 	case 429:
 		err = errors.New("breaking binance request rate limit")
-		break
 	case 418:
 		err = errors.New("ip has been auto-banned by binance for continuing to send requests after receiving 429 codes")
-		break
 	case 500:
 		err = errors.New("500 from Binance, its fault")
-		break
 	case 401:
 		err = errors.New("binance api key not valid")
-		break
 	case 200:
 		respBody, err = ioutil.ReadAll(resp.Body)
-		break
 	default:
 		var response exchange.Binaresp
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			break
 		}
-		err = fmt.Errorf("Binance return with code: %d - %s", resp.StatusCode, response.Msg)
+		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
 	if err != nil || len(respBody) == 0 || rand.Int()%10 == 0 {
 		log.Printf("request to %s, got response from binance (error or throttled to 10%%): %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
@@ -111,10 +106,10 @@ func (self *BinanceEndpoint) GetResponse(
 	return respBody, err
 }
 
-func (self *BinanceEndpoint) GetDepthOnePair(baseID, quoteID string) (exchange.Binaresp, error) {
+func (ep *Endpoint) GetDepthOnePair(baseID, quoteID string) (exchange.Binaresp, error) {
 
-	respBody, err := self.GetResponse(
-		"GET", self.interf.PublicEndpoint()+"/api/v1/depth",
+	respBody, err := ep.GetResponse(
+		"GET", ep.interf.PublicEndpoint()+"/api/v1/depth",
 		map[string]string{
 			"symbol": fmt.Sprintf("%s%s", baseID, quoteID),
 			"limit":  "100",
@@ -131,7 +126,7 @@ func (self *BinanceEndpoint) GetDepthOnePair(baseID, quoteID string) (exchange.B
 		return respData, err
 	}
 	if respData.Code != 0 {
-		return respData, fmt.Errorf("Getting depth from Binance failed: %s", respData.Msg)
+		return respData, fmt.Errorf("getting depth from Binance failed: %s", respData.Msg)
 	}
 	return respData, nil
 }
@@ -146,7 +141,7 @@ func (self *BinanceEndpoint) GetDepthOnePair(baseID, quoteID string) (exchange.B
 //
 // In this version, we only support LIMIT order which means only buy/sell with acceptable price,
 // and GTC time in force which means that the order will be active until it's implicitly canceled
-func (self *BinanceEndpoint) Trade(tradeType string, base, quote common.Token, rate, amount float64) (exchange.Binatrade, error) {
+func (ep *Endpoint) Trade(tradeType string, base, quote common.Token, rate, amount float64) (exchange.Binatrade, error) {
 	result := exchange.Binatrade{}
 	symbol := base.ID + quote.ID
 	orderType := "LIMIT"
@@ -157,12 +152,10 @@ func (self *BinanceEndpoint) Trade(tradeType string, base, quote common.Token, r
 		"timeInForce": "GTC",
 		"quantity":    strconv.FormatFloat(amount, 'f', -1, 64),
 	}
-	if orderType == "LIMIT" {
-		params["price"] = strconv.FormatFloat(rate, 'f', -1, 64)
-	}
-	respBody, err := self.GetResponse(
+	params["price"] = strconv.FormatFloat(rate, 'f', -1, 64)
+	respBody, err := ep.GetResponse(
 		"POST",
-		self.interf.AuthenticatedEndpoint()+"/api/v3/order",
+		ep.interf.AuthenticatedEndpoint()+"/api/v3/order",
 		params,
 		true,
 		common.GetTimepoint(),
@@ -174,12 +167,12 @@ func (self *BinanceEndpoint) Trade(tradeType string, base, quote common.Token, r
 	return result, err
 }
 
-func (self *BinanceEndpoint) GetTradeHistory(symbol string) (exchange.BinanceTradeHistory, error) {
+func (ep *Endpoint) GetTradeHistory(symbol string) (exchange.BinanceTradeHistory, error) {
 	result := exchange.BinanceTradeHistory{}
 	timepoint := common.GetTimepoint()
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.PublicEndpoint()+"/api/v1/trades",
+		ep.interf.PublicEndpoint()+"/api/v1/trades",
 		map[string]string{
 			"symbol": symbol,
 			"limit":  "500",
@@ -193,7 +186,7 @@ func (self *BinanceEndpoint) GetTradeHistory(symbol string) (exchange.BinanceTra
 	return result, err
 }
 
-func (self *BinanceEndpoint) GetAccountTradeHistory(
+func (ep *Endpoint) GetAccountTradeHistory(
 	base, quote common.Token,
 	fromID string) (exchange.BinaAccountTradeHistory, error) {
 
@@ -208,9 +201,9 @@ func (self *BinanceEndpoint) GetAccountTradeHistory(
 	} else {
 		params["fromId"] = "0"
 	}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/api/v3/myTrades",
+		ep.interf.AuthenticatedEndpoint()+"/api/v3/myTrades",
 		params,
 		true,
 		common.GetTimepoint(),
@@ -221,11 +214,11 @@ func (self *BinanceEndpoint) GetAccountTradeHistory(
 	return result, err
 }
 
-func (self *BinanceEndpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawithdrawals, error) {
+func (ep *Endpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawithdrawals, error) {
 	result := exchange.Binawithdrawals{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/wapi/v3/withdrawHistory.html",
+		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/withdrawHistory.html",
 		map[string]string{
 			"startTime": fmt.Sprintf("%d", startTime),
 			"endTime":   fmt.Sprintf("%d", endTime),
@@ -244,11 +237,11 @@ func (self *BinanceEndpoint) WithdrawHistory(startTime, endTime uint64) (exchang
 	return result, err
 }
 
-func (self *BinanceEndpoint) DepositHistory(startTime, endTime uint64) (exchange.Binadeposits, error) {
+func (ep *Endpoint) DepositHistory(startTime, endTime uint64) (exchange.Binadeposits, error) {
 	result := exchange.Binadeposits{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/wapi/v3/depositHistory.html",
+		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/depositHistory.html",
 		map[string]string{
 			"startTime": fmt.Sprintf("%d", startTime),
 			"endTime":   fmt.Sprintf("%d", endTime),
@@ -267,11 +260,11 @@ func (self *BinanceEndpoint) DepositHistory(startTime, endTime uint64) (exchange
 	return result, err
 }
 
-func (self *BinanceEndpoint) CancelOrder(symbol string, id uint64) (exchange.Binacancel, error) {
+func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.Binacancel, error) {
 	result := exchange.Binacancel{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"DELETE",
-		self.interf.AuthenticatedEndpoint()+"/api/v3/order",
+		ep.interf.AuthenticatedEndpoint()+"/api/v3/order",
 		map[string]string{
 			"symbol":  symbol,
 			"orderId": fmt.Sprintf("%d", id),
@@ -290,11 +283,11 @@ func (self *BinanceEndpoint) CancelOrder(symbol string, id uint64) (exchange.Bin
 	return result, err
 }
 
-func (self *BinanceEndpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, error) {
+func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, error) {
 	result := exchange.Binaorder{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/api/v3/order",
+		ep.interf.AuthenticatedEndpoint()+"/api/v3/order",
 		map[string]string{
 			"symbol":  symbol,
 			"orderId": fmt.Sprintf("%d", id),
@@ -313,11 +306,11 @@ func (self *BinanceEndpoint) OrderStatus(symbol string, id uint64) (exchange.Bin
 	return result, err
 }
 
-func (self *BinanceEndpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (string, error) {
+func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (string, error) {
 	result := exchange.Binawithdraw{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"POST",
-		self.interf.AuthenticatedEndpoint()+"/wapi/v3/withdraw.html",
+		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/withdraw.html",
 		map[string]string{
 			"asset":   token.ID,
 			"address": address.Hex(),
@@ -339,11 +332,11 @@ func (self *BinanceEndpoint) Withdraw(token common.Token, amount *big.Int, addre
 	return "", fmt.Errorf("withdraw rejected by Binnace: %s", common.ErrorToString(err))
 }
 
-func (self *BinanceEndpoint) GetInfo() (exchange.Binainfo, error) {
+func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	result := exchange.Binainfo{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/api/v3/account",
+		ep.interf.AuthenticatedEndpoint()+"/api/v3/account",
 		map[string]string{},
 		true,
 		common.GetTimepoint(),
@@ -354,17 +347,17 @@ func (self *BinanceEndpoint) GetInfo() (exchange.Binainfo, error) {
 		}
 	}
 	if result.Code != 0 {
-		return result, fmt.Errorf("Getting account info from Binance failed: %s", result.Msg)
+		return result, fmt.Errorf("getting account info from Binance failed: %s", result.Msg)
 	}
 	return result, err
 }
 
-func (self *BinanceEndpoint) OpenOrdersForOnePair(pair common.TokenPair) (exchange.Binaorders, error) {
+func (ep *Endpoint) OpenOrdersForOnePair(pair common.TokenPair) (exchange.Binaorders, error) {
 
 	result := exchange.Binaorders{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
+		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
 		map[string]string{
 			"symbol": pair.Base.ID + pair.Quote.ID,
 		},
@@ -380,11 +373,11 @@ func (self *BinanceEndpoint) OpenOrdersForOnePair(pair common.TokenPair) (exchan
 	return result, nil
 }
 
-func (self *BinanceEndpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress, error) {
+func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress, error) {
 	result := exchange.Binadepositaddress{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.AuthenticatedEndpoint()+"/wapi/v3/depositAddress.html",
+		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/depositAddress.html",
 		map[string]string{
 			"asset": asset,
 		},
@@ -402,11 +395,11 @@ func (self *BinanceEndpoint) GetDepositAddress(asset string) (exchange.Binadepos
 	return result, err
 }
 
-func (self *BinanceEndpoint) GetExchangeInfo() (exchange.BinanceExchangeInfo, error) {
+func (ep *Endpoint) GetExchangeInfo() (exchange.BinanceExchangeInfo, error) {
 	result := exchange.BinanceExchangeInfo{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.PublicEndpoint()+"/api/v1/exchangeInfo",
+		ep.interf.PublicEndpoint()+"/api/v1/exchangeInfo",
 		map[string]string{},
 		false,
 		common.GetTimepoint(),
@@ -417,11 +410,11 @@ func (self *BinanceEndpoint) GetExchangeInfo() (exchange.BinanceExchangeInfo, er
 	return result, err
 }
 
-func (self *BinanceEndpoint) getServerTime() (uint64, error) {
+func (ep *Endpoint) getServerTime() (uint64, error) {
 	result := exchange.BinaServerTime{}
-	respBody, err := self.GetResponse(
+	respBody, err := ep.GetResponse(
 		"GET",
-		self.interf.PublicEndpoint()+"/api/v1/time",
+		ep.interf.PublicEndpoint()+"/api/v1/time",
 		map[string]string{},
 		false,
 		common.GetTimepoint(),
@@ -432,9 +425,9 @@ func (self *BinanceEndpoint) getServerTime() (uint64, error) {
 	return result.ServerTime, err
 }
 
-func (self *BinanceEndpoint) UpdateTimeDelta() error {
+func (ep *Endpoint) UpdateTimeDelta() error {
 	currentTime := common.GetTimepoint()
-	serverTime, err := self.getServerTime()
+	serverTime, err := ep.getServerTime()
 	responseTime := common.GetTimepoint()
 	if err != nil {
 		return err
@@ -443,15 +436,15 @@ func (self *BinanceEndpoint) UpdateTimeDelta() error {
 	log.Printf("Binance server time: %d", serverTime)
 	log.Printf("Binance response time: %d", responseTime)
 	roundtripTime := (int64(responseTime) - int64(currentTime)) / 2
-	self.timeDelta = int64(serverTime) - int64(currentTime) - roundtripTime
+	ep.timeDelta = int64(serverTime) - int64(currentTime) - roundtripTime
 
-	log.Printf("Time delta: %d", self.timeDelta)
+	log.Printf("Time delta: %d", ep.timeDelta)
 	return nil
 }
 
 //NewBinanceEndpoint return new endpoint instance for using binance
-func NewBinanceEndpoint(signer Signer, interf Interface) *BinanceEndpoint {
-	endpoint := &BinanceEndpoint{signer, interf, 0}
+func NewBinanceEndpoint(signer Signer, interf Interface) *Endpoint {
+	endpoint := &Endpoint{signer, interf, 0}
 	switch interf.(type) {
 	case *SimulatedInterface:
 		log.Println("Simulate environment, no updateTime called...")

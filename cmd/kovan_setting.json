@@ -32,21 +32,12 @@
     }
   },
   "exchangesAddress": {
-    "bittrex": "0x337bd888263110b9e285815436a47b65bced5957",
     "liqui": "0xa65204dcd9484a3c8a5e927398625c1de9084e25",
     "poloniex": "0x711c6e568477524b32e1b249442b2af6458a2464",
     "binance": "0x30e9e8f35b7aa27cca210961716681fdc62e990a",
     "bitfinex": "0x38adde42854d787da1512a588216059937287903"
   },
   "exchanges": {
-    "bittrex": {
-      "OMG": "0xd9f95b69708082975302e52fa7ce873660de4f1b",
-      "KNC": "0x132478f1ec4b8e1256b11fdf3e00d97e4df5988f",
-      "EOS": "0xef6ee90c5bb23da2eb71b3daa8e57b204e5ac647",
-      "SALT": "0x385d619b530f00ab7d082683f7cdc37995ac76f2",
-      "SNT": "0x3ef96f9de64c44b1ad392b10e2277a73ec14ff5f",
-      "ETH": "0x46ff7ebe96cdf10c6924db000a809881d849b570"
-    },
     "liqui": {
       "OMG": "0x275a5b53a05b2e7dd7a7e5af57ba3e511154f80e",
       "KNC": "0x9be40f24aeca73a20a56fc7a5827862782532dd4",

@@ -1,4 +1,4 @@
-package http_runner
+package httprunner
 
 import (
 	"errors"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-// HttpRunner is an implementation of FetcherRunner
+// HTTPRunner is an implementation of FetcherRunner
 // that run a HTTP server and tick when it receives request to a certain endpoints.
-type HttpRunner struct {
+type HTTPRunner struct {
 	port int
 
 	oticker          chan time.Time
@@ -19,43 +19,43 @@ type HttpRunner struct {
 	bticker          chan time.Time
 	globalDataTicker chan time.Time
 
-	server *HttpRunnerServer
+	server *Server
 }
 
 // GetGlobalDataTicker returns the global data ticker.
-func (self *HttpRunner) GetGlobalDataTicker() <-chan time.Time {
-	return self.globalDataTicker
+func (hr *HTTPRunner) GetGlobalDataTicker() <-chan time.Time {
+	return hr.globalDataTicker
 }
 
 // GetBlockTicker returns the block ticker.
-func (self *HttpRunner) GetBlockTicker() <-chan time.Time {
-	return self.bticker
+func (hr *HTTPRunner) GetBlockTicker() <-chan time.Time {
+	return hr.bticker
 }
 
 // GetOrderbookTicker returns the order book ticker.
-func (self *HttpRunner) GetOrderbookTicker() <-chan time.Time {
-	return self.oticker
+func (hr *HTTPRunner) GetOrderbookTicker() <-chan time.Time {
+	return hr.oticker
 }
 
 // GetAuthDataTicker returns the auth data ticker.
-func (self *HttpRunner) GetAuthDataTicker() <-chan time.Time {
-	return self.aticker
+func (hr *HTTPRunner) GetAuthDataTicker() <-chan time.Time {
+	return hr.aticker
 }
 
 // GetRateTicker returns the rate ticker.
-func (self *HttpRunner) GetRateTicker() <-chan time.Time {
-	return self.rticker
+func (hr *HTTPRunner) GetRateTicker() <-chan time.Time {
+	return hr.rticker
 }
 
 // waitPingResponse waits until HTTP ticker server responses to request.
-func (self *HttpRunner) waitPingResponse() error {
+func (hr *HTTPRunner) waitPingResponse() error {
 	var (
 		tickCh   = time.NewTicker(time.Second / 2).C
 		expireCh = time.NewTicker(time.Second * 5).C
 		client   = http.Client{Timeout: time.Second}
 	)
 
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/%s", self.port, "ping"), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/%s", hr.port, "ping"), nil)
 	if err != nil {
 		return err
 	}
@@ -83,58 +83,56 @@ func (self *HttpRunner) waitPingResponse() error {
 // It is guaranteed that the HTTP server is ready to serve request after
 // this method is returned.
 // The HTTP server is listened on all network interfaces.
-func (self *HttpRunner) Start() error {
-	if self.server != nil {
+func (hr *HTTPRunner) Start() error {
+	if hr.server != nil {
 		return errors.New("runner start already")
-	} else {
-		var addr string
-		if self.port != 0 {
-			addr = fmt.Sprintf(":%d", self.port)
-		}
-		self.server = NewHttpRunnerServer(self, addr)
-		go func() {
-			if err := self.server.Start(); err != nil {
-				log.Printf("Http server for runner couldn't start or get stopped. Error: %s", err)
-			}
-		}()
-
-		// wait until the HTTP server is ready
-		<-self.server.notifyCh
-		return self.waitPingResponse()
 	}
+	var addr string
+	if hr.port != 0 {
+		addr = fmt.Sprintf(":%d", hr.port)
+	}
+	hr.server = NewServer(hr, addr)
+	go func() {
+		if err := hr.server.Start(); err != nil {
+			log.Printf("Http server for runner couldn't start or get stopped. Error: %s", err)
+		}
+	}()
+
+	// wait until the HTTP server is ready
+	<-hr.server.notifyCh
+	return hr.waitPingResponse()
 }
 
 // Stop stops the HTTP server. It returns an error if the server is already stopped.
-func (self *HttpRunner) Stop() error {
-	if self.server != nil {
-		err := self.server.Stop()
-		self.server = nil
+func (hr *HTTPRunner) Stop() error {
+	if hr.server != nil {
+		err := hr.server.Stop()
+		hr.server = nil
 		return err
-	} else {
-		return errors.New("runner stop already")
 	}
+	return errors.New("runner stop already")
 }
 
-// HttpRunnerOption is the option to setup the HttpRunner on creation.
-type HttpRunnerOption func(hr *HttpRunner)
+// Option is the option to setup the HTTPRunner on creation.
+type Option func(hr *HTTPRunner)
 
-// WithHttpRunnerPort setups the HttpRunner instance with the given port.
-// Without this option, NewHttpRunner will use a random port.
-func WithHttpRunnerPort(port int) HttpRunnerOption {
-	return func(hr *HttpRunner) {
+// WithPort setups the HTTPRunner instance with the given port.
+// Without this option, NewHTTPRunner will use a random port.
+func WithPort(port int) Option {
+	return func(hr *HTTPRunner) {
 		hr.port = port
 	}
 }
 
-// NewHttpRunner creates a new instance of HttpRunner.
-func NewHttpRunner(options ...HttpRunnerOption) (*HttpRunner, error) {
+// NewHTTPRunner creates a new instance of HTTPRunner.
+func NewHTTPRunner(options ...Option) (*HTTPRunner, error) {
 	ochan := make(chan time.Time)
 	achan := make(chan time.Time)
 	rchan := make(chan time.Time)
 	bchan := make(chan time.Time)
 	globalDataChan := make(chan time.Time)
 
-	runner := &HttpRunner{
+	runner := &HTTPRunner{
 		oticker:          ochan,
 		aticker:          achan,
 		rticker:          rchan,

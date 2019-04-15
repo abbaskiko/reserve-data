@@ -48,9 +48,6 @@ func (bte *BinanceTestExchange) GetMinDeposit() (common.ExchangesMinDeposit, err
 func (bte *BinanceTestExchange) GetInfo() (common.ExchangeInfo, error) {
 	return common.ExchangeInfo{}, nil
 }
-func (bte *BinanceTestExchange) TokenAddresses() (map[string]ethereum.Address, error) {
-	return map[string]ethereum.Address{}, nil
-}
 func (bte *BinanceTestExchange) UpdateDepositAddress(token common.Token, address string) error {
 	return nil
 }
@@ -64,7 +61,7 @@ func (bte *BinanceTestExchange) GetLiveExchangeInfos(tokenPairIDs []common.Token
 	result := make(common.ExchangeInfo)
 	for _, pairID := range tokenPairIDs {
 		if pairID != ETHKNCpairID {
-			return result, errors.New("Token pair ID is not support")
+			return result, errors.New("token pair ID is not support")
 		}
 		result[pairID] = common.ExchangePrecisionLimit{
 			AmountLimit: common.TokenPairAmountLimit{

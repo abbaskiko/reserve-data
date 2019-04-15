@@ -10,12 +10,12 @@ import (
 )
 
 // GetPWIEquationV2 returns the current PWI equations.
-func (self *HTTPServer) GetPWIEquationV2(c *gin.Context) {
-	_, ok := self.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
+func (s *Server) GetPWIEquationV2(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
-	data, err := self.metric.GetPWIEquationV2()
+	data, err := s.metric.GetPWIEquationV2()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -24,10 +24,10 @@ func (self *HTTPServer) GetPWIEquationV2(c *gin.Context) {
 }
 
 // SetPWIEquationV2 stores the given PWI equations to pending for later evaluation.
-func (self *HTTPServer) SetPWIEquationV2(c *gin.Context) {
+func (s *Server) SetPWIEquationV2(c *gin.Context) {
 	const dataPostFormKey = "data"
 
-	postForm, ok := self.Authenticated(c, []string{dataPostFormKey}, []Permission{ConfigurePermission})
+	postForm, ok := s.Authenticated(c, []string{dataPostFormKey}, []Permission{ConfigurePermission})
 	if !ok {
 		return
 	}
@@ -44,12 +44,12 @@ func (self *HTTPServer) SetPWIEquationV2(c *gin.Context) {
 		return
 	}
 	for tokenID := range input {
-		if _, err := self.setting.GetInternalTokenByID(tokenID); err != nil {
+		if _, err := s.setting.GetInternalTokenByID(tokenID); err != nil {
 			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is unsupported", tokenID)))
 		}
 	}
 
-	if err := self.metric.StorePendingPWIEquationV2(data); err != nil {
+	if err := s.metric.StorePendingPWIEquationV2(data); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -57,12 +57,12 @@ func (self *HTTPServer) SetPWIEquationV2(c *gin.Context) {
 }
 
 // GetPendingPWIEquationV2 returns the pending PWI equations.
-func (self *HTTPServer) GetPendingPWIEquationV2(c *gin.Context) {
-	_, ok := self.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
+func (s *Server) GetPendingPWIEquationV2(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
-	data, err := self.metric.GetPendingPWIEquationV2()
+	data, err := s.metric.GetPendingPWIEquationV2()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -71,15 +71,15 @@ func (self *HTTPServer) GetPendingPWIEquationV2(c *gin.Context) {
 }
 
 // ConfirmPWIEquationV2 accepts the pending PWI equations and remove it from pending bucket.
-func (self *HTTPServer) ConfirmPWIEquationV2(c *gin.Context) {
+func (s *Server) ConfirmPWIEquationV2(c *gin.Context) {
 	const dataPostFormKey = "data"
 
-	postForm, ok := self.Authenticated(c, []string{dataPostFormKey}, []Permission{ConfirmConfPermission})
+	postForm, ok := s.Authenticated(c, []string{dataPostFormKey}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
 	}
 	postData := postForm.Get(dataPostFormKey)
-	err := self.metric.StorePWIEquationV2(postData)
+	err := s.metric.StorePWIEquationV2(postData)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -89,13 +89,13 @@ func (self *HTTPServer) ConfirmPWIEquationV2(c *gin.Context) {
 
 // RejectPWIEquationV2 rejects the PWI equations request and removes
 // it from pending storage.
-func (self *HTTPServer) RejectPWIEquationV2(c *gin.Context) {
-	_, ok := self.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
+func (s *Server) RejectPWIEquationV2(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
 	}
 
-	if err := self.metric.RemovePendingPWIEquationV2(); err != nil {
+	if err := s.metric.RemovePendingPWIEquationV2(); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}

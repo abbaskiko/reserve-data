@@ -202,7 +202,7 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := HTTPServer{
+	s := Server{
 		app:         data.NewReserveData(st, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, st, setting),
 		metric:      st,
@@ -326,6 +326,7 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, s.r) })
 	}
 }

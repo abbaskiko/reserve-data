@@ -78,19 +78,6 @@ func EthToWei(n float64) *big.Int {
 	return FloatToBigInt(n, 18)
 }
 
-// AllZero returns true if all params are zero, false otherwise
-// func AllZero(sets ...[]*big.Int) bool {
-// 	big0 := big.NewInt(0)
-// 	for _, set := range sets {
-// 		for _, i := range set {
-// 			if i.Cmp(big0) != 0 {
-// 				return false
-// 			}
-// 		}
-// 	}
-// 	return true
-// }
-
 // CombineActivityStorageErrs return a combination of error between action error and storage error
 func CombineActivityStorageErrs(err, sErr error) error {
 	if err == nil && sErr == nil {

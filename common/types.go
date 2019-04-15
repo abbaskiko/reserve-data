@@ -14,8 +14,8 @@ import (
 type Version uint64
 type Timestamp string
 
-func (self Timestamp) MustToUint64() uint64 {
-	res, err := strconv.ParseUint(string(self), 10, 64)
+func (ts Timestamp) MustToUint64() uint64 {
+	res, err := strconv.ParseUint(string(ts), 10, 64)
 	//  this should never happen. Timestamp is never manually entered.
 	if err != nil {
 		panic(err)
@@ -50,18 +50,18 @@ func NewExchangeAddresses() *ExchangeAddresses {
 	return &exAddr
 }
 
-func (self ExchangeAddresses) Update(tokenID string, address ethereum.Address) {
-	self[tokenID] = address
+func (ea ExchangeAddresses) Update(tokenID string, address ethereum.Address) {
+	ea[tokenID] = address
 }
 
-func (self ExchangeAddresses) Get(tokenID string) (ethereum.Address, bool) {
-	address, supported := self[tokenID]
+func (ea ExchangeAddresses) Get(tokenID string) (ethereum.Address, bool) {
+	address, supported := ea[tokenID]
 	return address, supported
 }
 
-func (self ExchangeAddresses) GetData() map[string]ethereum.Address {
+func (ea ExchangeAddresses) GetData() map[string]ethereum.Address {
 	dataCopy := map[string]ethereum.Address{}
-	for k, v := range self {
+	for k, v := range ea {
 		dataCopy[k] = v
 	}
 	return dataCopy
@@ -83,17 +83,17 @@ func NewExchangeInfo() ExchangeInfo {
 	return ExchangeInfo(make(map[TokenPairID]ExchangePrecisionLimit))
 }
 
-func (self ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
-	info, exist := self[pair]
+func (ei ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
+	info, exist := ei[pair]
 	if !exist {
-		return info, fmt.Errorf("Token pair is not existed")
+		return info, fmt.Errorf("token pair is not existed")
 	}
 	return info, nil
 
 }
 
-func (self ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
-	data := map[TokenPairID]ExchangePrecisionLimit(self)
+func (ei ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
+	data := map[TokenPairID]ExchangePrecisionLimit(ei)
 	return data
 }
 
@@ -121,8 +121,8 @@ type FundingFee struct {
 	Deposit  map[string]float64
 }
 
-func (self FundingFee) GetTokenFee(token string) float64 {
-	withdrawFee := self.Withdraw
+func (ff FundingFee) GetTokenFee(token string) float64 {
+	withdrawFee := ff.Withdraw
 	return withdrawFee[token]
 }
 
@@ -163,32 +163,31 @@ type ActivityID struct {
 	EID       string
 }
 
-func (self ActivityID) ToBytes() [64]byte {
+func (ai ActivityID) ToBytes() [64]byte {
 	var b [64]byte
 	temp := make([]byte, 64)
-	binary.BigEndian.PutUint64(temp, self.Timepoint)
-	temp = append(temp, []byte(self.EID)...)
+	binary.BigEndian.PutUint64(temp, ai.Timepoint)
+	temp = append(temp, []byte(ai.EID)...)
 	copy(b[0:], temp)
 	return b
 }
 
-func (self ActivityID) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%s|%s", strconv.FormatUint(self.Timepoint, 10), self.EID)), nil
+func (ai ActivityID) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%s|%s", strconv.FormatUint(ai.Timepoint, 10), ai.EID)), nil
 }
 
-func (self *ActivityID) UnmarshalText(b []byte) error {
+func (ai *ActivityID) UnmarshalText(b []byte) error {
 	id, err := StringToActivityID(string(b))
 	if err != nil {
 		return err
-	} else {
-		self.Timepoint = id.Timepoint
-		self.EID = id.EID
-		return nil
 	}
+	ai.Timepoint = id.Timepoint
+	ai.EID = id.EID
+	return nil
 }
 
-func (self ActivityID) String() string {
-	res, _ := self.MarshalText()
+func (ai ActivityID) String() string {
+	res, _ := ai.MarshalText()
 	return string(res)
 }
 
@@ -196,19 +195,17 @@ func StringToActivityID(id string) (ActivityID, error) {
 	result := ActivityID{}
 	parts := strings.Split(id, "|")
 	if len(parts) < 2 {
-		return result, fmt.Errorf("Invalid activity id")
-	} else {
-		timeStr := parts[0]
-		eid := strings.Join(parts[1:], "|")
-		timepoint, err := strconv.ParseUint(timeStr, 10, 64)
-		if err != nil {
-			return result, err
-		} else {
-			result.Timepoint = timepoint
-			result.EID = eid
-			return result, nil
-		}
+		return result, fmt.Errorf("invalid activity id")
 	}
+	timeStr := parts[0]
+	eid := strings.Join(parts[1:], "|")
+	timepoint, err := strconv.ParseUint(timeStr, 10, 64)
+	if err != nil {
+		return result, err
+	}
+	result.Timepoint = timepoint
+	result.EID = eid
+	return result, nil
 }
 
 // NewActivityStatus creates new Activity ID.
@@ -258,44 +255,44 @@ func NewActivityRecord(action string, id ActivityID, destination string, params,
 	}
 }
 
-func (self ActivityRecord) IsExchangePending() bool {
-	switch self.Action {
+func (ar ActivityRecord) IsExchangePending() bool {
+	switch ar.Action {
 	case ActionWithdraw:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted) &&
-			self.MiningStatus != MiningStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted) &&
+			ar.MiningStatus != MiningStatusFailed
 	case ActionDeposit:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusPending) &&
-			self.MiningStatus != MiningStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusPending) &&
+			ar.MiningStatus != MiningStatusFailed
 	case ActionTrade:
-		return self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted
+		return ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted
 	}
 	return true
 }
 
-func (self ActivityRecord) IsBlockchainPending() bool {
-	switch self.Action {
-	case ActionWithdraw, ActionDeposit, ActionSetrate:
-		return (self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) && self.ExchangeStatus != ExchangeStatusFailed
+func (ar ActivityRecord) IsBlockchainPending() bool {
+	switch ar.Action {
+	case ActionWithdraw, ActionDeposit, ActionSetRate:
+		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) && ar.ExchangeStatus != ExchangeStatusFailed
 	}
 	return true
 }
 
-func (self ActivityRecord) IsPending() bool {
-	switch self.Action {
+func (ar ActivityRecord) IsPending() bool {
+	switch ar.Action {
 	case ActionWithdraw:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted ||
-			self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
-			self.MiningStatus != MiningStatusFailed && self.ExchangeStatus != ExchangeStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted ||
+			ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
+			ar.MiningStatus != MiningStatusFailed && ar.ExchangeStatus != ExchangeStatusFailed
 	case ActionDeposit:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusPending ||
-			self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
-			self.MiningStatus != MiningStatusFailed && self.ExchangeStatus != ExchangeStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusPending ||
+			ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
+			ar.MiningStatus != MiningStatusFailed && ar.ExchangeStatus != ExchangeStatusFailed
 	case ActionTrade:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted) &&
-			self.ExchangeStatus != ExchangeStatusFailed
-	case ActionSetrate:
-		return (self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
-			self.ExchangeStatus != ExchangeStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted) &&
+			ar.ExchangeStatus != ExchangeStatusFailed
+	case ActionSetRate:
+		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
+			ar.ExchangeStatus != ExchangeStatusFailed
 	}
 	return true
 }
@@ -366,17 +363,17 @@ type ExchangePrice struct {
 
 type RawBalance big.Int
 
-func (self *RawBalance) ToFloat(decimal int64) float64 {
-	return BigToFloat((*big.Int)(self), decimal)
+func (rb *RawBalance) ToFloat(decimal int64) float64 {
+	return BigToFloat((*big.Int)(rb), decimal)
 }
 
-func (self RawBalance) MarshalJSON() ([]byte, error) {
-	selfInt := (big.Int)(self)
+func (rb RawBalance) MarshalJSON() ([]byte, error) {
+	selfInt := (big.Int)(rb)
 	return selfInt.MarshalJSON()
 }
 
-func (self *RawBalance) UnmarshalJSON(text []byte) error {
-	selfInt := (*big.Int)(self)
+func (rb *RawBalance) UnmarshalJSON(text []byte) error {
+	selfInt := (*big.Int)(rb)
 	return selfInt.UnmarshalJSON(text)
 }
 
@@ -388,13 +385,13 @@ type BalanceEntry struct {
 	Balance    RawBalance
 }
 
-func (self BalanceEntry) ToBalanceResponse(decimal int64) BalanceResponse {
+func (be BalanceEntry) ToBalanceResponse(decimal int64) BalanceResponse {
 	return BalanceResponse{
-		Valid:      self.Valid,
-		Error:      self.Error,
-		Timestamp:  self.Timestamp,
-		ReturnTime: self.ReturnTime,
-		Balance:    self.Balance.ToFloat(decimal),
+		Valid:      be.Valid,
+		Error:      be.Error,
+		Timestamp:  be.Timestamp,
+		ReturnTime: be.ReturnTime,
+		Balance:    be.Balance.ToFloat(decimal),
 	}
 }
 
@@ -417,7 +414,7 @@ type Order struct {
 	ID          string // standard id across multiple exchanges
 	Base        string
 	Quote       string
-	OrderId     string
+	OrderID     string
 	Price       float64
 	OrigQty     float64 // original quantity
 	ExecutedQty float64 // matched quantity

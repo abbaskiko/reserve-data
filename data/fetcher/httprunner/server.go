@@ -1,6 +1,7 @@
-package http_runner
+package httprunner
 
 import (
+	"context"
 	"errors"
 	"log"
 	"math"
@@ -20,9 +21,9 @@ import (
 // timestamp parameter in request is omit or malformed.
 const maxTimeSpot uint64 = math.MaxUint64
 
-// HttpRunnerServer is the HTTP ticker server.
-type HttpRunnerServer struct {
-	runner *HttpRunner
+// Server is the HTTP ticker server.
+type Server struct {
+	runner *HTTPRunner
 	host   string
 	r      *gin.Engine
 	http   *http.Server
@@ -59,32 +60,32 @@ func pingHandler(c *gin.Context) {
 }
 
 // register setups the gin.Engine instance by registers HTTP handlers.
-func (self *HttpRunnerServer) register() {
-	self.r.GET("/ping", pingHandler)
+func (s *Server) register() {
+	s.r.GET("/ping", pingHandler)
 
-	self.r.GET("/otick", newTickerHandler(self.runner.oticker))
-	self.r.GET("/atick", newTickerHandler(self.runner.aticker))
-	self.r.GET("/rtick", newTickerHandler(self.runner.rticker))
-	self.r.GET("/btick", newTickerHandler(self.runner.bticker))
-	self.r.GET("/gtick", newTickerHandler(self.runner.globalDataTicker))
+	s.r.GET("/otick", newTickerHandler(s.runner.oticker))
+	s.r.GET("/atick", newTickerHandler(s.runner.aticker))
+	s.r.GET("/rtick", newTickerHandler(s.runner.rticker))
+	s.r.GET("/btick", newTickerHandler(s.runner.bticker))
+	s.r.GET("/gtick", newTickerHandler(s.runner.globalDataTicker))
 }
 
 // Start creates the HTTP server if needed and starts it.
 // The HTTP server is running in foreground.
 // This function always return a non-nil error.
-func (self *HttpRunnerServer) Start() error {
-	if self.http == nil {
-		self.http = &http.Server{
-			Handler: self.r,
+func (s *Server) Start() error {
+	if s.http == nil {
+		s.http = &http.Server{
+			Handler: s.r,
 		}
 
-		lis, err := net.Listen("tcp", self.host)
+		lis, err := net.Listen("tcp", s.host)
 		if err != nil {
 			return err
 		}
 
 		// if port is not provided, use a random one and set it back to runner.
-		if self.runner.port == 0 {
+		if s.runner.port == 0 {
 			_, listenedPort, sErr := net.SplitHostPort(lis.Addr().String())
 			if sErr != nil {
 				return sErr
@@ -93,32 +94,32 @@ func (self *HttpRunnerServer) Start() error {
 			if sErr != nil {
 				return sErr
 			}
-			self.runner.port = port
+			s.runner.port = port
 		}
 
-		self.notifyCh <- struct{}{}
+		s.notifyCh <- struct{}{}
 
-		return self.http.Serve(lis)
+		return s.http.Serve(lis)
 	}
 	return errors.New("server start already")
 }
 
 // Stop shutdowns the HTTP server and free the resources.
 // It returns an error if the server is shutdown already.
-func (self *HttpRunnerServer) Stop() error {
-	if self.http != nil {
-		err := self.http.Shutdown(nil)
-		self.http = nil
+func (s *Server) Stop() error {
+	if s.http != nil {
+		err := s.http.Shutdown(context.Background())
+		s.http = nil
 		return err
 	}
 	return errors.New("server stop already")
 }
 
-// NewHttpRunnerServer creates a new instance of HttpRunnerServer.
-func NewHttpRunnerServer(runner *HttpRunner, host string) *HttpRunnerServer {
+// NewServer creates a new instance of HttpRunnerServer.
+func NewServer(runner *HTTPRunner, host string) *Server {
 	r := gin.Default()
 	r.Use(sentry.Recovery(raven.DefaultClient, false))
-	server := &HttpRunnerServer{
+	server := &Server{
 		runner:   runner,
 		host:     host,
 		r:        r,

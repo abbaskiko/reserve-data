@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -18,9 +19,9 @@ type Broadcaster struct {
 	clients map[string]*ethclient.Client
 }
 
-func (self Broadcaster) broadcast(
+func (b Broadcaster) broadcast(
 	ctx context.Context,
-	id string, client *ethclient.Client, tx *types.Transaction,
+	id string, client ethereum.TransactionSender, tx *types.Transaction,
 	wg *sync.WaitGroup, failures *sync.Map) {
 	defer wg.Done()
 	err := client.SendTransaction(ctx, tx)
@@ -29,13 +30,13 @@ func (self Broadcaster) broadcast(
 	}
 }
 
-func (self Broadcaster) Broadcast(tx *types.Transaction) (map[string]error, bool) {
+func (b Broadcaster) Broadcast(tx *types.Transaction) (map[string]error, bool) {
 	failures := sync.Map{}
 	wg := sync.WaitGroup{}
-	for id, client := range self.clients {
+	for id, client := range b.clients {
 		wg.Add(1)
 		timeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		self.broadcast(timeout, id, client, tx, &wg, &failures)
+		b.broadcast(timeout, id, client, tx, &wg, &failures)
 		defer cancel()
 	}
 	wg.Wait()
@@ -54,7 +55,7 @@ func (self Broadcaster) Broadcast(tx *types.Transaction) (map[string]error, bool
 		result[k] = err
 		return true
 	})
-	return result, len(result) != len(self.clients) && len(self.clients) > 0
+	return result, len(result) != len(b.clients) && len(b.clients) > 0
 }
 
 func NewBroadcaster(clients map[string]*ethclient.Client) *Broadcaster {
