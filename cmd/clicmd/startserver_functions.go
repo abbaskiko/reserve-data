@@ -55,7 +55,6 @@ func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPa
 				}
 			}
 		}
-		return
 	})
 	if err != nil {
 		log.Printf("BACKUPLOG Cannot rotate log: %s", err.Error())
@@ -95,24 +94,22 @@ func configLog(stdoutLog bool) {
 }
 
 func InitInterface() {
-	if base_url != defaultBaseURL {
-		log.Printf("Overwriting base URL with %s \n", base_url)
+	if baseURL != defaultBaseURL {
+		log.Printf("Overwriting base URL with %s \n", baseURL)
 	}
-	configuration.SetInterface(base_url)
+	configuration.SetInterface(baseURL)
 }
 
 // GetConfigFromENV: From ENV variable and overwriting instruction, build the config
 func GetConfigFromENV(kyberENV string) *configuration.Config {
 	log.Printf("Running in %s mode \n", kyberENV)
-	var config *configuration.Config
-	config = configuration.GetConfig(kyberENV,
+	config := configuration.GetConfig(kyberENV,
 		!noAuthEnable,
-		endpointOW,
-		noCore)
+		endpointOW)
 	return config
 }
 
-func CreateBlockchain(config *configuration.Config, kyberENV string) (bc *blockchain.Blockchain, err error) {
+func CreateBlockchain(config *configuration.Config) (bc *blockchain.Blockchain, err error) {
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
 		config.Setting,

@@ -12,10 +12,9 @@ import (
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/datapruner"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
-	"github.com/KyberNetwork/reserve-data/data/fetcher/http_runner"
+	"github.com/KyberNetwork/reserve-data/data/fetcher/httprunner"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
-	"github.com/KyberNetwork/reserve-data/exchange/bittrex"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/metric"
@@ -75,17 +74,16 @@ type Config struct {
 	DataGlobalStorage    data.GlobalStorage
 	FetcherStorage       fetcher.Storage
 	FetcherGlobalStorage fetcher.GlobalStorage
-	MetricStorage        metric.MetricStorage
+	MetricStorage        metric.Storage
 	Archive              archive.Archive
 
 	World                *world.TheWorld
-	FetcherRunner        fetcher.FetcherRunner
+	FetcherRunner        fetcher.Runner
 	DataControllerRunner datapruner.StorageControllerRunner
 	FetcherExchanges     []fetcher.Exchange
 	Exchanges            []common.Exchange
 	BlockchainSigner     blockchain.Signer
 	DepositSigner        blockchain.Signer
-	//IntermediatorSigner blockchain.Signer
 
 	EnableAuthentication bool
 	AuthEngine           http.Authentication
@@ -94,29 +92,26 @@ type Config struct {
 	BackupEthereumEndpoints []string
 	Blockchain              *blockchain.BaseBlockchain
 
-	// etherscan api key (optional)
-	EtherscanApiKey string
-
 	ChainType      string
 	Setting        *settings.Settings
 	AddressSetting *settings.AddressSetting
 }
 
-func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
-	setting, err := GetSetting(settingPath, kyberENV, self.AddressSetting)
+func (c *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
+	setting, err := GetSetting(settingPath, kyberENV, c.AddressSetting)
 	if err != nil {
 		log.Panicf("Failed to create setting: %s", err.Error())
 	}
-	self.Setting = setting
+	c.Setting = setting
 	dataStorage, err := storage.NewBoltStorage(settingPath.dataStoragePath)
 	if err != nil {
 		panic(err)
 	}
 
-	var fetcherRunner fetcher.FetcherRunner
+	var fetcherRunner fetcher.Runner
 	var dataControllerRunner datapruner.StorageControllerRunner
 	if common.RunningMode() == common.SimulationMode {
-		if fetcherRunner, err = http_runner.NewHttpRunner(http_runner.WithHttpRunnerPort(8001)); err != nil {
+		if fetcherRunner, err = httprunner.NewHTTPRunner(httprunner.WithPort(8001)); err != nil {
 			log.Fatalf("failed to create HTTP runner: %s", err.Error())
 		}
 	} else {
@@ -133,30 +128,23 @@ func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
 	pricingSigner := PricingSignerFromConfigFile(settingPath.secretPath)
 	depositSigner := DepositSignerFromConfigFile(settingPath.secretPath)
 
-	self.ActivityStorage = dataStorage
-	self.DataStorage = dataStorage
-	self.DataGlobalStorage = dataStorage
-	self.FetcherStorage = dataStorage
-	self.FetcherGlobalStorage = dataStorage
-	self.MetricStorage = dataStorage
-	self.FetcherRunner = fetcherRunner
-	self.DataControllerRunner = dataControllerRunner
-	self.BlockchainSigner = pricingSigner
-	//self.IntermediatorSigner = huoBiintermediatorSigner
-	self.DepositSigner = depositSigner
-	//self.ExchangeStorage = exsStorage
-	// var huobiConfig common.HuobiConfig
-	// exchangesIDs := os.Getenv("KYBER_EXCHANGES")
-	// if strings.Contains(exchangesIDs, "huobi") {
-	// 	huobiConfig = *self.GetHuobiConfig(kyberENV, addressConfig.Intermediator, huobiIntermediatorSigner)
-	// }
+	c.ActivityStorage = dataStorage
+	c.DataStorage = dataStorage
+	c.DataGlobalStorage = dataStorage
+	c.FetcherStorage = dataStorage
+	c.FetcherGlobalStorage = dataStorage
+	c.MetricStorage = dataStorage
+	c.FetcherRunner = fetcherRunner
+	c.DataControllerRunner = dataControllerRunner
+	c.BlockchainSigner = pricingSigner
+	c.DepositSigner = depositSigner
 
 	// create Exchange pool
 	exchangePool, err := NewExchangePool(
 		settingPath,
-		self.Blockchain,
+		c.Blockchain,
 		kyberENV,
-		self.Setting,
+		c.Setting,
 	)
 	if err != nil {
 		log.Panicf("Can not create exchangePool: %s", err.Error())
@@ -165,12 +153,12 @@ func (self *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
 	if err != nil {
 		log.Panicf("cannot Create fetcher exchanges : (%s)", err.Error())
 	}
-	self.FetcherExchanges = fetcherExchanges
+	c.FetcherExchanges = fetcherExchanges
 	coreExchanges, err := exchangePool.CoreExchanges()
 	if err != nil {
 		log.Panicf("cannot Create core exchanges : (%s)", err.Error())
 	}
-	self.Exchanges = coreExchanges
+	c.Exchanges = coreExchanges
 }
 
 var ConfigPaths = map[string]SettingPaths{
@@ -290,30 +278,21 @@ var ConfigPaths = map[string]SettingPaths{
 
 var BinanceInterfaces = make(map[string]binance.Interface)
 var HuobiInterfaces = make(map[string]huobi.Interface)
-var BittrexInterfaces = make(map[string]bittrex.Interface)
 
-func SetInterface(base_url string) {
-	BittrexInterfaces[common.DevMode] = bittrex.NewDevInterface()
-	BittrexInterfaces[common.KovanMode] = bittrex.NewKovanInterface(base_url)
-	BittrexInterfaces[common.MainnetMode] = bittrex.NewRealInterface()
-	BittrexInterfaces[common.StagingMode] = bittrex.NewRealInterface()
-	BittrexInterfaces[common.SimulationMode] = bittrex.NewSimulatedInterface(base_url)
-	BittrexInterfaces[common.RopstenMode] = bittrex.NewRopstenInterface(base_url)
-	BittrexInterfaces[common.AnalyticDevMode] = bittrex.NewRopstenInterface(base_url)
-
+func SetInterface(baseURL string) {
 	HuobiInterfaces[common.DevMode] = huobi.NewDevInterface()
-	HuobiInterfaces[common.KovanMode] = huobi.NewKovanInterface(base_url)
+	HuobiInterfaces[common.KovanMode] = huobi.NewKovanInterface(baseURL)
 	HuobiInterfaces[common.MainnetMode] = huobi.NewRealInterface()
 	HuobiInterfaces[common.StagingMode] = huobi.NewRealInterface()
-	HuobiInterfaces[common.SimulationMode] = huobi.NewSimulatedInterface(base_url)
-	HuobiInterfaces[common.RopstenMode] = huobi.NewRopstenInterface(base_url)
-	HuobiInterfaces[common.AnalyticDevMode] = huobi.NewRopstenInterface(base_url)
+	HuobiInterfaces[common.SimulationMode] = huobi.NewSimulatedInterface(baseURL)
+	HuobiInterfaces[common.RopstenMode] = huobi.NewRopstenInterface(baseURL)
+	HuobiInterfaces[common.AnalyticDevMode] = huobi.NewRopstenInterface(baseURL)
 
 	BinanceInterfaces[common.DevMode] = binance.NewDevInterface()
-	BinanceInterfaces[common.KovanMode] = binance.NewKovanInterface(base_url)
+	BinanceInterfaces[common.KovanMode] = binance.NewKovanInterface(baseURL)
 	BinanceInterfaces[common.MainnetMode] = binance.NewRealInterface()
 	BinanceInterfaces[common.StagingMode] = binance.NewRealInterface()
-	BinanceInterfaces[common.SimulationMode] = binance.NewSimulatedInterface(base_url)
-	BinanceInterfaces[common.RopstenMode] = binance.NewRopstenInterface(base_url)
-	BinanceInterfaces[common.AnalyticDevMode] = binance.NewRopstenInterface(base_url)
+	BinanceInterfaces[common.SimulationMode] = binance.NewSimulatedInterface(baseURL)
+	BinanceInterfaces[common.RopstenMode] = binance.NewRopstenInterface(baseURL)
+	BinanceInterfaces[common.AnalyticDevMode] = binance.NewRopstenInterface(baseURL)
 }

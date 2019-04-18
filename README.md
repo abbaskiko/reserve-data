@@ -6,7 +6,7 @@ This repo is contains two components:
 
 - core: 
 	- interacts with blockchain to get/set rates for tokens pair
-	- buy/sell with centralized exchanges (binance, huobi, bittrex, etc)
+	- buy/sell with centralized exchanges (binance, huobi, etc)
 (For more detail, take a look to interface ReserveCore in intefaces.go)
 
 - stat:  
@@ -26,7 +26,7 @@ a `cmd` executable file will be created in `cmd` module.
 
 1. You need to prepare a `config.json` file inside `cmd` module. The file is described in later section.
 2. You need to prepare a JSON keystore file inside `cmd` module. It is the keystore for the reserve owner.
-3. Make sure your working directory is `cmd`. Run `KYBER_EXCHANGES=binance,bittrex ./cmd` in dev mode.
+3. Make sure your working directory is `cmd`. Run `KYBER_EXCHANGES=binance,huobi ./cmd` in dev mode.
 
 ### Manual
 
@@ -37,7 +37,7 @@ cd cmd
 - Run core only
 
 ```shell
-KYBER_EXCHANGES="binance,bittrex,huobi" KYBER_ENV=production ./cmd server --log-to-stdout
+KYBER_EXCHANGES="binance,huobi" KYBER_ENV=production ./cmd server --log-to-stdout
 ```
 
 - Run stat only
@@ -53,7 +53,7 @@ This repository will build docker images and public on [docker hub](https://hub.
 - Run core only
 
 ```shell
-docker run -p 8000:8000 -v /location/of/config.json:/go/src/github.com/KyberNetwork/reserve-data/cmd/config.json -e KYBER_EXCHANGES="binance,bittrex,huobi" KYBER_ENV="production" kybernetwork/reserve-data:develop server --log-to-stdout
+docker run -p 8000:8000 -v /location/of/config.json:/go/src/github.com/KyberNetwork/reserve-data/cmd/config.json -e KYBER_EXCHANGES="binance,huobi" KYBER_ENV="production" kybernetwork/reserve-data:develop server --log-to-stdout
 ```
 
 - Run stat only 
@@ -137,7 +137,34 @@ curl -X GET "http://localhost:8000/core/addresses"
 response:
 
 ```json
-{"data":{"tokens":{"EOS":"0x15fb2a9d7dadbb88f260f78dcbb574b3b76a8e06","ETH":"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","KNC":"0x8dc114d77e857558aefbe8e1a50b460ff9578f1a","OMG":"0x7606bd550f467546212649a9c25623dfca88dcd7","SALT":"0xcc112cd38362bf3c07d226768fd5869e65296083","SNT":"0x676f650000f420485b99ef0377a2e1c96eb3e821"},"exchanges":{"binance":{"EOS":"0x1ae659f93ba2fc0a1f379545cf9335adb75fa547","ETH":"0x1ae659f93ba2fc0a1f379545cf9335adb75fa547","KNC":"0x1ae659f93ba2fc0a1f379545cf9335adb75fa547","OMG":"0x1ae659f93ba2fc0a1f379545cf9335adb75fa547","SALT":"0x1ae659f93ba2fc0a1f379545cf9335adb75fa547","SNT":"0x1ae659f93ba2fc0a1f379545cf9335adb75fa547"},"bittrex":{"EOS":"0xef6ee90c5bb23da2eb71b3daa8e57b204e5ac647","ETH":"0xe0355aa3cc0a4e0e4b2a70acd90c2fa961f61b23","KNC":"0x132478f1ec4b8e1256b11fdf3e00d97e4df5988f","OMG":"0x9db6e8d2d133448dbcf755f19d540253da4ba043","SALT":"0x385d619b530f00ab7d082683f7cdc37995ac76f2","SNT":"0x3ef96f9de64c44b1ad392b10e2277a73ec14ff5f"}},"wrapper":"0xa54f27b5a72fc1ddc5c4bc6ed50391f457e4a46a","pricing":"0x77925520469d0fcbb0311814c053bf9bafcd867b","reserve":"0x2d1ceabd5a1cd16581ad199031601615a434a2cd","feeburner":"0xa33a2f0745ee8e31b753ec33d22d363a62a123a4","network":"0x643211b405c9a14139142e1104250bbcd94bd0ef"},"success":true}
+{
+  "data": {
+    "tokens": {
+      "EOS": "0x15fb2a9d7dadbb88f260f78dcbb574b3b76a8e06",
+      "ETH": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "KNC": "0x8dc114d77e857558aefbe8e1a50b460ff9578f1a",
+      "OMG": "0x7606bd550f467546212649a9c25623dfca88dcd7",
+      "SALT": "0xcc112cd38362bf3c07d226768fd5869e65296083",
+      "SNT": "0x676f650000f420485b99ef0377a2e1c96eb3e821"
+    },
+    "exchanges": {
+      "binance": {
+        "EOS": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+        "ETH": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+        "KNC": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+        "OMG": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+        "SALT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547",
+        "SNT": "0x1ae659f93ba2fc0a1f379545cf9335adb75fa547"
+      }
+    },
+    "wrapper": "0xa54f27b5a72fc1ddc5c4bc6ed50391f457e4a46a",
+    "pricing": "0x77925520469d0fcbb0311814c053bf9bafcd867b",
+    "reserve": "0x2d1ceabd5a1cd16581ad199031601615a434a2cd",
+    "feeburner": "0xa33a2f0745ee8e31b753ec33d22d363a62a123a4",
+    "network": "0x643211b405c9a14139142e1104250bbcd94bd0ef"
+  },
+  "success": true
+}
 ```
 
 ### Get prices for specific base-quote pair
@@ -3068,6 +3095,5 @@ curl -H 'Content-Type: application/x-www-form-urlencoded' \
 
 ## Supported exchanges
 
-1. Bittrex (bittrex)
-2. Binance (binance)
-3. Huobi (huobi)
+1. Binance (binance)
+2. Huobi (huobi)

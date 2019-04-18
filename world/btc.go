@@ -2,17 +2,18 @@ package world
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/gin-gonic/gin/json"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/gin-gonic/gin/json"
 )
 
-func (self *TheWorld) getBitfinexInfo() common.BitfinexData {
+func (tw *TheWorld) getBitfinexInfo() common.BitfinexData {
 	var (
-		client = &http.Client{Timeout: time.Duration(30 * time.Second)}
-		url    = self.endpoint.BitfinexEndpoint()
+		client = &http.Client{Timeout: 30 * time.Second}
+		url    = tw.endpoint.BitfinexEndpoint()
 		result = common.BitfinexData{}
 	)
 
@@ -54,10 +55,10 @@ func (self *TheWorld) getBitfinexInfo() common.BitfinexData {
 	return result
 }
 
-func (self *TheWorld) getBinanceInfo() common.BinanceData {
+func (tw *TheWorld) getBinanceInfo() common.BinanceData {
 	var (
-		client = &http.Client{Timeout: time.Duration(30 * time.Second)}
-		url    = self.endpoint.BinanceEndpoint()
+		client = &http.Client{Timeout: 30 * time.Second}
+		url    = tw.endpoint.BinanceEndpoint()
 		result = common.BinanceData{}
 	)
 
@@ -99,9 +100,9 @@ func (self *TheWorld) getBinanceInfo() common.BinanceData {
 	return result
 }
 
-func (self *TheWorld) GetBTCInfo() (common.BTCData, error) {
+func (tw *TheWorld) GetBTCInfo() (common.BTCData, error) {
 	return common.BTCData{
-		Bitfinex: self.getBitfinexInfo(),
-		Binance:  self.getBinanceInfo(),
+		Bitfinex: tw.getBitfinexInfo(),
+		Binance:  tw.getBinanceInfo(),
 	}, nil
 }

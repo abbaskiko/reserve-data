@@ -14,5 +14,5 @@ const (
 	ActionDeposit           = "deposit"
 	ActionTrade             = "trade"
 	ActionWithdraw          = "withdraw"
-	ActionSetrate           = "set_rates"
+	ActionSetRate           = "set_rates"
 )

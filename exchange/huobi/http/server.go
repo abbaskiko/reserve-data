@@ -12,19 +12,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//HTTPServer for huobi which including
+//Server for huobi which including
 //app stand for huobi exchange instance in reserve data
 //host is for api calling
 //r for http engine
-type HTTPServer struct {
+type Server struct {
 	app  Huobi
 	host string
 	r    *gin.Engine
 }
 
 //PendingIntermediateTxs get pending transaction
-func (self *HTTPServer) PendingIntermediateTxs(c *gin.Context) {
-	data, err := self.app.PendingIntermediateTxs()
+func (s *Server) PendingIntermediateTxs(c *gin.Context) {
+	data, err := s.app.PendingIntermediateTxs()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	} else {
@@ -34,18 +34,18 @@ func (self *HTTPServer) PendingIntermediateTxs(c *gin.Context) {
 }
 
 //Run run http server for huobi
-func (self *HTTPServer) Run() {
-	if self.app != nil {
-		self.r.GET("/pending_intermediate_tx", self.PendingIntermediateTxs)
+func (s *Server) Run() {
+	if s.app != nil {
+		s.r.GET("/pending_intermediate_tx", s.PendingIntermediateTxs)
 	}
 
-	if err := self.r.Run(self.host); err != nil {
+	if err := s.r.Run(s.host); err != nil {
 		log.Fatalf("Http server run error: %s", err.Error())
 	}
 }
 
 //NewHuobiHTTPServer return new http instance
-func NewHuobiHTTPServer(app Huobi) *HTTPServer {
+func NewHuobiHTTPServer(app Huobi) *Server {
 	huobihost := fmt.Sprintf(":12221")
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
@@ -67,7 +67,7 @@ func NewHuobiHTTPServer(app Huobi) *HTTPServer {
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
 
-	return &HTTPServer{
+	return &Server{
 		app, huobihost, r,
 	}
 }

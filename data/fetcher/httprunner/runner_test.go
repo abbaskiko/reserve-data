@@ -1,4 +1,4 @@
-package http_runner
+package httprunner
 
 import (
 	"fmt"
@@ -45,7 +45,7 @@ func testTicker(t *testing.T, ch <-chan time.Time, path string, port int) {
 }
 
 func TestHttpRunner(t *testing.T) {
-	runner, err := NewHttpRunner()
+	runner, err := NewHTTPRunner()
 	if err != nil {
 		t.Fatal(err)
 	}

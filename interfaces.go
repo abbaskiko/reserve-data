@@ -6,9 +6,9 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
-// ReserveData is the interface of of all data query methods.
+// Data is the interface of of all data query methods.
 // All methods' implementations must support concurrency.
-type ReserveData interface {
+type Data interface {
 	CurrentPriceVersion(timestamp uint64) (common.Version, error)
 	GetAllPrices(timestamp uint64) (common.AllPriceResponse, error)
 	GetOnePrice(id common.TokenPairID, timestamp uint64) (common.OnePriceResponse, error)
@@ -47,9 +47,9 @@ type ReserveData interface {
 	Stop() error
 }
 
-// ReserveCore is the interface that wrap around all interactions
+// Core is the interface that wrap around all interactions
 // with exchanges and blockchain.
-type ReserveCore interface {
+type Core interface {
 	// place order
 	Trade(
 		exchange common.Exchange,
