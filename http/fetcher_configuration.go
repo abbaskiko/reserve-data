@@ -10,11 +10,11 @@ import (
 
 // UpdateFetcherConfiguration update btc fetcher configuration
 // and return new configuration
-func (h *HTTPServer) UpdateFetcherConfiguration(c *gin.Context) {
+func (s *Server) UpdateFetcherConfiguration(c *gin.Context) {
 	var (
 		query common.FetcherConfiguration
 	)
-	postForm, ok := h.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
+	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
 	}
@@ -24,7 +24,7 @@ func (h *HTTPServer) UpdateFetcherConfiguration(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	query.BTC = btcConfig
-	if err := h.app.UpdateFetcherConfiguration(query); err != nil {
+	if err := s.app.UpdateFetcherConfiguration(query); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -32,12 +32,12 @@ func (h *HTTPServer) UpdateFetcherConfiguration(c *gin.Context) {
 }
 
 //GetAllFetcherConfiguration returns all fetcher config
-func (h *HTTPServer) GetAllFetcherConfiguration(c *gin.Context) {
-	_, ok := h.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission})
+func (s *Server) GetAllFetcherConfiguration(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
-	config, err := h.app.GetAllFetcherConfiguration()
+	config, err := s.app.GetAllFetcherConfiguration()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

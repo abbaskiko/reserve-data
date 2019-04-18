@@ -19,9 +19,8 @@ func GetAWSconfigFromFile(path string) (AWSConfig, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return AWSConfig{}, err
-	} else {
-		result := AWSConfig{}
-		err := json.Unmarshal(data, &result)
-		return result, err
 	}
+	result := AWSConfig{}
+	err = json.Unmarshal(data, &result)
+	return result, err
 }

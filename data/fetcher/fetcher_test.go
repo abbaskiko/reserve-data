@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/data/fetcher/http_runner"
+	"github.com/KyberNetwork/reserve-data/data/fetcher/httprunner"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingstorage "github.com/KyberNetwork/reserve-data/settings/storage"
@@ -97,7 +97,7 @@ func TestExchangeDown(t *testing.T) {
 			t.Error(rErr)
 		}
 	}()
-	runner, err := http_runner.NewHttpRunner(http_runner.WithHttpRunnerPort(9000))
+	runner, err := httprunner.NewHTTPRunner(httprunner.WithPort(9000))
 	if err != nil {
 		t.Fatal(err)
 	}

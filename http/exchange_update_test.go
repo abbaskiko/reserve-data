@@ -105,7 +105,7 @@ func TestHTTPUpdateExchange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testServer := HTTPServer{
+	testServer := Server{
 		app:         data.NewReserveData(nil, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, nil, setting),
 		metric:      testStorage,
@@ -320,6 +320,7 @@ func TestHTTPUpdateExchange(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, testServer.r) })
 	}
 

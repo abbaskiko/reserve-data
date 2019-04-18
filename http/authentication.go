@@ -12,7 +12,6 @@ import (
 
 // Authentication is the authentication layer of HTTP APIs.
 type Authentication interface {
-	KNSign(message string) string
 	GetPermission(signed string, message string) []Permission
 }
 
@@ -35,53 +34,53 @@ func NewKNAuthenticationFromFile(path string) KNAuthentication {
 	return result
 }
 
-func (self KNAuthentication) KNSign(msg string) string {
-	mac := hmac.New(sha512.New, []byte(self.KNSecret))
+func (auth KNAuthentication) KNSign(msg string) string {
+	mac := hmac.New(sha512.New, []byte(auth.KNSecret))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
 	}
 	return ethereum.Bytes2Hex(mac.Sum(nil))
 }
 
-func (self KNAuthentication) knReadonlySign(msg string) string {
-	mac := hmac.New(sha512.New, []byte(self.KNReadOnly))
+func (auth KNAuthentication) knReadonlySign(msg string) string {
+	mac := hmac.New(sha512.New, []byte(auth.KNReadOnly))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
 	}
 	return ethereum.Bytes2Hex(mac.Sum(nil))
 }
 
-func (self KNAuthentication) knConfigurationSign(msg string) string {
-	mac := hmac.New(sha512.New, []byte(self.KNConfiguration))
+func (auth KNAuthentication) knConfigurationSign(msg string) string {
+	mac := hmac.New(sha512.New, []byte(auth.KNConfiguration))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
 	}
 	return ethereum.Bytes2Hex(mac.Sum(nil))
 }
 
-func (self KNAuthentication) knConfirmConfSign(msg string) string {
-	mac := hmac.New(sha512.New, []byte(self.KNConfirmConf))
+func (auth KNAuthentication) knConfirmConfSign(msg string) string {
+	mac := hmac.New(sha512.New, []byte(auth.KNConfirmConf))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		log.Printf("Encode message error: %s", err.Error())
 	}
 	return ethereum.Bytes2Hex(mac.Sum(nil))
 }
 
-func (self KNAuthentication) GetPermission(signed string, message string) []Permission {
+func (auth KNAuthentication) GetPermission(signed string, message string) []Permission {
 	result := []Permission{}
-	rebalanceSigned := self.KNSign(message)
+	rebalanceSigned := auth.KNSign(message)
 	if signed == rebalanceSigned {
 		result = append(result, RebalancePermission)
 	}
-	readonlySigned := self.knReadonlySign(message)
+	readonlySigned := auth.knReadonlySign(message)
 	if signed == readonlySigned {
 		result = append(result, ReadOnlyPermission)
 	}
-	configureSigned := self.knConfigurationSign(message)
+	configureSigned := auth.knConfigurationSign(message)
 	if signed == configureSigned {
 		result = append(result, ConfigurePermission)
 	}
-	confirmConfSigned := self.knConfirmConfSign(message)
+	confirmConfSigned := auth.knConfirmConfSign(message)
 	if signed == confirmConfSigned {
 		result = append(result, ConfirmConfPermission)
 	}

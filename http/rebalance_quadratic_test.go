@@ -115,7 +115,7 @@ func TestHTTPServerRebalanceQuadratic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := HTTPServer{
+	s := Server{
 		app:         data.NewReserveData(rqStorage, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, rqStorage, setting),
 		metric:      rqStorage,
@@ -239,6 +239,7 @@ func TestHTTPServerRebalanceQuadratic(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, s.r) })
 	}
 }

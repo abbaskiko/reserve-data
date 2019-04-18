@@ -8,7 +8,6 @@ import (
 type StorageControllerRunner interface {
 	GetAuthBucketTicker() <-chan time.Time
 	Start() error
-	Stop() error
 }
 
 type ControllerTickerRunner struct {
@@ -17,21 +16,16 @@ type ControllerTickerRunner struct {
 	signal       chan bool
 }
 
-func (self *ControllerTickerRunner) GetAuthBucketTicker() <-chan time.Time {
-	if self.authClock == nil {
-		<-self.signal
+func (c *ControllerTickerRunner) GetAuthBucketTicker() <-chan time.Time {
+	if c.authClock == nil {
+		<-c.signal
 	}
-	return self.authClock.C
+	return c.authClock.C
 }
 
-func (self *ControllerTickerRunner) Start() error {
-	self.authClock = time.NewTicker(self.authDuration)
-	self.signal <- true
-	return nil
-}
-
-func (self *ControllerTickerRunner) Stop() error {
-	self.authClock.Stop()
+func (c *ControllerTickerRunner) Start() error {
+	c.authClock = time.NewTicker(c.authDuration)
+	c.signal <- true
 	return nil
 }
 

@@ -44,7 +44,7 @@ func (setting *Settings) GetAllAddresses() (map[string]interface{}, error) {
 }
 func (addrsetting *AddressSetting) AddAddressToSet(setName AddressSetName, address ethereum.Address) {
 	//no need to handle availability here, if the record is not exist yet it's still be able to update new address-
-	addrs, _ := addrsetting.AddressSets[setName]
+	addrs := addrsetting.AddressSets[setName]
 	addrs = append(addrs, address)
 	addrsetting.AddressSets[setName] = addrs
 }

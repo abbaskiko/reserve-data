@@ -73,10 +73,9 @@ func (setting *Settings) NewTokenPairFromID(base, quote string) (common.TokenPai
 	bToken, err1 := setting.GetInternalTokenByID(base)
 	qToken, err2 := setting.GetInternalTokenByID(quote)
 	if err1 != nil || err2 != nil {
-		return common.TokenPair{}, errors.New(fmt.Sprintf("%s or %s is not supported", base, quote))
-	} else {
-		return common.TokenPair{Base: bToken, Quote: qToken}, nil
+		return common.TokenPair{}, fmt.Errorf("%s or %s is not supported", base, quote)
 	}
+	return common.TokenPair{Base: bToken, Quote: qToken}, nil
 }
 
 func (setting *Settings) MustCreateTokenPair(base, quote string) common.TokenPair {

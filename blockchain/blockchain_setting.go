@@ -7,7 +7,6 @@ import (
 )
 
 type Setting interface {
-	GetInternalTokenByID(tokenID string) (common.Token, error)
 	GetInternalTokens() ([]common.Token, error)
 	ETHToken() common.Token
 	GetAddress(settings.AddressName) (ethereum.Address, error)

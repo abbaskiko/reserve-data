@@ -19,13 +19,13 @@ type ExchangeName int
 
 const (
 	Binance        ExchangeName = iota //binance
-	Bittrex                            //bittrex
+	Bittrex                            //bittrex (deprecated)
 	Huobi                              //huobi
 	StableExchange                     //stable_exchange
 )
 const exchangeEnv string = "KYBER_EXCHANGES"
 
-var ErrExchangeRecordNotFound = errors.New("Exchange record not found")
+var ErrExchangeRecordNotFound = errors.New("exchange record not found")
 
 type ExchangeFeesConfig struct {
 	Exchanges map[string]common.ExchangeFees `json:"exchanges"`
@@ -78,7 +78,7 @@ func (setting *Settings) loadFeeFromFile(path string) error {
 		//Check if the exchange is in current code deployment.
 		exName, ok := exchangeNameValue[ex]
 		if !ok {
-			return fmt.Errorf("Exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
+			return fmt.Errorf("exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
 		}
 		//Check if the current database has a record for such exchange
 		if _, err := setting.Exchange.Storage.GetFee(exName); err != nil {
@@ -124,7 +124,7 @@ func (setting *Settings) loadMinDepositFromFile(path string) error {
 		//Check if the exchange is in current code deployment.
 		exName, ok := exchangeNameValue[ex]
 		if !ok {
-			return fmt.Errorf("Exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
+			return fmt.Errorf("exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
 		}
 		//Check if the current database has a record for such exchange
 		if _, err := setting.Exchange.Storage.GetMinDeposit(exName); err != nil {
@@ -172,7 +172,7 @@ func (setting *Settings) loadDepositAddressFromFile(path string) error {
 		//Check if the exchange is in current code deployment.
 		exName, ok := exchangeNameValue[ex]
 		if !ok {
-			return fmt.Errorf("Exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
+			return fmt.Errorf("exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
 		}
 		//Check if the current database has a record for such exchange
 		if _, err := setting.Exchange.Storage.GetDepositAddresses(exName); err != nil {
@@ -206,7 +206,7 @@ func (setting *Settings) handleEmptyExchangeInfo() error {
 	for _, ex := range runningExs {
 		exName, ok := exchangeNameValue[ex]
 		if !ok {
-			return fmt.Errorf("Exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
+			return fmt.Errorf("exchange %s is in KYBER_EXCHANGES, but not avail in current deployment", ex)
 		}
 		if _, err := setting.Exchange.Storage.GetExchangeInfo(exName); err != nil {
 			log.Printf("Exchange %s is in KYBER_EXCHANGES but can't load its exchangeInfo in Database (%s). attempt to init it", exName.String(), err.Error())
@@ -236,7 +236,7 @@ func (setting *Settings) NewExchangeInfo(exName ExchangeName) (common.ExchangeIn
 				log.Printf("WARNING: can not find token %s (%s). This will skip preparing its exchange info", tokenID, err)
 				continue
 			}
-			if token.Internal == false {
+			if !token.Internal {
 				log.Printf("INFO: Token %s is external. This will skip preparing its exchange info", tokenID)
 				continue
 			}

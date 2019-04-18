@@ -107,6 +107,9 @@ func TestHuobiStoreDepositActivity(t *testing.T) {
 
 	// get pending tx
 	pendingIntermediateTxs, err = storage.GetPendingIntermediateTXs()
+	if err != nil {
+		t.Fatalf("failed to get pending intermediate tx: %s", err.Error())
+	}
 	if len(pendingIntermediateTxs) != 1 {
 		t.Fatalf("Huobi get pending intermediate txs expected 1 pending tx got %d pending txs.", len(pendingIntermediateTxs))
 	}
@@ -143,7 +146,7 @@ func TestHuobiStoreDepositActivity(t *testing.T) {
 		t.Fatalf("Huobi get pending intermediate tx failed: %s", err.Error())
 	}
 
-	pendingTx, exist = pendingIntermediateTxs[txID]
+	_, exist = pendingIntermediateTxs[txID]
 	if exist {
 		t.Fatal("Huobi remove pending intermediate failed. Pending intermediate should be removed.")
 	}
