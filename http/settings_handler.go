@@ -137,8 +137,9 @@ func (self *HTTPServer) SetTokenUpdate(c *gin.Context) {
 	}
 
 	var (
-		exInfos map[string]common.ExchangeInfo
-		err     error
+		exInfos              map[string]common.ExchangeInfo
+		toRemoveFromExchange []string
+		err                  error
 	)
 	hasInternal := thereIsInternal(tokenUpdates)
 	if hasInternal {
@@ -190,6 +191,9 @@ func (self *HTTPServer) SetTokenUpdate(c *gin.Context) {
 				}
 				tokenUpdate.Exchanges[ex] = tokExSett
 			}
+		} else {
+			//if token is not internal, add it to the removal list
+			toRemoveFromExchange = append(toRemoveFromExchange, tokenID)
 		}
 		tokenUpdate.Token = token
 		tokenUpdates[tokenID] = tokenUpdate
@@ -338,23 +342,25 @@ func (self *HTTPServer) getInfosFromExchangeEndPoint(tokenUpdates map[string]com
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, tokenUpdate := range tokenUpdates {
-		for ex, exSetting := range tokenUpdate.Exchanges {
-			_, err := self.ensureRunningExchange(ex)
-			if err != nil {
-				return result, err
+		if tokenUpdate.Token.Internal {
+			for ex, exSetting := range tokenUpdate.Exchanges {
+				_, err := self.ensureRunningExchange(ex)
+				if err != nil {
+					return result, err
+				}
+				info, ok := exTokenPairIDs[ex]
+				if !ok {
+					info = []common.TokenPairID{}
+				}
+				pairID := common.NewTokenPairID(tokenID, ETHID)
+				//if the current exchangeSetting already got precision limit for this pair, skip it
+				_, ok = exSetting.Info[pairID]
+				if ok {
+					continue
+				}
+				info = append(info, pairID)
+				exTokenPairIDs[ex] = info
 			}
-			info, ok := exTokenPairIDs[ex]
-			if !ok {
-				info = []common.TokenPairID{}
-			}
-			pairID := common.NewTokenPairID(tokenID, ETHID)
-			//if the current exchangeSetting already got precision limit for this pair, skip it
-			_, ok = exSetting.Info[pairID]
-			if ok {
-				continue
-			}
-			info = append(info, pairID)
-			exTokenPairIDs[ex] = info
 		}
 	}
 	for ex, tokenPairIDs := range exTokenPairIDs {
