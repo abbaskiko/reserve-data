@@ -147,9 +147,9 @@ func removeTokensFromExchanges(tx *bolt.Tx, tokens []string, availExs []settings
 func delDepositAddress(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) error {
 	exAddresses := make(common.ExchangeAddresses)
 
-	b := tx.Bucket([]byte(ExchangeDepositAddress))
+	b := tx.Bucket([]byte(EXCHANGE_DEPOSIT_ADDRESS))
 	if b == nil {
-		return fmt.Errorf("bucket %s does not exist", ExchangeDepositAddress)
+		return fmt.Errorf("bucket %s does not exist", EXCHANGE_DEPOSIT_ADDRESS)
 	}
 	//Get Curren exchange's Addresses
 	data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
