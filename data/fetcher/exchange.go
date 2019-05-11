@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"github.com/KyberNetwork/reserve-data/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // Exchange is the common interface of centralized exchanges.
@@ -13,4 +14,5 @@ type Exchange interface {
 	OrderStatus(id string, base, quote string) (string, error)
 	DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error)
 	WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error)
+	TokenAddresses() (map[string]ethereum.Address, error)
 }
