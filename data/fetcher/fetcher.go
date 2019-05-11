@@ -602,6 +602,7 @@ func (self *Fetcher) FetchAuthDataFromExchange(
 	var balances common.EBalanceEntry
 	var statuses map[common.ActivityID]common.ActivityStatus
 	var err error
+	var tokenAddress map[string]ethereum.Address
 	for {
 		preStatuses := self.FetchStatusFromExchange(exchange, pendings, timepoint)
 		balances, err = exchange.FetchEBalanceData(timepoint)
@@ -610,7 +611,7 @@ func (self *Fetcher) FetchAuthDataFromExchange(
 			break
 		}
 		//Remove all token which is not in this exchange's token addresses
-		tokenAddress, err := exchange.TokenAddresses()
+		tokenAddress, err = exchange.TokenAddresses()
 		if err != nil {
 			log.Printf("getting token address from %s failed: %v\n", exchange.Name(), err)
 			break
