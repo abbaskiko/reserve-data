@@ -57,8 +57,12 @@ func NewExchangeAddresses() *ExchangeAddresses {
 	return &exAddr
 }
 
-func (self ExchangeAddresses) Update(tokenID string, address ethereum.Address) {
-	self[tokenID] = address
+func (ea ExchangeAddresses) Remove(tokenID string) {
+	delete(ea, tokenID)
+}
+
+func (ea ExchangeAddresses) Update(tokenID string, address ethereum.Address) {
+	ea[tokenID] = address
 }
 
 func (self ExchangeAddresses) Get(tokenID string) (ethereum.Address, bool) {
