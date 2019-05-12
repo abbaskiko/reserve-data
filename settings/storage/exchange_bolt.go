@@ -56,6 +56,30 @@ func (boltSettingStorage *BoltSettingStorage) StoreFee(ex settings.ExchangeName,
 	return err
 }
 
+func delFee(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) error {
+	b := tx.Bucket([]byte(EXCHANGE_FEE_BUCKET))
+	if b == nil {
+		return fmt.Errorf("bucket %s hasn't existed yet", EXCHANGE_FEE_BUCKET)
+	}
+	data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
+	if data == nil {
+		log.Printf("key %s hasn't existed yet", ex.String())
+		return settings.ErrExchangeRecordNotFound
+	}
+
+	var currFee common.ExchangeFees
+	uErr := json.Unmarshal(data, &currFee)
+	if uErr != nil {
+		return uErr
+	}
+	for _, tokenID := range tokens {
+		delete(currFee.Trading, tokenID)
+		delete(currFee.Funding.Deposit, tokenID)
+		delete(currFee.Funding.Withdraw, tokenID)
+	}
+	return putFee(tx, ex, currFee)
+}
+
 func putFee(tx *bolt.Tx, ex settings.ExchangeName, fee common.ExchangeFees) error {
 	b, uErr := tx.CreateBucketIfNotExists([]byte(EXCHANGE_FEE_BUCKET))
 	if uErr != nil {
@@ -101,6 +125,28 @@ func (boltSettingStorage *BoltSettingStorage) StoreMinDeposit(ex settings.Exchan
 	return err
 }
 
+func delMinDeposit(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) error {
+	currMinDeposit := make(common.ExchangesMinDeposit)
+	b := tx.Bucket([]byte(EXCHANGE_MIN_DEPOSIT_BUCKET))
+	if b == nil {
+		return fmt.Errorf("bucket %s hasn't existed yet", EXCHANGE_MIN_DEPOSIT_BUCKET)
+	}
+	data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
+	if data == nil {
+		log.Printf("key %s hasn't existed yet", ex.String())
+		return settings.ErrExchangeRecordNotFound
+	}
+	uErr := json.Unmarshal(data, &currMinDeposit)
+	if uErr != nil {
+		return uErr
+	}
+	for _, tokenID := range tokens {
+		delete(currMinDeposit, tokenID)
+	}
+	return putMinDeposit(tx, ex, currMinDeposit)
+
+}
+
 func putMinDeposit(tx *bolt.Tx, ex settings.ExchangeName, minDeposit common.ExchangesMinDeposit) error {
 	b, uErr := tx.CreateBucketIfNotExists([]byte(EXCHANGE_MIN_DEPOSIT_BUCKET))
 	if uErr != nil {
@@ -140,6 +186,12 @@ func removeTokensFromExchanges(tx *bolt.Tx, tokens []string, availExs []settings
 		if dErr := delDepositAddress(tx, ex, tokens); dErr != nil {
 			return fmt.Errorf("cannot remove deposit address of tokens %v from exchange %s, error: %s", tokens, ex.String(), dErr)
 		}
+		if dErr := delFee(tx, ex, tokens); dErr != nil {
+			return fmt.Errorf("cannot remove fees of tokens %v from exchange %s, error: %s", tokens, ex.String(), dErr)
+		}
+		if dErr := delMinDeposit(tx, ex, tokens); dErr != nil {
+			return fmt.Errorf("cannot remove mindeposit of tokens %v from exchange %s, error: %s", tokens, ex.String(), dErr)
+		}
 	}
 	return nil
 }
@@ -168,11 +220,7 @@ func delDepositAddress(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) e
 			exAddresses.Remove(token)
 		}
 	}
-	dataJSON, uErr := json.Marshal(exAddresses)
-	if uErr != nil {
-		return uErr
-	}
-	return b.Put(boltutil.Uint64ToBytes(uint64(ex)), dataJSON)
+	return putDepositAddress(tx, ex, exAddresses)
 }
 
 func putDepositAddress(tx *bolt.Tx, ex settings.ExchangeName, addrs common.ExchangeAddresses) error {
