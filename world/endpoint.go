@@ -13,10 +13,8 @@ var (
 		"GDAX",
 		"Kraken",
 		"Gemini",
-		"bitfinex_btc",
-		"binance_btc",
-		"coinbase_btc",
-		"gemini_btc",
+		"CoinbaseBTC",
+		"GeminiBTC",
 	}
 	// remove unused feeds
 )
@@ -35,8 +33,6 @@ type Endpoint interface {
 	KrakenDataEndpoint() string
 	GeminiDataEndpoint() string
 
-	BitfinexBTCEndpoint() string
-	BinanceBTCEndpoint() string
 	CoinbaseBTCEndpoint() string
 	GeminiBTCEndpoint() string
 }
@@ -67,14 +63,6 @@ func (re RealEndpoint) KrakenDataEndpoint() string {
 
 func (re RealEndpoint) GeminiDataEndpoint() string {
 	return "https://api.gemini.com/v1/pubticker/ethusd"
-}
-
-func (re RealEndpoint) BitfinexBTCEndpoint() string {
-	return "https://api.bitfinex.com/v1/pubticker/ethbtc"
-}
-
-func (re RealEndpoint) BinanceBTCEndpoint() string {
-	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHBTC"
 }
 
 func (re RealEndpoint) CoinbaseBTCEndpoint() string {
@@ -120,14 +108,6 @@ func (se SimulatedEndpoint) KrakenDataEndpoint() string {
 
 func (se SimulatedEndpoint) GeminiDataEndpoint() string {
 	return "http://simulator:5800/v1/pubticker/ethusd"
-}
-
-func (se SimulatedEndpoint) BitfinexBTCEndpoint() string {
-	return "http://simulator:5900/v1/pubticker/ethbtc"
-}
-
-func (se SimulatedEndpoint) BinanceBTCEndpoint() string {
-	return "http://simulator:5100/api/v3/ticker/bookTicker?symbol=ETHBTC"
 }
 
 func (se SimulatedEndpoint) CoinbaseBTCEndpoint() string {
