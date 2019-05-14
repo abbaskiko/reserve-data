@@ -13,9 +13,11 @@ var (
 		"GDAX",
 		"Kraken",
 		"Gemini",
-		"bitfinex",
-		"binance",
+
+		"CoinbaseBTC",
+		"GeminiBTC",
 	}
+	// remove unused feeds
 )
 
 // AllFeeds returns all configured feed sources.
@@ -32,8 +34,8 @@ type Endpoint interface {
 	KrakenDataEndpoint() string
 	GeminiDataEndpoint() string
 
-	BitfinexEndpoint() string
-	BinanceEndpoint() string
+	CoinbaseBTCEndpoint() string
+	GeminiBTCEndpoint() string
 }
 
 type RealEndpoint struct {
@@ -64,12 +66,12 @@ func (re RealEndpoint) GeminiDataEndpoint() string {
 	return "https://api.gemini.com/v1/pubticker/ethusd"
 }
 
-func (re RealEndpoint) BitfinexEndpoint() string {
-	return "https://api.bitfinex.com/v1/pubticker/ethbtc"
+func (re RealEndpoint) CoinbaseBTCEndpoint() string {
+	return "https://api.pro.coinbase.com/products/eth-btc/ticker"
 }
 
-func (re RealEndpoint) BinanceEndpoint() string {
-	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHBTC"
+func (re RealEndpoint) GeminiBTCEndpoint() string {
+	return "https://api.gemini.com/v1/pubticker/ethbtc"
 }
 
 func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
@@ -109,10 +111,10 @@ func (se SimulatedEndpoint) GeminiDataEndpoint() string {
 	return "http://simulator:5800/v1/pubticker/ethusd"
 }
 
-func (se SimulatedEndpoint) BitfinexEndpoint() string {
-	return "http://simulator:5900/v1/pubticker/ethbtc"
+func (se SimulatedEndpoint) CoinbaseBTCEndpoint() string {
+	panic("unimplemented")
 }
 
-func (se SimulatedEndpoint) BinanceEndpoint() string {
-	return "http://simulator:5100/api/v3/ticker/bookTicker?symbol=ETHBTC"
+func (se SimulatedEndpoint) GeminiBTCEndpoint() string {
+	panic("unimplemented")
 }
