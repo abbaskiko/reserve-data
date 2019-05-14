@@ -495,7 +495,7 @@ func sanityCheck(buys, afpMid, sells []*big.Int) error {
 	for i, s := range sells {
 		check := checkZeroValue(buys[i], s)
 		switch check {
-		case 1:
+		case 1: // both buy/sell rate > 0
 			sFloat := big.NewFloat(0).SetInt(s)
 			sRate := calculateRate(sFloat, eth)
 			bFloat := big.NewFloat(0).SetInt(buys[i])
@@ -503,12 +503,15 @@ func sanityCheck(buys, afpMid, sells []*big.Int) error {
 			aMFloat := big.NewFloat(0).SetInt(afpMid[i])
 			aMRate := calculateRate(aMFloat, eth)
 			if bRate.Cmp(sRate) <= 0 || bRate.Cmp(aMRate) <= 0 {
-				return errors.New("sell price must be bigger than buy price and afpMid price")
+				return errors.New("buy price must be bigger than sell price and afpMid price")
 			}
-		case 0:
+		case 0: // both buy/sell rate is 0
 			return nil
-		case -1:
-			return errors.New("rate cannot be zero on only sell or buy side")
+		case -1: // either buy/sell rate is 0
+			if buys[i].Cmp(big.NewInt(0)) == 0 {
+				return errors.New("buy rate can not be zero")
+			}
+			log.Printf("WARNING: sell rate is zero, index: %d, buy rate: %s", i, buys[i].String())
 		}
 	}
 	return nil
