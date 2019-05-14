@@ -7,10 +7,11 @@ import (
 	"log"
 	"strings"
 
+	"github.com/boltdb/bolt"
+
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
-	"github.com/boltdb/bolt"
 )
 
 const exchangeVersion = "exchange_version"
@@ -57,9 +58,9 @@ func (boltSettingStorage *BoltSettingStorage) StoreFee(ex settings.ExchangeName,
 }
 
 func delFee(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) error {
-	b := tx.Bucket([]byte(EXCHANGE_FEE_BUCKET))
+	b := tx.Bucket([]byte(ExchangeFeeBucket))
 	if b == nil {
-		return fmt.Errorf("bucket %s hasn't existed yet", EXCHANGE_FEE_BUCKET)
+		return fmt.Errorf("bucket %s hasn't existed yet", ExchangeFeeBucket)
 	}
 	data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 	if data == nil {
@@ -127,9 +128,9 @@ func (boltSettingStorage *BoltSettingStorage) StoreMinDeposit(ex settings.Exchan
 
 func delMinDeposit(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) error {
 	currMinDeposit := make(common.ExchangesMinDeposit)
-	b := tx.Bucket([]byte(EXCHANGE_MIN_DEPOSIT_BUCKET))
+	b := tx.Bucket([]byte(ExchangeMinDepositBucket))
 	if b == nil {
-		return fmt.Errorf("bucket %s hasn't existed yet", EXCHANGE_MIN_DEPOSIT_BUCKET)
+		return fmt.Errorf("bucket %s hasn't existed yet", ExchangeMinDepositBucket)
 	}
 	data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
 	if data == nil {
@@ -199,9 +200,9 @@ func removeTokensFromExchanges(tx *bolt.Tx, tokens []string, availExs []settings
 func delDepositAddress(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) error {
 	exAddresses := make(common.ExchangeAddresses)
 
-	b := tx.Bucket([]byte(EXCHANGE_DEPOSIT_ADDRESS))
+	b := tx.Bucket([]byte(ExchangeDepositAddress))
 	if b == nil {
-		return fmt.Errorf("bucket %s does not exist", EXCHANGE_DEPOSIT_ADDRESS)
+		return fmt.Errorf("bucket %s does not exist", ExchangeDepositAddress)
 	}
 	//Get Curren exchange's Addresses
 	data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
