@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
@@ -15,7 +17,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingsstorage "github.com/KyberNetwork/reserve-data/settings/storage"
-	"github.com/gin-gonic/gin"
 )
 
 //TestHTTPServerTargetQtyV2 check if api v2 work correctly
@@ -159,7 +160,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := HTTPServer{
+	s := Server{
 		app:         data.NewReserveData(st, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, st, setting),
 		metric:      st,
@@ -263,6 +264,7 @@ func TestHTTPServerTargetQtyV2(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, s.r) })
 	}
 }

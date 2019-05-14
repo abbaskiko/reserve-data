@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/KyberNetwork/reserve-data/cmd/clicmd"
+	cmd "github.com/KyberNetwork/reserve-data/cmd/clicmd"
 )
 
 func main() {

@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type rpcTransaction struct {
+type RPCTransaction struct {
 	tx *types.Transaction
 	txExtraInfo
 }
@@ -22,25 +22,23 @@ type txExtraInfo struct {
 	From        ethereum.Address
 }
 
-func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
+func (tx *RPCTransaction) UnmarshalJSON(msg []byte) error {
 	if err := json.Unmarshal(msg, &tx.tx); err != nil {
 		return err
 	}
 	return json.Unmarshal(msg, &tx.txExtraInfo)
 }
 
-func (tx *rpcTransaction) BlockNumber() *big.Int {
+func (tx *RPCTransaction) BlockNumber() *big.Int {
 	if tx.txExtraInfo.BlockNumber == nil {
 		return big.NewInt(0)
-	} else {
-		blockno, err := hexutil.DecodeBig(*tx.txExtraInfo.BlockNumber)
-		if err != nil {
-			log.Printf("Error decoding block number: %v", err)
-			return big.NewInt(0)
-		} else {
-			return blockno
-		}
 	}
+	blockno, err := hexutil.DecodeBig(*tx.txExtraInfo.BlockNumber)
+	if err != nil {
+		log.Printf("Error decoding block number: %v", err)
+		return big.NewInt(0)
+	}
+	return blockno
 }
 
 // senderFromServer is a types.Signer that remembers the sender address returned by the RPC
@@ -79,7 +77,7 @@ func (s *senderFromServer) Hash(tx *types.Transaction) ethereum.Hash {
 }
 
 // SignatureValues implementation is only for satisfy the interface definition. senderFromServer shouldn't be signing anything.
-func (s *senderFromServer) SignatureValues(tx *types.Transaction, sig []byte) (R, S, V *big.Int, err error) {
+func (s *senderFromServer) SignatureValues(tx *types.Transaction, sig []byte) (_, _, _ *big.Int, err error) {
 	// This should never happen
 	panic("can't sign with senderFromServer")
 }

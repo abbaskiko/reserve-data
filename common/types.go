@@ -3,21 +3,19 @@ package common
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
 	"math/big"
 	"strconv"
 	"strings"
 	"time"
 
-	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 type Version uint64
 type Timestamp string
 
-func (self Timestamp) MustToUint64() uint64 {
-	res, err := strconv.ParseUint(string(self), 10, 64)
+func (ts Timestamp) MustToUint64() uint64 {
+	res, err := strconv.ParseUint(string(ts), 10, 64)
 	//  this should never happen. Timestamp is never manually entered.
 	if err != nil {
 		panic(err)
@@ -28,11 +26,6 @@ func (self Timestamp) MustToUint64() uint64 {
 func GetTimestamp() Timestamp {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	return Timestamp(strconv.Itoa(int(timestamp)))
-}
-
-func GetTimepointInMicrosecond() uint64 {
-	timestamp := time.Now().UnixNano() / int64(time.Microsecond)
-	return uint64(timestamp)
 }
 
 func GetTimepoint() uint64 {
@@ -65,14 +58,14 @@ func (ea ExchangeAddresses) Update(tokenID string, address ethereum.Address) {
 	ea[tokenID] = address
 }
 
-func (self ExchangeAddresses) Get(tokenID string) (ethereum.Address, bool) {
-	address, supported := self[tokenID]
+func (ea ExchangeAddresses) Get(tokenID string) (ethereum.Address, bool) {
+	address, supported := ea[tokenID]
 	return address, supported
 }
 
-func (self ExchangeAddresses) GetData() map[string]ethereum.Address {
+func (ea ExchangeAddresses) GetData() map[string]ethereum.Address {
 	dataCopy := map[string]ethereum.Address{}
-	for k, v := range self {
+	for k, v := range ea {
 		dataCopy[k] = v
 	}
 	return dataCopy
@@ -94,17 +87,17 @@ func NewExchangeInfo() ExchangeInfo {
 	return ExchangeInfo(make(map[TokenPairID]ExchangePrecisionLimit))
 }
 
-func (self ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
-	info, exist := self[pair]
+func (ei ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
+	info, exist := ei[pair]
 	if !exist {
-		return info, fmt.Errorf("Token pair is not existed")
+		return info, fmt.Errorf("token pair is not existed")
 	}
 	return info, nil
 
 }
 
-func (self ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
-	data := map[TokenPairID]ExchangePrecisionLimit(self)
+func (ei ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
+	data := map[TokenPairID]ExchangePrecisionLimit(ei)
 	return data
 }
 
@@ -132,8 +125,8 @@ type FundingFee struct {
 	Deposit  map[string]float64
 }
 
-func (self FundingFee) GetTokenFee(token string) float64 {
-	withdrawFee := self.Withdraw
+func (ff FundingFee) GetTokenFee(token string) float64 {
+	withdrawFee := ff.Withdraw
 	return withdrawFee[token]
 }
 
@@ -174,32 +167,31 @@ type ActivityID struct {
 	EID       string
 }
 
-func (self ActivityID) ToBytes() [64]byte {
+func (ai ActivityID) ToBytes() [64]byte {
 	var b [64]byte
 	temp := make([]byte, 64)
-	binary.BigEndian.PutUint64(temp, self.Timepoint)
-	temp = append(temp, []byte(self.EID)...)
+	binary.BigEndian.PutUint64(temp, ai.Timepoint)
+	temp = append(temp, []byte(ai.EID)...)
 	copy(b[0:], temp)
 	return b
 }
 
-func (self ActivityID) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%s|%s", strconv.FormatUint(self.Timepoint, 10), self.EID)), nil
+func (ai ActivityID) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%s|%s", strconv.FormatUint(ai.Timepoint, 10), ai.EID)), nil
 }
 
-func (self *ActivityID) UnmarshalText(b []byte) error {
+func (ai *ActivityID) UnmarshalText(b []byte) error {
 	id, err := StringToActivityID(string(b))
 	if err != nil {
 		return err
-	} else {
-		self.Timepoint = id.Timepoint
-		self.EID = id.EID
-		return nil
 	}
+	ai.Timepoint = id.Timepoint
+	ai.EID = id.EID
+	return nil
 }
 
-func (self ActivityID) String() string {
-	res, _ := self.MarshalText()
+func (ai ActivityID) String() string {
+	res, _ := ai.MarshalText()
 	return string(res)
 }
 
@@ -207,19 +199,17 @@ func StringToActivityID(id string) (ActivityID, error) {
 	result := ActivityID{}
 	parts := strings.Split(id, "|")
 	if len(parts) < 2 {
-		return result, fmt.Errorf("Invalid activity id")
-	} else {
-		timeStr := parts[0]
-		eid := strings.Join(parts[1:], "|")
-		timepoint, err := strconv.ParseUint(timeStr, 10, 64)
-		if err != nil {
-			return result, err
-		} else {
-			result.Timepoint = timepoint
-			result.EID = eid
-			return result, nil
-		}
+		return result, fmt.Errorf("invalid activity id")
 	}
+	timeStr := parts[0]
+	eid := strings.Join(parts[1:], "|")
+	timepoint, err := strconv.ParseUint(timeStr, 10, 64)
+	if err != nil {
+		return result, err
+	}
+	result.Timepoint = timepoint
+	result.EID = eid
+	return result, nil
 }
 
 // NewActivityStatus creates new Activity ID.
@@ -269,44 +259,44 @@ func NewActivityRecord(action string, id ActivityID, destination string, params,
 	}
 }
 
-func (self ActivityRecord) IsExchangePending() bool {
-	switch self.Action {
+func (ar ActivityRecord) IsExchangePending() bool {
+	switch ar.Action {
 	case ActionWithdraw:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted) &&
-			self.MiningStatus != MiningStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted) &&
+			ar.MiningStatus != MiningStatusFailed
 	case ActionDeposit:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusPending) &&
-			self.MiningStatus != MiningStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusPending) &&
+			ar.MiningStatus != MiningStatusFailed
 	case ActionTrade:
-		return self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted
+		return ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted
 	}
 	return true
 }
 
-func (self ActivityRecord) IsBlockchainPending() bool {
-	switch self.Action {
-	case ActionWithdraw, ActionDeposit, ActionSetrate:
-		return (self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) && self.ExchangeStatus != ExchangeStatusFailed
+func (ar ActivityRecord) IsBlockchainPending() bool {
+	switch ar.Action {
+	case ActionWithdraw, ActionDeposit, ActionSetRate:
+		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) && ar.ExchangeStatus != ExchangeStatusFailed
 	}
 	return true
 }
 
-func (self ActivityRecord) IsPending() bool {
-	switch self.Action {
+func (ar ActivityRecord) IsPending() bool {
+	switch ar.Action {
 	case ActionWithdraw:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted ||
-			self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
-			self.MiningStatus != MiningStatusFailed && self.ExchangeStatus != ExchangeStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted ||
+			ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
+			ar.MiningStatus != MiningStatusFailed && ar.ExchangeStatus != ExchangeStatusFailed
 	case ActionDeposit:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusPending ||
-			self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
-			self.MiningStatus != MiningStatusFailed && self.ExchangeStatus != ExchangeStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusPending ||
+			ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
+			ar.MiningStatus != MiningStatusFailed && ar.ExchangeStatus != ExchangeStatusFailed
 	case ActionTrade:
-		return (self.ExchangeStatus == "" || self.ExchangeStatus == ExchangeStatusSubmitted) &&
-			self.ExchangeStatus != ExchangeStatusFailed
-	case ActionSetrate:
-		return (self.MiningStatus == "" || self.MiningStatus == MiningStatusSubmitted) &&
-			self.ExchangeStatus != ExchangeStatusFailed
+		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted) &&
+			ar.ExchangeStatus != ExchangeStatusFailed
+	case ActionSetRate:
+		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
+			ar.ExchangeStatus != ExchangeStatusFailed
 	}
 	return true
 }
@@ -375,23 +365,19 @@ type ExchangePrice struct {
 	ReturnTime Timestamp
 }
 
-func AddrToString(addr ethereum.Address) string {
-	return strings.ToLower(addr.String())
-}
-
 type RawBalance big.Int
 
-func (self *RawBalance) ToFloat(decimal int64) float64 {
-	return BigToFloat((*big.Int)(self), decimal)
+func (rb *RawBalance) ToFloat(decimal int64) float64 {
+	return BigToFloat((*big.Int)(rb), decimal)
 }
 
-func (self RawBalance) MarshalJSON() ([]byte, error) {
-	selfInt := (big.Int)(self)
+func (rb RawBalance) MarshalJSON() ([]byte, error) {
+	selfInt := (big.Int)(rb)
 	return selfInt.MarshalJSON()
 }
 
-func (self *RawBalance) UnmarshalJSON(text []byte) error {
-	selfInt := (*big.Int)(self)
+func (rb *RawBalance) UnmarshalJSON(text []byte) error {
+	selfInt := (*big.Int)(rb)
 	return selfInt.UnmarshalJSON(text)
 }
 
@@ -403,13 +389,13 @@ type BalanceEntry struct {
 	Balance    RawBalance
 }
 
-func (self BalanceEntry) ToBalanceResponse(decimal int64) BalanceResponse {
+func (be BalanceEntry) ToBalanceResponse(decimal int64) BalanceResponse {
 	return BalanceResponse{
-		Valid:      self.Valid,
-		Error:      self.Error,
-		Timestamp:  self.Timestamp,
-		ReturnTime: self.ReturnTime,
-		Balance:    self.Balance.ToFloat(decimal),
+		Valid:      be.Valid,
+		Error:      be.Error,
+		Timestamp:  be.Timestamp,
+		ReturnTime: be.ReturnTime,
+		Balance:    be.Balance.ToFloat(decimal),
 	}
 }
 
@@ -432,7 +418,7 @@ type Order struct {
 	ID          string // standard id across multiple exchanges
 	Base        string
 	Quote       string
-	OrderId     string
+	OrderID     string
 	Price       float64
 	OrigQty     float64 // original quantity
 	ExecutedQty float64 // matched quantity
@@ -592,155 +578,6 @@ type AllRateResponse struct {
 	ToBlockNumber uint64
 }
 
-// KNLog is the common interface of some important logging events.
-type KNLog interface {
-	TxHash() ethereum.Hash
-	BlockNo() uint64
-	Type() string
-}
-
-type SetCatLog struct {
-	Timestamp       uint64
-	BlockNumber     uint64
-	TransactionHash ethereum.Hash
-	Index           uint
-
-	Address  ethereum.Address
-	Category string
-}
-
-func (self SetCatLog) BlockNo() uint64       { return self.BlockNumber }
-func (self SetCatLog) Type() string          { return "SetCatLog" }
-func (self SetCatLog) TxHash() ethereum.Hash { return self.TransactionHash }
-
-type TradeLog struct {
-	Timestamp       uint64
-	BlockNumber     uint64
-	TransactionHash ethereum.Hash
-	Index           uint
-
-	EtherReceivalSender ethereum.Address
-	EtherReceivalAmount *big.Int
-
-	UserAddress ethereum.Address
-	SrcAddress  ethereum.Address
-	DestAddress ethereum.Address
-	SrcAmount   *big.Int
-	DestAmount  *big.Int
-	FiatAmount  float64
-
-	ReserveAddress ethereum.Address
-	WalletAddress  ethereum.Address
-	WalletFee      *big.Int
-	BurnFee        *big.Int
-	IP             string
-	Country        string
-}
-
-type ReserveRateEntry struct {
-	BuyReserveRate  float64
-	BuySanityRate   float64
-	SellReserveRate float64
-	SellSanityRate  float64
-}
-
-type ReserveTokenRateEntry map[string]ReserveRateEntry
-
-type ReserveRates struct {
-	Timestamp     uint64
-	ReturnTime    uint64
-	BlockNumber   uint64
-	ToBlockNumber uint64
-	Data          ReserveTokenRateEntry
-}
-
-func (self TradeLog) BlockNo() uint64       { return self.BlockNumber }
-func (self TradeLog) Type() string          { return "TradeLog" }
-func (self TradeLog) TxHash() ethereum.Hash { return self.TransactionHash }
-
-type StatTicks map[uint64]interface{}
-
-type TradeStats map[string]float64
-
-type VolumeStats struct {
-	ETHVolume float64 `json:"eth_amount"`
-	USDAmount float64 `json:"usd_amount"`
-	Volume    float64 `json:"volume"`
-}
-
-// NewVolumeStats creates a new instance of VolumeStats.
-func NewVolumeStats(ethVolume, usdAmount, volume float64) VolumeStats {
-	return VolumeStats{
-		ETHVolume: ethVolume,
-		USDAmount: usdAmount,
-		Volume:    volume,
-	}
-}
-
-type BurnFeeStats struct {
-	TotalBurnFee float64
-}
-
-// NewBurnFeeStats creates a new instance of BurnFeeStats.
-func NewBurnFeeStats(totalBurnFee float64) BurnFeeStats {
-	return BurnFeeStats{TotalBurnFee: totalBurnFee}
-}
-
-type BurnFeeStatsTimeZone map[string]map[uint64]BurnFeeStats
-
-type VolumeStatsTimeZone map[string]map[uint64]VolumeStats
-
-type FeeStats map[int64]map[uint64]float64
-
-type MetricStats struct {
-	ETHVolume          float64 `json:"total_eth_volume"`
-	USDVolume          float64 `json:"total_usd_amount"`
-	BurnFee            float64 `json:"total_burn_fee"`
-	TradeCount         int     `json:"total_trade"`
-	UniqueAddr         int     `json:"unique_addresses"`
-	KYCEd              int     `json:"kyced_addresses"`
-	NewUniqueAddresses int     `json:"new_unique_addresses"`
-	USDPerTrade        float64 `json:"usd_per_trade"`
-	ETHPerTrade        float64 `json:"eth_per_trade"`
-}
-
-// NewMetricStats creates a new instance of MetricStats.
-func NewMetricStats(ethVolume, usdVolume, burnFee float64,
-	tradeCount, uniqueAddr, kycEd, newUniqueAddresses int,
-	usdPerTrade, ethPerTrade float64) MetricStats {
-	return MetricStats{
-		ETHVolume:          ethVolume,
-		USDVolume:          usdVolume,
-		BurnFee:            burnFee,
-		TradeCount:         tradeCount,
-		UniqueAddr:         uniqueAddr,
-		KYCEd:              kycEd,
-		NewUniqueAddresses: newUniqueAddresses,
-		USDPerTrade:        usdPerTrade,
-		ETHPerTrade:        ethPerTrade,
-	}
-}
-
-type MetricStatsTimeZone map[int64]map[uint64]MetricStats
-
-type UserInfo struct {
-	Addr      string  `json:"user_address"`
-	Email     string  `json:"email"`
-	ETHVolume float64 `json:"total_eth_volume"`
-	USDVolume float64 `json:"total_usd_volume"`
-}
-
-type UserListResponse []UserInfo
-
-func (h UserListResponse) Less(i, j int) bool {
-	return h[i].ETHVolume < h[j].ETHVolume
-}
-
-func (h UserListResponse) Len() int      { return len(h) }
-func (h UserListResponse) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-type UserInfoTimezone map[int64]map[uint64]UserInfo
-
 type TradeHistory struct {
 	ID        string
 	Price     float64
@@ -768,68 +605,12 @@ type AllTradeHistory struct {
 	Data      map[ExchangeID]ExchangeTradeHistory
 }
 
-// NewAllTradeHistory creates a new AllTradeHistory instance.
-func NewAllTradeHistory(timestamp Timestamp, data map[ExchangeID]ExchangeTradeHistory) AllTradeHistory {
-	return AllTradeHistory{
-		Timestamp: timestamp,
-		Data:      data,
-	}
-}
-
 type ExStatus struct {
 	Timestamp uint64 `json:"timestamp"`
 	Status    bool   `json:"status"`
 }
 
 type ExchangesStatus map[string]ExStatus
-
-type TradeLogGeoInfoResp struct {
-	Success bool `json:"success"`
-	Data    struct {
-		IP      string `json:"IP"`
-		Country string `json:"Country"`
-	} `json:"data"`
-}
-
-type HeatmapType struct {
-	TotalETHValue        float64 `json:"total_eth_value"`
-	TotalFiatValue       float64 `json:"total_fiat_value"`
-	ToTalBurnFee         float64 `json:"total_burn_fee"`
-	TotalTrade           int     `json:"total_trade"`
-	TotalUniqueAddresses int     `json:"total_unique_addr"`
-	TotalKYCUser         int     `json:"total_kyc_user"`
-}
-
-type Heatmap map[string]HeatmapType
-
-type HeatmapObject struct {
-	Country              string  `json:"country"`
-	TotalETHValue        float64 `json:"total_eth_value"`
-	TotalFiatValue       float64 `json:"total_fiat_value"`
-	ToTalBurnFee         float64 `json:"total_burn_fee"`
-	TotalTrade           int     `json:"total_trade"`
-	TotalUniqueAddresses int     `json:"total_unique_addr"`
-	TotalKYCUser         int     `json:"total_kyc_user"`
-}
-
-type HeatmapResponse []HeatmapObject
-
-func (h HeatmapResponse) Less(i, j int) bool {
-	return h[i].TotalETHValue < h[j].TotalETHValue
-}
-
-func (h HeatmapResponse) Len() int      { return len(h) }
-func (h HeatmapResponse) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-type AnalyticPriceResponse struct {
-	Timestamp uint64
-	Data      map[string]interface{}
-}
-
-// NewAnalyticPriceResponse creates a new instance of AnalyticPriceResponse.
-func NewAnalyticPriceResponse(timestamp uint64, data map[string]interface{}) AnalyticPriceResponse {
-	return AnalyticPriceResponse{Timestamp: timestamp, Data: data}
-}
 
 type ExchangeNotiContent struct {
 	FromTime  uint64 `json:"fromTime"`
@@ -843,36 +624,6 @@ type ExchangeTokenNoti map[string]ExchangeNotiContent
 type ExchangeActionNoti map[string]ExchangeTokenNoti
 
 type ExchangeNotifications map[string]ExchangeActionNoti
-
-type CountryTokenHeatmap map[string]VolumeStats
-
-type TokenHeatmap struct {
-	Country   string  `json:"country"`
-	Volume    float64 `json:"volume"`
-	ETHVolume float64 `json:"total_eth_value"`
-	USDVolume float64 `json:"total_fiat_value"`
-}
-
-type TokenHeatmapResponse []TokenHeatmap
-
-func (t TokenHeatmapResponse) Less(i, j int) bool {
-	return t[i].Volume < t[j].Volume
-}
-
-func (t TokenHeatmapResponse) Len() int      { return len(t) }
-func (t TokenHeatmapResponse) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
-
-type UsersVolume map[string]StatTicks
-
-// NewFilterQuery creates a new ether.FilterQuery instance.
-func NewFilterQuery(fromBlock, toBlock *big.Int, addresses []ethereum.Address, topics [][]ethereum.Hash) ether.FilterQuery {
-	return ether.FilterQuery{
-		FromBlock: fromBlock,
-		ToBlock:   toBlock,
-		Addresses: addresses,
-		Topics:    topics,
-	}
-}
 
 type TransactionInfo struct {
 	BlockNumber string `json:"blockNumber"`
@@ -895,31 +646,6 @@ type StoreSetRateTx struct {
 	TimeStamp uint64 `json:"timeStamp"`
 	GasPrice  uint64 `json:"gasPrice"`
 	GasUsed   uint64 `json:"gasUsed"`
-}
-
-func GetStoreTx(tx SetRateTxInfo) (StoreSetRateTx, error) {
-	var storeTx StoreSetRateTx
-	gasPriceUint, err := strconv.ParseUint(tx.GasPrice, 10, 64)
-	if err != nil {
-		log.Printf("Cant convert %s to uint64", tx.GasPrice)
-		return storeTx, err
-	}
-	gasUsedUint, err := strconv.ParseUint(tx.GasUsed, 10, 64)
-	if err != nil {
-		log.Printf("Cant convert %s to uint64", tx.GasUsed)
-		return storeTx, err
-	}
-	timeStampUint, err := strconv.ParseUint(tx.TimeStamp, 10, 64)
-	if err != nil {
-		log.Printf("Cant convert %s to uint64", tx.TimeStamp)
-		return storeTx, err
-	}
-	storeTx = StoreSetRateTx{
-		TimeStamp: timeStampUint,
-		GasPrice:  gasPriceUint,
-		GasUsed:   gasUsedUint,
-	}
-	return storeTx, nil
 }
 
 type FeeSetRate struct {
@@ -996,20 +722,6 @@ type ImbalanceStepFunction struct {
 type StepFunctionResponse struct {
 	QuantityStepResponse  QuantityStepFunction  `json:"quantity_step_function"`
 	ImbalanceStepResponse ImbalanceStepFunction `json:"imbalance_step_function"`
-}
-
-type ExportedReserverRateRecord struct {
-	ReserveAddress string
-	Rate           ReserveRates
-	Timestamp      uint64
-}
-
-func NewExportedReserverRateRecord(addr ethereum.Address, rate ReserveRates, timestamp uint64) ExportedReserverRateRecord {
-	return ExportedReserverRateRecord{
-		ReserveAddress: addr.Hex(),
-		Rate:           rate,
-		Timestamp:      timestamp,
-	}
 }
 
 //FetcherConfiguration is configuration of fetcher

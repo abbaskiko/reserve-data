@@ -10,26 +10,26 @@ type Binaprice struct {
 	Rate     string
 }
 
-func (self *Binaprice) UnmarshalJSON(text []byte) error {
+func (bp *Binaprice) UnmarshalJSON(text []byte) error {
 	temp := []interface{}{}
 	if err := json.Unmarshal(text, &temp); err != nil {
 		return err
 	}
 	qty, ok := temp[1].(string)
 	if !ok {
-		return fmt.Errorf("Unmarshal err: interface %v can't be converted to string", temp[1])
+		return fmt.Errorf("unmarshal err: interface %v can't be converted to string", temp[1])
 	}
-	self.Quantity = qty
+	bp.Quantity = qty
 	rate, ok := temp[0].(string)
 	if !ok {
-		return fmt.Errorf("Unmarshal err: interface %v can't be converted to string", temp[0])
+		return fmt.Errorf("unmarshal err: interface %v can't be converted to string", temp[0])
 	}
-	self.Rate = rate
+	bp.Rate = rate
 	return nil
 }
 
 type Binaresp struct {
-	LastUpdatedId int64       `json:"lastUpdateId"`
+	LastUpdatedID int64       `json:"lastUpdateId"`
 	Code          int         `json:"code"`
 	Msg           string      `json:"msg"`
 	Bids          []Binaprice `json:"bids"`
@@ -92,8 +92,8 @@ type Binaorder struct {
 	Code          int    `json:"code"`
 	Msg           string `json:"msg"`
 	Symbol        string `json:"symbol"`
-	OrderId       uint64 `json:"orderId"`
-	ClientOrderId string `json:"clientOrderId"`
+	OrderID       uint64 `json:"orderId"`
+	ClientOrderID string `json:"clientOrderId"`
 	Price         string `json:"price"`
 	OrigQty       string `json:"origQty"`
 	ExecutedQty   string `json:"executedQty"`
@@ -120,9 +120,9 @@ type Binacancel struct {
 	Code              int    `json:"code"`
 	Msg               string `json:"msg"`
 	Symbol            string `json:"symbol"`
-	OrigClientOrderId string `json:"origClientOrderId"`
-	OrderId           uint64 `json:"orderId"`
-	ClientOrderId     string `json:"clientOrderId"`
+	OrigClientOrderID string `json:"origClientOrderId"`
+	OrderID           uint64 `json:"orderId"`
+	ClientOrderID     string `json:"clientOrderId"`
 }
 
 // {

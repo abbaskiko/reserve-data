@@ -2,31 +2,34 @@ package world
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/gin-gonic/gin/json"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin/json"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
-func (self *TheWorld) getBitfinexInfo() common.BitfinexData {
+func (tw *TheWorld) getCoinbaseInfo() common.CoinbaseData {
 	var (
-		client = &http.Client{Timeout: time.Duration(30 * time.Second)}
-		url    = self.endpoint.BitfinexEndpoint()
-		result = common.BitfinexData{}
+		client = &http.Client{Timeout: 30 * time.Second}
+		url    = tw.endpoint.CoinbaseBTCEndpoint()
+		result = common.CoinbaseData{}
 	)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return common.BitfinexData{
+		return common.CoinbaseData{
 			Valid: false,
 			Error: err.Error(),
 		}
 	}
+
 	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return common.BitfinexData{
+		return common.CoinbaseData{
 			Valid: false,
 			Error: err.Error(),
 		}
@@ -38,14 +41,14 @@ func (self *TheWorld) getBitfinexInfo() common.BitfinexData {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return common.BitfinexData{
+		return common.CoinbaseData{
 			Valid: false,
 			Error: fmt.Sprintf("unexpected return code: %d", resp.StatusCode),
 		}
 	}
 
 	if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return common.BitfinexData{
+		return common.CoinbaseData{
 			Valid: false,
 			Error: err.Error(),
 		}
@@ -54,24 +57,25 @@ func (self *TheWorld) getBitfinexInfo() common.BitfinexData {
 	return result
 }
 
-func (self *TheWorld) getBinanceInfo() common.BinanceData {
+func (tw *TheWorld) getGeminiInfo() common.GeminiData {
 	var (
-		client = &http.Client{Timeout: time.Duration(30 * time.Second)}
-		url    = self.endpoint.BinanceEndpoint()
-		result = common.BinanceData{}
+		client = &http.Client{Timeout: 30 * time.Second}
+		url    = tw.endpoint.GeminiBTCEndpoint()
+		result = common.GeminiData{}
 	)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return common.BinanceData{
+		return common.GeminiData{
 			Valid: false,
 			Error: err.Error(),
 		}
 	}
+
 	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return common.BinanceData{
+		return common.GeminiData{
 			Valid: false,
 			Error: err.Error(),
 		}
@@ -83,14 +87,14 @@ func (self *TheWorld) getBinanceInfo() common.BinanceData {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return common.BinanceData{
+		return common.GeminiData{
 			Valid: false,
 			Error: fmt.Sprintf("unexpected return code: %d", resp.StatusCode),
 		}
 	}
 
 	if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return common.BinanceData{
+		return common.GeminiData{
 			Valid: false,
 			Error: err.Error(),
 		}
@@ -99,9 +103,9 @@ func (self *TheWorld) getBinanceInfo() common.BinanceData {
 	return result
 }
 
-func (self *TheWorld) GetBTCInfo() (common.BTCData, error) {
+func (tw *TheWorld) GetBTCInfo() (common.BTCData, error) {
 	return common.BTCData{
-		Bitfinex: self.getBitfinexInfo(),
-		Binance:  self.getBinanceInfo(),
+		Coinbase: tw.getCoinbaseInfo(),
+		Gemini:   tw.getGeminiInfo(),
 	}, nil
 }

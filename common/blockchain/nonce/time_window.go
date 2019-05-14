@@ -30,39 +30,38 @@ func NewTimeWindow(address ethereum.Address, window uint64) *TimeWindow {
 	}
 }
 
-func (self *TimeWindow) GetAddress() ethereum.Address {
-	return self.address
+func (tw *TimeWindow) GetAddress() ethereum.Address {
+	return tw.address
 }
 
-func (self *TimeWindow) getNonceFromNode(ethclient *ethclient.Client) (*big.Int, error) {
+func (tw *TimeWindow) getNonceFromNode(ethclient *ethclient.Client) (*big.Int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
 	defer cancel()
-	nonce, err := ethclient.PendingNonceAt(ctx, self.GetAddress())
+	nonce, err := ethclient.PendingNonceAt(ctx, tw.GetAddress())
 	return big.NewInt(int64(nonce)), err
 }
 
-func (self *TimeWindow) MinedNonce(ethclient *ethclient.Client) (*big.Int, error) {
+func (tw *TimeWindow) MinedNonce(ethclient *ethclient.Client) (*big.Int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
 	defer cancel()
-	nonce, err := ethclient.NonceAt(ctx, self.GetAddress(), nil)
+	nonce, err := ethclient.NonceAt(ctx, tw.GetAddress(), nil)
 	return big.NewInt(int64(nonce)), err
 }
 
-func (self *TimeWindow) GetNextNonce(ethclient *ethclient.Client) (*big.Int, error) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
+func (tw *TimeWindow) GetNextNonce(ethclient *ethclient.Client) (*big.Int, error) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
 	t := common.GetTimepoint()
-	if t-self.time < self.window {
-		self.time = t
-		self.manualNonce.Add(self.manualNonce, ethereum.Big1)
-		return self.manualNonce, nil
-	} else {
-		nonce, err := self.getNonceFromNode(ethclient)
-		if err != nil {
-			return big.NewInt(0), err
-		}
-		self.time = t
-		self.manualNonce = nonce
-		return self.manualNonce, nil
+	if t-tw.time < tw.window {
+		tw.time = t
+		tw.manualNonce.Add(tw.manualNonce, ethereum.Big1)
+		return tw.manualNonce, nil
 	}
+	nonce, err := tw.getNonceFromNode(ethclient)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+	tw.time = t
+	tw.manualNonce = nonce
+	return tw.manualNonce, nil
 }

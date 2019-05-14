@@ -15,6 +15,11 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+const (
+	byzantiumChainType = "byzantium"
+	homesteadChainType = "homestead"
+)
+
 func GetSettingDBName(kyberENV string) string {
 	switch kyberENV {
 	case common.MainnetMode, common.ProductionMode:
@@ -37,19 +42,19 @@ func GetSettingDBName(kyberENV string) string {
 func GetChainType(kyberENV string) string {
 	switch kyberENV {
 	case common.MainnetMode, common.ProductionMode:
-		return "byzantium"
+		return byzantiumChainType
 	case common.DevMode:
-		return "homestead"
+		return homesteadChainType
 	case common.KovanMode:
-		return "homestead"
+		return homesteadChainType
 	case common.StagingMode:
-		return "byzantium"
+		return byzantiumChainType
 	case common.SimulationMode, common.AnalyticDevMode:
-		return "homestead"
+		return homesteadChainType
 	case common.RopstenMode:
-		return "byzantium"
+		return byzantiumChainType
 	default:
-		return "homestead"
+		return homesteadChainType
 	}
 }
 
@@ -91,7 +96,7 @@ func GetSetting(setPath SettingPaths, kyberENV string, addressSetting *settings.
 	return setting, err
 }
 
-func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enableStat bool) *Config {
+func GetConfig(kyberENV string, authEnbl bool, endpointOW string) *Config {
 	setPath := GetConfigPaths(kyberENV)
 
 	theWorld, err := world.NewTheWorld(kyberENV, setPath.secretPath)
@@ -145,7 +150,6 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 	bc := blockchain.NewBaseBlockchain(
 		client, mainClient, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
-		blockchain.NewCMCEthUSDRate(),
 		chainType,
 		blockchain.NewContractCaller(callClients, bkEndpoints),
 	)
@@ -172,11 +176,6 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, noCore, enable
 
 	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
 
-	if enableStat {
-		config.AddStatConfig(setPath)
-	}
-	if !noCore {
-		config.AddCoreConfig(setPath, kyberENV)
-	}
+	config.AddCoreConfig(setPath, kyberENV)
 	return config
 }
