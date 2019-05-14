@@ -258,7 +258,7 @@ func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error
 		b := tx.Bucket([]byte(disabledFeedsBucket))
 		return b.ForEach(func(k, _ []byte) error {
 			for i := range results {
-				if strings.EqualFold(results[i].Name, string(k)) {
+				if strings.ToLower(results[i].Name) == string(k) {
 					results[i].Enabled = false
 					break
 				}
