@@ -13,6 +13,7 @@ var (
 		"GDAX",
 		"Kraken",
 		"Gemini",
+
 		"CoinbaseBTC",
 		"GeminiBTC",
 	}
