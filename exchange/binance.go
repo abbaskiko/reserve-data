@@ -11,9 +11,10 @@ import (
 	"sync"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -25,6 +26,14 @@ type Binance struct {
 	interf  BinanceInterface
 	storage BinanceStorage
 	setting Setting
+}
+
+func (bn *Binance) TokenAddresses() (map[string]ethereum.Address, error) {
+	addresses, err := bn.setting.GetDepositAddresses(settings.Binance)
+	if err != nil {
+		return nil, err
+	}
+	return addresses.GetData(), nil
 }
 
 func (bn *Binance) MarshalText() (text []byte, err error) {
