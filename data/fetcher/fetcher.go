@@ -601,6 +601,7 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 	var balances common.EBalanceEntry
 	var statuses map[common.ActivityID]common.ActivityStatus
 	var err error
+	var tokenAddress map[string]ethereum.Address
 	for {
 		preStatuses := f.FetchStatusFromExchange(exchange, pendings, timepoint)
 		balances, err = exchange.FetchEBalanceData(timepoint)
@@ -608,6 +609,30 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 			log.Printf("Fetching exchange balances from %s failed: %v\n", exchange.Name(), err)
 			break
 		}
+		//Remove all token which is not in this exchange's token addresses
+		tokenAddress, err = exchange.TokenAddresses()
+		if err != nil {
+			log.Printf("getting token address from %s failed: %v\n", exchange.Name(), err)
+			break
+		}
+		for tokenID := range balances.AvailableBalance {
+			if _, ok := tokenAddress[tokenID]; !ok {
+				delete(balances.AvailableBalance, tokenID)
+			}
+		}
+
+		for tokenID := range balances.LockedBalance {
+			if _, ok := tokenAddress[tokenID]; !ok {
+				delete(balances.LockedBalance, tokenID)
+			}
+		}
+
+		for tokenID := range balances.DepositBalance {
+			if _, ok := tokenAddress[tokenID]; !ok {
+				delete(balances.DepositBalance, tokenID)
+			}
+		}
+
 		statuses = f.FetchStatusFromExchange(exchange, pendings, timepoint)
 		if unchanged(preStatuses, statuses) {
 			break
