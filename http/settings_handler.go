@@ -337,23 +337,25 @@ func (s *Server) getInfosFromExchangeEndPoint(tokenUpdates map[string]common.Tok
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, tokenUpdate := range tokenUpdates {
-		for ex, exSetting := range tokenUpdate.Exchanges {
-			_, err := s.ensureRunningExchange(ex)
-			if err != nil {
-				return result, err
+		if tokenUpdate.Token.Internal {
+			for ex, exSetting := range tokenUpdate.Exchanges {
+				_, err := s.ensureRunningExchange(ex)
+				if err != nil {
+					return result, err
+				}
+				info, ok := exTokenPairIDs[ex]
+				if !ok {
+					info = []common.TokenPairID{}
+				}
+				pairID := common.NewTokenPairID(tokenID, ETHID)
+				//if the current exchangeSetting already got precision limit for this pair, skip it
+				_, ok = exSetting.Info[pairID]
+				if ok {
+					continue
+				}
+				info = append(info, pairID)
+				exTokenPairIDs[ex] = info
 			}
-			info, ok := exTokenPairIDs[ex]
-			if !ok {
-				info = []common.TokenPairID{}
-			}
-			pairID := common.NewTokenPairID(tokenID, ETHID)
-			//if the current exchangeSetting already got precision limit for this pair, skip it
-			_, ok = exSetting.Info[pairID]
-			if ok {
-				continue
-			}
-			info = append(info, pairID)
-			exTokenPairIDs[ex] = info
 		}
 	}
 	for ex, tokenPairIDs := range exTokenPairIDs {
