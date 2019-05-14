@@ -251,14 +251,14 @@ func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error
 	)
 
 	for _, feed := range allFeeds {
-		results = append(results, common.FeedConfiguration{Name: feed, Enabled: true})
+		results = append(results, common.FeedConfiguration{Name: strings.ToLower(feed), Enabled: true})
 	}
 
 	err = bs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(disabledFeedsBucket))
 		return b.ForEach(func(k, _ []byte) error {
 			for i := range results {
-				if strings.EqualFold(results[i].Name, string(k)) {
+				if results[i].Name == string(k) {
 					results[i].Enabled = false
 					break
 				}
