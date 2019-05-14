@@ -17,15 +17,15 @@ const (
 	maxGetTradeHistory uint64 = 3 * 86400000
 )
 
-//BinanceStorage storage binance information
+//Storage storage binance information
 //including trade history
-type BinanceStorage struct {
+type Storage struct {
 	mu sync.RWMutex
 	db *bolt.DB
 }
 
 //NewBoltStorage create database and related bucket for binance storage
-func NewBoltStorage(path string) (*BinanceStorage, error) {
+func NewBoltStorage(path string) (*Storage, error) {
 	// init instance
 	var err error
 	var db *bolt.DB
@@ -44,12 +44,12 @@ func NewBoltStorage(path string) (*BinanceStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	storage := &BinanceStorage{sync.RWMutex{}, db}
+	storage := &Storage{sync.RWMutex{}, db}
 	return storage, nil
 }
 
 //StoreTradeHistory store binance trade history
-func (bs *BinanceStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
+func (bs *Storage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
 	err := bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tradeHistory))
 		for pair, pairHistory := range data {
@@ -75,11 +75,11 @@ func (bs *BinanceStorage) StoreTradeHistory(data common.ExchangeTradeHistory) er
 }
 
 //GetTradeHistory return trade history from binance from time to time
-func (bs *BinanceStorage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
+func (bs *Storage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	result := common.ExchangeTradeHistory{}
 	var err error
 	if toTime-fromTime > maxGetTradeHistory {
-		return result, fmt.Errorf("Time range is too broad, it must be smaller or equal to 3 days (miliseconds)")
+		return result, fmt.Errorf("time range is too broad, it must be smaller or equal to 3 days (miliseconds)")
 	}
 	min := []byte(strconv.FormatUint(fromTime, 10))
 	max := []byte(strconv.FormatUint(toTime, 10))
@@ -110,7 +110,7 @@ func (bs *BinanceStorage) GetTradeHistory(fromTime, toTime uint64) (common.Excha
 
 //GetLastIDTradeHistory return last id of trade history of a token
 //using for query trade history from binance
-func (bs *BinanceStorage) GetLastIDTradeHistory(pair string) (string, error) {
+func (bs *Storage) GetLastIDTradeHistory(pair string) (string, error) {
 	history := common.TradeHistory{}
 	err := bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tradeHistory))

@@ -12,27 +12,13 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
 const (
 	pricingOP = "pricingOP"
 	depositOP = "depositOP"
-
-	// feeToWalletEvent is the topic of event AssignFeeToWallet(address reserve, address wallet, uint walletFee).
-	feeToWalletEvent = "0x366bc34352215bf0bd3b527cfd6718605e1f5938777e42bcd8ed92f578368f52"
-	// burnFeeEvent is the topic of event AssignBurnFees(address reserve, uint burnFee).
-	burnFeeEvent = "0xf838f6ddc89706878e3c3e698e9b5cbfbf2c0e3d3dcd0bd2e00f1ccf313e0185"
-	// tradeEvent is the topic of event
-	// ExecuteTrade(address indexed sender, ERC20 src, ERC20 dest, uint actualSrcAmount, uint actualDestAmount).
-	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
-	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
-	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
-	// userCatEvent is the topic of event UserCategorySet(address user, uint category).
-	userCatEvent = "0x0aeb0f7989a09b8cccf58cea1aefa196ccf738cb14781d6910448dd5649d0e6e"
 )
 
 var (
@@ -71,25 +57,25 @@ type Blockchain struct {
 	setting               Setting
 }
 
-func (self *Blockchain) StandardGasPrice() float64 {
+func (bc *Blockchain) StandardGasPrice() float64 {
 	// we use node's recommended gas price because gas station is not returning
 	// correct gas price now
-	price, err := self.RecommendedGasPriceFromNode()
+	price, err := bc.RecommendedGasPriceFromNode()
 	if err != nil {
 		return 0
 	}
 	return common.BigToFloat(price, 9)
 }
 
-func (self *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
-	opts := self.GetCallOpts(0)
-	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+func (bc *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
+	opts := bc.GetCallOpts(0)
+	pricingAddr, err := bc.setting.GetAddress(settings.Pricing)
 	if err != nil {
 		return err
 	}
 	tokenAddrs := []ethereum.Address{}
 	tokenAddrs = append(tokenAddrs, tokenAddr)
-	_, _, err = self.GeneratedGetTokenIndicies(
+	_, _, err = bc.GeneratedGetTokenIndicies(
 		opts,
 		pricingAddr,
 		tokenAddrs,
@@ -100,18 +86,18 @@ func (self *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
 	return nil
 }
 
-func (self *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	self.tokenIndices = map[string]tbindex{}
+func (bc *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error {
+	bc.mu.Lock()
+	defer bc.mu.Unlock()
+	bc.tokenIndices = map[string]tbindex{}
 	// this is not really needed. Just a safe guard. Use a very big indices so it would not exist.
-	self.tokenIndices[ethereum.HexToAddress(self.setting.ETHToken().Address).Hex()] = tbindex{1000000, 1000000}
-	opts := self.GetCallOpts(0)
-	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	bc.tokenIndices[ethereum.HexToAddress(bc.setting.ETHToken().Address).Hex()] = tbindex{1000000, 1000000}
+	opts := bc.GetCallOpts(0)
+	pricingAddr, err := bc.setting.GetAddress(settings.Pricing)
 	if err != nil {
 		return err
 	}
-	bulkIndices, indicesInBulk, err := self.GeneratedGetTokenIndicies(
+	bulkIndices, indicesInBulk, err := bc.GeneratedGetTokenIndicies(
 		opts,
 		pricingAddr,
 		tokenAddrs,
@@ -120,23 +106,23 @@ func (self *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) er
 		return err
 	}
 	for i, tok := range tokenAddrs {
-		self.tokenIndices[tok.Hex()] = newTBIndex(
+		bc.tokenIndices[tok.Hex()] = newTBIndex(
 			bulkIndices[i].Uint64(),
 			indicesInBulk[i].Uint64(),
 		)
 	}
-	log.Printf("Token indices: %+v", self.tokenIndices)
+	log.Printf("Token indices: %+v", bc.tokenIndices)
 	return nil
 }
 
-func (self *Blockchain) RegisterPricingOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
+func (bc *Blockchain) RegisterPricingOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	log.Printf("reserve pricing address: %s", signer.GetAddress().Hex())
-	self.MustRegisterOperator(pricingOP, blockchain.NewOperator(signer, nonceCorpus))
+	bc.MustRegisterOperator(pricingOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
-func (self *Blockchain) RegisterDepositOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
+func (bc *Blockchain) RegisterDepositOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	log.Printf("reserve depositor address: %s", signer.GetAddress().Hex())
-	self.MustRegisterOperator(depositOP, blockchain.NewOperator(signer, nonceCorpus))
+	bc.MustRegisterOperator(depositOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
 func readablePrint(data map[ethereum.Address]byte) string {
@@ -153,20 +139,20 @@ func readablePrint(data map[ethereum.Address]byte) string {
 // we got a bug when compact is not set to old compact
 // or when one of buy/sell got overflowed, it discards
 // the other's compact
-func (self *Blockchain) SetRates(
+func (bc *Blockchain) SetRates(
 	tokens []ethereum.Address,
 	buys []*big.Int,
 	sells []*big.Int,
 	block *big.Int,
 	nonce *big.Int,
 	gasPrice *big.Int) (*types.Transaction, error) {
-	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	pricingAddr, err := bc.setting.GetAddress(settings.Pricing)
 	if err != nil {
 		return nil, err
 	}
 	block.Add(block, big.NewInt(1))
-	copts := self.GetCallOpts(0)
-	baseBuys, baseSells, _, _, _, err := self.GeneratedGetTokenRates(
+	copts := bc.GetCallOpts(0)
+	baseBuys, baseSells, _, _, _, err := bc.GeneratedGetTokenRates(
 		copts, pricingAddr, tokens,
 	)
 	if err != nil {
@@ -203,105 +189,102 @@ func (self *Blockchain) SetRates(
 	bbuys, bsells, indices := BuildCompactBulk(
 		newCBuys,
 		newCSells,
-		self.tokenIndices,
+		bc.tokenIndices,
 	)
-	opts, err := self.GetTxOpts(pricingOP, nonce, gasPrice, nil)
+	opts, err := bc.GetTxOpts(pricingOP, nonce, gasPrice, nil)
 	if err != nil {
 		log.Printf("Getting transaction opts failed, err: %s", err)
 		return nil, err
-	} else {
-		var tx *types.Transaction
-		if len(baseTokens) > 0 {
-			// set base tx
-			tx, err = self.GeneratedSetBaseRate(
-				opts, baseTokens, newBBuys, newBSells,
-				bbuys, bsells, block, indices)
-			if tx != nil {
-				log.Printf(
-					"broadcasting setbase tx %s, target buys(%s), target sells(%s), old base buy(%s) || old base sell(%s) || new base buy(%s) || new base sell(%s) || new compact buy(%s) || new compact sell(%s) || new buy bulk(%v) || new sell bulk(%v) || indices(%v)",
-					tx.Hash().Hex(),
-					buys, sells,
-					baseBuys, baseSells,
-					newBBuys, newBSells,
-					readablePrint(newCBuys), readablePrint(newCSells),
-					bbuys, bsells, indices,
-				)
-			}
-		} else {
-			// update compact tx
-			tx, err = self.GeneratedSetCompactData(
-				opts, bbuys, bsells, block, indices)
-			if tx != nil {
-				log.Printf(
-					"broadcasting setcompact tx %s, target buys(%s), target sells(%s), old base buy(%s) || old base sell(%s) || new compact buy(%s) || new compact sell(%s) || new buy bulk(%v) || new sell bulk(%v) || indices(%v)",
-					tx.Hash().Hex(),
-					buys, sells,
-					baseBuys, baseSells,
-					readablePrint(newCBuys), readablePrint(newCSells),
-					bbuys, bsells, indices,
-				)
-			}
-			// log.Printf("Setting compact rates: tx(%s), err(%v) with basesells(%+v), buys(%+v), sells(%+v), block(%s), indices(%+v)",
-			// 	tx.Hash().Hex(), err, baseTokens, buys, sells, block.Text(10), indices,
-			// )
-		}
-		if err != nil {
-			return nil, err
-		}
-		return self.SignAndBroadcast(tx, pricingOP)
 	}
+	var tx *types.Transaction
+	if len(baseTokens) > 0 {
+		// set base tx
+		tx, err = bc.GeneratedSetBaseRate(
+			opts, baseTokens, newBBuys, newBSells,
+			bbuys, bsells, block, indices)
+		if tx != nil {
+			log.Printf(
+				"broadcasting setbase tx %s, target buys(%s), target sells(%s), old base buy(%s) || old base sell(%s) || new base buy(%s) || new base sell(%s) || new compact buy(%s) || new compact sell(%s) || new buy bulk(%v) || new sell bulk(%v) || indices(%v)",
+				tx.Hash().Hex(),
+				buys, sells,
+				baseBuys, baseSells,
+				newBBuys, newBSells,
+				readablePrint(newCBuys), readablePrint(newCSells),
+				bbuys, bsells, indices,
+			)
+		}
+	} else {
+		// update compact tx
+		tx, err = bc.GeneratedSetCompactData(
+			opts, bbuys, bsells, block, indices)
+		if tx != nil {
+			log.Printf(
+				"broadcasting setcompact tx %s, target buys(%s), target sells(%s), old base buy(%s) || old base sell(%s) || new compact buy(%s) || new compact sell(%s) || new buy bulk(%v) || new sell bulk(%v) || indices(%v)",
+				tx.Hash().Hex(),
+				buys, sells,
+				baseBuys, baseSells,
+				readablePrint(newCBuys), readablePrint(newCSells),
+				bbuys, bsells, indices,
+			)
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return bc.SignAndBroadcast(tx, pricingOP)
+
 }
 
-func (self *Blockchain) Send(
+func (bc *Blockchain) Send(
 	token common.Token,
 	amount *big.Int,
 	dest ethereum.Address) (*types.Transaction, error) {
 
-	opts, err := self.GetTxOpts(depositOP, nil, nil, nil)
+	opts, err := bc.GetTxOpts(depositOP, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	tx, err := self.GeneratedWithdraw(
+	tx, err := bc.GeneratedWithdraw(
 		opts,
 		ethereum.HexToAddress(token.Address),
 		amount, dest)
 	if err != nil {
 		return nil, err
 	}
-	return self.SignAndBroadcast(tx, depositOP)
+	return bc.SignAndBroadcast(tx, depositOP)
 }
 
-func (self *Blockchain) SetImbalanceStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := self.GetTxOpts(pricingOP, nil, nil, nil)
+func (bc *Blockchain) SetImbalanceStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
+	opts, err := bc.GetTxOpts(pricingOP, nil, nil, nil)
 	if err != nil {
 		log.Printf("Getting transaction opts failed, err: %s", err)
 		return nil, err
 	}
-	tx, err := self.GeneratedSetImbalanceStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
+	tx, err := bc.GeneratedSetImbalanceStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
 	if err != nil {
 		return nil, err
 	}
-	return self.SignAndBroadcast(tx, pricingOP)
+	return bc.SignAndBroadcast(tx, pricingOP)
 }
 
-func (self *Blockchain) SetQtyStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := self.GetTxOpts(pricingOP, nil, nil, nil)
+func (bc *Blockchain) SetQtyStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
+	opts, err := bc.GetTxOpts(pricingOP, nil, nil, nil)
 	if err != nil {
 		log.Printf("Getting transaction opts failed, err: %s", err)
 		return nil, err
 	}
-	tx, err := self.GeneratedSetQtyStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
+	tx, err := bc.GeneratedSetQtyStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
 	if err != nil {
 		return nil, err
 	}
-	return self.SignAndBroadcast(tx, pricingOP)
+	return bc.SignAndBroadcast(tx, pricingOP)
 }
 
 //====================== Readonly calls ============================
-func (self *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
+func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
 	result := map[string]common.BalanceEntry{}
 	tokens := []ethereum.Address{}
-	tokensSetting, err := self.setting.GetInternalTokens()
+	tokensSetting, err := bc.setting.GetInternalTokens()
 	if err != nil {
 		return result, err
 	}
@@ -309,8 +292,8 @@ func (self *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint6
 		tokens = append(tokens, ethereum.HexToAddress(tok.Address))
 	}
 	timestamp := common.GetTimestamp()
-	opts := self.GetCallOpts(atBlock)
-	balances, err := self.GeneratedGetBalances(opts, reserve, tokens)
+	opts := bc.GetCallOpts(atBlock)
+	balances, err := bc.GeneratedGetBalances(opts, reserve, tokens)
 	returnTime := common.GetTimestamp()
 	log.Printf("Fetcher ------> balances: %v, err: %s", balances, common.ErrorToString(err))
 	if err != nil {
@@ -346,11 +329,11 @@ func (self *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint6
 	return result, nil
 }
 
-func (self *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.AllRateEntry, error) {
+func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.AllRateEntry, error) {
 	result := common.AllRateEntry{}
 	tokenAddrs := []ethereum.Address{}
 	validTokens := []common.Token{}
-	tokenSettings, err := self.setting.GetInternalTokens()
+	tokenSettings, err := bc.setting.GetInternalTokens()
 	if err != nil {
 		return result, err
 	}
@@ -361,12 +344,12 @@ func (self *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.
 		}
 	}
 	timestamp := common.GetTimestamp()
-	opts := self.GetCallOpts(atBlock)
-	pricingAddr, err := self.setting.GetAddress(settings.Pricing)
+	opts := bc.GetCallOpts(atBlock)
+	pricingAddr, err := bc.setting.GetAddress(settings.Pricing)
 	if err != nil {
 		return result, err
 	}
-	baseBuys, baseSells, compactBuys, compactSells, blocks, err := self.GeneratedGetTokenRates(
+	baseBuys, baseSells, compactBuys, compactSells, blocks, err := bc.GeneratedGetTokenRates(
 		opts, pricingAddr, tokenAddrs,
 	)
 	if err != nil {
@@ -381,58 +364,21 @@ func (self *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.
 	for i, token := range validTokens {
 		result.Data[token.ID] = common.NewRateEntry(
 			baseBuys[i],
-			int8(compactBuys[i]),
+			compactBuys[i],
 			baseSells[i],
-			int8(compactSells[i]),
+			compactSells[i],
 			blocks[i].Uint64(),
 		)
 	}
 	return result, nil
 }
 
-func (self *Blockchain) GetReserveRates(
-	atBlock, currentBlock uint64, reserveAddress ethereum.Address,
-	tokens []common.Token) (common.ReserveRates, error) {
-	result := common.ReserveTokenRateEntry{}
-	rates := common.ReserveRates{}
-	rates.Timestamp = common.GetTimepoint()
-
-	ETH := self.setting.ETHToken()
-	srcAddresses := []ethereum.Address{}
-	destAddresses := []ethereum.Address{}
-	for _, token := range tokens {
-		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(ETH.Address))
-		destAddresses = append(destAddresses, ethereum.HexToAddress(ETH.Address), ethereum.HexToAddress(token.Address))
-	}
-
-	opts := self.GetCallOpts(atBlock)
-	reserveRate, sanityRate, err := self.GeneratedGetReserveRates(opts, reserveAddress, srcAddresses, destAddresses)
-	if err != nil {
-		return rates, err
-	}
-
-	rates.BlockNumber = atBlock
-	rates.ToBlockNumber = currentBlock
-	rates.ReturnTime = common.GetTimepoint()
-	for index, token := range tokens {
-		rateEntry := common.ReserveRateEntry{}
-		rateEntry.BuyReserveRate = common.BigToFloat(reserveRate[index*2+1], 18)
-		rateEntry.BuySanityRate = common.BigToFloat(sanityRate[index*2+1], 18)
-		rateEntry.SellReserveRate = common.BigToFloat(reserveRate[index*2], 18)
-		rateEntry.SellSanityRate = common.BigToFloat(sanityRate[index*2], 18)
-		result[fmt.Sprintf("ETH-%s", token.ID)] = rateEntry
-	}
-	rates.Data = result
-
-	return rates, err
-}
-
-func (self *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceType string, qty *big.Int, atBlock uint64) (*big.Int, error) {
-	opts := self.GetCallOpts(atBlock)
+func (bc *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceType string, qty *big.Int, atBlock uint64) (*big.Int, error) {
+	opts := bc.GetCallOpts(atBlock)
 	if priceType == "buy" {
-		return self.GeneratedGetRate(opts, token, block, true, qty)
+		return bc.GeneratedGetRate(opts, token, block, true, qty)
 	}
-	return self.GeneratedGetRate(opts, token, block, false, qty)
+	return bc.GeneratedGetRate(opts, token, block, false, qty)
 }
 
 // SetRateMinedNonce returns nonce of the pricing operator in confirmed
@@ -447,47 +393,32 @@ func (self *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceTy
 // for more than 15 mins, the local one is considered incorrect
 // because the chain might be reorganized so we will invalidate it
 // and assign it to the nonce from node.
-func (self *Blockchain) SetRateMinedNonce() (uint64, error) {
+func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 	const localNonceExpiration = time.Minute * 2
-	nonceFromNode, err := self.GetMinedNonce(pricingOP)
+	nonceFromNode, err := bc.GetMinedNonce(pricingOP)
 	if err != nil {
 		return nonceFromNode, err
 	}
-	if nonceFromNode < self.localSetRateNonce {
+	if nonceFromNode < bc.localSetRateNonce {
 		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
-			nonceFromNode, self.localSetRateNonce)
-		if common.GetTimepoint()-self.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
+			nonceFromNode, bc.localSetRateNonce)
+		if common.GetTimepoint()-bc.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
 			log.Printf("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
-				self.localSetRateNonce, nonceFromNode)
-			self.localSetRateNonce = nonceFromNode
-			self.setRateNonceTimestamp = common.GetTimepoint()
+				bc.localSetRateNonce, nonceFromNode)
+			bc.localSetRateNonce = nonceFromNode
+			bc.setRateNonceTimestamp = common.GetTimepoint()
 			return nonceFromNode, nil
-		} else {
-			log.Printf("SET_RATE_MINED_NONCE: using cached nonce %d instead of nonce from node %d",
-				self.localSetRateNonce, nonceFromNode)
-			return self.localSetRateNonce, nil
 		}
-	} else {
-		log.Printf("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
-			self.localSetRateNonce, nonceFromNode)
-		self.localSetRateNonce = nonceFromNode
-		self.setRateNonceTimestamp = common.GetTimepoint()
-		return nonceFromNode, nil
+		log.Printf("SET_RATE_MINED_NONCE: using cached nonce %d instead of nonce from node %d",
+			bc.localSetRateNonce, nonceFromNode)
+		return bc.localSetRateNonce, nil
 	}
-}
 
-func (self *Blockchain) GetPricingMethod(inputData string) (*abi.Method, error) {
-	abiPricing := &self.pricing.ABI
-	inputDataByte, err := hexutil.Decode(inputData)
-	if err != nil {
-		log.Printf("Cannot decode data: %v", err)
-		return nil, err
-	}
-	method, err := abiPricing.MethodById(inputDataByte)
-	if err != nil {
-		return nil, err
-	}
-	return method, nil
+	log.Printf("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
+		bc.localSetRateNonce, nonceFromNode)
+	bc.localSetRateNonce = nonceFromNode
+	bc.setRateNonceTimestamp = common.GetTimepoint()
+	return nonceFromNode, nil
 }
 
 func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchain, error) {
@@ -547,14 +478,14 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchai
 	}, nil
 }
 
-func (self *Blockchain) GetPricingOPAddress() ethereum.Address {
-	return self.MustGetOperator(pricingOP).Address
+func (bc *Blockchain) GetPricingOPAddress() ethereum.Address {
+	return bc.MustGetOperator(pricingOP).Address
 }
 
-func (self *Blockchain) GetDepositOPAddress() ethereum.Address {
-	return self.MustGetOperator(depositOP).Address
+func (bc *Blockchain) GetDepositOPAddress() ethereum.Address {
+	return bc.MustGetOperator(depositOP).Address
 }
 
-func (self *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
-	return self.MustGetOperator(huobiblockchain.HuobiOP).Address
+func (bc *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
+	return bc.MustGetOperator(huobiblockchain.HuobiOP).Address
 }

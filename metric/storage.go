@@ -4,17 +4,15 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
-// MetricStorage is the interface that wraps all metrics database operations.
-type MetricStorage interface {
+// Storage is the interface that wraps all metrics database operations.
+type Storage interface {
 	StoreMetric(data *common.MetricEntry, timepoint uint64) error
 	StoreRebalanceControl(status bool) error
 	StoreSetrateControl(status bool) error
 
 	GetMetric(tokens []common.Token, fromTime, toTime uint64) (map[string]common.MetricList, error)
-	GetTokenTargetQty() (common.TokenTargetQty, error)
 	GetRebalanceControl() (common.RebalanceControl, error)
 	GetSetrateControl() (common.SetrateControl, error)
-	GetPWIEquation() (common.PWIEquation, error)
 
 	SetStableTokenParams(value []byte) error
 	ConfirmStableTokenParams(value []byte) error
@@ -41,7 +39,5 @@ type MetricStorage interface {
 	GetRebalanceQuadratic() (common.RebalanceQuadraticRequest, error)
 	// StorePendingtokenUpdateInfo will attempt to store targetquanty v2. PWIequation V2 and RebalanceQuadracticRequest into database
 	// it returns error if occur.
-	StorePendingTokenUpdateInfo(common.TokenTargetQtyV2, common.PWIEquationRequestV2, common.RebalanceQuadraticRequest) error
 	ConfirmTokenUpdateInfo(common.TokenTargetQtyV2, common.PWIEquationRequestV2, common.RebalanceQuadraticRequest) error
-	RemovePendingTokenUpdateInfo() error
 }

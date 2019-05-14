@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
+
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/storage"
@@ -16,8 +19,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingsstorage "github.com/KyberNetwork/reserve-data/settings/storage"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -341,7 +342,7 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testServer := HTTPServer{
+	testServer := Server{
 		app:         data.NewReserveData(nil, nil, nil, nil, nil, nil, setting),
 		core:        core.NewReserveCore(nil, nil, setting),
 		metric:      testStorage,
@@ -434,6 +435,7 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, testServer.r) })
 	}
 

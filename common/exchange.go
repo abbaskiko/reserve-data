@@ -26,7 +26,6 @@ type Exchange interface {
 	GetLiveExchangeInfos([]TokenPairID) (ExchangeInfo, error)
 	GetFee() (ExchangeFees, error)
 	GetMinDeposit() (ExchangesMinDeposit, error)
-	TokenAddresses() (map[string]ethereum.Address, error)
 	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)
 }
 
@@ -35,18 +34,9 @@ var SupportedExchanges = map[ExchangeID]Exchange{}
 func GetExchange(id string) (Exchange, error) {
 	ex := SupportedExchanges[ExchangeID(id)]
 	if ex == nil {
-		return ex, fmt.Errorf("Exchange %s is not supported", id)
-	} else {
-		return ex, nil
+		return ex, fmt.Errorf("exchange %s is not supported", id)
 	}
-}
-
-func MustGetExchange(id string) Exchange {
-	result, err := GetExchange(id)
-	if err != nil {
-		panic(err)
-	}
-	return result
+	return ex, nil
 }
 
 // ExchangeSetting contain the composition of settings necessary for an exchange

@@ -9,10 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/settings"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/settings"
 )
 
 const (
@@ -46,13 +47,13 @@ func timebasedID(id string) common.ActivityID {
 	return common.NewActivityID(uint64(time.Now().UnixNano()), id)
 }
 
-func (self ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange) error {
-	activity, err := self.activityStorage.GetActivity(id)
+func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange) error {
+	activity, err := rc.activityStorage.GetActivity(id)
 	if err != nil {
 		return err
 	}
 	if activity.Action != common.ActionTrade {
-		return errors.New("This is not an order activity so cannot cancel")
+		return errors.New("this is not an order activity so cannot cancel")
 	}
 	base, ok := activity.Params["base"].(string)
 	if !ok {
@@ -62,11 +63,11 @@ func (self ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchan
 	if !ok {
 		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
 	}
-	orderId := id.EID
-	return exchange.CancelOrder(orderId, base, quote)
+	orderID := id.EID
+	return exchange.CancelOrder(orderID, base, quote)
 }
 
-func (self ReserveCore) Trade(
+func (rc ReserveCore) Trade(
 	exchange common.Exchange,
 	tradeType string,
 	base common.Token,
@@ -89,7 +90,7 @@ func (self ReserveCore) Trade(
 			finished, common.ErrorToString(err),
 		)
 
-		return self.activityStorage.Record(
+		return rc.activityStorage.Record(
 			common.ActionTrade,
 			uid,
 			string(exchange.ID()),
@@ -143,7 +144,7 @@ func (self ReserveCore) Trade(
 	return uid, done, remaining, finished, common.CombineActivityStorageErrs(err, sErr)
 }
 
-func (self ReserveCore) Deposit(
+func (rc ReserveCore) Deposit(
 	exchange common.Exchange,
 	token common.Token,
 	amount *big.Int,
@@ -166,7 +167,7 @@ func (self ReserveCore) Deposit(
 			exchange.ID(), token.ID, amount.Text(10), timepoint, txhex, common.ErrorToString(err),
 		)
 
-		return self.activityStorage.Record(
+		return rc.activityStorage.Record(
 			common.ActionDeposit,
 			uid,
 			string(exchange.ID()),
@@ -188,7 +189,7 @@ func (self ReserveCore) Deposit(
 	}
 
 	if !supported {
-		err = fmt.Errorf("Exchange %s doesn't support token %s", exchange.ID(), token.ID)
+		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -196,7 +197,7 @@ func (self ReserveCore) Deposit(
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 
-	if ok, err = self.activityStorage.HasPendingDeposit(token, exchange); err != nil {
+	if ok, err = rc.activityStorage.HasPendingDeposit(token, exchange); err != nil {
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -204,7 +205,7 @@ func (self ReserveCore) Deposit(
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 	if ok {
-		err = fmt.Errorf("There is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
+		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -219,7 +220,7 @@ func (self ReserveCore) Deposit(
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
-	if tx, err = self.blockchain.Send(token, amount, address); err != nil {
+	if tx, err = rc.blockchain.Send(token, amount, address); err != nil {
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -237,7 +238,7 @@ func (self ReserveCore) Deposit(
 	return uidGenerator(tx.Hash().Hex()), common.CombineActivityStorageErrs(err, sErr)
 }
 
-func (self ReserveCore) Withdraw(
+func (rc ReserveCore) Withdraw(
 	exchange common.Exchange, token common.Token,
 	amount *big.Int, timepoint uint64) (common.ActivityID, error) {
 	var err error
@@ -248,7 +249,7 @@ func (self ReserveCore) Withdraw(
 			"Core ----------> Withdraw from %s: token: %s, amount: %s, timestamp: %d ==> Result: id: %s, error: %s",
 			exchange.ID(), token.ID, amount.Text(10), timepoint, id, err,
 		)
-		return self.activityStorage.Record(
+		return rc.activityStorage.Record(
 			common.ActionWithdraw,
 			uid,
 			string(exchange.ID()),
@@ -272,7 +273,7 @@ func (self ReserveCore) Withdraw(
 
 	_, supported := exchange.Address(token)
 	if !supported {
-		err = fmt.Errorf("Exchange %s doesn't support token %s", exchange.ID(), token.ID)
+		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
 		sErr := activityRecord("", statusFailed, err)
 		if sErr != nil {
 			log.Printf("failed to store activiry record: %s", sErr.Error())
@@ -287,7 +288,16 @@ func (self ReserveCore) Withdraw(
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
-	reserveAddr, err := self.setting.GetAddress(settings.Reserve)
+
+	reserveAddr, err := rc.setting.GetAddress(settings.Reserve)
+	if err != nil {
+		sErr := activityRecord("", statusFailed, err)
+		if sErr != nil {
+			log.Printf("failed to store activiry record: %s", sErr.Error())
+		}
+		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
+	}
+
 	id, err := exchange.Withdraw(token, amount, reserveAddr, timepoint)
 	if err != nil {
 		sErr := activityRecord("", statusFailed, err)
@@ -311,18 +321,17 @@ func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
 		return big.NewInt(0).Add(
 			common.GweiToWei(highBoundGasPrice),
 			common.GweiToWei(float64(count)-4.0))
-	} else {
-		// new = initPrice * (high bound / initPrice)^(step / 4)
-		initPrice := common.BigToFloat(initPrice, 9) // convert Gwei int to float
-		base := highBoundGasPrice / initPrice
-		newPrice := initPrice * math.Pow(base, float64(count)/4.0)
-		return common.FloatToBigInt(newPrice, 9)
 	}
+	// new = initPrice * (high bound / initPrice)^(step / 4)
+	initPriceFloat := common.BigToFloat(initPrice, 9) // convert Gwei int to float
+	base := highBoundGasPrice / initPriceFloat
+	newPrice := initPriceFloat * math.Pow(base, float64(count)/4.0)
+	return common.FloatToBigInt(newPrice, 9)
 }
 
 // return: old nonce, init price, step, error
-func (self ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int, uint64, error) {
-	act, count, err := self.activityStorage.PendingSetrate(minedNonce)
+func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int, uint64, error) {
+	act, count, err := rc.activityStorage.PendingSetRate(minedNonce)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -350,7 +359,7 @@ func (self ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.In
 	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
 
-func (self ReserveCore) GetSetRateResult(tokens []common.Token,
+func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	buys, sells, afpMids []*big.Int,
 	block *big.Int) (*types.Transaction, error) {
 	var (
@@ -358,14 +367,14 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 		err error
 	)
 	if len(tokens) != len(buys) {
-		return tx, fmt.Errorf("Number of buys (%d) is not equal to number of tokens (%d)", len(buys), len(tokens))
+		return tx, fmt.Errorf("number of buys (%d) is not equal to number of tokens (%d)", len(buys), len(tokens))
 	}
 	if len(tokens) != len(sells) {
-		return tx, fmt.Errorf("Number of sell (%d) is not equal to number of tokens (%d)", len(sells), len(tokens))
+		return tx, fmt.Errorf("number of sell (%d) is not equal to number of tokens (%d)", len(sells), len(tokens))
 
 	}
 	if len(tokens) != len(afpMids) {
-		return tx, fmt.Errorf("Number of afpMids (%d) is not equal to number of tokens (%d)", len(afpMids), len(tokens))
+		return tx, fmt.Errorf("number of afpMids (%d) is not equal to number of tokens (%d)", len(afpMids), len(tokens))
 	}
 	if err = sanityCheck(buys, afpMids, sells); err != nil {
 		return tx, err
@@ -381,18 +390,18 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 		minedNonce uint64
 		count      uint64
 	)
-	minedNonce, err = self.blockchain.SetRateMinedNonce()
+	minedNonce, err = rc.blockchain.SetRateMinedNonce()
 	if err != nil {
-		return tx, fmt.Errorf("Couldn't get mined nonce of set rate operator (%s)", err.Error())
+		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%s)", err.Error())
 	}
-	oldNonce, initPrice, count, err = self.pendingSetrateInfo(minedNonce)
+	oldNonce, initPrice, count, err = rc.pendingSetrateInfo(minedNonce)
 	log.Printf("old nonce: %v, init price: %v, count: %d, err: %s", oldNonce, initPrice, count, common.ErrorToString(err))
 	if err != nil {
-		return tx, fmt.Errorf("Couldn't check pending set rate tx pool (%s). Please try later", err.Error())
+		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%s). Please try later", err.Error())
 	}
 	if oldNonce != nil {
 		newPrice := calculateNewGasPrice(initPrice, count)
-		tx, err = self.blockchain.SetRates(
+		tx, err = rc.blockchain.SetRates(
 			tokenAddrs, buys, sells, block,
 			oldNonce,
 			newPrice,
@@ -408,7 +417,7 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 			)
 		}
 	} else {
-		recommendedPrice := self.blockchain.StandardGasPrice()
+		recommendedPrice := rc.blockchain.StandardGasPrice()
 		var initPrice *big.Int
 		if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
 			initPrice = common.GweiToWei(10)
@@ -416,7 +425,7 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 			initPrice = common.GweiToWei(recommendedPrice)
 		}
 		log.Printf("initial set rate tx, init price: %s", initPrice.String())
-		tx, err = self.blockchain.SetRates(
+		tx, err = rc.blockchain.SetRates(
 			tokenAddrs, buys, sells, block,
 			big.NewInt(int64(minedNonce)),
 			initPrice,
@@ -425,7 +434,7 @@ func (self ReserveCore) GetSetRateResult(tokens []common.Token,
 	return tx, err
 }
 
-func (self ReserveCore) SetRates(
+func (rc ReserveCore) SetRates(
 	tokens []common.Token,
 	buys []*big.Int,
 	sells []*big.Int,
@@ -435,14 +444,14 @@ func (self ReserveCore) SetRates(
 
 	var (
 		tx           *types.Transaction
-		txhex        string = ethereum.Hash{}.Hex()
-		txnonce      string = "0"
-		txprice      string = "0"
+		txhex        = ethereum.Hash{}.Hex()
+		txnonce      = "0"
+		txprice      = "0"
 		err          error
 		miningStatus string
 	)
 
-	tx, err = self.GetSetRateResult(tokens, buys, sells, afpMids, block)
+	tx, err = rc.GetSetRateResult(tokens, buys, sells, afpMids, block)
 	if err != nil {
 		miningStatus = common.MiningStatusFailed
 	} else {
@@ -452,8 +461,8 @@ func (self ReserveCore) SetRates(
 		txprice = tx.GasPrice().Text(10)
 	}
 	uid := timebasedID(txhex)
-	sErr := self.activityStorage.Record(
-		common.ActionSetrate,
+	sErr := rc.activityStorage.Record(
+		common.ActionSetRate,
 		uid,
 		"blockchain",
 		map[string]interface{}{
@@ -486,7 +495,7 @@ func sanityCheck(buys, afpMid, sells []*big.Int) error {
 	for i, s := range sells {
 		check := checkZeroValue(buys[i], s)
 		switch check {
-		case 1:
+		case 1: // both buy/sell rate > 0
 			sFloat := big.NewFloat(0).SetInt(s)
 			sRate := calculateRate(sFloat, eth)
 			bFloat := big.NewFloat(0).SetInt(buys[i])
@@ -494,12 +503,15 @@ func sanityCheck(buys, afpMid, sells []*big.Int) error {
 			aMFloat := big.NewFloat(0).SetInt(afpMid[i])
 			aMRate := calculateRate(aMFloat, eth)
 			if bRate.Cmp(sRate) <= 0 || bRate.Cmp(aMRate) <= 0 {
-				return errors.New("Sell price must be bigger than buy price and afpMid price")
+				return errors.New("buy price must be bigger than sell price and afpMid price")
 			}
-		case 0:
+		case 0: // both buy/sell rate is 0
 			return nil
-		case -1:
-			return errors.New("Rate cannot be zero on only sell or buy side")
+		case -1: // either buy/sell rate is 0
+			if buys[i].Cmp(big.NewInt(0)) == 0 {
+				return errors.New("buy rate can not be zero")
+			}
+			log.Printf("WARNING: sell rate is zero, index: %d, buy rate: %s", i, buys[i].String())
 		}
 	}
 	return nil
@@ -515,7 +527,7 @@ func sanityCheckTrading(exchange common.Exchange, base, quote common.Token, rate
 	minNotional := exchangeInfo.MinNotional
 	if minNotional != float64(0) {
 		if currentNotional < minNotional {
-			return errors.New("Notional must be bigger than exchange's MinNotional")
+			return errors.New("notional must be bigger than exchange's MinNotional")
 		}
 	}
 	return nil
@@ -527,13 +539,13 @@ func sanityCheckAmount(exchange common.Exchange, token common.Token, amount *big
 		return err
 	}
 	amountFloat := big.NewFloat(0).SetInt(amount)
-	feeWithdrawing := exchangeFee.Funding.GetTokenFee(string(token.ID))
+	feeWithdrawing := exchangeFee.Funding.GetTokenFee(token.ID)
 	expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimals), nil)
 	minAmountWithdraw := big.NewFloat(0)
 
 	minAmountWithdraw.Mul(big.NewFloat(feeWithdrawing), big.NewFloat(0).SetInt(expDecimal))
 	if amountFloat.Cmp(minAmountWithdraw) < 0 {
-		return errors.New("Amount is too small!!!")
+		return errors.New("amount is too small")
 	}
 	return nil
 }

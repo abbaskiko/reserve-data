@@ -11,8 +11,6 @@ import (
 type HuobiInterface interface {
 	GetDepthOnePair(baseID, quoteID string) (HuobiDepth, error)
 
-	OpenOrdersForOnePair(pair common.TokenPair) (HuobiOrder, error)
-
 	GetInfo() (HuobiInfo, error)
 
 	GetExchangeInfo() (HuobiExchangeInfo, error)

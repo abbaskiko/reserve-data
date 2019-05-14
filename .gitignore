@@ -58,7 +58,6 @@ cmd/verification/verification
 cmd/comparerates/comparerates
 cmd/ropsten.db
 cmd/binance.db
-cmd/bittrex.db
 cmd/dev_analytics.db
 cmd/dev_exchanges.db
 cmd/dev_logs.db
