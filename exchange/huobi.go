@@ -10,13 +10,14 @@ import (
 	"sync"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	huobihttp "github.com/KyberNetwork/reserve-data/exchange/huobi/http"
 	"github.com/KyberNetwork/reserve-data/settings"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 const (
@@ -28,6 +29,14 @@ type Huobi struct {
 	blockchain HuobiBlockchain
 	storage    HuobiStorage
 	setting    Setting
+}
+
+func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
+	addrs, err := h.setting.GetDepositAddresses(settings.Huobi)
+	if err != nil {
+		return nil, err
+	}
+	return addrs.GetData(), nil
 }
 
 func (h *Huobi) MarshalText() (text []byte, err error) {

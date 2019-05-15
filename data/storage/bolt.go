@@ -13,10 +13,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/boltdb/bolt"
+
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/world"
-	"github.com/boltdb/bolt"
 )
 
 const (
@@ -212,6 +213,8 @@ func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error 
 		allFeeds = world.AllFeeds()
 		exists   = false
 	)
+	// ignore case
+	name = strings.ToLower(name)
 
 	for _, feed := range allFeeds {
 		if strings.EqualFold(name, feed) {
@@ -255,7 +258,7 @@ func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error
 		b := tx.Bucket([]byte(disabledFeedsBucket))
 		return b.ForEach(func(k, _ []byte) error {
 			for i := range results {
-				if strings.EqualFold(results[i].Name, string(k)) {
+				if strings.ToLower(results[i].Name) == string(k) {
 					results[i].Enabled = false
 					break
 				}
