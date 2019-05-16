@@ -1,16 +1,13 @@
 package settings
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // ExchangeName is the name of exchanges of which core will use to rebalance.
@@ -18,18 +15,19 @@ import (
 type ExchangeName int
 
 const (
-	Binance        ExchangeName = iota //binance
-	Bittrex                            //bittrex (deprecated)
-	Huobi                              //huobi
-	StableExchange                     //stable_exchange
+	//Binance is the enumerated key for binance
+	Binance ExchangeName = iota //binance
+	//Bittrex is the enumerated key for bittrex (deprecated)
+	Bittrex //bittrex
+	//Huobi is the enumerated key for huobi
+	Huobi //huobi
+	//StableExchange is the enumerated key for stable_exchange
+	StableExchange //stable_exchange
 )
 const exchangeEnv string = "KYBER_EXCHANGES"
 
+//ErrExchangeRecordNotFound will be return on empty db query
 var ErrExchangeRecordNotFound = errors.New("exchange record not found")
-
-type ExchangeFeesConfig struct {
-	Exchanges map[string]common.ExchangeFees `json:"exchanges"`
-}
 
 var exchangeNameValue = map[string]ExchangeName{
 	"binance":         Binance,
@@ -38,7 +36,7 @@ var exchangeNameValue = map[string]ExchangeName{
 	"stable_exchange": StableExchange,
 }
 
-// Running Exchange get the exchangeEnvironment params and return the list of exchanges ID for the current run
+// RunningExchanges get the exchangeEnvironment params and return the list of exchanges ID for the current run
 // It returns empty string slice if the ENV is empty string or not found
 // DO NOT CALL this once httpserver has ran.
 func RunningExchanges() []string {
@@ -51,27 +49,22 @@ func RunningExchanges() []string {
 	return exchanges
 }
 
+//ExchangeTypeValues return exchange Name value config
 func ExchangeTypeValues() map[string]ExchangeName {
 	return exchangeNameValue
 }
 
+//ExchangeSetting is the struct to implement exchange related setting
 type ExchangeSetting struct {
 	Storage ExchangeStorage
 }
 
+//NewExchangeSetting return a new exchange setting
 func NewExchangeSetting(exchangeStorage ExchangeStorage) (*ExchangeSetting, error) {
 	return &ExchangeSetting{exchangeStorage}, nil
 }
 
-func (setting *Settings) loadFeeFromFile(path string) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	var exFeeConfig ExchangeFeesConfig
-	if err = json.Unmarshal(data, &exFeeConfig); err != nil {
-		return err
-	}
+func (setting *Settings) savePreconfigFee(exFeeConfig map[string]common.ExchangeFees) error {
 	runningExs := RunningExchanges()
 
 	for _, ex := range runningExs {
@@ -84,7 +77,7 @@ func (setting *Settings) loadFeeFromFile(path string) error {
 		if _, err := setting.Exchange.Storage.GetFee(exName); err != nil {
 			log.Printf("Exchange %s is in KYBER_EXCHANGES but can't load fee in Database (%s). atempt to load it from config file", exName.String(), err.Error())
 			//Check if the config file has config for such exchange
-			exFee, ok := exFeeConfig.Exchanges[ex]
+			exFee, ok := exFeeConfig[ex]
 			if !ok {
 				log.Printf("Warning: Exchange %s is in KYBER_EXCHANGES, but not avail in Fee config file.", ex)
 				continue
@@ -105,20 +98,8 @@ func (setting *Settings) loadFeeFromFile(path string) error {
 	return nil
 }
 
-type ExchangesMinDepositConfig struct {
-	Exchanges map[string]common.ExchangesMinDeposit `json:"exchanges"`
-}
+func (setting *Settings) savePrecofigMinDeposit(exMinDepositConfig map[string]common.ExchangesMinDeposit) error {
 
-func (setting *Settings) loadMinDepositFromFile(path string) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	var exMinDepositConfig ExchangesMinDepositConfig
-
-	if err = json.Unmarshal(data, &exMinDepositConfig); err != nil {
-		return err
-	}
 	runningExs := RunningExchanges()
 	for _, ex := range runningExs {
 		//Check if the exchange is in current code deployment.
@@ -130,7 +111,7 @@ func (setting *Settings) loadMinDepositFromFile(path string) error {
 		if _, err := setting.Exchange.Storage.GetMinDeposit(exName); err != nil {
 			log.Printf("Exchange %s is in KYBER_EXCHANGES but can't load MinDeposit in Database (%s). atempt to load it from config file", exName.String(), err.Error())
 			//Check if the config file has config for such exchange
-			minDepo, ok := exMinDepositConfig.Exchanges[ex]
+			minDepo, ok := exMinDepositConfig[ex]
 			if !ok {
 				log.Printf("Warning: Exchange %s is in KYBER_EXCHANGES, but not avail in MinDepositconfig file", exName.String())
 				continue
@@ -148,25 +129,10 @@ func (setting *Settings) loadMinDepositFromFile(path string) error {
 	return nil
 }
 
-// exchangeDepositAddress type stores a map[tokenID]depositaddress
-// it is used to read address config from a file.
-type exchangeDepositAddress map[string]string
-
-// AddressDepositConfig struct contain a map[exchangeName],
-// it is used mainly to read addfress config from JSON file.
-type AddressDepositConfig struct {
-	Exchanges map[string]exchangeDepositAddress `json:"exchanges"`
-}
-
-func (setting *Settings) loadDepositAddressFromFile(path string) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	var exAddressConfig AddressDepositConfig
-	if err = json.Unmarshal(data, &exAddressConfig); err != nil {
-		return err
-	}
+func (setting *Settings) savePreconfigExchangeDepositAddress(data map[common.ExchangeID]common.ExchangeAddresses) error {
+	const (
+		version = 1
+	)
 	runningExs := RunningExchanges()
 	for _, ex := range runningExs {
 		//Check if the exchange is in current code deployment.
@@ -178,27 +144,18 @@ func (setting *Settings) loadDepositAddressFromFile(path string) error {
 		if _, err := setting.Exchange.Storage.GetDepositAddresses(exName); err != nil {
 			log.Printf("Exchange %s is in KYBER_EXCHANGES but can't load DepositAddress in Database (%s). atempt to load it from config file", exName.String(), err.Error())
 			//Check if the config file has config for such exchange
-			exchangeAddressStr, ok := exAddressConfig.Exchanges[ex]
+			exchangeAddress, ok := data[common.ExchangeID(ex)]
 			if !ok {
-				log.Printf("Warning: Exchange %s is in KYBER_EXCHANGES, but not avail in DepositAddress config file", ex)
+				log.Printf("Warning: Exchange %s is in KYBER_EXCHANGES, but not avail in preconfig data", ex)
 				continue
 			}
-			exchangeAddresses := convertToAddressMap(exchangeAddressStr)
 			//version =1 means it is init from config file
-			if err = setting.Exchange.Storage.StoreDepositAddress(exName, exchangeAddresses, 1); err != nil {
+			if err = setting.Exchange.Storage.StoreDepositAddress(exName, exchangeAddress, version); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
-}
-
-func convertToAddressMap(data exchangeDepositAddress) common.ExchangeAddresses {
-	result := make(common.ExchangeAddresses)
-	for token, addrStr := range data {
-		result[token] = ethereum.HexToAddress(addrStr)
-	}
-	return result
 }
 
 func (setting *Settings) handleEmptyExchangeInfo() error {
@@ -223,6 +180,7 @@ func (setting *Settings) handleEmptyExchangeInfo() error {
 	return nil
 }
 
+//NewExchangeInfo return an an ExchangeInfo
 func (setting *Settings) NewExchangeInfo(exName ExchangeName) (common.ExchangeInfo, error) {
 	result := common.NewExchangeInfo()
 	addrs, err := setting.GetDepositAddresses(exName)

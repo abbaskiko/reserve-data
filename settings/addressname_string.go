@@ -4,9 +4,9 @@ package settings
 
 import "strconv"
 
-const _AddressName_name = "reserveburnerbanknetworkwrapperpricingwhitelistinternal_network"
+const _AddressName_name = "reserveburnerwrapperpricingwhitelistinternal_network"
 
-var _AddressName_index = [...]uint8{0, 7, 13, 17, 24, 31, 38, 47, 63}
+var _AddressName_index = [...]uint8{0, 7, 13, 20, 27, 36, 52}
 
 func (i AddressName) String() string {
 	if i < 0 || i >= AddressName(len(_AddressName_index)-1) {

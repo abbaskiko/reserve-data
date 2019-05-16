@@ -1,9 +1,10 @@
 package http
 
 import (
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 type Setting interface {
@@ -33,5 +34,4 @@ type Setting interface {
 	GetActiveTokens() ([]common.Token, error)
 	GetTokenByAddress(ethereum.Address) (common.Token, error)
 	GetAddress(settings.AddressName) (ethereum.Address, error)
-	GetAddresses(settings.AddressSetName) ([]ethereum.Address, error)
 }

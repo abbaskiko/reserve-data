@@ -728,3 +728,10 @@ type StepFunctionResponse struct {
 type FetcherConfiguration struct {
 	BTC bool `json:"btc" binding:"exists"`
 }
+
+// AddressConfig type defines a list of address attribute available in core.
+type AddressConfig struct {
+	Reserve string `json:"reserve"`
+	Wrapper string `json:"wrapper"`
+	Pricing string `json:"pricing"`
+}
