@@ -4,6 +4,9 @@ import (
 	"log"
 	"path/filepath"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
@@ -11,8 +14,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingstorage "github.com/KyberNetwork/reserve-data/settings/storage"
 	"github.com/KyberNetwork/reserve-data/world"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const (
@@ -71,7 +72,7 @@ func GetConfigPaths(kyberENV string) SettingPaths {
 	return ConfigPaths[common.DevMode]
 }
 
-func GetSetting(setPath SettingPaths, kyberENV string, addressSetting *settings.AddressSetting) (*settings.Settings, error) {
+func GetSetting(kyberENV string, addressSetting *settings.AddressSetting) (*settings.Settings, error) {
 	boltSettingStorage, err := settingstorage.NewBoltSettingStorage(filepath.Join(common.CmdDirLocation(), GetSettingDBName(kyberENV)))
 	if err != nil {
 		return nil, err

@@ -98,7 +98,7 @@ type Config struct {
 }
 
 func (c *Config) AddCoreConfig(settingPath SettingPaths, kyberENV string) {
-	setting, err := GetSetting(settingPath, kyberENV, c.AddressSetting)
+	setting, err := GetSetting(kyberENV, c.AddressSetting)
 	if err != nil {
 		log.Panicf("Failed to create setting: %s", err.Error())
 	}
