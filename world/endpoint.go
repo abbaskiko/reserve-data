@@ -112,9 +112,9 @@ func (se SimulatedEndpoint) GeminiDataEndpoint() string {
 }
 
 func (se SimulatedEndpoint) CoinbaseBTCEndpoint() string {
-	panic("unimplemented")
+	return "http://simulator:5600/products/eth-btc/ticker"
 }
 
 func (se SimulatedEndpoint) GeminiBTCEndpoint() string {
-	panic("unimplemented")
+	return "http://simulator:5800/v1/pubticker/ethbtc"
 }
