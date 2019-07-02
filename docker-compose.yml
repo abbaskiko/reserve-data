@@ -1,13 +1,16 @@
-version: '2.1'
+version: '3'
+
+volumes:
+  postgres:
 
 services:
-  collector:
-    image: kyber_reserve_stats
-    build: .
-    ports:
-      - 8000:8000
+  postgres:
+    image: 'postgres:9.5.14-alpine'
     volumes:
-      - .:/go/src/github.com/KyberNetwork/reserve-data
+      - postgres:/var/lib/postgresql/data
     environment:
-      - KYBER_ENV=production
-    command: cmd server --enable-stat --no-core
+      POSTGRES_DB: reserve_data
+      POSTGRES_USER: reserve_data
+      POSTGRES_PASSWORD: reserve_data
+    ports:
+      - '127.0.0.1:5432:5432'

@@ -14,6 +14,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 const (
@@ -54,8 +56,8 @@ type Blockchain struct {
 
 	localSetRateNonce     uint64
 	setRateNonceTimestamp uint64
-	setting               Setting
 	contractAddress       *common.ContractAddressConfiguration
+	sr                    storage.SettingReader
 }
 
 func (bc *Blockchain) StandardGasPrice() float64 {
@@ -88,8 +90,6 @@ func (bc *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) erro
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
 	bc.tokenIndices = map[string]tbindex{}
-	// this is not really needed. Just a safe guard. Use a very big indices so it would not exist.
-	bc.tokenIndices[ethereum.HexToAddress(bc.setting.ETHToken().Address).Hex()] = tbindex{1000000, 1000000}
 	opts := bc.GetCallOpts(0)
 	pricingAddr := bc.contractAddress.Pricing
 	bulkIndices, indicesInBulk, err := bc.GeneratedGetTokenIndicies(
@@ -276,12 +276,12 @@ func (bc *Blockchain) SetQtyStepFunction(token ethereum.Address, xBuy []*big.Int
 func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
 	result := map[string]common.BalanceEntry{}
 	tokens := []ethereum.Address{}
-	tokensSetting, err := bc.setting.GetInternalTokens()
+	assets, err := bc.sr.GetSetRateAssets()
 	if err != nil {
 		return result, err
 	}
-	for _, tok := range tokensSetting {
-		tokens = append(tokens, ethereum.HexToAddress(tok.Address))
+	for _, tok := range assets {
+		tokens = append(tokens, tok.Address)
 	}
 	timestamp := common.GetTimestamp()
 	opts := bc.GetCallOpts(atBlock)
@@ -289,8 +289,9 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 	returnTime := common.GetTimestamp()
 	log.Printf("Fetcher ------> balances: %v, err: %s", balances, common.ErrorToString(err))
 	if err != nil {
-		for _, token := range tokensSetting {
-			result[token.ID] = common.BalanceEntry{
+		for _, token := range assets {
+			// TODO: should store token id instead of symbol
+			result[token.Symbol] = common.BalanceEntry{
 				Valid:      false,
 				Error:      err.Error(),
 				Timestamp:  timestamp,
@@ -298,10 +299,12 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 			}
 		}
 	} else {
-		for i, tok := range tokensSetting {
+		for i, tok := range assets {
 			if balances[i].Cmp(Big0) == 0 || balances[i].Cmp(BigMax) > 0 {
-				log.Printf("Fetcher ------> balances of token %s is invalid", tok.ID)
-				result[tok.ID] = common.BalanceEntry{
+				// TODO: log asset_id instead of token
+				log.Printf("Fetcher ------> balances of token %s is invalid", tok.Symbol)
+				// TODO: should store token id instead of symbol
+				result[tok.Symbol] = common.BalanceEntry{
 					Valid:      false,
 					Error:      "Got strange balances from node. It equals to 0 or is bigger than 10^33",
 					Timestamp:  timestamp,
@@ -309,7 +312,8 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 					Balance:    common.RawBalance(*balances[i]),
 				}
 			} else {
-				result[tok.ID] = common.BalanceEntry{
+				// TODO: should store token id instead of symbol
+				result[tok.Symbol] = common.BalanceEntry{
 					Valid:      true,
 					Timestamp:  timestamp,
 					ReturnTime: returnTime,
@@ -324,14 +328,15 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.AllRateEntry, error) {
 	result := common.AllRateEntry{}
 	tokenAddrs := []ethereum.Address{}
-	validTokens := []common.Token{}
-	tokenSettings, err := bc.setting.GetInternalTokens()
+	validTokens := []commonv3.Asset{}
+	assets, err := bc.sr.GetSetRateAssets()
 	if err != nil {
 		return result, err
 	}
-	for _, s := range tokenSettings {
-		if s.ID != "ETH" {
-			tokenAddrs = append(tokenAddrs, ethereum.HexToAddress(s.Address))
+	for _, s := range assets {
+		// TODO: add a isETH method
+		if s.Symbol != "ETH" {
+			tokenAddrs = append(tokenAddrs, s.Address)
 			validTokens = append(validTokens, s)
 		}
 	}
@@ -351,7 +356,8 @@ func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.Al
 
 	result.Data = map[string]common.RateEntry{}
 	for i, token := range validTokens {
-		result.Data[token.ID] = common.NewRateEntry(
+		// TODO: should store asset_id instead of symbol
+		result.Data[token.Symbol] = common.NewRateEntry(
 			baseBuys[i],
 			compactBuys[i],
 			baseSells[i],
@@ -410,7 +416,10 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 	return nonceFromNode, nil
 }
 
-func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting, contractAddressConf *common.ContractAddressConfiguration) (*Blockchain, error) {
+func NewBlockchain(base *blockchain.BaseBlockchain,
+	contractAddressConf *common.ContractAddressConfiguration,
+	sr storage.SettingReader,
+) (*Blockchain, error) {
 	log.Printf("wrapper address: %s", contractAddressConf.Wrapper.Hex())
 	wrapper := blockchain.NewContract(
 		contractAddressConf.Wrapper,
@@ -434,8 +443,8 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting, contractAdd
 		wrapper:         wrapper,
 		pricing:         pricing,
 		reserve:         reserve,
-		setting:         setting,
 		contractAddress: contractAddressConf,
+		sr:              sr,
 	}, nil
 }
 

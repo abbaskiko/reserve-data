@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -14,7 +13,8 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/settings"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 const (
@@ -25,55 +25,43 @@ const (
 type Binance struct {
 	interf  BinanceInterface
 	storage BinanceStorage
-	setting Setting
+	sr      storage.SettingReader
 }
 
 func (bn *Binance) TokenAddresses() (map[string]ethereum.Address, error) {
-	addresses, err := bn.setting.GetDepositAddresses(settings.Binance)
+	result, err := bn.sr.GetDepositAddresses(uint64(common.Binance))
 	if err != nil {
 		return nil, err
 	}
-	return addresses.GetData(), nil
+	return result, nil
 }
 
 func (bn *Binance) MarshalText() (text []byte, err error) {
 	return []byte(bn.ID()), nil
 }
 
-// Address returns the deposit address of a token on Binance.
-// It will prioritize the live adress from Binance over the current address in storage
+// Address returns the deposit address of given token.
 func (bn *Binance) Address(token common.Token) (ethereum.Address, bool) {
 	liveAddress, err := bn.interf.GetDepositAddress(token.ID)
 	if err != nil || liveAddress.Address == "" {
 		log.Printf("WARNING: Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
-		addrs, uErr := bn.setting.GetDepositAddresses(settings.Binance)
+		addrs, uErr := bn.sr.GetDepositAddresses(uint64(common.Binance))
 		if uErr != nil {
 			log.Printf("WARNING: get address of token %s in Binance exchange failed:(%s), it will be considered as not supported", token.ID, err.Error())
 			return ethereum.Address{}, false
 		}
-		return addrs.Get(token.ID)
+		depositAddr, ok := addrs[token.ID]
+		return depositAddr, ok
 	}
 	log.Printf("Got Binance live deposit address for token %s, attempt to update it to current setting", token.ID)
 	addrs := common.NewExchangeAddresses()
 	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
-	if err = bn.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint()); err != nil {
-		log.Printf("WARNING: cannot update deposit address for token %s on Binance: (%s)", token.ID, err.Error())
-	}
-	return ethereum.HexToAddress(liveAddress.Address), true
-}
 
-func (bn *Binance) UpdateDepositAddress(token common.Token, address string) error {
-	liveAddress, err := bn.interf.GetDepositAddress(token.ID)
-	if err != nil || liveAddress.Address == "" {
-		log.Printf("WARNING: Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
-		addrs := common.NewExchangeAddresses()
-		addrs.Update(token.ID, ethereum.HexToAddress(address))
-		return bn.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint())
-	}
-	log.Printf("Got Binance live deposit address for token %s, attempt to update it to current setting", token.ID)
-	addrs := common.NewExchangeAddresses()
-	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
-	return bn.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint())
+	// TODO: update deposit address
+	//if err = bn.setting.UpdateDepositAddress(common.Binance, *addrs, common.GetTimepoint()); err != nil {
+	//	log.Printf("WARNING: cannot update deposit address for token %s on Binance: (%s)", token.ID, err.Error())
+	//}
+	return ethereum.HexToAddress(liveAddress.Address), true
 }
 
 func (bn *Binance) precisionFromStepSize(stepSize string) int {
@@ -147,80 +135,17 @@ func (bn *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols
 	return result, false
 }
 
-func (bn *Binance) UpdatePairsPrecision() error {
-	exchangeInfo, err := bn.interf.GetExchangeInfo()
-	if err != nil {
-		return err
-	}
-	symbols := exchangeInfo.Symbols
-	exInfo, err := bn.GetInfo()
-	if err != nil {
-		return fmt.Errorf("can't get Exchange Info for Binance from persistent storage. (%s)", err)
-	}
-	if exInfo == nil {
-		return errors.New("exchange info of Binance is nil")
-	}
-	for pair := range exInfo.GetData() {
-		exchangePrecisionLimit, exist := bn.getPrecisionLimitFromSymbols(pair, symbols)
-		if !exist {
-			return fmt.Errorf("binance Exchange Info reply doesn't contain token pair %s", pair)
-		}
-		exInfo[pair] = exchangePrecisionLimit
-	}
-	return bn.setting.UpdateExchangeInfo(settings.Binance, exInfo, common.GetTimepoint())
-}
-
-func (bn *Binance) GetInfo() (common.ExchangeInfo, error) {
-	return bn.setting.GetExchangeInfo(settings.Binance)
-}
-
-func (bn *Binance) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
-	exInfo, err := bn.setting.GetExchangeInfo(settings.Binance)
-	if err != nil {
-		return common.ExchangePrecisionLimit{}, err
-	}
-	return exInfo.Get(pair)
-}
-
-func (bn *Binance) GetFee() (common.ExchangeFees, error) {
-	return bn.setting.GetFee(settings.Binance)
-}
-
-func (bn *Binance) GetMinDeposit() (common.ExchangesMinDeposit, error) {
-	return bn.setting.GetMinDeposit(settings.Binance)
-}
-
 // ID must return the exact string or else simulation will fail
 func (bn *Binance) ID() common.ExchangeID {
-	return common.ExchangeID(settings.Binance.String())
+	return common.ExchangeID(common.Binance.String())
 }
 
-func (bn *Binance) TokenPairs() ([]common.TokenPair, error) {
-	result := []common.TokenPair{}
-	exInfo, err := bn.setting.GetExchangeInfo(settings.Binance)
+func (bn *Binance) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
+	pairs, err := bn.sr.GetTradingPairSymbols(uint64(common.Binance))
 	if err != nil {
 		return nil, err
 	}
-	for pair := range exInfo.GetData() {
-		pairIDs := strings.Split(string(pair), "-")
-		if len(pairIDs) != 2 {
-			return result, fmt.Errorf("binance PairID %s is malformed", string(pair))
-		}
-		tok1, uErr := bn.setting.GetTokenByID(pairIDs[0])
-		if uErr != nil {
-			return result, fmt.Errorf("binance cant get Token %s, %s", pairIDs[0], uErr)
-		}
-		tok2, uErr := bn.setting.GetTokenByID(pairIDs[1])
-		if uErr != nil {
-			return result, fmt.Errorf("binance cant get Token %s, %s", pairIDs[1], uErr)
-		}
-		tokPair := common.TokenPair{
-			Base:  tok1,
-			Quote: tok2,
-		}
-		result = append(result, tokPair)
-	}
-	return result, nil
+	return pairs, nil
 }
 
 func (bn *Binance) Name() string {
@@ -318,7 +243,7 @@ func (bn *Binance) FetchOnePairData(
 	data.Store(common.NewTokenPairID(baseID, quoteID), result)
 }
 
-func (bn *Binance) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (bn *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := bn.TokenPairs()
@@ -333,16 +258,8 @@ func (bn *Binance) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[com
 		for x = i; x < len(pairs) && x < i+batchSize; x++ {
 			wait.Add(1)
 			pair := pairs[x]
-			baseID, quoteID := pair.GetBaseQuoteID()
+			baseID, quoteID := pair.BaseSymbol, pair.QuoteSymbol
 			go bn.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
-			if fetchBTCPrice {
-				wait.Add(1)
-				go bn.FetchOnePairData(&wait, baseID, BtcID, &data, timepoint)
-			}
-		}
-		if fetchBTCPrice {
-			wait.Add(1)
-			go bn.FetchOnePairData(&wait, bn.setting.ETHToken().ID, BtcID, &data, timepoint)
 		}
 		wait.Wait()
 		i = x
@@ -364,44 +281,6 @@ func (bn *Binance) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[com
 		return true
 	})
 	return result, err
-}
-
-func (bn *Binance) OpenOrdersForOnePair(
-	wg *sync.WaitGroup,
-	pair common.TokenPair,
-	data *sync.Map,
-	timepoint uint64) {
-
-	defer wg.Done()
-
-	result, err := bn.interf.OpenOrdersForOnePair(pair)
-
-	if err == nil {
-		orders := []common.Order{}
-		for _, order := range result {
-			price, _ := strconv.ParseFloat(order.Price, 64)
-			orgQty, _ := strconv.ParseFloat(order.OrigQty, 64)
-			executedQty, _ := strconv.ParseFloat(order.ExecutedQty, 64)
-			orders = append(orders, common.Order{
-				ID:          fmt.Sprintf("%d_%s%s", order.OrderID, strings.ToUpper(pair.Base.ID), strings.ToUpper(pair.Quote.ID)),
-				Base:        strings.ToUpper(pair.Base.ID),
-				Quote:       strings.ToUpper(pair.Quote.ID),
-				OrderID:     fmt.Sprintf("%d", order.OrderID),
-				Price:       price,
-				OrigQty:     orgQty,
-				ExecutedQty: executedQty,
-				TimeInForce: order.TimeInForce,
-				Type:        order.Type,
-				Side:        order.Side,
-				StopPrice:   order.StopPrice,
-				IcebergQty:  order.IcebergQty,
-				Time:        order.Time,
-			})
-		}
-		data.Store(pair.PairID(), orders)
-	} else {
-		log.Printf("Unsuccessful response from Binance: %s", err)
-	}
 }
 
 func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
@@ -427,7 +306,7 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 		} else {
 			for _, b := range respData.Balances {
 				tokenID := b.Asset
-				_, err := bn.setting.GetTokenByID(tokenID)
+				_, err := bn.sr.GetAssetBySymbol(uint64(common.Binance), tokenID)
 				if err == nil {
 					avai, _ := strconv.ParseFloat(b.Free, 64)
 					locked, _ := strconv.ParseFloat(b.Locked, 64)
@@ -445,18 +324,18 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 func (bn *Binance) FetchOnePairTradeHistory(
 	wait *sync.WaitGroup,
 	data *sync.Map,
-	pair common.TokenPair) {
+	pair commonv3.TradingPairSymbols) {
 
 	defer wait.Done()
 	result := []common.TradeHistory{}
-	tokenPair := fmt.Sprintf("%s-%s", pair.Base.ID, pair.Quote.ID)
+	tokenPair := fmt.Sprintf("%s-%s", pair.BaseSymbol, pair.QuoteSymbol)
 	fromID, err := bn.storage.GetLastIDTradeHistory(tokenPair)
 	if err != nil {
 		log.Printf("Cannot get last ID trade history: %s", err.Error())
 	}
-	resp, err := bn.interf.GetAccountTradeHistory(pair.Base, pair.Quote, fromID)
+	resp, err := bn.interf.GetAccountTradeHistory(pair.BaseSymbol, pair.QuoteSymbol, fromID)
 	if err != nil {
-		log.Printf("Binance Cannot fetch data for pair %s%s: %s", pair.Base.ID, pair.Quote.ID, err.Error())
+		log.Printf("Binance Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
 	}
 	pairString := pair.PairID()
 	for _, trade := range resp {
@@ -593,11 +472,11 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 func NewBinance(
 	interf BinanceInterface,
 	storage BinanceStorage,
-	setting Setting) (*Binance, error) {
+	sr storage.SettingReader) (*Binance, error) {
 	binance := &Binance{
-		interf,
-		storage,
-		setting,
+		interf:  interf,
+		storage: storage,
+		sr:      sr,
 	}
 	binance.FetchTradeHistory()
 	return binance, nil

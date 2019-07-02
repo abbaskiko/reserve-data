@@ -27,7 +27,6 @@ type Fetcher struct {
 	currentBlock           uint64
 	currentBlockUpdateTime uint64
 	simulationMode         bool
-	setting                Setting
 	contractAddressConf    *common.ContractAddressConfiguration
 }
 
@@ -37,7 +36,6 @@ func NewFetcher(
 	theworld TheWorld,
 	runner Runner,
 	simulationMode bool,
-	setting Setting,
 	contractAddressConf *common.ContractAddressConfiguration) *Fetcher {
 	return &Fetcher{
 		storage:             storage,
@@ -47,7 +45,6 @@ func NewFetcher(
 		theworld:            theworld,
 		runner:              runner,
 		simulationMode:      simulationMode,
-		setting:             setting,
 		contractAddressConf: contractAddressConf,
 	}
 }
@@ -59,22 +56,6 @@ func (f *Fetcher) SetBlockchain(blockchain Blockchain) {
 
 func (f *Fetcher) AddExchange(exchange Exchange) {
 	f.exchanges = append(f.exchanges, exchange)
-	// initiate exchange status as up
-	exchangeStatus, _ := f.setting.GetExchangeStatus()
-	if exchangeStatus == nil {
-		exchangeStatus = map[string]common.ExStatus{}
-	}
-	exchangeID := string(exchange.ID())
-	_, exist := exchangeStatus[exchangeID]
-	if !exist {
-		exchangeStatus[exchangeID] = common.ExStatus{
-			Timestamp: common.GetTimepoint(),
-			Status:    true,
-		}
-	}
-	if err := f.setting.UpdateExchangeStatus(exchangeStatus); err != nil {
-		log.Printf("Update exchange status error: %s", err.Error())
-	}
 }
 
 func (f *Fetcher) Stop() error {
@@ -271,7 +252,7 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 	for {
 		preStatuses, err = f.FetchStatusFromBlockchain(pendings)
 		if err != nil {
-			log.Printf("Fetching blockchain pre statuses failed:  %v, retrying", err)
+			log.Printf("Fetching blockchain pre statuses failed: %v, retrying", err)
 		}
 		balances, err = f.FetchBalanceFromBlockchain()
 		if err != nil {
@@ -780,11 +761,7 @@ func (f *Fetcher) FetchOrderbook(timepoint uint64) {
 
 func (f *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, data *ConcurrentAllPriceData, timepoint uint64) {
 	defer wg.Done()
-	fetchConfig, err := f.globalStorage.GetAllFetcherConfiguration()
-	if err != nil {
-		log.Fatal("cannot get btc fetcher configuration")
-	}
-	exdata, err := exchange.FetchPriceData(timepoint, fetchConfig.BTC)
+	exdata, err := exchange.FetchPriceData(timepoint)
 	if err != nil {
 		log.Printf("Fetching data from %s failed: %v\n", exchange.Name(), err)
 	}

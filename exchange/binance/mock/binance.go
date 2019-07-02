@@ -4,8 +4,9 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/KyberNetwork/reserve-data/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 const binanceTestExchangeID = "binance"
@@ -36,21 +37,7 @@ func (bte *BinanceTestExchange) CancelOrder(id, base, quote string) error {
 func (bte *BinanceTestExchange) MarshalText() (text []byte, err error) {
 	return []byte("binance"), nil
 }
-func (bte *BinanceTestExchange) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
-	return common.ExchangePrecisionLimit{}, nil
-}
-func (bte *BinanceTestExchange) GetFee() (common.ExchangeFees, error) {
-	return common.ExchangeFees{}, nil
-}
-func (bte *BinanceTestExchange) GetMinDeposit() (common.ExchangesMinDeposit, error) {
-	return common.ExchangesMinDeposit{}, nil
-}
-func (bte *BinanceTestExchange) GetInfo() (common.ExchangeInfo, error) {
-	return common.ExchangeInfo{}, nil
-}
-func (bte *BinanceTestExchange) UpdateDepositAddress(token common.Token, address string) error {
-	return nil
-}
+
 func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
 }

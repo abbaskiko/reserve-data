@@ -510,35 +510,37 @@ func sanityCheck(buys, afpMid, sells []*big.Int) error {
 }
 
 func sanityCheckTrading(exchange common.Exchange, base, quote common.Token, rate, amount float64) error {
-	tokenPair := makeTokenPair(base, quote)
-	exchangeInfo, err := exchange.GetExchangeInfo(tokenPair.PairID())
-	if err != nil {
-		return err
-	}
-	currentNotional := rate * amount
-	minNotional := exchangeInfo.MinNotional
-	if minNotional != float64(0) {
-		if currentNotional < minNotional {
-			return errors.New("notional must be bigger than exchange's MinNotional")
-		}
-	}
+	//TODO: reenable sanity check trading
+	//tokenPair := makeTokenPair(base, quote)
+	//exchangeInfo, err := exchange.GetExchangeInfo(tokenPair.PairID())
+	//if err != nil {
+	//	return err
+	//}
+	//currentNotional := rate * amount
+	//minNotional := exchangeInfo.MinNotional
+	//if minNotional != float64(0) {
+	//	if currentNotional < minNotional {
+	//		return errors.New("notional must be bigger than exchange's MinNotional")
+	//	}
+	//}
 	return nil
 }
 
 func sanityCheckAmount(exchange common.Exchange, token common.Token, amount *big.Int) error {
-	exchangeFee, err := exchange.GetFee()
-	if err != nil {
-		return err
-	}
-	amountFloat := big.NewFloat(0).SetInt(amount)
-	feeWithdrawing := exchangeFee.Funding.GetTokenFee(token.ID)
-	expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimals), nil)
-	minAmountWithdraw := big.NewFloat(0)
-
-	minAmountWithdraw.Mul(big.NewFloat(feeWithdrawing), big.NewFloat(0).SetInt(expDecimal))
-	if amountFloat.Cmp(minAmountWithdraw) < 0 {
-		return errors.New("amount is too small")
-	}
+	// TODO: reenable sanity check amount
+	//exchangeFee, err := exchange.GetFee()
+	//if err != nil {
+	//	return err
+	//}
+	//amountFloat := big.NewFloat(0).SetInt(amount)
+	//feeWithdrawing := exchangeFee.Funding.GetTokenFee(token.ID)
+	//expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimals), nil)
+	//minAmountWithdraw := big.NewFloat(0)
+	//
+	//minAmountWithdraw.Mul(big.NewFloat(feeWithdrawing), big.NewFloat(0).SetInt(expDecimal))
+	//if amountFloat.Cmp(minAmountWithdraw) < 0 {
+	//	return errors.New("amount is too small")
+	//}
 	return nil
 }
 

@@ -13,8 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	"github.com/KyberNetwork/reserve-data/http"
-	"github.com/KyberNetwork/reserve-data/settings"
-	settingstorage "github.com/KyberNetwork/reserve-data/settings/storage"
+	"github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
@@ -42,35 +41,6 @@ func GetChainType(dpl deployment.Deployment) string {
 	}
 }
 
-func GetSetting(
-	dpl deployment.Deployment,
-	contractAddressConf *common.ContractAddressConfiguration,
-	settingDataFile string) (*settings.Settings, error) {
-	boltSettingStorage, err := settingstorage.NewBoltSettingStorage(settingDataFile)
-	if err != nil {
-		return nil, err
-	}
-	tokenSetting, err := settings.NewTokenSetting(boltSettingStorage)
-	if err != nil {
-		return nil, err
-	}
-	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
-	if err != nil {
-		return nil, err
-	}
-
-	setting, err := settings.NewSetting(
-		tokenSetting,
-		contractAddressConf,
-		exchangeSetting,
-		settings.WithHandleEmptyToken(mustGetTokenConfig(dpl)),
-		settings.WithHandleEmptyFee(FeeConfigs),
-		settings.WithHandleEmptyMinDeposit(ExchangesMinDepositConfig),
-		settings.WithHandleEmptyDepositAddress(mustGetExchangeConfig(dpl)),
-		settings.WithHandleEmptyExchangeInfo())
-	return setting, err
-}
-
 func GetConfig(
 	dpl deployment.Deployment,
 	authEnbl bool,
@@ -80,7 +50,8 @@ func GetConfig(
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
 	secretConfigFile string,
-	settingDataFile string,
+	enabledExchanges []common.ExchangeName,
+	assetStorage storage.Interface,
 ) (*Config, error) {
 	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
 	if err != nil {
@@ -138,10 +109,11 @@ func GetConfig(
 		Archive:                 s3archive,
 		World:                   theWorld,
 		ContractAddresses:       contractAddressConf,
+		AssetStorage:            assetStorage,
 	}
 
 	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingDataFile); err != nil {
+	if err = config.AddCoreConfig(secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, enabledExchanges, assetStorage); err != nil {
 		return nil, err
 	}
 	return config, nil

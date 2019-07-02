@@ -189,10 +189,10 @@ func (ep *Endpoint) GetTradeHistory(symbol string) (exchange.BinanceTradeHistory
 }
 
 func (ep *Endpoint) GetAccountTradeHistory(
-	base, quote common.Token,
+	baseSymbol, quoteSymbol string,
 	fromID string) (exchange.BinaAccountTradeHistory, error) {
 
-	symbol := strings.ToUpper(fmt.Sprintf("%s%s", base.ID, quote.ID))
+	symbol := strings.ToUpper(fmt.Sprintf("%s%s", baseSymbol, quoteSymbol))
 	result := exchange.BinaAccountTradeHistory{}
 	params := map[string]string{
 		"symbol": symbol,

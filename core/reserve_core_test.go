@@ -32,21 +32,6 @@ func (te testExchange) CancelOrder(id string, base, quote string) error {
 func (te testExchange) MarshalText() (text []byte, err error) {
 	return []byte("bittrex"), nil
 }
-func (te testExchange) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
-	return common.ExchangePrecisionLimit{}, nil
-}
-func (te testExchange) GetFee() (common.ExchangeFees, error) {
-	return common.ExchangeFees{}, nil
-}
-func (te testExchange) GetMinDeposit() (common.ExchangesMinDeposit, error) {
-	return common.ExchangesMinDeposit{}, nil
-}
-func (te testExchange) GetInfo() (common.ExchangeInfo, error) {
-	return common.ExchangeInfo{}, nil
-}
-func (te testExchange) UpdateDepositAddress(token common.Token, address string) error {
-	return nil
-}
 
 func (te testExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil

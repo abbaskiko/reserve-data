@@ -3,18 +3,19 @@ package configuration
 import (
 	"log"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
-	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
+	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
 )
 
 const (
@@ -34,6 +35,8 @@ const (
 	huobiPublicEndpointValue        = "https://api.huobi.pro"
 	huobiAuthenticatedEndpointFlag  = "huobi-authenticated-endpoint"
 	huobiAuthenticatedEndpointValue = "https://api.huobi.pro"
+
+	defaultDB = "reserve_data"
 )
 
 // NewBinanceCliFlags returns new configuration flags for Binance.
@@ -146,8 +149,8 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 	)
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
-		config.Setting,
 		config.ContractAddresses,
+		config.AssetStorage,
 	)
 	if err != nil {
 		log.Printf("failed to create block chain err=%s", err.Error())
@@ -156,13 +159,18 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	// old contract addresses are used for events fetcher
 
-	tokens, err := config.Setting.GetInternalTokens()
+	assets, err := config.AssetStorage.GetSetRateAssets()
 	if err != nil {
 		log.Printf("Can't get the list of Internal Tokens for indices: %s", err.Error())
 		return nil, err
 	}
 
-	err = bc.LoadAndSetTokenIndices(common.GetTokenAddressesList(tokens))
+	var assetAddrs []ethereum.Address
+	for _, asset := range assets {
+		assetAddrs = append(assetAddrs, asset.Address)
+	}
+
+	err = bc.LoadAndSetTokenIndices(assetAddrs)
 	if err != nil {
 		log.Printf("Can't load and set token indices: %s", err.Error())
 		return nil, err
@@ -179,7 +187,6 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.World,
 		config.FetcherRunner,
 		dpl == deployment.Simulation,
-		config.Setting,
 		config.ContractAddresses,
 	)
 	for _, ex := range config.FetcherExchanges {
@@ -197,7 +204,6 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.Archive,
 		config.DataGlobalStorage,
 		config.Exchanges,
-		config.Setting,
 	)
 
 	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses)
@@ -233,12 +239,22 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 		return nil, err
 	}
 
-	settingDataFile, err := NewSettingDataFileFromContext(c)
+	db, err := NewDBFromContext(c)
+	if err != nil {
+		return nil, err
+	}
+
+	sr, err := postgres.NewStorage(db)
 	if err != nil {
 		return nil, err
 	}
 
 	secretConfigFile := NewSecretConfigFileFromContext(c)
+
+	enabledExchanges, err := NewExchangesFromContext(c)
+	if err != nil {
+		return nil, err
+	}
 
 	config, err := GetConfig(
 		dpl,
@@ -249,7 +265,8 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 		contractAddressConf,
 		dataFile,
 		secretConfigFile,
-		settingDataFile,
+		enabledExchanges,
+		sr,
 	)
 	if err != nil {
 		return nil, err

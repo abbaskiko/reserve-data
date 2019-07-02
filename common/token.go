@@ -1,7 +1,5 @@
 package common
 
-import ethereum "github.com/ethereum/go-ethereum/common"
-
 // TokenExchangeSetting contains necessary information on exchange to List a token on the fly
 type TokenExchangeSetting struct {
 	DepositAddress string       `json:"deposit_address"`
@@ -67,14 +65,4 @@ func (tp *TokenPair) PairID() TokenPairID {
 // GetBaseQuoteID return base and quoteID as strings
 func (tp *TokenPair) GetBaseQuoteID() (string, string) {
 	return tp.Base.ID, tp.Quote.ID
-}
-
-func GetTokenAddressesList(tokens []Token) []ethereum.Address {
-	tokenAddrs := []ethereum.Address{}
-	for _, tok := range tokens {
-		if tok.ID != "ETH" {
-			tokenAddrs = append(tokenAddrs, ethereum.HexToAddress(tok.Address))
-		}
-	}
-	return tokenAddrs
 }

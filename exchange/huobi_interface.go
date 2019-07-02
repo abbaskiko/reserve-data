@@ -3,8 +3,9 @@ package exchange
 import (
 	"math/big"
 
-	"github.com/KyberNetwork/reserve-data/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 // HuobiInterface contains the methods to interact with Huobi centralized exchange.
@@ -17,7 +18,7 @@ type HuobiInterface interface {
 
 	GetDepositAddress(token string) (HuobiDepositAddress, error)
 
-	GetAccountTradeHistory(base, quote common.Token) (HuobiTradeHistory, error)
+	GetAccountTradeHistory(baseSymbol, quoteSymbol string) (HuobiTradeHistory, error)
 
 	Withdraw(
 		token common.Token,
@@ -32,9 +33,9 @@ type HuobiInterface interface {
 
 	CancelOrder(symbol string, id uint64) (HuobiCancel, error)
 
-	DepositHistory(tokens []common.Token) (HuobiDeposits, error)
+	DepositHistory(size int) (HuobiDeposits, error)
 
-	WithdrawHistory(token []common.Token) (HuobiWithdraws, error)
+	WithdrawHistory(size int) (HuobiWithdraws, error)
 
 	OrderStatus(symbol string, id uint64) (HuobiOrder, error)
 }

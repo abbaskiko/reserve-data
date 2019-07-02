@@ -31,16 +31,7 @@ type Data interface {
 	UpdateFeedConfiguration(string, bool) error
 	GetFeedConfiguration() ([]common.FeedConfiguration, error)
 
-	GetExchangeStatus() (common.ExchangesStatus, error)
-	UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error
-
-	UpdateExchangeNotification(exchange, action, tokenPair string, from, to uint64, isWarning bool, msg string) error
-	GetNotifications() (common.ExchangeNotifications, error)
-
 	GetTradeHistory(fromTime, toTime uint64) (common.AllTradeHistory, error)
-
-	UpdateFetcherConfiguration(common.FetcherConfiguration) error
-	GetAllFetcherConfiguration() (common.FetcherConfiguration, error)
 
 	Run() error
 	RunStorageController() error

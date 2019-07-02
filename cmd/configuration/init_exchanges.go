@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"sync"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -15,77 +14,50 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/settings"
+	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 type ExchangePool struct {
 	Exchanges map[common.ExchangeID]interface{}
 }
 
-func AsyncUpdateDepositAddress(ex common.Exchange, tokenID, addr string, wait *sync.WaitGroup, setting *settings.Settings) {
-	defer wait.Done()
-	token, err := setting.GetTokenByID(tokenID)
-	if err != nil {
-		log.Panicf("ERROR: Can't get token %s. Error: %s", tokenID, err.Error())
-	}
-	if err := ex.UpdateDepositAddress(token, addr); err != nil {
-		log.Printf("WARNING: Cant not update deposit address for token %s on exchange %s (%s), this will need to be manually update", tokenID, ex.ID(), err.Error())
-	}
-}
-
 func NewExchangePool(
 	secretConfigFile string,
 	blockchain *blockchain.BaseBlockchain,
 	dpl deployment.Deployment,
-	setting *settings.Settings,
 	bi binance.Interface,
 	hi huobi.Interface,
+	enabledExchanges []common.ExchangeName,
+	sr storage.SettingReader,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
-	exparams := settings.RunningExchanges()
-	for _, exparam := range exparams {
+	for _, exparam := range enabledExchanges {
 		switch exparam {
-		case "stable_exchange":
-			stableEx, err := exchange.NewStableEx(
-				setting,
-			)
+		case common.StableExchange:
+			stableEx, err := exchange.NewStableEx()
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange stable_exchange: (%s)", err.Error())
 			}
 			exchanges[stableEx.ID()] = stableEx
-		case "binance":
+		case common.Binance:
 			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
 			endpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
-			storage, err := binance.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "binance.db"))
+			binanceStorage, err := binance.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "binance.db"))
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
 			bin, err := exchange.NewBinance(
 				endpoint,
-				storage,
-				setting)
+				binanceStorage,
+				sr)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Binance: (%s)", err.Error())
 			}
-			addrs, err := setting.GetDepositAddresses(settings.Binance)
-			if err != nil {
-				log.Printf("INFO: Can't get Binance Deposit Addresses from Storage (%s)", err.Error())
-				addrs = make(common.ExchangeAddresses)
-			}
-			wait := sync.WaitGroup{}
-			for tokenID, addr := range addrs {
-				wait.Add(1)
-				go AsyncUpdateDepositAddress(bin, tokenID, addr.Hex(), &wait, setting)
-			}
-			wait.Wait()
-			if err = bin.UpdatePairsPrecision(); err != nil {
-				return nil, fmt.Errorf("can not Update Binance Pairs Precision: (%s)", err.Error())
-			}
 			exchanges[bin.ID()] = bin
-		case "huobi":
+		case common.Huobi:
 			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
 			endpoint := huobi.NewHuobiEndpoint(huobiSigner, hi)
-			storage, err := huobi.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "huobi.db"))
+			huobiStorage, err := huobi.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "huobi.db"))
 			if err != nil {
 				return nil, fmt.Errorf("can not create Huobi storage: (%s)", err.Error())
 			}
@@ -95,32 +67,18 @@ func NewExchangePool(
 				return nil, err
 			}
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
-			huobi, err := exchange.NewHuobi(
+			hb, err := exchange.NewHuobi(
 				endpoint,
 				blockchain,
 				intermediatorSigner,
 				intermediatorNonce,
-				storage,
-				setting,
+				huobiStorage,
+				sr,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Huobi: (%s)", err.Error())
 			}
-			addrs, err := setting.GetDepositAddresses(settings.Huobi)
-			if err != nil {
-				log.Printf("INFO: Can't get Huobi Deposit Addresses from Storage (%s)", err.Error())
-				addrs = make(common.ExchangeAddresses)
-			}
-			wait := sync.WaitGroup{}
-			for tokenID, addr := range addrs {
-				wait.Add(1)
-				go AsyncUpdateDepositAddress(huobi, tokenID, addr.Hex(), &wait, setting)
-			}
-			wait.Wait()
-			if err = huobi.UpdatePairsPrecision(); err != nil {
-				return nil, fmt.Errorf("can not Update Huobi Pairs Precision: (%s)", err.Error())
-			}
-			exchanges[huobi.ID()] = huobi
+			exchanges[hb.ID()] = hb
 		}
 	}
 	return &ExchangePool{exchanges}, nil

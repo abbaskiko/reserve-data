@@ -20,7 +20,6 @@ type ReserveData struct {
 	storageController datapruner.StorageController
 	globalStorage     GlobalStorage
 	exchanges         []common.Exchange
-	setting           Setting
 }
 
 func (rd ReserveData) CurrentGoldInfoVersion(timepoint uint64) (common.Version, error) {
@@ -124,16 +123,17 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, er
 	result.Data.PendingActivities = data.PendingActivities
 	result.Data.Block = data.Block
 	result.Data.ReserveBalances = map[string]common.BalanceResponse{}
-	for tokenID, balance := range data.ReserveBalances {
-		token, uErr := rd.setting.GetInternalTokenByID(tokenID)
-		//If the token is invalid, this must Panic
-		if uErr != nil {
-			return result, fmt.Errorf("can't get Internal token %s: (%s)", tokenID, uErr)
-		}
-		result.Data.ReserveBalances[tokenID] = balance.ToBalanceResponse(
-			token.Decimals,
-		)
-	}
+	// TODO: reserve_balance should be stored by asset_id
+	//for tokenID, balance := range data.ReserveBalances {
+	//	token, uErr := rd.setting.GetInternalTokenByID(tokenID)
+	//	//If the token is invalid, this must Panic
+	//	if uErr != nil {
+	//		return result, fmt.Errorf("can't get Internal token %s: (%s)", tokenID, uErr)
+	//	}
+	//	result.Data.ReserveBalances[tokenID] = balance.ToBalanceResponse(
+	//		token.Decimals,
+	//	)
+	//}
 	return result, err
 }
 
@@ -243,37 +243,12 @@ func (rd ReserveData) GetRate(timepoint uint64) (common.AllRateResponse, error) 
 	return result, err
 }
 
-func (rd ReserveData) GetExchangeStatus() (common.ExchangesStatus, error) {
-	return rd.setting.GetExchangeStatus()
-}
-
-func (rd ReserveData) UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error {
-	currentExchangeStatus, err := rd.setting.GetExchangeStatus()
-	if err != nil {
-		return err
-	}
-	currentExchangeStatus[exchange] = common.ExStatus{
-		Timestamp: timestamp,
-		Status:    status,
-	}
-	return rd.setting.UpdateExchangeStatus(currentExchangeStatus)
-}
-
-func (rd ReserveData) UpdateExchangeNotification(
-	exchange, action, tokenPair string, fromTime, toTime uint64, isWarning bool, msg string) error {
-	return rd.setting.UpdateExchangeNotification(exchange, action, tokenPair, fromTime, toTime, isWarning, msg)
-}
-
 func (rd ReserveData) GetRecords(fromTime, toTime uint64) ([]common.ActivityRecord, error) {
 	return rd.storage.GetAllRecords(fromTime, toTime)
 }
 
 func (rd ReserveData) GetPendingActivities() ([]common.ActivityRecord, error) {
 	return rd.storage.GetPendingActivities()
-}
-
-func (rd ReserveData) GetNotifications() (common.ExchangeNotifications, error) {
-	return rd.setting.GetExchangeNotifications()
 }
 
 //Run run fetcher
@@ -365,17 +340,6 @@ func (rd ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTradeH
 	return data, nil
 }
 
-// UpdateFetcherConfiguration save btc fetcher configuration to db
-// and return new configuration
-func (rd ReserveData) UpdateFetcherConfiguration(query common.FetcherConfiguration) error {
-	return rd.globalStorage.UpdateFetcherConfiguration(query)
-}
-
-// GetAllFetcherConfiguration returns current fetcher configuration for all tokens
-func (rd ReserveData) GetAllFetcherConfiguration() (common.FetcherConfiguration, error) {
-	return rd.globalStorage.GetAllFetcherConfiguration()
-}
-
 func (rd ReserveData) RunStorageController() error {
 	if err := rd.storageController.Runner.Start(); err != nil {
 		log.Fatalf("Storage controller runner error: %s", err.Error())
@@ -392,16 +356,16 @@ func (rd ReserveData) RunStorageController() error {
 func NewReserveData(storage Storage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,
-	exchanges []common.Exchange, setting Setting) *ReserveData {
+	exchanges []common.Exchange) *ReserveData {
 	storageController, err := datapruner.NewStorageController(storageControllerRunner, arch)
 	if err != nil {
 		panic(err)
 	}
 	return &ReserveData{
-		storage,
-		fetcher,
-		storageController,
-		globalStorage,
-		exchanges,
-		setting}
+		storage:           storage,
+		fetcher:           fetcher,
+		storageController: storageController,
+		globalStorage:     globalStorage,
+		exchanges:         exchanges,
+	}
 }

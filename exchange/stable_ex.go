@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"strings"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/settings"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 type StableEx struct {
-	setting Setting
 }
 
 func (se *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
@@ -38,14 +36,6 @@ func (se *StableEx) Address(token common.Token) (ethereum.Address, bool) {
 	return addr, supported
 }
 
-func (se *StableEx) UpdateDepositAddress(token common.Token, address string) error {
-	return errors.New("dgx doesn't support update deposit addresses")
-}
-
-func (se *StableEx) GetInfo() (common.ExchangeInfo, error) {
-	return se.setting.GetExchangeInfo(settings.StableExchange)
-}
-
 func (se *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
 	log.Print("WARNING stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
 	result := make(common.ExchangeInfo)
@@ -60,50 +50,9 @@ func (se *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (com
 	return result, nil
 }
 
-func (se *StableEx) GetExchangeInfo(pair common.TokenPairID) (common.ExchangePrecisionLimit, error) {
-	exInfo, err := se.setting.GetExchangeInfo(settings.StableExchange)
-	if err != nil {
-		return common.ExchangePrecisionLimit{}, err
-	}
-	data, err := exInfo.Get(pair)
-	return data, err
-}
-
-func (se *StableEx) GetFee() (common.ExchangeFees, error) {
-	return se.setting.GetFee(settings.StableExchange)
-}
-
 // ID must return the exact string or else simulation will fail
 func (se *StableEx) ID() common.ExchangeID {
-	return common.ExchangeID(settings.StableExchange.String())
-}
-
-func (se *StableEx) TokenPairs() ([]common.TokenPair, error) {
-	result := []common.TokenPair{}
-	exInfo, err := se.setting.GetExchangeInfo(settings.StableExchange)
-	if err != nil {
-		return nil, err
-	}
-	for pair := range exInfo.GetData() {
-		pairIDs := strings.Split(string(pair), "-")
-		if len(pairIDs) != 2 {
-			return result, fmt.Errorf("PairID %s is malformed", string(pair))
-		}
-		tok1, uErr := se.setting.GetTokenByID(pairIDs[0])
-		if uErr != nil {
-			return result, fmt.Errorf("cant get Token %s, %s", pairIDs[0], uErr)
-		}
-		tok2, uErr := se.setting.GetTokenByID(pairIDs[1])
-		if uErr != nil {
-			return result, fmt.Errorf("cant get Token %s, %s", pairIDs[1], uErr)
-		}
-		tokPair := common.TokenPair{
-			Base:  tok1,
-			Quote: tok2,
-		}
-		result = append(result, tokPair)
-	}
-	return result, nil
+	return common.ExchangeID(common.StableExchange.String())
 }
 
 func (se *StableEx) Name() string {
@@ -132,7 +81,7 @@ func (se *StableEx) CancelOrder(id, base, quote string) error {
 	return errors.New("dgx doesn't support trade cancelling")
 }
 
-func (se *StableEx) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (se *StableEx) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
 	result := map[common.TokenPairID]common.ExchangePrice{}
 	// TODO: Get price data from dgx connector and construct valid orderbooks
 	return result, nil
@@ -176,12 +125,6 @@ func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 	return "", errors.New("not supported")
 }
 
-func (se *StableEx) GetMinDeposit() (common.ExchangesMinDeposit, error) {
-	return se.setting.GetMinDeposit(settings.StableExchange)
-}
-
-func NewStableEx(setting Setting) (*StableEx, error) {
-	return &StableEx{
-		setting,
-	}, nil
+func NewStableEx() (*StableEx, error) {
+	return &StableEx{}, nil
 }

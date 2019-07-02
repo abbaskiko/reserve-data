@@ -14,9 +14,10 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -184,9 +185,8 @@ func (ep *Endpoint) Trade(tradeType string, base, quote common.Token, rate, amou
 }
 
 //WithdrawHistory return withdraw history from huobi
-func (ep *Endpoint) WithdrawHistory(tokens []common.Token) (exchange.HuobiWithdraws, error) {
+func (ep *Endpoint) WithdrawHistory(size int) (exchange.HuobiWithdraws, error) {
 	result := exchange.HuobiWithdraws{}
-	size := len(tokens) * 2
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.AuthenticatedEndpoint()+"/v1/query/deposit-withdraw",
@@ -209,9 +209,8 @@ func (ep *Endpoint) WithdrawHistory(tokens []common.Token) (exchange.HuobiWithdr
 }
 
 //DepositHistory get deposit history from huobi
-func (ep *Endpoint) DepositHistory(tokens []common.Token) (exchange.HuobiDeposits, error) {
+func (ep *Endpoint) DepositHistory(size int) (exchange.HuobiDeposits, error) {
 	result := exchange.HuobiDeposits{}
-	size := len(tokens) * 2
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.AuthenticatedEndpoint()+"/v1/query/deposit-withdraw",
@@ -325,9 +324,9 @@ func (ep *Endpoint) GetInfo() (exchange.HuobiInfo, error) {
 }
 
 func (ep *Endpoint) GetAccountTradeHistory(
-	base, quote common.Token) (exchange.HuobiTradeHistory, error) {
+	baseSymbol, quoteSymbol string) (exchange.HuobiTradeHistory, error) {
 	result := exchange.HuobiTradeHistory{}
-	symbol := strings.ToUpper(fmt.Sprintf("%s%s", base.ID, quote.ID))
+	symbol := strings.ToUpper(fmt.Sprintf("%s%s", baseSymbol, quoteSymbol))
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.AuthenticatedEndpoint()+"/v1/order/orders",

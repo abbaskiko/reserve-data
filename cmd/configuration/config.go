@@ -18,7 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/metric"
-	"github.com/KyberNetwork/reserve-data/settings"
+	storagev3 "github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
@@ -46,7 +46,7 @@ type Config struct {
 	BackupEthereumEndpoints []string
 	Blockchain              *blockchain.BaseBlockchain
 
-	Setting           *settings.Settings
+	AssetStorage      storagev3.Interface
 	ContractAddresses *common.ContractAddressConfiguration
 }
 
@@ -57,17 +57,12 @@ func (c *Config) AddCoreConfig(
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
-	settingDataFile string,
+	enabledExchanges []common.ExchangeName,
+	sr storagev3.SettingReader,
 ) error {
-	setting, err := GetSetting(dpl, contractAddressConf, settingDataFile)
-	if err != nil {
-		log.Printf("Failed to create setting: %s", err.Error())
-		return err
-	}
-	c.Setting = setting
 	dataStorage, err := storage.NewBoltStorage(dataFile)
 	if err != nil {
-		log.Printf("failed create new data storage database")
+		log.Printf("failed create new data storage database err=%s", err.Error())
 		return err
 	}
 
@@ -116,9 +111,10 @@ func (c *Config) AddCoreConfig(
 		secretConfigFile,
 		c.Blockchain,
 		dpl,
-		c.Setting,
 		bi,
 		hi,
+		enabledExchanges,
+		sr,
 	)
 	if err != nil {
 		log.Printf("Can not create exchangePool: %s", err.Error())

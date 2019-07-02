@@ -3,8 +3,9 @@ package exchange
 import (
 	"math/big"
 
-	"github.com/KyberNetwork/reserve-data/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 // BinanceInterface contains the methods to interact with Binance centralized exchange.
@@ -19,7 +20,7 @@ type BinanceInterface interface {
 
 	GetDepositAddress(tokenID string) (Binadepositaddress, error)
 
-	GetAccountTradeHistory(base, quote common.Token, fromID string) (BinaAccountTradeHistory, error)
+	GetAccountTradeHistory(baseSymbol, quoteSymbol, fromID string) (BinaAccountTradeHistory, error)
 
 	Withdraw(
 		token common.Token,

@@ -4,15 +4,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"sync"
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/data/fetcher/httprunner"
 	"github.com/KyberNetwork/reserve-data/data/storage"
-	"github.com/KyberNetwork/reserve-data/settings"
-	settingstorage "github.com/KyberNetwork/reserve-data/settings/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
@@ -101,25 +98,10 @@ func TestExchangeDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	boltSettingStorage, err := settingstorage.NewBoltSettingStorage(filepath.Join(tmpDir, "setting.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	tokenSetting, err := settings.NewTokenSetting(boltSettingStorage)
-	if err != nil {
-		t.Fatal(err)
-	}
-	addressConf := &common.ContractAddressConfiguration{}
-	exchangeSetting, err := settings.NewExchangeSetting(boltSettingStorage)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	setting, err := settings.NewSetting(tokenSetting, addressConf, exchangeSetting)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fetcher := NewFetcher(fstorage, fstorage, &world.TheWorld{}, runner, true, setting, addressConf)
+	addressConf := &common.ContractAddressConfiguration{}
+
+	fetcher := NewFetcher(fstorage, fstorage, &world.TheWorld{}, runner, true, addressConf)
 
 	// mock normal data
 	var estatuses, bstatuses sync.Map

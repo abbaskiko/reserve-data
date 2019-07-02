@@ -19,25 +19,4 @@ type Storage interface {
 	RemovePendingStableTokenParams() error
 	GetPendingStableTokenParams() (map[string]interface{}, error)
 	GetStableTokenParams() (map[string]interface{}, error)
-
-	StorePendingTargetQtyV2(value []byte) error
-	ConfirmTargetQtyV2(value []byte) error
-	RemovePendingTargetQtyV2() error
-	GetPendingTargetQtyV2() (common.TokenTargetQtyV2, error)
-	GetTargetQtyV2() (common.TokenTargetQtyV2, error)
-
-	StorePendingPWIEquationV2([]byte) error
-	GetPendingPWIEquationV2() (common.PWIEquationRequestV2, error)
-	StorePWIEquationV2(data string) error
-	RemovePendingPWIEquationV2() error
-	GetPWIEquationV2() (common.PWIEquationRequestV2, error)
-
-	StorePendingRebalanceQuadratic([]byte) error
-	GetPendingRebalanceQuadratic() (common.RebalanceQuadraticRequest, error)
-	ConfirmRebalanceQuadratic(data []byte) error
-	RemovePendingRebalanceQuadratic() error
-	GetRebalanceQuadratic() (common.RebalanceQuadraticRequest, error)
-	// StorePendingtokenUpdateInfo will attempt to store targetquanty v2. PWIequation V2 and RebalanceQuadracticRequest into database
-	// it returns error if occur.
-	ConfirmTokenUpdateInfo(common.TokenTargetQtyV2, common.PWIEquationRequestV2, common.RebalanceQuadraticRequest) error
 }

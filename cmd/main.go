@@ -76,8 +76,8 @@ func run(c *cli.Context) error {
 		conf.AuthEngine,
 		dpl,
 		bc,
-		conf.Setting,
 		conf.ContractAddresses,
+		conf.AssetStorage,
 	)
 
 	if !dryRun {

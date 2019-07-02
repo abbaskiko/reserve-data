@@ -27,21 +27,7 @@ func (te TestExchange) CancelOrder(id, base, quote string) error {
 func (te TestExchange) MarshalText() (text []byte, err error) {
 	return []byte("bittrex"), nil
 }
-func (te TestExchange) GetExchangeInfo(pair TokenPairID) (ExchangePrecisionLimit, error) {
-	return ExchangePrecisionLimit{}, nil
-}
-func (te TestExchange) GetFee() (ExchangeFees, error) {
-	return ExchangeFees{}, nil
-}
-func (te TestExchange) GetMinDeposit() (ExchangesMinDeposit, error) {
-	return ExchangesMinDeposit{}, nil
-}
-func (te TestExchange) GetInfo() (ExchangeInfo, error) {
-	return ExchangeInfo{}, nil
-}
-func (te TestExchange) UpdateDepositAddress(token Token, address string) error {
-	return nil
-}
+
 func (te TestExchange) GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error) {
 	return ExchangeTradeHistory{}, nil
 }

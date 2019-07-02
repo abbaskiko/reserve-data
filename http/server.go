@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -22,6 +21,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/metric"
+	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 const (
@@ -43,8 +43,8 @@ type Server struct {
 	auth                Authentication
 	r                   *gin.Engine
 	blockchain          Blockchain
-	setting             Setting
 	contractAddressConf *common.ContractAddressConfiguration
+	assetStorage        storage.Interface
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -166,21 +166,22 @@ func (s *Server) Price(c *gin.Context) {
 	base := c.Param("base")
 	quote := c.Param("quote")
 	log.Printf("Getting price for %s - %s \n", base, quote)
-	pair, err := s.setting.NewTokenPairFromID(base, quote)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason("Token pair is not supported"))
-	} else {
-		data, err := s.app.GetOnePrice(pair.PairID(), getTimePoint(c, true))
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-		} else {
-			httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
-				"version":   data.Version,
-				"timestamp": data.Timestamp,
-				"exchanges": data.Data,
-			}))
-		}
-	}
+	// TODO: change getting price to accept asset id
+	//pair, err := s.setting.NewTokenPairFromID(base, quote)
+	//if err != nil {
+	//	httputil.ResponseFailure(c, httputil.WithReason("Token pair is not supported"))
+	//} else {
+	//	data, err := s.app.GetOnePrice(pair.PairID(), getTimePoint(c, true))
+	//	if err != nil {
+	//		httputil.ResponseFailure(c, httputil.WithError(err))
+	//	} else {
+	//		httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
+	//			"version":   data.Version,
+	//			"timestamp": data.Timestamp,
+	//			"exchanges": data.Data,
+	//		}))
+	//	}
+	//}
 }
 
 func (s *Server) AuthDataVersion(c *gin.Context) {
@@ -251,21 +252,22 @@ func (s *Server) SetRate(c *gin.Context) {
 	if !ok {
 		return
 	}
-	tokenAddrs := postForm.Get("tokens")
+	//tokenAddrs := postForm.Get("tokens")
 	buys := postForm.Get("buys")
 	sells := postForm.Get("sells")
 	block := postForm.Get("block")
 	afpMid := postForm.Get("afp_mid")
 	msgs := strings.Split(postForm.Get("msgs"), "-")
 	tokens := []common.Token{}
-	for _, tok := range strings.Split(tokenAddrs, "-") {
-		token, err := s.setting.GetInternalTokenByID(tok)
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-		tokens = append(tokens, token)
-	}
+	// TODO: set rate should accept asset_id
+	//for _, tok := range strings.Split(tokenAddrs, "-") {
+	//	token, err := s.assetStorage.GetInternalTokenByID(tok)
+	//	if err != nil {
+	//		httputil.ResponseFailure(c, httputil.WithError(err))
+	//		return
+	//	}
+	//	tokens = append(tokens, token)
+	//}
 	bigBuys := []*big.Int{}
 	for _, rate := range strings.Split(buys, "-") {
 		r, err := hexutil.DecodeBig(rate)
@@ -313,8 +315,8 @@ func (s *Server) Trade(c *gin.Context) {
 	}
 
 	exchangeParam := c.Param("exchangeid")
-	baseTokenParam := postForm.Get("base")
-	quoteTokenParam := postForm.Get("quote")
+	//baseTokenParam := postForm.Get("base")
+	//quoteTokenParam := postForm.Get("quote")
 	amountParam := postForm.Get("amount")
 	rateParam := postForm.Get("rate")
 	typeParam := postForm.Get("type")
@@ -324,16 +326,17 @@ func (s *Server) Trade(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	base, err := s.setting.GetInternalTokenByID(baseTokenParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	quote, err := s.setting.GetInternalTokenByID(quoteTokenParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
+	// TODO: trade should accept asset_id instead of exchange id
+	//base, err := s.setting.GetInternalTokenByID(baseTokenParam)
+	//if err != nil {
+	//	httputil.ResponseFailure(c, httputil.WithError(err))
+	//	return
+	//}
+	//quote, err := s.setting.GetInternalTokenByID(quoteTokenParam)
+	//if err != nil {
+	//	httputil.ResponseFailure(c, httputil.WithError(err))
+	//	return
+	//}
 	amount, err := strconv.ParseFloat(amountParam, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -349,6 +352,9 @@ func (s *Server) Trade(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Trade type of %s is not supported.", typeParam)))
 		return
 	}
+
+	// TODO: remove me
+	var base, quote common.Token
 	id, done, remaining, finished, err := s.core.Trade(
 		exchange, typeParam, base, quote, rate, amount, getTimePoint(c, false))
 	if err != nil {
@@ -398,7 +404,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 	}
 
 	exchangeParam := c.Param("exchangeid")
-	tokenParam := postForm.Get("token")
+	//tokenParam := postForm.Get("token")
 	amountParam := postForm.Get("amount")
 
 	exchange, err := common.GetExchange(exchangeParam)
@@ -406,16 +412,18 @@ func (s *Server) Withdraw(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	token, err := s.setting.GetInternalTokenByID(tokenParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
+	// TODO: withdraw should accept asset_id instead of token
+	//token, err := s.setting.GetInternalTokenByID(tokenParam)
+	//if err != nil {
+	//	httputil.ResponseFailure(c, httputil.WithError(err))
+	//	return
+	//}
 	amount, err := hexutil.DecodeBig(amountParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+	var token common.Token // TODO: remove me
 	log.Printf("Withdraw %s %s from %s\n", amount.Text(10), token.ID, exchange.ID())
 	id, err := s.core.Withdraw(exchange, token, amount, getTimePoint(c, false))
 	if err != nil {
@@ -433,23 +441,26 @@ func (s *Server) Deposit(c *gin.Context) {
 
 	exchangeParam := c.Param("exchangeid")
 	amountParam := postForm.Get("amount")
-	tokenParam := postForm.Get("token")
+	//tokenParam := postForm.Get("token")
 
 	exchange, err := common.GetExchange(exchangeParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	token, err := s.setting.GetInternalTokenByID(tokenParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
+	// TODO: deposit should accept asset_id instead of symbol
+	//token, err := s.setting.GetInternalTokenByID(tokenParam)
+	//if err != nil {
+	//	httputil.ResponseFailure(c, httputil.WithError(err))
+	//	return
+	//}
 	amount, err := hexutil.DecodeBig(amountParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+
+	var token common.Token // TODO: remove me
 	log.Printf("Depositing %s %s to %s\n", amount.Text(10), token.ID, exchange.ID())
 	id, err := s.core.Deposit(exchange, token, amount, getTimePoint(c, false))
 	if err != nil {
@@ -512,18 +523,19 @@ func (s *Server) Metrics(c *gin.Context) {
 	if !ok {
 		return
 	}
-	tokenParam := postForm.Get("tokens")
+	//tokenParam := postForm.Get("tokens")
 	fromParam := postForm.Get("from")
 	toParam := postForm.Get("to")
 	tokens := []common.Token{}
-	for _, tok := range strings.Split(tokenParam, "-") {
-		token, err := s.setting.GetInternalTokenByID(tok)
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-		tokens = append(tokens, token)
-	}
+	// TODO: this should accept asset_id instead of symbol
+	//for _, tok := range strings.Split(tokenParam, "-") {
+	//	token, err := s.setting.GetInternalTokenByID(tok)
+	//	if err != nil {
+	//		httputil.ResponseFailure(c, httputil.WithError(err))
+	//		return
+	//	}
+	//	tokens = append(tokens, token)
+	//}
 	from, err := strconv.ParseUint(fromParam, 10, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -617,67 +629,6 @@ func (s *Server) StoreMetrics(c *gin.Context) {
 // 	}
 // 	return nil
 // }
-
-//GetExchangeInfo return exchange info of one exchange if it is given exchangeID
-//otherwise return all exchanges info
-func (s *Server) GetExchangeInfo(c *gin.Context) {
-	exchangeParam := c.Query("exchangeid")
-	if exchangeParam == "" {
-		data := map[string]common.ExchangeInfo{}
-		for _, ex := range common.SupportedExchanges {
-			exchangeInfo, err := ex.GetInfo()
-			if err != nil {
-				httputil.ResponseFailure(c, httputil.WithError(err))
-				return
-			}
-			responseData := exchangeInfo.GetData()
-			// if err := ValidateExchangeInfo(exchangeInfo, responseData); err != nil {
-			// 	httputil.ResponseFailure(c, httputil.WithError(err))
-			// 	return
-			// }
-			data[string(ex.ID())] = responseData
-		}
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-		return
-	}
-	exchange, err := common.GetExchange(exchangeParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	exchangeInfo, err := exchange.GetInfo()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(exchangeInfo.GetData()))
-}
-
-func (s *Server) GetFee(c *gin.Context) {
-	data := map[string]common.ExchangeFees{}
-	for _, exchange := range common.SupportedExchanges {
-		fee, err := exchange.GetFee()
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-		data[string(exchange.ID())] = fee
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (s *Server) GetMinDeposit(c *gin.Context) {
-	data := map[string]common.ExchangesMinDeposit{}
-	for _, exchange := range common.SupportedExchanges {
-		minDeposit, err := exchange.GetMinDeposit()
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-		data[string(exchange.ID())] = minDeposit
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
 
 func (s *Server) GetTradeHistory(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -783,80 +734,6 @@ func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	return fromTime, toTime, true
 }
 
-func (s *Server) GetExchangesStatus(c *gin.Context) {
-	data, err := s.app.GetExchangeStatus()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (s *Server) UpdateExchangeStatus(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"exchange", "status", "timestamp"}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
-	exchange := postForm.Get("exchange")
-	status, err := strconv.ParseBool(postForm.Get("status"))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	timestamp, err := strconv.ParseUint(postForm.Get("timestamp"), 10, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	_, err = common.GetExchange(strings.ToLower(exchange))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	err = s.app.UpdateExchangeStatus(exchange, status, timestamp)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (s *Server) ExchangeNotification(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{
-		"exchange", "action", "token", "fromTime", "toTime", "isWarning"}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
-
-	exchange := postForm.Get("exchange")
-	action := postForm.Get("action")
-	tokenPair := postForm.Get("token")
-	from, _ := strconv.ParseUint(postForm.Get("fromTime"), 10, 64)
-	to, _ := strconv.ParseUint(postForm.Get("toTime"), 10, 64)
-	isWarning, _ := strconv.ParseBool(postForm.Get("isWarning"))
-	msg := postForm.Get("msg")
-
-	err := s.app.UpdateExchangeNotification(exchange, action, tokenPair, from, to, isWarning, msg)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (s *Server) GetNotifications(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
-	data, err := s.app.GetNotifications()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
 func (s *Server) SetStableTokenParams(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfigurePermission})
 	if !ok {
@@ -934,119 +811,8 @@ func (s *Server) GetStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
-//SetTargetQtyV2 set token target quantity version 2
-func (s *Server) SetTargetQtyV2(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfigurePermission})
-	if !ok {
-		return
-	}
-	value := []byte(postForm.Get("value"))
-	if len(value) > maxDataSize {
-		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
-		return
-	}
-	var tokenTargetQty common.TokenTargetQtyV2
-	if err := json.Unmarshal(value, &tokenTargetQty); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-
-	for tokenID := range tokenTargetQty {
-		if _, err := s.setting.GetInternalTokenByID(tokenID); err != nil {
-			err = fmt.Errorf("TokenID: %s, error: %s", tokenID, err)
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-	}
-
-	err := s.metric.StorePendingTargetQtyV2(value)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (s *Server) GetPendingTargetQtyV2(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
-	if !ok {
-		return
-	}
-
-	data, err := s.metric.GetPendingTargetQtyV2()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-func (s *Server) ConfirmTargetQtyV2(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
-	value := []byte(postForm.Get("value"))
-	if len(value) > maxDataSize {
-		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
-		return
-	}
-	err := s.metric.ConfirmTargetQtyV2(value)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (s *Server) CancelTargetQtyV2(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
-	err := s.metric.RemovePendingTargetQtyV2()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (s *Server) GetTargetQtyV2(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
-	if !ok {
-		return
-	}
-
-	data, err := s.metric.GetTargetQtyV2()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
 func (s *Server) register() {
-
 	if s.core != nil && s.app != nil {
-		stt := s.r.Group("/setting")
-		stt.POST("/set-token-update", s.SetTokenUpdate)
-		stt.GET("/pending-token-update", s.GetPendingTokenUpdates)
-		stt.POST("/confirm-token-update", s.ConfirmTokenUpdate)
-		stt.POST("/reject-token-update", s.RejectTokenUpdate)
-		stt.GET("/token-settings", s.TokenSettings)
-		stt.POST("/update-exchange-fee", s.UpdateExchangeFee)
-		stt.POST("/update-exchange-mindeposit", s.UpdateExchangeMinDeposit)
-		stt.POST("/update-deposit-address", s.UpdateDepositAddress)
-		stt.POST("/update-exchange-info", s.UpdateExchangeInfo)
-		stt.GET("/all-settings", s.GetAllSetting)
-		stt.GET("/internal-tokens", s.GetInternalTokens)
-		stt.GET("/active-tokens", s.GetActiveTokens)
-		stt.GET("/token-by-address", s.GetTokenByAddress)
-		stt.GET("/active-token-by-id", s.GetActiveTokenByID)
-		stt.GET("/address", s.GetAddress)
-		stt.GET("/ping", s.ReadyToServe)
-		v2 := s.r.Group("/v2")
-
 		s.r.GET("/prices-version", s.AllPricesVersion)
 		s.r.GET("/prices", s.AllPrices)
 		s.r.GET("/prices/:base/:quote", s.Price)
@@ -1065,16 +831,7 @@ func (s *Server) register() {
 		s.r.POST("/withdraw/:exchangeid", s.Withdraw)
 		s.r.POST("/trade/:exchangeid", s.Trade)
 		s.r.POST("/setrates", s.SetRate)
-		s.r.GET("/exchangeinfo", s.GetExchangeInfo)
-		s.r.GET("/exchangefees", s.GetFee)
-		s.r.GET("/exchange-min-deposit", s.GetMinDeposit)
 		s.r.GET("/tradehistory", s.GetTradeHistory)
-
-		v2.GET("/targetqty", s.GetTargetQtyV2)
-		v2.GET("/pendingtargetqty", s.GetPendingTargetQtyV2)
-		v2.POST("/settargetqty", s.SetTargetQtyV2)
-		v2.POST("/confirmtargetqty", s.ConfirmTargetQtyV2)
-		v2.POST("/canceltargetqty", s.CancelTargetQtyV2)
 
 		s.r.GET("/timeserver", s.GetTimeServer)
 
@@ -1086,24 +843,6 @@ func (s *Server) register() {
 		s.r.POST("/holdsetrate", s.HoldSetrate)
 		s.r.POST("/enablesetrate", s.EnableSetrate)
 
-		v2.GET("/pwis-equation", s.GetPWIEquationV2)
-		v2.GET("/pending-pwis-equation", s.GetPendingPWIEquationV2)
-		v2.POST("/set-pwis-equation", s.SetPWIEquationV2)
-		v2.POST("/confirm-pwis-equation", s.ConfirmPWIEquationV2)
-		v2.POST("/reject-pwis-equation", s.RejectPWIEquationV2)
-
-		s.r.GET("/rebalance-quadratic", s.GetRebalanceQuadratic)
-		s.r.GET("/pending-rebalance-quadratic", s.GetPendingRebalanceQuadratic)
-		s.r.POST("/set-rebalance-quadratic", s.SetRebalanceQuadratic)
-		s.r.POST("/confirm-rebalance-quadratic", s.ConfirmRebalanceQuadratic)
-		s.r.POST("/reject-rebalance-quadratic", s.RejectRebalanceQuadratic)
-
-		s.r.GET("/get-exchange-status", s.GetExchangesStatus)
-		s.r.POST("/update-exchange-status", s.UpdateExchangeStatus)
-
-		s.r.POST("/exchange-notification", s.ExchangeNotification)
-		s.r.GET("/exchange-notifications", s.GetNotifications)
-
 		s.r.POST("/set-stable-token-params", s.SetStableTokenParams)
 		s.r.POST("/confirm-stable-token-params", s.ConfirmStableTokenParams)
 		s.r.POST("/reject-stable-token-params", s.RejectStableTokenParams)
@@ -1114,9 +853,6 @@ func (s *Server) register() {
 		s.r.GET("/btc-feed", s.GetBTCData)
 		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
-
-		s.r.POST("/set-fetcher-configuration", s.UpdateFetcherConfiguration)
-		s.r.GET("/get-all-fetcher-configuration", s.GetAllFetcherConfiguration)
 	}
 }
 
@@ -1136,8 +872,9 @@ func NewHTTPServer(
 	authEngine Authentication,
 	dpl deployment.Deployment,
 	bc Blockchain,
-	setting Setting,
-	contractAddressConf *common.ContractAddressConfiguration) *Server {
+	contractAddressConf *common.ContractAddressConfiguration,
+	assetStorage storage.Interface,
+) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
 		"https://bf15053001464a5195a81bc41b644751:eff41ac715114b20b940010208271b13@sentry.io/228067",
@@ -1167,7 +904,7 @@ func NewHTTPServer(
 		auth:                authEngine,
 		r:                   r,
 		blockchain:          bc,
-		setting:             setting,
 		contractAddressConf: contractAddressConf,
+		assetStorage:        assetStorage,
 	}
 }
