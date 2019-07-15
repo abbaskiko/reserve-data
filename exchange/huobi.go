@@ -250,14 +250,13 @@ func (h *Huobi) Trade(tradeType string, base common.Token, quote common.Token, r
 	return result.OrderID, done, remaining, finished, err
 }
 
+//Withdraw return withdraw id from huobi
 func (h *Huobi) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	withdrawID, err := h.interf.Withdraw(token, amount, address)
 	if err != nil {
 		return "", err
 	}
-	// this magical logic base on inspection on huobi website
-	result := withdrawID + "01"
-	return result, err
+	return withdrawID, err
 }
 
 func (h *Huobi) CancelOrder(id, base, quote string) error {
@@ -605,7 +604,10 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 	}
 	//check tx2 deposit status from Huobi
 	for _, deposit := range deposits.Data {
-		// log.Printf("deposit tx is %s, with token %s", deposit.TxHash, deposit.Currency)
+		log.Printf("deposit tx is %s, with token %s", deposit.TxHash, deposit.Currency)
+		if deposit.TxHash[0:2] != "0x" {
+			deposit.TxHash = "0x" + deposit.TxHash
+		}
 		if deposit.TxHash == tx2Entry.Hash {
 			if deposit.State == "safe" || deposit.State == "confirmed" {
 				data := common.NewTXEntry(tx2Entry.Hash,
@@ -741,6 +743,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 	return "", nil
 }
 
+//WithdrawStatus return withdraw status from huobi
 func (h *Huobi) WithdrawStatus(
 	id, currency string, amount float64, timepoint uint64) (string, string, error) {
 	withdrawID, _ := strconv.ParseUint(id, 10, 64)
@@ -750,12 +753,15 @@ func (h *Huobi) WithdrawStatus(
 	}
 	withdraws, err := h.interf.WithdrawHistory(tokens)
 	if err != nil {
-		return "", "", nil
+		return "", "", fmt.Errorf("can't get withdraw history from huobi: %s", err.Error())
 	}
 	log.Printf("Huobi Withdrawal id: %d", withdrawID)
 	for _, withdraw := range withdraws.Data {
 		if withdraw.TxID == withdrawID {
 			if withdraw.State == "confirmed" {
+				if withdraw.TxHash[0:2] != "0x" {
+					withdraw.TxHash = "0x" + withdraw.TxHash
+				}
 				return common.ExchangeStatusDone, withdraw.TxHash, nil
 			}
 			return "", withdraw.TxHash, nil
