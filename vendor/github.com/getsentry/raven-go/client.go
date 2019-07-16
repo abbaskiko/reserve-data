@@ -14,7 +14,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	mrand "math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,7 +24,6 @@ import (
 	"time"
 
 	"github.com/certifi/gocertifi"
-	pkgErrors "github.com/pkg/errors"
 )
 
 const (
@@ -37,8 +35,8 @@ var (
 	ErrPacketDropped         = errors.New("raven: packet dropped")
 	ErrUnableToUnmarshalJSON = errors.New("raven: unable to unmarshal JSON")
 	ErrMissingUser           = errors.New("raven: dsn missing public key and/or password")
+	ErrMissingPrivateKey     = errors.New("raven: dsn missing private key")
 	ErrMissingProjectID      = errors.New("raven: dsn missing project id")
-	ErrInvalidSampleRate     = errors.New("raven: sample rate should be between 0 and 1")
 )
 
 type Severity string
@@ -68,11 +66,6 @@ func (timestamp *Timestamp) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (timestamp Timestamp) Format(format string) string {
-	t := time.Time(timestamp)
-	return t.Format(format)
-}
-
 // An Interface is a Sentry interface that will be serialized as JSON.
 // It must implement json.Marshaler or use json struct tags.
 type Interface interface {
@@ -87,8 +80,6 @@ type Culpriter interface {
 type Transport interface {
 	Send(url, authHeader string, packet *Packet) error
 }
-
-type Extra map[string]interface{}
 
 type outgoingPacket struct {
 	packet *Packet
@@ -156,50 +147,32 @@ type Packet struct {
 	Logger    string    `json:"logger"`
 
 	// Optional
-	Platform    string            `json:"platform,omitempty"`
-	Culprit     string            `json:"culprit,omitempty"`
-	ServerName  string            `json:"server_name,omitempty"`
-	Release     string            `json:"release,omitempty"`
-	Environment string            `json:"environment,omitempty"`
-	Tags        Tags              `json:"tags,omitempty"`
-	Modules     map[string]string `json:"modules,omitempty"`
-	Fingerprint []string          `json:"fingerprint,omitempty"`
-	Extra       Extra             `json:"extra,omitempty"`
+	Platform    string                 `json:"platform,omitempty"`
+	Culprit     string                 `json:"culprit,omitempty"`
+	ServerName  string                 `json:"server_name,omitempty"`
+	Release     string                 `json:"release,omitempty"`
+	Environment string                 `json:"environment,omitempty"`
+	Tags        Tags                   `json:"tags,omitempty"`
+	Modules     map[string]string      `json:"modules,omitempty"`
+	Fingerprint []string               `json:"fingerprint,omitempty"`
+	Extra       map[string]interface{} `json:"extra,omitempty"`
 
 	Interfaces []Interface `json:"-"`
 }
 
 // NewPacket constructs a packet with the specified message and interfaces.
 func NewPacket(message string, interfaces ...Interface) *Packet {
-	extra := Extra{}
-	setExtraDefaults(extra)
+	extra := map[string]interface{}{
+		"runtime.Version":      runtime.Version(),
+		"runtime.NumCPU":       runtime.NumCPU(),
+		"runtime.GOMAXPROCS":   runtime.GOMAXPROCS(0), // 0 just returns the current value
+		"runtime.NumGoroutine": runtime.NumGoroutine(),
+	}
 	return &Packet{
 		Message:    message,
 		Interfaces: interfaces,
 		Extra:      extra,
 	}
-}
-
-// NewPacketWithExtra constructs a packet with the specified message, extra information, and interfaces.
-func NewPacketWithExtra(message string, extra Extra, interfaces ...Interface) *Packet {
-	if extra == nil {
-		extra = Extra{}
-	}
-	setExtraDefaults(extra)
-
-	return &Packet{
-		Message:    message,
-		Interfaces: interfaces,
-		Extra:      extra,
-	}
-}
-
-func setExtraDefaults(extra Extra) Extra {
-	extra["runtime.Version"] = runtime.Version()
-	extra["runtime.NumCPU"] = runtime.NumCPU()
-	extra["runtime.GOMAXPROCS"] = runtime.GOMAXPROCS(0) // 0 just returns the current value
-	extra["runtime.NumGoroutine"] = runtime.NumGoroutine()
-	return extra
 }
 
 // Init initializes required fields in a packet. It is typically called by
@@ -344,7 +317,7 @@ func newTransport() Transport {
 	} else {
 		t.Client = &http.Client{
 			Transport: &http.Transport{
-				Proxy:           http.ProxyFromEnvironment,
+				Proxy: http.ProxyFromEnvironment,
 				TLSClientConfig: &tls.Config{RootCAs: rootCAs},
 			},
 		}
@@ -354,15 +327,12 @@ func newTransport() Transport {
 
 func newClient(tags map[string]string) *Client {
 	client := &Client{
-		Transport:  newTransport(),
-		Tags:       tags,
-		context:    &context{},
-		sampleRate: 1.0,
-		queue:      make(chan *outgoingPacket, MaxQueueBuffer),
+		Transport: newTransport(),
+		Tags:      tags,
+		context:   &context{},
+		queue:     make(chan *outgoingPacket, MaxQueueBuffer),
 	}
 	client.SetDSN(os.Getenv("SENTRY_DSN"))
-	client.SetRelease(os.Getenv("SENTRY_RELEASE"))
-	client.SetEnvironment(os.Getenv("SENTRY_ENVIRONMENT"))
 	return client
 }
 
@@ -407,7 +377,6 @@ type Client struct {
 	authHeader  string
 	release     string
 	environment string
-	sampleRate  float32
 
 	// default logger name (leave empty for 'root')
 	defaultLoggerName string
@@ -470,7 +439,10 @@ func (client *Client) SetDSN(dsn string) error {
 		return ErrMissingUser
 	}
 	publicKey := uri.User.Username()
-	secretKey, hasSecretKey := uri.User.Password()
+	secretKey, ok := uri.User.Password()
+	if !ok {
+		return ErrMissingPrivateKey
+	}
 	uri.User = nil
 
 	if idx := strings.LastIndex(uri.Path, "/"); idx != -1 {
@@ -483,11 +455,7 @@ func (client *Client) SetDSN(dsn string) error {
 
 	client.url = uri.String()
 
-	if hasSecretKey {
-		client.authHeader = fmt.Sprintf("Sentry sentry_version=4, sentry_key=%s, sentry_secret=%s", publicKey, secretKey)
-	} else {
-		client.authHeader = fmt.Sprintf("Sentry sentry_version=4, sentry_key=%s", publicKey)
-	}
+	client.authHeader = fmt.Sprintf("Sentry sentry_version=4, sentry_key=%s, sentry_secret=%s", publicKey, secretKey)
 
 	return nil
 }
@@ -516,18 +484,6 @@ func (client *Client) SetDefaultLoggerName(name string) {
 	client.defaultLoggerName = name
 }
 
-// SetSampleRate sets how much sampling we want on client side
-func (client *Client) SetSampleRate(rate float32) error {
-	client.mu.Lock()
-	defer client.mu.Unlock()
-
-	if rate < 0 || rate > 1 {
-		return ErrInvalidSampleRate
-	}
-	client.sampleRate = rate
-	return nil
-}
-
 // SetRelease sets the "release" tag on the default *Client
 func SetRelease(release string) { DefaultClient.SetRelease(release) }
 
@@ -538,9 +494,6 @@ func SetEnvironment(environment string) { DefaultClient.SetEnvironment(environme
 func SetDefaultLoggerName(name string) {
 	DefaultClient.SetDefaultLoggerName(name)
 }
-
-// SetSampleRate sets the "sample rate" on the degault *Client
-func SetSampleRate(rate float32) error { return DefaultClient.SetSampleRate(rate) }
 
 func (client *Client) worker() {
 	for outgoingPacket := range client.queue {
@@ -562,15 +515,6 @@ func (client *Client) Capture(packet *Packet, captureTags map[string]string) (ev
 
 	if client == nil {
 		// return a chan that always returns nil when the caller receives from it
-		close(ch)
-		return
-	}
-
-	if client.sampleRate < 1.0 && mrand.Float32() > client.sampleRate {
-		return
-	}
-
-	if packet == nil {
 		close(ch)
 		return
 	}
@@ -609,13 +553,8 @@ func (client *Client) Capture(packet *Packet, captureTags map[string]string) (ev
 		return
 	}
 
-	if packet.Release == "" {
-		packet.Release = release
-	}
-
-	if packet.Environment == "" {
-		packet.Environment = environment
-	}
+	packet.Release = release
+	packet.Environment = environment
 
 	outgoingPacket := &outgoingPacket{packet, ch}
 
@@ -679,9 +618,7 @@ func (client *Client) CaptureMessageAndWait(message string, tags map[string]stri
 
 	packet := NewPacket(message, append(append(interfaces, client.context.interfaces()...), &Message{message, nil})...)
 	eventID, ch := client.Capture(packet, tags)
-	if eventID != "" {
-		<-ch
-	}
+	<-ch
 
 	return eventID
 }
@@ -698,18 +635,11 @@ func (client *Client) CaptureError(err error, tags map[string]string, interfaces
 		return ""
 	}
 
-	if err == nil {
-		return ""
-	}
-
 	if client.shouldExcludeErr(err.Error()) {
 		return ""
 	}
 
-	extra := extractExtra(err)
-	cause := pkgErrors.Cause(err)
-
-	packet := NewPacketWithExtra(err.Error(), extra, append(append(interfaces, client.context.interfaces()...), NewException(cause, GetOrNewStacktrace(cause, 1, 3, client.includePaths)))...)
+	packet := NewPacket(err.Error(), append(append(interfaces, client.context.interfaces()...), NewException(err, NewStacktrace(1, 3, client.includePaths)))...)
 	eventID, _ := client.Capture(packet, tags)
 
 	return eventID
@@ -731,14 +661,9 @@ func (client *Client) CaptureErrorAndWait(err error, tags map[string]string, int
 		return ""
 	}
 
-	extra := extractExtra(err)
-	cause := pkgErrors.Cause(err)
-
-	packet := NewPacketWithExtra(err.Error(), extra, append(append(interfaces, client.context.interfaces()...), NewException(cause, GetOrNewStacktrace(cause, 1, 3, client.includePaths)))...)
+	packet := NewPacket(err.Error(), append(append(interfaces, client.context.interfaces()...), NewException(err, NewStacktrace(1, 3, client.includePaths)))...)
 	eventID, ch := client.Capture(packet, tags)
-	if eventID != "" {
-		<-ch
-	}
+	<-ch
 
 	return eventID
 }
@@ -814,9 +739,7 @@ func (client *Client) CapturePanicAndWait(f func(), tags map[string]string, inte
 
 		var ch chan error
 		errorID, ch = client.Capture(packet, tags)
-		if errorID != "" {
-			<-ch
-		}
+		<-ch
 	}()
 
 	f()
@@ -945,7 +868,7 @@ func (t *HTTPTransport) Send(url, authHeader string, packet *Packet) error {
 	io.Copy(ioutil.Discard, res.Body)
 	res.Body.Close()
 	if res.StatusCode != 200 {
-		return fmt.Errorf("raven: got http status %d - x-sentry-error: %s", res.StatusCode, res.Header.Get("X-Sentry-Error"))
+		return fmt.Errorf("raven: got http status %d", res.StatusCode)
 	}
 	return nil
 }
