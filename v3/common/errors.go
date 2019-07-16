@@ -26,4 +26,7 @@ var (
 	ErrAssetTargetMissing = errors.New("missing asset target configuration")
 	// ErrBadTradingPairConfiguration is returned when bad trading pair configuration is given.
 	ErrBadTradingPairConfiguration = errors.New("bad trading pair configuration")
+	// ErrDepositAddressMissing is returned when asset is transferable but no deposit address is
+	// provided.
+	ErrDepositAddressMissing = errors.New("missing deposit address for transferable asset")
 )

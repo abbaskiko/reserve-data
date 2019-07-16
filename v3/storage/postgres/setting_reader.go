@@ -10,7 +10,7 @@ import (
 )
 
 // TODO: rewritten this function to filter the set rate strategy in SQL query
-func (s *Storage) GetSetRateAssets() ([]common.Asset, error) {
+func (s *Storage) GetTransferableAssets() ([]common.Asset, error) {
 	var results []common.Asset
 	allAssets, err := s.GetAssets()
 	if err != nil {

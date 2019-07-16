@@ -87,170 +87,211 @@ func TestStorage_CreateAsset(t *testing.T) {
 	var tests = []struct {
 		msg string
 
-		// input
-		symbol    string
-		name      string
-		address   ethereum.Address
-		decimals  uint64
-		setRate   commonv3.SetRate
-		rebalance bool
-		isQuote   bool
-		pwi       *commonv3.AssetPWI
-		rb        *commonv3.RebalanceQuadratic
-		exchanges []commonv3.AssetExchange
-		target    *commonv3.AssetTarget
+		symbol       string
+		name         string
+		address      ethereum.Address
+		decimals     uint64
+		transferable bool
+		setRate      commonv3.SetRate
+		rebalance    bool
+		isQuote      bool
+		pwi          *commonv3.AssetPWI
+		rb           *commonv3.RebalanceQuadratic
+		exchanges    []commonv3.AssetExchange
+		target       *commonv3.AssetTarget
 
-		// output
 		assertFn func(*testing.T, uint64, error)
 	}{
 		{
-			msg:       "creating asset without address for non quote token",
-			symbol:    "ABC",
-			name:      "ABC Advanced Token",
-			decimals:  12,
-			setRate:   commonv3.BTCFeed,
-			rebalance: true,
-			isQuote:   false,
-			pwi:       testPWI,
-			rb:        testRb,
-			exchanges: testAssetExchanges,
-			target:    testAssetTarget,
+			msg:          "creating asset without address for transferable token",
+			symbol:       "ABC",
+			name:         "ABC Advanced Token",
+			decimals:     12,
+			transferable: true,
+			setRate:      commonv3.BTCFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges:    testAssetExchanges,
+			target:       testAssetTarget,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Equal(t, commonv3.ErrAddressMissing, err)
 			},
 		},
 		{
-			msg:       "creating asset successfully",
-			symbol:    "ABC",
-			name:      "ABC Advanced Token",
-			address:   ethereum.HexToAddress("0xB8c77482e45F1F44dE1745F52C74426C631bDD52"),
-			decimals:  12,
-			setRate:   commonv3.BTCFeed,
-			rebalance: true,
-			isQuote:   false,
-			pwi:       testPWI,
-			rb:        testRb,
-			exchanges: testAssetExchanges,
-			target:    testAssetTarget,
+			msg:          "creating asset successfully",
+			symbol:       "ABC",
+			name:         "ABC Advanced Token",
+			address:      ethereum.HexToAddress("0xB8c77482e45F1F44dE1745F52C74426C631bDD52"),
+			decimals:     12,
+			transferable: false,
+			setRate:      commonv3.BTCFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges:    testAssetExchanges,
+			target:       testAssetTarget,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.NoError(t, err)
 				assert.NotZero(t, id)
 			},
 		},
 		{
-			msg:       "creating asset with duplicated symbol",
-			symbol:    "ABC",
-			name:      "ABC Advanced Token 2",
-			address:   ethereum.HexToAddress("0xD2b6Ba1e59373A2750F3D9fE9178706fBd42F1F2"),
-			decimals:  12,
-			setRate:   commonv3.BTCFeed,
-			rebalance: true,
-			isQuote:   false,
-			pwi:       testPWI,
-			rb:        testRb,
-			exchanges: testAssetExchanges,
-			target:    testAssetTarget,
+			msg:          "creating asset with duplicated symbol",
+			symbol:       "ABC",
+			name:         "ABC Advanced Token 2",
+			address:      ethereum.HexToAddress("0xD2b6Ba1e59373A2750F3D9fE9178706fBd42F1F2"),
+			decimals:     12,
+			transferable: false,
+			setRate:      commonv3.BTCFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges:    testAssetExchanges,
+			target:       testAssetTarget,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Equal(t, commonv3.ErrSymbolExists, err)
 			},
 		},
 		{
-			msg:       "creating order with duplicated address",
-			symbol:    "ABC-2",
-			name:      "ABC Advanced Token-2",
-			address:   ethereum.HexToAddress("0xB8c77482e45F1F44dE1745F52C74426C631bDD52"),
-			decimals:  12,
-			setRate:   commonv3.GoldFeed,
-			rebalance: false,
-			isQuote:   false,
-			pwi:       testPWI,
-			rb:        nil,
-			exchanges: nil,
-			target:    nil,
+			msg:          "creating order with duplicated address",
+			symbol:       "ABC-2",
+			name:         "ABC Advanced Token-2",
+			address:      ethereum.HexToAddress("0xB8c77482e45F1F44dE1745F52C74426C631bDD52"),
+			decimals:     12,
+			transferable: false,
+			setRate:      commonv3.GoldFeed,
+			rebalance:    false,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           nil,
+			exchanges:    nil,
+			target:       nil,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Equal(t, commonv3.ErrAddressExists, err)
 			},
 		},
 		{
-			msg:       "creating a quote token with null address",
-			symbol:    "BTCXYZ",
-			name:      "Bitcoin Fork XYZ",
-			decimals:  12,
-			setRate:   commonv3.SetRateNotSet,
-			rebalance: false,
-			isQuote:   true,
-			rb:        nil,
-			exchanges: nil,
-			target:    nil,
+			msg:          "creating a quote token with null address",
+			symbol:       "BTCXYZ",
+			name:         "Bitcoin Fork XYZ",
+			decimals:     12,
+			transferable: false,
+			setRate:      commonv3.SetRateNotSet,
+			rebalance:    false,
+			isQuote:      true,
+			rb:           nil,
+			exchanges:    nil,
+			target:       nil,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.NoError(t, err)
 			},
 		},
 		{
-			msg:       "creating asset with set rate strategy but no pwi configuration",
-			symbol:    "Dodge Coin",
-			name:      "Barf",
-			address:   ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
-			decimals:  9,
-			setRate:   commonv3.ExchangeFeed,
-			rebalance: true,
-			isQuote:   false,
-			rb:        testRb,
-			exchanges: testAssetExchanges,
-			target:    testAssetTarget,
+			msg:          "creating asset with set rate strategy but no pwi configuration",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: false,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			rb:           testRb,
+			exchanges:    testAssetExchanges,
+			target:       testAssetTarget,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Equal(t, commonv3.ErrPWIMissing, err)
 			},
 		},
 		{
-			msg:       "creating asset with rebalance but no rebalance quadratic",
-			symbol:    "Dodge Coin",
-			name:      "Barf",
-			address:   ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
-			decimals:  9,
-			setRate:   commonv3.ExchangeFeed,
-			rebalance: true,
-			isQuote:   false,
-			pwi:       testPWI,
-			rb:        nil,
-			exchanges: testAssetExchanges,
-			target:    testAssetTarget,
+			msg:          "creating asset with rebalance but no rebalance quadratic",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: false,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           nil,
+			exchanges:    testAssetExchanges,
+			target:       testAssetTarget,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Equal(t, commonv3.ErrRebalanceQuadraticMissing, err)
 			},
 		},
 		{
-			msg:       "creating asset with rebalance but no exchange configuration",
-			symbol:    "Dodge Coin",
-			name:      "Barf",
-			address:   ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
-			decimals:  9,
-			setRate:   commonv3.ExchangeFeed,
-			rebalance: true,
-			isQuote:   false,
-			pwi:       testPWI,
-			rb:        testRb,
-			exchanges: nil,
-			target:    testAssetTarget,
+			msg:          "creating asset with rebalance but no exchange configuration",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: false,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges:    nil,
+			target:       testAssetTarget,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Equal(t, commonv3.ErrAssetExchangeMissing, err)
 			},
 		},
 		{
-			msg:       "creating asset with rebalance but no target configuration",
-			symbol:    "Dodge Coin",
-			name:      "Barf",
-			address:   ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
-			decimals:  9,
-			setRate:   commonv3.ExchangeFeed,
-			rebalance: true,
-			isQuote:   false,
-			pwi:       testPWI,
-			rb:        testRb,
-			exchanges: testAssetExchanges,
-			target:    nil,
+			msg:          "creating asset with rebalance but no target configuration",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: false,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges:    testAssetExchanges,
+			target:       nil,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Equal(t, commonv3.ErrAssetTargetMissing, err)
+			},
+		},
+		{
+			msg:          "creating transferable asset but with no deposit address",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: true,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges: []commonv3.AssetExchange{
+				{
+					ExchangeID:        uint64(common.Binance),
+					Symbol:            "DGC",
+					MinDeposit:        1,
+					WithdrawFee:       2,
+					PricePrecision:    3,
+					AmountPrecision:   4,
+					AmountLimitMin:    5,
+					AmountLimitMax:    6,
+					PriceLimitMin:     7,
+					PriceLimitMax:     8,
+					TargetRecommended: 12.0,
+					TargetRatio:       12.1,
+				},
+			},
+			target: testAssetTarget,
+			assertFn: func(t *testing.T, id uint64, err error) {
+				assert.Equal(t, commonv3.ErrDepositAddressMissing, err)
 			},
 		},
 	}
@@ -262,6 +303,7 @@ func TestStorage_CreateAsset(t *testing.T) {
 			tc.name,
 			tc.address,
 			tc.decimals,
+			tc.transferable,
 			tc.setRate,
 			tc.rebalance,
 			tc.isQuote,
@@ -301,6 +343,7 @@ func TestStorage_GetAssets(t *testing.T) {
 		"ABC Advanced Token",
 		ethereum.HexToAddress("0xB8c77482e45F1F44dE1745F52C74426C631bDD52"),
 		12,
+		true,
 		commonv3.BTCFeed,
 		true,
 		false,
@@ -321,6 +364,7 @@ func TestStorage_GetAssets(t *testing.T) {
 	assert.Equal(t, "ABC Advanced Token", testAsset.Name)
 	assert.Equal(t, ethereum.HexToAddress("0xB8c77482e45F1F44dE1745F52C74426C631bDD52"), testAsset.Address)
 	assert.Equal(t, uint64(12), testAsset.Decimals)
+	assert.Equal(t, true, testAsset.Transferable)
 	assert.Equal(t, commonv3.BTCFeed, testAsset.SetRate)
 	assert.True(t, testAsset.Rebalance)
 	assert.False(t, testAsset.IsQuote)
@@ -361,8 +405,9 @@ func TestStorage_GetAsset(t *testing.T) {
 	testAssetID, err := s.CreateAsset(
 		"BTCXYZ",
 		"Bitcoin Fork XYZ",
-		ethereum.Address{},
+		ethereum.HexToAddress("0xBdd566c70B9B943547210c0106c3b320c5079f3D"),
 		12,
+		true,
 		commonv3.BTCFeed,
 		true,
 		true,
@@ -377,8 +422,9 @@ func TestStorage_GetAsset(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "BTCXYZ", testAsset.Symbol)
 	assert.Equal(t, "Bitcoin Fork XYZ", testAsset.Name)
-	assert.Equal(t, ethereum.Address{}, testAsset.Address)
+	assert.Equal(t, ethereum.HexToAddress("0xBdd566c70B9B943547210c0106c3b320c5079f3D"), testAsset.Address)
 	assert.Equal(t, uint64(12), testAsset.Decimals)
+	assert.Equal(t, true, testAsset.Transferable)
 	assert.Equal(t, commonv3.BTCFeed, testAsset.SetRate)
 	assert.True(t, testAsset.Rebalance)
 	assert.True(t, testAsset.IsQuote)
@@ -407,6 +453,7 @@ func TestStorage_UpdateAsset(t *testing.T) {
 		"ABC Advanced Token",
 		ethereum.HexToAddress("0xB8c77482e45F1F44dE1745F52C74426C631bDD52"),
 		12,
+		false,
 		commonv3.BTCFeed,
 		true,
 		false,
@@ -422,6 +469,7 @@ func TestStorage_UpdateAsset(t *testing.T) {
 		"DEF Super Token",
 		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
 		12,
+		false,
 		commonv3.GoldFeed,
 		true,
 		true,
@@ -537,6 +585,7 @@ func TestStorage_ChangeAssetAddress(t *testing.T) {
 		"ABC Advanced Token",
 		oldAddress,
 		12,
+		false,
 		commonv3.BTCFeed,
 		true,
 		false,
@@ -552,6 +601,7 @@ func TestStorage_ChangeAssetAddress(t *testing.T) {
 		"DEF Super Token",
 		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
 		12,
+		false,
 		commonv3.GoldFeed,
 		true,
 		true,
@@ -627,6 +677,7 @@ func TestStorage_GetTradingPairSymbols2(t *testing.T) {
 		"Non Quote Token",
 		ethereum.HexToAddress("0x930e2f445A5a0e3c98b7C385125f95C24d772961"),
 		12,
+		false,
 		commonv3.SetRateNotSet,
 		false,
 		false,
@@ -642,6 +693,7 @@ func TestStorage_GetTradingPairSymbols2(t *testing.T) {
 		"ABC Advanced Token",
 		ethereum.HexToAddress("0xB42b3F0C10385df057f7374d7Aa884571E71791b"),
 		12,
+		false,
 		commonv3.SetRateNotSet,
 		false,
 		true,
@@ -672,6 +724,7 @@ func TestStorage_GetTradingPairSymbols2(t *testing.T) {
 		"DEF Super Token",
 		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
 		12,
+		false,
 		commonv3.ExchangeFeed,
 		true,
 		false,
@@ -708,6 +761,7 @@ func TestStorage_GetTradingPairSymbols2(t *testing.T) {
 		"DEF Super Token",
 		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
 		12,
+		false,
 		commonv3.ExchangeFeed,
 		true,
 		false,
@@ -744,6 +798,7 @@ func TestStorage_GetTradingPairSymbols2(t *testing.T) {
 		"DEF Super Token",
 		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
 		12,
+		false,
 		commonv3.ExchangeFeed,
 		true,
 		false,
@@ -780,6 +835,7 @@ func TestStorage_GetTradingPairSymbols2(t *testing.T) {
 		"DEF Super Token",
 		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
 		12,
+		false,
 		commonv3.ExchangeFeed,
 		true,
 		false,
@@ -855,6 +911,7 @@ func TestStorage_GetMinNotional(t *testing.T) {
 		"ABC Advanced Token",
 		ethereum.HexToAddress("0xB42b3F0C10385df057f7374d7Aa884571E71791b"),
 		12,
+		false,
 		commonv3.SetRateNotSet,
 		false,
 		true,
@@ -885,6 +942,7 @@ func TestStorage_GetMinNotional(t *testing.T) {
 		"DEF Super Token",
 		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
 		12,
+		false,
 		commonv3.ExchangeFeed,
 		true,
 		false,
@@ -934,4 +992,77 @@ func TestStorage_Initialization(t *testing.T) {
 	require.NoError(t, err)
 	_, err = NewStorage(db)
 	require.NoError(t, err)
+}
+
+func TestStorage_UpdateDepositAddress(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	require.NoError(t, err)
+
+	testAssetID, err := s.CreateAsset(
+		"ABC",
+		"ABC Advanced Token",
+		ethereum.HexToAddress("0xB42b3F0C10385df057f7374d7Aa884571E71791b"),
+		12,
+		false,
+		commonv3.SetRateNotSet,
+		false,
+		false,
+		nil,
+		nil,
+		[]commonv3.AssetExchange{
+			{
+				ExchangeID:      uint64(common.Binance),
+				Symbol:          "ABC",
+				DepositAddress:  ethereum.HexToAddress("0x118ee757dD8841F81903E1C1d7d7Aa88e376cC39"),
+				MinDeposit:      1,
+				WithdrawFee:     2,
+				PricePrecision:  3,
+				AmountPrecision: 4,
+				AmountLimitMin:  5,
+				AmountLimitMax:  6,
+				PriceLimitMin:   7,
+				PriceLimitMax:   8,
+				TradingPairs:    nil,
+			},
+		},
+		testAssetTarget,
+	)
+	require.NoError(t, err)
+	testAsset, err := s.GetAsset(testAssetID)
+	require.NoError(t, err)
+	err = s.UpdateDepositAddress(
+		testAsset.ID,
+		uint64(common.Binance),
+		ethereum.HexToAddress("0x09344477fDc71748216a7b8BbE7F2013B893DeF8"))
+	require.NoError(t, err)
+	testAsset, err = s.GetAsset(testAssetID)
+	require.NoError(t, err)
+	var found = false
+	for _, ae := range testAsset.Exchanges {
+		if ae.ExchangeID == uint64(common.Binance) {
+			assert.Equal(
+				t,
+				ethereum.HexToAddress("0x09344477fDc71748216a7b8BbE7F2013B893DeF8"),
+				ae.DepositAddress)
+			found = true
+		}
+	}
+	assert.True(t, found)
+
+	err = s.UpdateDepositAddress(
+		999,
+		uint64(common.Binance),
+		ethereum.HexToAddress("0x38194E93995aE1F0c828342ABDe767f6117d42C3"))
+	assert.Equal(t, commonv3.ErrNotFound, err)
+
+	err = s.UpdateDepositAddress(
+		testAsset.ID,
+		uint64(common.Huobi),
+		ethereum.HexToAddress("0x38194E93995aE1F0c828342ABDe767f6117d42C3"))
+	assert.Equal(t, commonv3.ErrNotFound, err)
 }

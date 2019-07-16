@@ -117,6 +117,7 @@ type Asset struct {
 	Address            ethereum.Address    `json:"address"`
 	OldAddresses       []ethereum.Address  `json:"old_addresses"`
 	Decimals           uint64              `json:"decimals"`
+	Transferable       bool                `json:"transferable"`
 	SetRate            SetRate             `json:"set_rate"`
 	Rebalance          bool                `json:"rebalance"`
 	IsQuote            bool                `json:"is_quote"`

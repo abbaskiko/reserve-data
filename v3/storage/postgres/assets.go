@@ -17,13 +17,14 @@ import (
 const addressesUniqueConstraint = "addresses_address_key"
 
 type createAssetParams struct {
-	Symbol    string `db:"symbol"`
-	Name      string `db:"name"`
-	Address   string `db:"address"`
-	Decimals  uint64 `db:"decimals"`
-	SetRate   string `db:"set_rate"`
-	Rebalance bool   `db:"rebalance"`
-	IsQuote   bool   `db:"is_quote"`
+	Symbol       string  `db:"symbol"`
+	Name         string  `db:"name"`
+	Address      *string `db:"address"`
+	Decimals     uint64  `db:"decimals"`
+	Transferable bool    `db:"transferable"`
+	SetRate      string  `db:"set_rate"`
+	Rebalance    bool    `db:"rebalance"`
+	IsQuote      bool    `db:"is_quote"`
 
 	AskA                   *float64 `db:"ask_a"`
 	AskB                   *float64 `db:"ask_b"`
@@ -50,6 +51,7 @@ func (s *Storage) CreateAsset(
 	symbol, name string,
 	address ethereum.Address,
 	decimals uint64,
+	transferable bool,
 	setRate common.SetRate,
 	rebalance, isQuote bool,
 	pwi *common.AssetPWI,
@@ -64,25 +66,32 @@ func (s *Storage) CreateAsset(
 	}
 	defer rollbackUnlessCommitted(tx)
 
-	if common.IsZeroAddress(address) {
-		if isQuote {
-			log.Printf("creating quote asset without address symbol=%s is_quote=%t", symbol, isQuote)
-		} else {
-			log.Printf("refusing to create non-quote asset without address")
-			return 0, common.ErrAddressMissing
-		}
-	} else {
-		log.Printf("creating new asset symbol=%s adress=%s", symbol, address.String())
+	if transferable && common.IsZeroAddress(address) {
+		return 0, common.ErrAddressMissing
 	}
 
+	for _, exchange := range exchanges {
+		if transferable && common.IsZeroAddress(exchange.DepositAddress) {
+			return 0, common.ErrDepositAddressMissing
+		}
+	}
+
+	log.Printf("creating new asset symbol=%s adress=%s", symbol, address.String())
+
+	var addressParam *string
+	if !common.IsZeroAddress(address) {
+		addressHex := address.String()
+		addressParam = &addressHex
+	}
 	arg := createAssetParams{
-		Symbol:    symbol,
-		Name:      name,
-		Address:   address.String(),
-		Decimals:  decimals,
-		SetRate:   setRate.String(),
-		Rebalance: rebalance,
-		IsQuote:   isQuote,
+		Symbol:       symbol,
+		Name:         name,
+		Address:      addressParam,
+		Decimals:     decimals,
+		Transferable: transferable,
+		SetRate:      setRate.String(),
+		Rebalance:    rebalance,
+		IsQuote:      isQuote,
 	}
 
 	if pwi != nil {
@@ -152,12 +161,19 @@ func (s *Storage) CreateAsset(
 	}
 
 	for _, exchange := range exchanges {
-		var assetExchangeID uint64
+		var (
+			assetExchangeID     uint64
+			depositAddressParam *string
+		)
+		if !common.IsZeroAddress(exchange.DepositAddress) {
+			depositAddressHex := exchange.DepositAddress.String()
+			depositAddressParam = &depositAddressHex
+		}
 		err := tx.NamedStmt(s.stmts.newAssetExchange).Get(&assetExchangeID, struct {
 			ExchangeID        uint64  `db:"exchange_id"`
 			AssetID           uint64  `db:"asset_id"`
 			Symbol            string  `db:"symbol"`
-			DepositAddress    string  `db:"deposit_address"`
+			DepositAddress    *string `db:"deposit_address"`
 			MinDeposit        float64 `db:"min_deposit"`
 			WithdrawFee       float64 `db:"withdraw_fee"`
 			PricePrecision    int64   `db:"price_precision"`
@@ -172,7 +188,7 @@ func (s *Storage) CreateAsset(
 			ExchangeID:        exchange.ExchangeID,
 			AssetID:           assetID,
 			Symbol:            exchange.Symbol,
-			DepositAddress:    exchange.DepositAddress.String(),
+			DepositAddress:    depositAddressParam,
 			MinDeposit:        exchange.MinDeposit,
 			WithdrawFee:       exchange.WithdrawFee,
 			PricePrecision:    exchange.PricePrecision,
@@ -318,6 +334,7 @@ type assetDB struct {
 	Address      sql.NullString `db:"address"`
 	OldAddresses pq.StringArray `db:"old_addresses"`
 	Decimals     uint64         `db:"decimals"`
+	Transferable bool           `db:"transferable"`
 	SetRate      string         `db:"set_rate"`
 	Rebalance    bool           `db:"rebalance"`
 	IsQuote      bool           `db:"is_quote"`
@@ -348,15 +365,16 @@ type assetDB struct {
 
 func (adb *assetDB) ToCommon() (common.Asset, error) {
 	result := common.Asset{
-		ID:        adb.ID,
-		Symbol:    adb.Symbol,
-		Name:      adb.Name,
-		Address:   ethereum.Address{},
-		Decimals:  adb.Decimals,
-		Rebalance: adb.Rebalance,
-		IsQuote:   adb.IsQuote,
-		Created:   adb.Created,
-		Updated:   adb.Updated,
+		ID:           adb.ID,
+		Symbol:       adb.Symbol,
+		Name:         adb.Name,
+		Address:      ethereum.Address{},
+		Decimals:     adb.Decimals,
+		Transferable: adb.Transferable,
+		Rebalance:    adb.Rebalance,
+		IsQuote:      adb.IsQuote,
+		Created:      adb.Created,
+		Updated:      adb.Updated,
 	}
 
 	if adb.Address.Valid {
@@ -640,4 +658,19 @@ func (s *Storage) ChangeAssetAddress(id uint64, address ethereum.Address) error 
 		return fmt.Errorf("failed to update asset err=%s", pErr)
 	}
 	return nil
+}
+
+func (s *Storage) UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error {
+	var updated uint64
+	err := s.stmts.updateDepositAddress.Get(&updated, assetID, exchangeID, address.Hex())
+	switch err {
+	case sql.ErrNoRows:
+		return common.ErrNotFound
+	case nil:
+		log.Printf("asset deposit address is updated asset_exchange_id=%d deposit_address=%s",
+			updated, address.Hex())
+		return nil
+	default:
+		return fmt.Errorf("failed to update deposit address asset_id=%d exchange_id=%d err=%s", assetID, exchangeID, err.Error())
+	}
 }

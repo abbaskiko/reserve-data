@@ -58,7 +58,7 @@ func (c *Config) AddCoreConfig(
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
 	enabledExchanges []common.ExchangeName,
-	sr storagev3.SettingReader,
+	assetStorage storagev3.Interface,
 ) error {
 	dataStorage, err := storage.NewBoltStorage(dataFile)
 	if err != nil {
@@ -114,7 +114,7 @@ func (c *Config) AddCoreConfig(
 		bi,
 		hi,
 		enabledExchanges,
-		sr,
+		assetStorage,
 	)
 	if err != nil {
 		log.Printf("Can not create exchangePool: %s", err.Error())

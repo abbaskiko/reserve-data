@@ -276,7 +276,7 @@ func (bc *Blockchain) SetQtyStepFunction(token ethereum.Address, xBuy []*big.Int
 func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
 	result := map[string]common.BalanceEntry{}
 	tokens := []ethereum.Address{}
-	assets, err := bc.sr.GetSetRateAssets()
+	assets, err := bc.sr.GetTransferableAssets()
 	if err != nil {
 		return result, err
 	}
@@ -329,7 +329,7 @@ func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.Al
 	result := common.AllRateEntry{}
 	tokenAddrs := []ethereum.Address{}
 	validTokens := []commonv3.Asset{}
-	assets, err := bc.sr.GetSetRateAssets()
+	assets, err := bc.sr.GetTransferableAssets()
 	if err != nil {
 		return result, err
 	}

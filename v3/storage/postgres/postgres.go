@@ -46,14 +46,16 @@ VALUES (unnest($1::INT[]),
 }
 
 func (s *Storage) initAssets() error {
+	ethAddr := "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	_, err := s.stmts.newAsset.Exec(&createAssetParams{
-		Symbol:    "ETH",
-		Name:      "Ethereum",
-		Address:   "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-		Decimals:  18,
-		SetRate:   v3.SetRateNotSet.String(),
-		Rebalance: false,
-		IsQuote:   true,
+		Symbol:       "ETH",
+		Name:         "Ethereum",
+		Address:      &ethAddr,
+		Decimals:     18,
+		Transferable: false,
+		SetRate:      v3.SetRateNotSet.String(),
+		Rebalance:    false,
+		IsQuote:      true,
 	})
 	return err
 }

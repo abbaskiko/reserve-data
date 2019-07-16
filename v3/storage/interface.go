@@ -14,10 +14,12 @@ type Interface interface {
 	GetExchange(id uint64) (v3.Exchange, error)
 	UpdateExchange(id uint64, opts ...UpdateExchangeOption) error
 
+	// TODO: support create multiple assets in a transaction
 	CreateAsset(
 		symbol, name string,
 		address ethereum.Address,
 		decimals uint64,
+		transferable bool,
 		setRate v3.SetRate,
 		rebalance bool,
 		isQuote bool,
@@ -30,6 +32,7 @@ type Interface interface {
 	UpdateAsset(id uint64, opts ...UpdateAssetOption) error
 	// ChangeAssetAddress make the current address address of asset old address and set new address as current.
 	ChangeAssetAddress(id uint64, address ethereum.Address) error
+	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
 
 	// TODO update precision pairs and live deposit addresses on startup
 
@@ -37,7 +40,6 @@ type Interface interface {
 	// TODO method for batch update rebalance quadratic
 	// TODO method for batch update exchange configuration
 	// TODO meethod for batch update target
-	// TODO method for update address
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
@@ -45,9 +47,8 @@ type SettingReader interface {
 	GetTradingPairSymbols(exchangeID uint64) ([]v3.TradingPairSymbols, error)
 	GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error)
 	GetAssets() ([]v3.Asset, error)
-	// GetSetRateAssets returns all assets that the set rate strategy is not not_set.
-	// TODO: this should be call ReserveAssets or something else
-	GetSetRateAssets() ([]v3.Asset, error)
+	// GetTransferableAssets returns all assets that the set rate strategy is not not_set.
+	GetTransferableAssets() ([]v3.Asset, error)
 	GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error)
 	// TODO: this method should be removed, as we will accept asset_id instead of symbol everywhere
 	GetAssetBySymbol(exchangeID uint64, symbol string) (v3.Asset, error)

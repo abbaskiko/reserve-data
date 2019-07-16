@@ -161,7 +161,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	// old contract addresses are used for events fetcher
 
-	assets, err := config.AssetStorage.GetSetRateAssets()
+	assets, err := config.AssetStorage.GetTransferableAssets()
 	if err != nil {
 		log.Printf("Can't get the list of Internal Tokens for indices: %s", err.Error())
 		return nil, err

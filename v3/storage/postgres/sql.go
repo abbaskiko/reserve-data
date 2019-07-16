@@ -27,10 +27,13 @@ CREATE TABLE IF NOT EXISTS "assets"
     id                            SERIAL PRIMARY KEY,
     symbol                        TEXT      NOT NULL UNIQUE,
     name                          TEXT      NOT NULL,
-    -- only allow null address_id if is_quote is true, reason: supports using non-ERC20 token as quote
     address_id                    INT       NULL REFERENCES addresses (id)
-        CONSTRAINT address_id_check CHECK ( address_id IS NOT NULL OR is_quote),
+        CONSTRAINT address_id_check CHECK ( address_id IS NOT NULL OR NOT transferable),
     decimals                      INT       NOT NULL,
+    -- transferable must be set to true if it is possible to withdraw/deposit 
+    -- to reserve (ETH or ERC20 tokens). If transferable is true, the address and 
+    -- deposit address of related asset_exchange records are required.
+    transferable                  BOOLEAN   NOT NULL,
     set_rate                      TEXT      NOT NULL,
     rebalance                     BOOLEAN   NOT NULL,
     is_quote                      BOOLEAN   NOT NULL,
@@ -99,9 +102,8 @@ CREATE TABLE IF NOT EXISTS "asset_exchanges"
     id                 SERIAL PRIMARY KEY,
     exchange_id        INT REFERENCES exchanges (id) NOT NULL,
     asset_id           INT REFERENCES assets (id)    NOT NULL,
-    -- TODO add constraint unique with same exchange_id
     symbol             TEXT                          NOT NULL,
-    deposit_address    TEXT                          NOT NULL,
+    deposit_address    TEXT                          NULL,
     min_deposit        FLOAT                         NOT NULL,
     withdraw_fee       FLOAT                         NOT NULL,
     price_precision    INT                           NOT NULL,
@@ -129,6 +131,7 @@ CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _name assets.symbol%TYPE,
                                      _address addresses.address%TYPE,
                                      _decimals assets.decimals%TYPE,
+                                     _transferable assets.transferable%TYPE,
                                      _set_rate assets.set_rate%TYPE,
                                      _rebalance assets.rebalance%TYPE,
                                      _is_quote assets.is_quote%TYPE,
@@ -164,6 +167,7 @@ BEGIN
                 name,
                 address_id,
                 decimals,
+                transferable,
                 set_rate,
                 rebalance,
                 is_quote,
@@ -190,6 +194,7 @@ BEGIN
             _name,
             _address_id,
             _decimals,
+            _transferable,
             _set_rate,
             _rebalance,
             _is_quote,
@@ -294,14 +299,16 @@ type preparedStmts struct {
 	newAssetExchange *sqlx.NamedStmt
 	newTradingPair   *sqlx.Stmt
 
-	getAsset           *sqlx.Stmt
-	getAssetExchange   *sqlx.Stmt
-	getTradingPair     *sqlx.Stmt
-	updateAsset        *sqlx.NamedStmt
-	changeAssetAddress *sqlx.Stmt
+	getAsset             *sqlx.Stmt
+	getAssetExchange     *sqlx.Stmt
+	getTradingPair       *sqlx.Stmt
+	updateAsset          *sqlx.NamedStmt
+	changeAssetAddress   *sqlx.Stmt
+	updateDepositAddress *sqlx.Stmt
 
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
+	getTransferableAssets *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -334,6 +341,7 @@ FROM new_asset(
              :name,
              :address,
              :decimals,
+             :transferable,
              :set_rate,
              :rebalance,
              :is_quote,
@@ -406,6 +414,7 @@ FROM new_trading_pair($1, $2, $3, $4);`
        a.address,
        array_agg(oa.address) FILTER ( WHERE oa.address IS NOT NULL ) AS old_addresses,
        assets.decimals,
+       assets.transferable,
        assets.set_rate,
        assets.rebalance,
        assets.is_quote,
@@ -438,6 +447,7 @@ GROUP BY assets.id,
          assets.name,
          a.address,
          assets.decimals,
+         assets.transferable,
          assets.set_rate,
          assets.rebalance,
          assets.is_quote,
@@ -552,6 +562,15 @@ WHERE bae.exchange_id = $1
 		return nil, err
 	}
 
+	const updateDepositAddressQuery = `UPDATE asset_exchanges
+SET deposit_address = $3
+WHERE asset_id = $1
+  AND exchange_id = $2 RETURNING id;`
+	updateDepositAddress, err := db.Preparex(updateDepositAddressQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	return &preparedStmts{
 		getExchanges:     getExchanges,
 		getExchange:      getExchange,
@@ -560,13 +579,15 @@ WHERE bae.exchange_id = $1
 		newAssetExchange: newAssetExchange,
 		newTradingPair:   newOrderBook,
 
-		getAsset:           getAsset,
-		getAssetExchange:   getAssetExchange,
-		getTradingPair:     getOrderBook,
-		updateAsset:        updateAsset,
-		changeAssetAddress: changeAssetAddress,
+		getAsset:             getAsset,
+		getAssetExchange:     getAssetExchange,
+		getTradingPair:       getOrderBook,
+		updateAsset:          updateAsset,
+		changeAssetAddress:   changeAssetAddress,
+		updateDepositAddress: updateDepositAddress,
 
 		getTradingPairSymbols: getTradingPairSymbols,
 		getMinNotional:        getMinMotional,
+		//getTransferableAssets:
 	}, nil
 }
