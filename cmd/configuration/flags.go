@@ -133,6 +133,8 @@ func NewCliFlags() []cli.Flag {
 	flags = append(flags, NewEthereumNodesCliFlags()...)
 	flags = append(flags, NewDataFileCliFlags()...)
 	flags = append(flags, NewSecretConfigCliFlag())
+	flags = append(flags, NewExchangeCliFlag())
+	flags = append(flags, NewPostgreSQLFlags(defaultDB)...)
 	flags = append(flags, cli.BoolFlag{
 		Name:   noAuthFlag,
 		Usage:  "disable core authentication",
