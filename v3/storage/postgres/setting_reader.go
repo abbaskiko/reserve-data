@@ -9,21 +9,9 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-// TODO: rewritten this function to filter the set rate strategy in SQL query
 func (s *Storage) GetTransferableAssets() ([]common.Asset, error) {
-	var results []common.Asset
-	allAssets, err := s.GetAssets()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, asset := range allAssets {
-		if asset.SetRate != common.SetRateNotSet {
-			results = append(results, asset)
-		}
-	}
-
-	return results, nil
+	transferable := true
+	return s.getAssets(&transferable)
 }
 
 type tradingPairSymbolsDB struct {

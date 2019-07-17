@@ -1066,3 +1066,79 @@ func TestStorage_UpdateDepositAddress(t *testing.T) {
 		ethereum.HexToAddress("0x38194E93995aE1F0c828342ABDe767f6117d42C3"))
 	assert.Equal(t, commonv3.ErrNotFound, err)
 }
+
+func TestStorage_GetTransferableAssets(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	require.NoError(t, err)
+
+	transferableAssetID, err := s.CreateAsset(
+		"ABC",
+		"ABC Advanced Token",
+		ethereum.HexToAddress("0xB42b3F0C10385df057f7374d7Aa884571E71791b"),
+		12,
+		true,
+		commonv3.SetRateNotSet,
+		false,
+		false,
+		nil,
+		nil,
+		[]commonv3.AssetExchange{
+			{
+				ExchangeID:      uint64(common.Binance),
+				Symbol:          "ABC",
+				DepositAddress:  ethereum.HexToAddress("0x118ee757dD8841F81903E1C1d7d7Aa88e376cC39"),
+				MinDeposit:      1,
+				WithdrawFee:     2,
+				PricePrecision:  3,
+				AmountPrecision: 4,
+				AmountLimitMin:  5,
+				AmountLimitMax:  6,
+				PriceLimitMin:   7,
+				PriceLimitMax:   8,
+				TradingPairs:    nil,
+			},
+		},
+		testAssetTarget,
+	)
+	require.NoError(t, err)
+
+	_, err = s.CreateAsset(
+		"DEF",
+		"DEF Advanced Token",
+		ethereum.Address{},
+		12,
+		false,
+		commonv3.SetRateNotSet,
+		false,
+		false,
+		nil,
+		nil,
+		[]commonv3.AssetExchange{
+			{
+				ExchangeID:      uint64(common.Binance),
+				Symbol:          "DEF",
+				MinDeposit:      1,
+				WithdrawFee:     2,
+				PricePrecision:  3,
+				AmountPrecision: 4,
+				AmountLimitMin:  5,
+				AmountLimitMax:  6,
+				PriceLimitMin:   7,
+				PriceLimitMax:   8,
+				TradingPairs:    nil,
+			},
+		},
+		testAssetTarget,
+	)
+	require.NoError(t, err)
+
+	assets, err := s.GetTransferableAssets()
+	require.NoError(t, err)
+	assert.Len(t, assets, 1)
+	assert.Equal(t, transferableAssetID, assets[0].ID)
+}

@@ -319,7 +319,7 @@ type assetExchangeDB struct {
 	ExchangeID        uint64          `db:"exchange_id"`
 	AssetID           uint64          `db:"asset_id"`
 	Symbol            string          `db:"symbol"`
-	DepositAddress    string          `db:"deposit_address"`
+	DepositAddress    sql.NullString  `db:"deposit_address"`
 	MinDeposit        float64         `db:"min_deposit"`
 	WithdrawFee       float64         `db:"withdraw_fee"`
 	PricePrecision    int64           `db:"price_precision"`
@@ -337,7 +337,6 @@ func (aedb *assetExchangeDB) ToCommon() common.AssetExchange {
 		ID:              aedb.ID,
 		ExchangeID:      aedb.ExchangeID,
 		Symbol:          aedb.Symbol,
-		DepositAddress:  ethereum.HexToAddress(aedb.DepositAddress),
 		MinDeposit:      aedb.MinDeposit,
 		WithdrawFee:     aedb.WithdrawFee,
 		PricePrecision:  aedb.PricePrecision,
@@ -347,6 +346,9 @@ func (aedb *assetExchangeDB) ToCommon() common.AssetExchange {
 		PriceLimitMin:   aedb.PriceLimitMin,
 		PriceLimitMax:   aedb.PriceLimitMax,
 		TradingPairs:    nil,
+	}
+	if aedb.DepositAddress.Valid {
+		result.DepositAddress = ethereum.HexToAddress(aedb.DepositAddress.String)
 	}
 	if aedb.TargetRecommended.Valid {
 		result.TargetRecommended = aedb.TargetRecommended.Float64
@@ -490,6 +492,10 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 }
 
 func (s *Storage) GetAssets() ([]common.Asset, error) {
+	return s.getAssets(nil)
+}
+
+func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	var (
 		allAssetDBs       []assetDB
 		allAssetExchanges []assetExchangeDB
@@ -503,7 +509,7 @@ func (s *Storage) GetAssets() ([]common.Asset, error) {
 	}
 	defer rollbackUnlessCommitted(tx)
 
-	if err := tx.Stmtx(s.stmts.getAsset).Select(&allAssetDBs, nil); err != nil {
+	if err := tx.Stmtx(s.stmts.getAsset).Select(&allAssetDBs, nil, transferable); err != nil {
 		return nil, err
 	}
 
@@ -574,7 +580,7 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 	}
 
 	log.Printf("getting asset id=%d", id)
-	err = tx.Stmtx(s.stmts.getAsset).Get(&assetDBResult, id)
+	err = tx.Stmtx(s.stmts.getAsset).Get(&assetDBResult, id, nil)
 	switch err {
 	case sql.ErrNoRows:
 		log.Printf("asset not found id=%d", id)

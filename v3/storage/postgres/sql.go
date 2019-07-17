@@ -442,6 +442,7 @@ FROM assets
          LEFT JOIN asset_old_addresses aoa on assets.id = aoa.asset_id
          LEFT JOIN addresses oa ON aoa.address_id = oa.id
 WHERE assets.id = coalesce($1, assets.id)
+  AND assets.transferable = coalesce($2, assets.transferable)
 GROUP BY assets.id,
          assets.symbol,
          assets.name,
@@ -588,6 +589,5 @@ WHERE asset_id = $1
 
 		getTradingPairSymbols: getTradingPairSymbols,
 		getMinNotional:        getMinMotional,
-		//getTransferableAssets:
 	}, nil
 }
