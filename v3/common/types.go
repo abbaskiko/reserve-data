@@ -45,10 +45,16 @@ func SetRateFromString(s string) (SetRate, bool) {
 
 // TradingPair is a trading in an exchange.
 type TradingPair struct {
-	ID          uint64  `json:"id"`
-	Base        uint64  `json:"base"`
-	Quote       uint64  `json:"quote"`
-	MinNotional float64 `json:"min_notional"`
+	ID              uint64  `json:"id"`
+	Base            uint64  `json:"base"`
+	Quote           uint64  `json:"quote"`
+	PricePrecision  uint64  `json:"price_precision"`
+	AmountPrecision uint64  `json:"amount_precision"`
+	AmountLimitMin  float64 `json:"amount_limit_min"`
+	AmountLimitMax  float64 `json:"amount_limit_max"`
+	PriceLimitMin   float64 `json:"price_limit_min"`
+	PriceLimitMax   float64 `json:"price_limit_max"`
+	MinNotional     float64 `json:"min_notional"`
 }
 
 type TradingPairSymbols struct {
@@ -69,12 +75,6 @@ type AssetExchange struct {
 	DepositAddress    ethereum.Address `json:"deposit_address"`
 	MinDeposit        float64          `json:"min_deposit"`
 	WithdrawFee       float64          `json:"withdraw_fee"`
-	PricePrecision    int64            `json:"price_precision"`
-	AmountPrecision   int64            `json:"amount_precision"`
-	AmountLimitMin    float64          `json:"amount_limit_min"`
-	AmountLimitMax    float64          `json:"amount_limit_max"`
-	PriceLimitMin     float64          `json:"price_limit_min"`
-	PriceLimitMax     float64          `json:"price_limit_max"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
 	TradingPairs      []TradingPair    `json:"trading_pairs"`

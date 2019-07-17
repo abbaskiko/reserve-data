@@ -223,12 +223,6 @@ func (s *Storage) createAsset(
 			DepositAddress    *string `db:"deposit_address"`
 			MinDeposit        float64 `db:"min_deposit"`
 			WithdrawFee       float64 `db:"withdraw_fee"`
-			PricePrecision    int64   `db:"price_precision"`
-			AmountPrecision   int64   `db:"amount_precision"`
-			AmountLimitMin    float64 `db:"amount_limit_min"`
-			AmountLimitMax    float64 `db:"amount_limit_max"`
-			PriceLimitMin     float64 `db:"price_limit_min"`
-			PriceLimitMax     float64 `db:"price_limit_max"`
 			TargetRecommended float64 `db:"target_recommended"`
 			TargetRatio       float64 `db:"target_ratio"`
 		}{
@@ -238,12 +232,6 @@ func (s *Storage) createAsset(
 			DepositAddress:    depositAddressParam,
 			MinDeposit:        exchange.MinDeposit,
 			WithdrawFee:       exchange.WithdrawFee,
-			PricePrecision:    exchange.PricePrecision,
-			AmountPrecision:   exchange.AmountPrecision,
-			AmountLimitMin:    exchange.AmountLimitMin,
-			AmountLimitMax:    exchange.AmountLimitMax,
-			PriceLimitMin:     exchange.PriceLimitMin,
-			PriceLimitMax:     exchange.PriceLimitMax,
 			TargetRecommended: exchange.TargetRecommended,
 			TargetRatio:       exchange.TargetRatio,
 		})
@@ -276,12 +264,31 @@ func (s *Storage) createAsset(
 				quoteID = assetID
 			}
 
-			err = tx.Stmtx(s.stmts.newTradingPair).Get(
+			err = tx.NamedStmt(s.stmts.newTradingPair).Get(
 				&tradingPairID,
-				exchange.ExchangeID,
-				baseID,
-				quoteID,
-				pair.MinNotional,
+				struct {
+					ExchangeID      uint64  `db:"exchange_id"`
+					Base            uint64  `db:"base_id"`
+					Quote           uint64  `db:"quote_id"`
+					PricePrecision  uint64  `db:"price_precision"`
+					AmountPrecision uint64  `db:"amount_precision"`
+					AmountLimitMin  float64 `db:"amount_limit_min"`
+					AmountLimitMax  float64 `db:"amount_limit_max"`
+					PriceLimitMin   float64 `db:"price_limit_min"`
+					PriceLimitMax   float64 `db:"price_limit_max"`
+					MinNotional     float64 `db:"min_notional"`
+				}{
+					ExchangeID:      exchange.ExchangeID,
+					Base:            baseID,
+					Quote:           quoteID,
+					PricePrecision:  pair.PricePrecision,
+					AmountPrecision: pair.AmountPrecision,
+					AmountLimitMin:  pair.AmountLimitMin,
+					AmountLimitMax:  pair.AmountLimitMax,
+					PriceLimitMin:   pair.PriceLimitMin,
+					PriceLimitMax:   pair.PriceLimitMax,
+					MinNotional:     pair.MinNotional,
+				},
 			)
 			if err != nil {
 				pErr, ok := err.(*pq.Error)
@@ -334,18 +341,12 @@ type assetExchangeDB struct {
 
 func (aedb *assetExchangeDB) ToCommon() common.AssetExchange {
 	result := common.AssetExchange{
-		ID:              aedb.ID,
-		ExchangeID:      aedb.ExchangeID,
-		Symbol:          aedb.Symbol,
-		MinDeposit:      aedb.MinDeposit,
-		WithdrawFee:     aedb.WithdrawFee,
-		PricePrecision:  aedb.PricePrecision,
-		AmountPrecision: aedb.AmountPrecision,
-		AmountLimitMin:  aedb.AmountLimitMin,
-		AmountLimitMax:  aedb.AmountLimitMax,
-		PriceLimitMin:   aedb.PriceLimitMin,
-		PriceLimitMax:   aedb.PriceLimitMax,
-		TradingPairs:    nil,
+		ID:           aedb.ID,
+		ExchangeID:   aedb.ExchangeID,
+		Symbol:       aedb.Symbol,
+		MinDeposit:   aedb.MinDeposit,
+		WithdrawFee:  aedb.WithdrawFee,
+		TradingPairs: nil,
 	}
 	if aedb.DepositAddress.Valid {
 		result.DepositAddress = ethereum.HexToAddress(aedb.DepositAddress.String)
@@ -360,19 +361,31 @@ func (aedb *assetExchangeDB) ToCommon() common.AssetExchange {
 }
 
 type tradingPairDB struct {
-	ID          uint64  `db:"id"`
-	ExchangeID  uint64  `db:"exchange_id"`
-	BaseID      uint64  `db:"base_id"`
-	QuoteID     uint64  `db:"quote_id"`
-	MinNotional float64 `db:"min_notional"`
+	ID              uint64  `db:"id"`
+	ExchangeID      uint64  `db:"exchange_id"`
+	BaseID          uint64  `db:"base_id"`
+	QuoteID         uint64  `db:"quote_id"`
+	PricePrecision  uint64  `db:"price_precision"`
+	AmountPrecision uint64  `db:"amount_precision"`
+	AmountLimitMin  float64 `db:"amount_limit_min"`
+	AmountLimitMax  float64 `db:"amount_limit_max"`
+	PriceLimitMin   float64 `db:"price_limit_min"`
+	PriceLimitMax   float64 `db:"price_limit_max"`
+	MinNotional     float64 `db:"min_notional"`
 }
 
 func (tpd *tradingPairDB) ToCommon() common.TradingPair {
 	return common.TradingPair{
-		ID:          tpd.ID,
-		Base:        tpd.BaseID,
-		Quote:       tpd.QuoteID,
-		MinNotional: tpd.MinNotional,
+		ID:              tpd.ID,
+		Base:            tpd.BaseID,
+		Quote:           tpd.QuoteID,
+		PricePrecision:  tpd.PricePrecision,
+		AmountPrecision: tpd.AmountPrecision,
+		AmountLimitMin:  tpd.AmountLimitMin,
+		AmountLimitMax:  tpd.AmountLimitMax,
+		PriceLimitMin:   tpd.PriceLimitMin,
+		PriceLimitMax:   tpd.PriceLimitMax,
+		MinNotional:     tpd.MinNotional,
 	}
 }
 
@@ -499,7 +512,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	var (
 		allAssetDBs       []assetDB
 		allAssetExchanges []assetExchangeDB
-		allOrderBooks     []tradingPairDB
+		allTradingPairs   []tradingPairDB
 		results           []common.Asset
 	)
 
@@ -517,7 +530,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 		return nil, err
 	}
 
-	if err := tx.Stmtx(s.stmts.getTradingPair).Select(&allOrderBooks, nil); err != nil {
+	if err := tx.Stmtx(s.stmts.getTradingPair).Select(&allTradingPairs, nil); err != nil {
 		return nil, err
 	}
 
@@ -530,7 +543,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 		for _, assetExchangeResult := range allAssetExchanges {
 			if assetExchangeResult.AssetID == assetDBResult.ID {
 				exchange := assetExchangeResult.ToCommon()
-				for _, tradingPairResult := range allOrderBooks {
+				for _, tradingPairResult := range allTradingPairs {
 					if assetExchangeResult.ExchangeID == tradingPairResult.ExchangeID {
 						exchange.TradingPairs = append(exchange.TradingPairs, tradingPairResult.ToCommon())
 					}

@@ -106,23 +106,23 @@ CREATE TABLE IF NOT EXISTS "asset_exchanges"
     deposit_address    TEXT                          NULL,
     min_deposit        FLOAT                         NOT NULL,
     withdraw_fee       FLOAT                         NOT NULL,
-    price_precision    INT                           NOT NULL,
-    amount_precision   INT                           NOT NULL,
-    amount_limit_min   FLOAT                         NOT NULL,
-    amount_limit_max   FLOAT                         NOT NULL,
-    price_limit_min    FLOAT                         NOT NULL,
-    price_limit_max    FLOAT                         NOT NULL,
     target_recommended FLOAT                         NOT NULL,
     target_ratio       FLOAT                         NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS trading_pairs
 (
-    id           SERIAL PRIMARY KEY,
-    exchange_id  INT REFERENCES exchanges (id) NOT NULL,
-    base_id      INT REFERENCES assets (id)    NOT NULL,
-    quote_id     INT REFERENCES assets (id)    NOT NULL,
-    min_notional FLOAT                         NOT NULL,
+    id               SERIAL PRIMARY KEY,
+    exchange_id      INT REFERENCES exchanges (id) NOT NULL,
+    base_id          INT REFERENCES assets (id)    NOT NULL,
+    quote_id         INT REFERENCES assets (id)    NOT NULL,
+    price_precision  INT                           NOT NULL,
+    amount_precision INT                           NOT NULL,
+    amount_limit_min FLOAT                         NOT NULL,
+    amount_limit_max FLOAT                         NOT NULL,
+    price_limit_min  FLOAT                         NOT NULL,
+    price_limit_max  FLOAT                         NOT NULL,
+    min_notional     FLOAT                         NOT NULL,
     UNIQUE (exchange_id, base_id, quote_id),
     CONSTRAINT trading_pair_check CHECK ( base_id != quote_id)
 );
@@ -251,6 +251,12 @@ $$ LANGUAGE PLPGSQL;
 CREATE OR REPLACE FUNCTION new_trading_pair(_exchange_id trading_pairs.exchange_id%TYPE,
                                             _base_id trading_pairs.base_id%TYPE,
                                             _quote_id trading_pairs.quote_id%TYPE,
+                                            _price_precision trading_pairs.price_precision%TYPE,
+                                            _amount_precision trading_pairs.amount_precision%TYPE,
+                                            _amount_limit_min trading_pairs.amount_limit_min%TYPE,
+                                            _amount_limit_max trading_pairs.amount_limit_max%TYPE,
+                                            _price_limit_min trading_pairs.price_limit_min%TYPE,
+                                            _price_limit_max trading_pairs.price_limit_max%TYPE,
                                             _min_notional trading_pairs.min_notional%TYPE)
     RETURNS INT AS
 $$
@@ -284,8 +290,26 @@ BEGIN
         RAISE EXCEPTION 'quote asset is not configured as quote id=%', _quote_id USING ERRCODE = 'assert_failure';
     END IF;
 
-    INSERT INTO trading_pairs (exchange_id, base_id, quote_id, min_notional)
-    VALUES (_exchange_id, _base_id, _quote_id, _min_notional) RETURNING id INTO _id;
+    INSERT INTO trading_pairs (exchange_id,
+                               base_id,
+                               quote_id,
+                               price_precision,
+                               amount_precision,
+                               amount_limit_min,
+                               amount_limit_max,
+                               price_limit_min,
+                               price_limit_max,
+                               min_notional)
+    VALUES (_exchange_id,
+            _base_id,
+            _quote_id,
+            _price_precision,
+            _amount_precision,
+            _amount_limit_min,
+            _amount_limit_max,
+            _price_limit_min,
+            _price_limit_max,
+            _min_notional) RETURNING id INTO _id;
     RETURN _id;
 END
 $$ LANGUAGE PLPGSQL;
@@ -297,7 +321,7 @@ type preparedStmts struct {
 	updateExchange   *sqlx.NamedStmt
 	newAsset         *sqlx.NamedStmt
 	newAssetExchange *sqlx.NamedStmt
-	newTradingPair   *sqlx.Stmt
+	newTradingPair   *sqlx.NamedStmt
 
 	getAsset             *sqlx.Stmt
 	getAssetExchange     *sqlx.Stmt
@@ -374,12 +398,6 @@ FROM new_asset(
                             deposit_address,
                             min_deposit,
                             withdraw_fee,
-                            price_precision,
-                            amount_precision,
-                            amount_limit_min,
-                            amount_limit_max,
-                            price_limit_min,
-                            price_limit_max,
                             target_recommended,
                             target_ratio)
 VALUES (:exchange_id,
@@ -388,12 +406,6 @@ VALUES (:exchange_id,
         :deposit_address,
         :min_deposit,
         :withdraw_fee,
-        :price_precision,
-        :amount_precision,
-        :amount_limit_min,
-        :amount_limit_max,
-        :price_limit_min,
-        :price_limit_max,
         :target_recommended,
         :target_ratio) RETURNING id`
 	newAssetExchange, err := db.PrepareNamed(newAssetExchangeQuery)
@@ -402,8 +414,17 @@ VALUES (:exchange_id,
 	}
 
 	const newTradingPairQuery = `SELECT new_trading_pair
-FROM new_trading_pair($1, $2, $3, $4);`
-	newOrderBook, err := db.Preparex(newTradingPairQuery)
+FROM new_trading_pair(:exchange_id,
+                      :base_id,
+                      :quote_id,
+                      :price_precision,
+                      :amount_precision,
+                      :amount_limit_min,
+                      :amount_limit_max,
+                      :price_limit_min,
+                      :price_limit_max,
+                      :min_notional);`
+	newTradingPair, err := db.PrepareNamed(newTradingPairQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -484,12 +505,6 @@ ORDER BY assets.id`
        deposit_address,
        min_deposit,
        withdraw_fee,
-       price_precision,
-       amount_precision,
-       amount_limit_min,
-       amount_limit_max,
-       price_limit_min,
-       price_limit_max,
        target_recommended,
        target_ratio
 FROM asset_exchanges
@@ -503,11 +518,18 @@ WHERE asset_id = coalesce($1, asset_id)`
                 tp.exchange_id,
                 tp.base_id,
                 tp.quote_id,
+                tp.price_precision,
+                tp.amount_precision,
+                tp.amount_limit_min,
+                tp.amount_limit_max,
+                tp.price_limit_min,
+                tp.price_limit_max,
                 tp.min_notional
 FROM trading_pairs tp
-         INNER JOIN asset_exchanges ae ON tp.exchange_id = ae.exchange_id AND ae.asset_id = coalesce($1, ae.asset_id);
+         INNER JOIN asset_exchanges ae ON tp.exchange_id = ae.exchange_id
+WHERE ae.asset_id = coalesce($1, ae.asset_id);
 `
-	getOrderBook, err := db.Preparex(getTradingPairQuery)
+	getTradingPair, err := db.Preparex(getTradingPairQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -579,11 +601,11 @@ WHERE asset_id = $1
 		updateExchange:   updateExchange,
 		newAsset:         newAsset,
 		newAssetExchange: newAssetExchange,
-		newTradingPair:   newOrderBook,
+		newTradingPair:   newTradingPair,
 
 		getAsset:             getAsset,
 		getAssetExchange:     getAssetExchange,
-		getTradingPair:       getOrderBook,
+		getTradingPair:       getTradingPair,
 		updateAsset:          updateAsset,
 		changeAssetAddress:   changeAssetAddress,
 		updateDepositAddress: updateDepositAddress,
