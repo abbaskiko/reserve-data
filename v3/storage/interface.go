@@ -14,7 +14,6 @@ type Interface interface {
 	GetExchange(id uint64) (v3.Exchange, error)
 	UpdateExchange(id uint64, opts ...UpdateExchangeOption) error
 
-	// TODO: support create multiple assets in a transaction
 	CreateAsset(
 		symbol, name string,
 		address ethereum.Address,

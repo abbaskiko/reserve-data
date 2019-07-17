@@ -8,6 +8,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -59,7 +60,53 @@ func (s *Storage) CreateAsset(
 	exchanges []common.AssetExchange,
 	target *common.AssetTarget,
 ) (uint64, error) {
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return 0, err
+	}
+	defer rollbackUnlessCommitted(tx)
+
+	id, err := s.createAsset(
+		nil,
+		symbol,
+		name,
+		address,
+		decimals,
+		transferable,
+		setRate,
+		rebalance,
+		isQuote,
+		pwi,
+		rb,
+		exchanges,
+		target,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (s *Storage) createAsset(
+	tx *sqlx.Tx,
+	symbol, name string,
+	address ethereum.Address,
+	decimals uint64,
+	transferable bool,
+	setRate common.SetRate,
+	rebalance, isQuote bool,
+	pwi *common.AssetPWI,
+	rb *common.RebalanceQuadratic,
+	exchanges []common.AssetExchange,
+	target *common.AssetTarget,
+) (uint64, error) {
 	var assetID uint64
+
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return 0, err
