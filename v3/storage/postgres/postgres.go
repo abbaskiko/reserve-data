@@ -52,7 +52,7 @@ func (s *Storage) initAssets() error {
 		Name:         "Ethereum",
 		Address:      &ethAddr,
 		Decimals:     18,
-		Transferable: false,
+		Transferable: true,
 		SetRate:      v3.SetRateNotSet.String(),
 		Rebalance:    false,
 		IsQuote:      true,

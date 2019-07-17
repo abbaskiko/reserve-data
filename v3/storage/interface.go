@@ -93,13 +93,14 @@ func WithDisableExchangeOpt(disable bool) UpdateExchangeOption {
 }
 
 type UpdateAssetOpts struct {
-	symbol    *string
-	name      *string
-	address   *ethereum.Address
-	decimals  *uint64
-	setRate   *v3.SetRate
-	rebalance *bool
-	isQuote   *bool
+	symbol       *string
+	name         *string
+	address      *ethereum.Address
+	decimals     *uint64
+	transferable *bool
+	setRate      *v3.SetRate
+	rebalance    *bool
+	isQuote      *bool
 }
 
 func (u *UpdateAssetOpts) Symbol() *string {
@@ -116,6 +117,10 @@ func (u *UpdateAssetOpts) Address() *ethereum.Address {
 
 func (u *UpdateAssetOpts) Decimals() *uint64 {
 	return u.decimals
+}
+
+func (u *UpdateAssetOpts) Transferable() *bool {
+	return u.transferable
 }
 
 func (u *UpdateAssetOpts) SetRate() *v3.SetRate {
@@ -153,6 +158,12 @@ func WithAddressUpdateAssetOption(address ethereum.Address) UpdateAssetOption {
 func WithDecimalsUpdateAssetOption(decimals uint64) UpdateAssetOption {
 	return func(opts *UpdateAssetOpts) {
 		opts.decimals = &decimals
+	}
+}
+
+func WithTransferableUpdateAssetOption(transferable bool) UpdateAssetOption {
+	return func(opts *UpdateAssetOpts) {
+		opts.transferable = &transferable
 	}
 }
 

@@ -564,6 +564,14 @@ func TestStorage_UpdateAsset(t *testing.T) {
 	err = s.UpdateAsset(testAssetID1)
 	require.NoError(t, err)
 	assert.Equal(t, oldUpdated, testAsset1.Updated)
+
+	err = s.UpdateAsset(
+		testAssetID1,
+		storage.WithTransferableUpdateAssetOption(true),
+	)
+	testAsset1, err = s.GetAsset(testAssetID1)
+	require.NoError(t, err)
+	assert.True(t, testAsset1.Transferable)
 }
 
 func TestStorage_ChangeAssetAddress(t *testing.T) {
@@ -1139,6 +1147,10 @@ func TestStorage_GetTransferableAssets(t *testing.T) {
 
 	assets, err := s.GetTransferableAssets()
 	require.NoError(t, err)
-	assert.Len(t, assets, 1)
-	assert.Equal(t, transferableAssetID, assets[0].ID)
+	assert.Len(t, assets, 2) // includes Ethereum
+	for _, asset := range assets {
+		if asset.ID != 1 { // not ethereum
+			assert.Equal(t, transferableAssetID, assets[1].ID)
+		}
+	}
 }

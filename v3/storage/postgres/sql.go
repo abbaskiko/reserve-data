@@ -519,13 +519,14 @@ FROM trading_pairs tp
         WHERE assets.id = :id AND assets.address_id = addresses.id
 )
 UPDATE "assets"
-SET symbol    = COALESCE(:symbol, symbol),
-    name      = COALESCE(:name, name),
-    decimals  = COALESCE(:decimals, decimals),
-    set_rate  = COALESCE(:set_rate, set_rate),
-    rebalance = COALESCE(:rebalance, rebalance),
-    is_quote  = COALESCE(:is_quote, is_quote),
-    updated   = now()
+SET symbol       = COALESCE(:symbol, symbol),
+    name         = COALESCE(:name, name),
+    decimals     = COALESCE(:decimals, decimals),
+    transferable = COALESCE(:transferable, transferable),
+    set_rate     = COALESCE(:set_rate, set_rate),
+    rebalance    = COALESCE(:rebalance, rebalance),
+    is_quote     = COALESCE(:is_quote, is_quote),
+    updated      = now()
 WHERE id = :id RETURNING id;
 `
 	updateAsset, err := db.PrepareNamed(updateAssetQuery)

@@ -628,6 +628,9 @@ func (s *Storage) UpdateAsset(id uint64, opts ...storage.UpdateAssetOption) erro
 	if updateOpts.Decimals() != nil {
 		updateMsgs = append(updateMsgs, fmt.Sprintf("decimals=%d", *updateOpts.Decimals()))
 	}
+	if updateOpts.Transferable() != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("transferable=%p", updateOpts.Transferable()))
+	}
 	if updateOpts.SetRate() != nil {
 		updateMsgs = append(updateMsgs, fmt.Sprintf("set_rate=%s", updateOpts.SetRate().String()))
 		setRateStr := updateOpts.SetRate().String()
@@ -644,23 +647,25 @@ func (s *Storage) UpdateAsset(id uint64, opts ...storage.UpdateAssetOption) erro
 	var updatedID uint64
 	err := s.stmts.updateAsset.Get(&updatedID,
 		struct {
-			ID        uint64  `db:"id"`
-			Symbol    *string `db:"symbol"`
-			Name      *string `db:"name"`
-			Address   *string `db:"address"`
-			Decimals  *uint64 `db:"decimals"`
-			SetRate   *string `db:"set_rate"`
-			Rebalance *bool   `db:"rebalance"`
-			IsQuote   *bool   `db:"is_quote"`
+			ID           uint64  `db:"id"`
+			Symbol       *string `db:"symbol"`
+			Name         *string `db:"name"`
+			Address      *string `db:"address"`
+			Decimals     *uint64 `db:"decimals"`
+			Transferable *bool   `db:"transferable"`
+			SetRate      *string `db:"set_rate"`
+			Rebalance    *bool   `db:"rebalance"`
+			IsQuote      *bool   `db:"is_quote"`
 		}{
-			ID:        id,
-			Symbol:    updateOpts.Symbol(),
-			Name:      updateOpts.Name(),
-			Address:   addressParam,
-			Decimals:  updateOpts.Decimals(),
-			SetRate:   setRatePram,
-			Rebalance: updateOpts.Rebalance(),
-			IsQuote:   updateOpts.IsQuote(),
+			ID:           id,
+			Symbol:       updateOpts.Symbol(),
+			Name:         updateOpts.Name(),
+			Address:      addressParam,
+			Decimals:     updateOpts.Decimals(),
+			Transferable: updateOpts.Transferable(),
+			SetRate:      setRatePram,
+			Rebalance:    updateOpts.Rebalance(),
+			IsQuote:      updateOpts.IsQuote(),
 		},
 	)
 	if err == sql.ErrNoRows {
