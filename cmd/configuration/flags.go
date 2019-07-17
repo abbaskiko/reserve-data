@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
+	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
@@ -169,7 +170,9 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	var assetAddrs []ethereum.Address
 	for _, asset := range assets {
-		assetAddrs = append(assetAddrs, asset.Address)
+		if !common.IsEthereumAddress(asset.Address) {
+			assetAddrs = append(assetAddrs, asset.Address)
+		}
 	}
 
 	err = bc.LoadAndSetTokenIndices(assetAddrs)

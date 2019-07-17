@@ -16,7 +16,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
@@ -24,32 +23,63 @@ type ExchangePool struct {
 	Exchanges map[common.ExchangeID]interface{}
 }
 
-func updateBinanceDepositAddress(assetStorage storage.Interface, binanceClient exchange.BinanceInterface, assets []commonv3.Asset) error {
+func updateDepositAddress(
+	assetStorage storage.Interface,
+	be exchange.BinanceInterface,
+	he exchange.HuobiInterface) {
+	assets, err := assetStorage.GetTransferableAssets()
+	if err != nil {
+		log.Printf("failed to get transferable assets err=%s", err.Error())
+		return
+	}
 	for _, asset := range assets {
 		for _, ae := range asset.Exchanges {
-			if ae.ExchangeID == uint64(common.Binance) {
+			switch ae.ExchangeID {
+			case uint64(common.Binance):
 				log.Printf("updating deposit address for asset id=%d exchange=%s symbol=%s",
 					asset.ID,
 					common.Binance.String(),
 					ae.Symbol)
-				depositAddress, err := binanceClient.GetDepositAddress(ae.Symbol)
+				depositAddress, err := be.GetDepositAddress(ae.Symbol)
 				if err != nil {
-					return fmt.Errorf("failed to get deposit address for asset id=%d exchange=%s symbol=%s",
+					log.Printf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
 						asset.ID,
 						common.Binance.String(),
-						ae.Symbol)
+						ae.Symbol, err.Error())
+					continue
 				}
 				err = assetStorage.UpdateDepositAddress(
 					asset.ID,
 					uint64(common.Binance),
 					ethereum.HexToAddress(depositAddress.Address))
 				if err != nil {
-					return fmt.Errorf("assetStorage.UpdateDepositAddress err=%s", err.Error())
+					log.Printf("assetStorage.UpdateDepositAddress err=%s", err.Error())
+					continue
+				}
+			case uint64(common.Huobi):
+				log.Printf("updating deposit address for asset id=%d exchange=%s symbol=%s",
+					asset.ID,
+					common.Huobi.String(),
+					ae.Symbol)
+				depositAddress, err := he.GetDepositAddress(ae.Symbol)
+				if err != nil {
+					log.Printf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
+						asset.ID,
+						common.Huobi.String(),
+						ae.Symbol, err.Error())
+					continue
+				}
+				err = assetStorage.UpdateDepositAddress(
+					asset.ID,
+					uint64(common.Huobi),
+					ethereum.HexToAddress(depositAddress.Address))
+				if err != nil {
+					log.Printf("assetStorage.UpdateDepositAddress err=%s", err.Error())
+					continue
 				}
 			}
 		}
 	}
-	return nil
 }
 
 func NewExchangePool(
@@ -62,11 +92,10 @@ func NewExchangePool(
 	assetStorage storage.Interface,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
-	reserveAssets, err := assetStorage.GetTransferableAssets()
-	if err != nil {
-		return nil, err
-	}
-
+	var (
+		be *binance.Endpoint
+		he *huobi.Endpoint
+	)
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.StableExchange:
@@ -77,25 +106,22 @@ func NewExchangePool(
 			exchanges[stableEx.ID()] = stableEx
 		case common.Binance:
 			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
-			endpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
+			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
 			binanceStorage, err := binance.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "binance.db"))
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
 			bin, err := exchange.NewBinance(
-				endpoint,
+				be,
 				binanceStorage,
 				assetStorage)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Binance: (%s)", err.Error())
 			}
 			exchanges[bin.ID()] = bin
-			if err = updateBinanceDepositAddress(assetStorage, endpoint, reserveAssets); err != nil {
-				return nil, fmt.Errorf("updateBinanceDepositAddress err=%s", err.Error())
-			}
 		case common.Huobi:
 			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
-			endpoint := huobi.NewHuobiEndpoint(huobiSigner, hi)
+			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
 			huobiStorage, err := huobi.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "huobi.db"))
 			if err != nil {
 				return nil, fmt.Errorf("can not create Huobi storage: (%s)", err.Error())
@@ -107,7 +133,7 @@ func NewExchangePool(
 			}
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
 			hb, err := exchange.NewHuobi(
-				endpoint,
+				he,
 				blockchain,
 				intermediatorSigner,
 				intermediatorNonce,
@@ -120,6 +146,8 @@ func NewExchangePool(
 			exchanges[hb.ID()] = hb
 		}
 	}
+
+	go updateDepositAddress(assetStorage, be, he)
 	return &ExchangePool{exchanges}, nil
 }
 

@@ -141,7 +141,7 @@ response:
   "data": {
     "tokens": {
       "EOS": "0x15fb2a9d7dadbb88f260f78dcbb574b3b76a8e06",
-      "ETH": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "ETH": "",
       "KNC": "0x8dc114d77e857558aefbe8e1a50b460ff9578f1a",
       "OMG": "0x7606bd550f467546212649a9c25623dfca88dcd7",
       "SALT": "0xcc112cd38362bf3c07d226768fd5869e65296083",

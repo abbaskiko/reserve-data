@@ -7,6 +7,8 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const truncLength int = 256
@@ -90,4 +92,9 @@ func CombineActivityStorageErrs(err, sErr error) error {
 		return sErr
 	}
 	return fmt.Errorf("action error: %s, storage error: %s", ErrorToString(err), ErrorToString(sErr))
+}
+
+// IsEthereumAddress returns true if the given address is ethereum.
+func IsEthereumAddress(addr common.Address) bool {
+	return addr == common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 }
