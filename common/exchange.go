@@ -5,6 +5,8 @@ import (
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // ExchangeName is the name of exchanges of which core will use to rebalance.
@@ -41,7 +43,7 @@ type Exchange interface {
 
 	// GetLiveExchangeInfo querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
 	// It return error if occurs.
-	GetLiveExchangeInfos([]TokenPairID) (ExchangeInfo, error)
+	GetLiveExchangeInfos([]common.TradingPairSymbols) (ExchangeInfo, error)
 	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)
 }
 

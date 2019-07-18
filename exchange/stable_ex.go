@@ -9,6 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 type StableEx struct {
@@ -36,11 +37,11 @@ func (se *StableEx) Address(token common.Token) (ethereum.Address, bool) {
 	return addr, supported
 }
 
-func (se *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (se *StableEx) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
 	log.Print("WARNING stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
 	result := make(common.ExchangeInfo)
-	for _, tokenPairID := range tokenPairIDs {
-		result[tokenPairID] = common.ExchangePrecisionLimit{
+	for _, pair := range pairs {
+		result[pair.ID] = common.ExchangePrecisionLimit{
 			Precision:   common.TokenPairPrecision{},
 			AmountLimit: common.TokenPairAmountLimit{},
 			PriceLimit:  common.TokenPairPriceLimit{},
@@ -104,8 +105,8 @@ func (se *StableEx) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTra
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (se *StableEx) FetchTradeHistory(timepoint uint64) (map[common.TokenPairID][]common.TradeHistory, error) {
-	result := map[common.TokenPairID][]common.TradeHistory{}
+func (se *StableEx) FetchTradeHistory(timepoint uint64) (map[uint64][]common.TradeHistory, error) {
+	result := map[uint64][]common.TradeHistory{}
 	// TODO: get trade history
 	return result, errors.New("not supported")
 }

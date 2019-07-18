@@ -19,6 +19,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // Endpoint object stand for Binance endpoint
@@ -354,14 +355,14 @@ func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	return result, err
 }
 
-func (ep *Endpoint) OpenOrdersForOnePair(pair common.TokenPair) (exchange.Binaorders, error) {
+func (ep *Endpoint) OpenOrdersForOnePair(pair commonv3.TradingPairSymbols) (exchange.Binaorders, error) {
 
 	result := exchange.Binaorders{}
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
 		map[string]string{
-			"symbol": pair.Base.ID + pair.Quote.ID,
+			"symbol": pair.BaseSymbol + pair.QuoteSymbol,
 		},
 		true,
 		common.GetTimepoint(),

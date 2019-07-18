@@ -6,13 +6,14 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // BinanceInterface contains the methods to interact with Binance centralized exchange.
 type BinanceInterface interface {
 	GetDepthOnePair(baseID, quoteID string) (Binaresp, error)
 
-	OpenOrdersForOnePair(pair common.TokenPair) (Binaorders, error)
+	OpenOrdersForOnePair(pair commonv3.TradingPairSymbols) (Binaorders, error)
 
 	GetInfo() (Binainfo, error)
 

@@ -78,27 +78,27 @@ func (h *Huobi) Address(token common.Token) (ethereum.Address, bool) {
 
 // GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
 // It return error if occurs.
-func (h *Huobi) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (h *Huobi) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
 	result := make(common.ExchangeInfo)
 	exchangeInfo, err := h.interf.GetExchangeInfo()
 	if err != nil {
 		return result, err
 	}
-	for _, pairID := range tokenPairIDs {
-		exchangePrecisionLimit, ok := h.getPrecisionLimitFromSymbols(pairID, exchangeInfo)
+	for _, pair := range pairs {
+		exchangePrecisionLimit, ok := h.getPrecisionLimitFromSymbols(pair, exchangeInfo)
 		if !ok {
-			return result, fmt.Errorf("huobi Exchange Info reply doesn't contain token pair %s", string(pairID))
+			return result, fmt.Errorf("huobi Exchange Info reply doesn't contain token pair %d", pair.ID)
 		}
-		result[pairID] = exchangePrecisionLimit
+		result[pair.ID] = exchangePrecisionLimit
 	}
 	return result, nil
 }
 
 // getPrecisionLimitFromSymbols find the pairID amongs symbols from exchanges,
 // return ExchangePrecisionLimit of that pair and true if the pairID exist amongs symbols, false if otherwise
-func (h *Huobi) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols HuobiExchangeInfo) (common.ExchangePrecisionLimit, bool) {
+func (h *Huobi) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSymbols, symbols HuobiExchangeInfo) (common.ExchangePrecisionLimit, bool) {
 	var result common.ExchangePrecisionLimit
-	pairName := strings.ToUpper(strings.Replace(string(pair), "-", "", 1))
+	pairName := strings.ToUpper(fmt.Sprintf("%s%s", pair.BaseSymbol, pair.QuoteSymbol))
 	for _, symbol := range symbols.Data {
 		symbolName := strings.ToUpper(symbol.Base + symbol.Quote)
 		if symbolName == pairName {
@@ -279,7 +279,7 @@ func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePric
 
 func (h *Huobi) OpenOrdersForOnePair(
 	wg *sync.WaitGroup,
-	pair common.TokenPair,
+	pair commonv3.TradingPairSymbols,
 	data *sync.Map,
 	timepoint uint64) {
 

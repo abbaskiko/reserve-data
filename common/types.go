@@ -81,13 +81,13 @@ type ExchangePrecisionLimit struct {
 }
 
 // ExchangeInfo is written and read concurrently
-type ExchangeInfo map[TokenPairID]ExchangePrecisionLimit
+type ExchangeInfo map[uint64]ExchangePrecisionLimit
 
 func NewExchangeInfo() ExchangeInfo {
-	return ExchangeInfo(make(map[TokenPairID]ExchangePrecisionLimit))
+	return ExchangeInfo(make(map[uint64]ExchangePrecisionLimit))
 }
 
-func (ei ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
+func (ei ExchangeInfo) Get(pair uint64) (ExchangePrecisionLimit, error) {
 	info, exist := ei[pair]
 	if !exist {
 		return info, fmt.Errorf("token pair is not existed")
@@ -96,8 +96,8 @@ func (ei ExchangeInfo) Get(pair TokenPairID) (ExchangePrecisionLimit, error) {
 
 }
 
-func (ei ExchangeInfo) GetData() map[TokenPairID]ExchangePrecisionLimit {
-	data := map[TokenPairID]ExchangePrecisionLimit(ei)
+func (ei ExchangeInfo) GetData() map[uint64]ExchangePrecisionLimit {
+	data := map[uint64]ExchangePrecisionLimit(ei)
 	return data
 }
 
@@ -152,13 +152,6 @@ func NewFundingFee(widthraw, deposit map[string]float64) FundingFee {
 		Withdraw: widthraw,
 		Deposit:  deposit,
 	}
-}
-
-// TODO: delete this type
-type TokenPairID string
-
-func NewTokenPairID(base, quote string) TokenPairID {
-	return TokenPairID(fmt.Sprintf("%s-%s", base, quote))
 }
 
 type ExchangeID string

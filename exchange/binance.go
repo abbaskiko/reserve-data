@@ -75,28 +75,28 @@ func (bn *Binance) precisionFromStepSize(stepSize string) int {
 
 // GetLiveExchangeInfo queries the Exchange Endpoint for exchange precision and limit of a certain pair ID
 // It return error if occurs.
-func (bn *Binance) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (bn *Binance) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
 	result := make(common.ExchangeInfo)
 	exchangeInfo, err := bn.interf.GetExchangeInfo()
 	if err != nil {
 		return result, err
 	}
 	symbols := exchangeInfo.Symbols
-	for _, pairID := range tokenPairIDs {
-		exchangePrecisionLimit, ok := bn.getPrecisionLimitFromSymbols(pairID, symbols)
+	for _, pair := range pairs {
+		exchangePrecisionLimit, ok := bn.getPrecisionLimitFromSymbols(pair, symbols)
 		if !ok {
-			return result, fmt.Errorf("binance Exchange Info reply doesn't contain token pair %s", string(pairID))
+			return result, fmt.Errorf("binance Exchange Info reply doesn't contain token pair %d", pair.ID)
 		}
-		result[pairID] = exchangePrecisionLimit
+		result[pair.ID] = exchangePrecisionLimit
 	}
 	return result, nil
 }
 
 // getPrecisionLimitFromSymbols find the pairID amongs symbols from exchanges,
 // return ExchangePrecisionLimit of that pair and true if the pairID exist amongs symbols, false if otherwise
-func (bn *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols []BinanceSymbol) (common.ExchangePrecisionLimit, bool) {
+func (bn *Binance) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSymbols, symbols []BinanceSymbol) (common.ExchangePrecisionLimit, bool) {
 	var result common.ExchangePrecisionLimit
-	pairName := strings.ToUpper(strings.Replace(string(pair), "-", "", 1))
+	pairName := strings.ToUpper(fmt.Sprintf("%s%s", pair.BaseSymbol, pair.QuoteSymbol))
 	for _, symbol := range symbols {
 		if strings.ToUpper(symbol.Symbol) == pairName {
 			//update precision

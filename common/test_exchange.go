@@ -32,6 +32,6 @@ func (te TestExchange) GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHi
 	return ExchangeTradeHistory{}, nil
 }
 
-func (te TestExchange) GetLiveExchangeInfos(tokenPairIDs []TokenPairID) (ExchangeInfo, error) {
+func (te TestExchange) GetLiveExchangeInfos(tokenPairIDs []uint64) (ExchangeInfo, error) {
 	return ExchangeInfo{}, nil
 }
