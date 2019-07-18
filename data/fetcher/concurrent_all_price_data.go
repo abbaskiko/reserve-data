@@ -15,7 +15,7 @@ func NewConcurrentAllPriceData() *ConcurrentAllPriceData {
 	return &ConcurrentAllPriceData{
 		mu: sync.RWMutex{},
 		data: common.AllPriceEntry{
-			Data:  map[common.TokenPairID]common.OnePrice{},
+			Data:  map[uint64]common.OnePrice{},
 			Block: 0,
 		},
 	}
@@ -29,7 +29,7 @@ func (cap *ConcurrentAllPriceData) SetBlockNumber(block uint64) {
 
 func (cap *ConcurrentAllPriceData) SetOnePrice(
 	exchange common.ExchangeID,
-	pair common.TokenPairID,
+	pair uint64,
 	d common.ExchangePrice) {
 	cap.mu.Lock()
 	defer cap.mu.Unlock()

@@ -79,7 +79,7 @@ func (rd ReserveData) GetAllPrices(timepoint uint64) (common.AllPriceResponse, e
 	return result, err
 }
 
-func (rd ReserveData) GetOnePrice(pairID common.TokenPairID, timepoint uint64) (common.OnePriceResponse, error) {
+func (rd ReserveData) GetOnePrice(pairID uint64, timepoint uint64) (common.OnePriceResponse, error) {
 	timestamp := common.GetTimestamp()
 	version, err := rd.storage.CurrentPriceVersion(timepoint)
 	if err != nil {

@@ -81,8 +81,8 @@ func (se *StableEx) CancelOrder(id, base, quote string) error {
 	return errors.New("dgx doesn't support trade cancelling")
 }
 
-func (se *StableEx) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
-	result := map[common.TokenPairID]common.ExchangePrice{}
+func (se *StableEx) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
+	result := map[uint64]common.ExchangePrice{}
 	// TODO: Get price data from dgx connector and construct valid orderbooks
 	return result, nil
 }

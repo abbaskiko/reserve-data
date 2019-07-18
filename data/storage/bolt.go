@@ -431,7 +431,7 @@ func (bs *BoltStorage) GetAllPrices(version common.Version) (common.AllPriceEntr
 	return result, err
 }
 
-func (bs *BoltStorage) GetOnePrice(pair common.TokenPairID, version common.Version) (common.OnePrice, error) {
+func (bs *BoltStorage) GetOnePrice(pairID uint64, version common.Version) (common.OnePrice, error) {
 	result := common.AllPriceEntry{}
 	var err error
 	err = bs.db.View(func(tx *bolt.Tx) error {
@@ -447,7 +447,7 @@ func (bs *BoltStorage) GetOnePrice(pair common.TokenPairID, version common.Versi
 	if err != nil {
 		return common.OnePrice{}, err
 	}
-	dataPair, exist := result.Data[pair]
+	dataPair, exist := result.Data[pairID]
 	if exist {
 		return dataPair, nil
 	}

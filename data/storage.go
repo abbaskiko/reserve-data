@@ -8,7 +8,7 @@ import (
 type Storage interface {
 	CurrentPriceVersion(timepoint uint64) (common.Version, error)
 	GetAllPrices(common.Version) (common.AllPriceEntry, error)
-	GetOnePrice(common.TokenPairID, common.Version) (common.OnePrice, error)
+	GetOnePrice(uint64, common.Version) (common.OnePrice, error)
 
 	CurrentAuthDataVersion(timepoint uint64) (common.Version, error)
 	GetAuthData(common.Version) (common.AuthDataSnapshot, error)

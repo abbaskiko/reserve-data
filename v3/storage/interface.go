@@ -43,7 +43,7 @@ type Interface interface {
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
 type SettingReader interface {
-	GetTradingPairSymbols(exchangeID uint64) ([]v3.TradingPairSymbols, error)
+	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
 	GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error)
 	GetAssets() ([]v3.Asset, error)
 	// GetTransferableAssets returns all assets that the set rate strategy is not not_set.

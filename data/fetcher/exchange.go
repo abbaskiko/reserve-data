@@ -10,7 +10,7 @@ import (
 type Exchange interface {
 	ID() common.ExchangeID
 	Name() string
-	FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error)
+	FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error)
 	FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error)
 	OrderStatus(id string, base, quote string) (string, error)
 	DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error)

@@ -154,6 +154,7 @@ func NewFundingFee(widthraw, deposit map[string]float64) FundingFee {
 	}
 }
 
+// TODO: delete this type
 type TokenPairID string
 
 func NewTokenPairID(base, quote string) TokenPairID {
@@ -335,14 +336,14 @@ func NewPriceEntry(quantity, rate float64) PriceEntry {
 
 type AllPriceEntry struct {
 	Block uint64
-	Data  map[TokenPairID]OnePrice
+	Data  map[uint64]OnePrice
 }
 
 type AllPriceResponse struct {
 	Version    Version
 	Timestamp  Timestamp
 	ReturnTime Timestamp
-	Data       map[TokenPairID]OnePrice
+	Data       map[uint64]OnePrice
 	Block      uint64
 }
 
@@ -598,7 +599,7 @@ func NewTradeHistory(id string, price, qty float64, typ string, timestamp uint64
 	}
 }
 
-type ExchangeTradeHistory map[TokenPairID][]TradeHistory
+type ExchangeTradeHistory map[uint64][]TradeHistory
 
 type AllTradeHistory struct {
 	Timestamp Timestamp

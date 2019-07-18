@@ -8,8 +8,10 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/boltdb/bolt"
+
+	"github.com/KyberNetwork/reserve-data/boltutil"
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 const (
@@ -157,7 +159,7 @@ func (bs *BoltStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error
 	err := bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tradeHistory))
 		for pair, pairHistory := range data {
-			pairBk, uErr := b.CreateBucketIfNotExists([]byte(pair))
+			pairBk, uErr := b.CreateBucketIfNotExists(boltutil.Uint64ToBytes(pair))
 			if uErr != nil {
 				return uErr
 			}
@@ -202,7 +204,7 @@ func (bs *BoltStorage) GetTradeHistory(fromTime, toTime uint64) (common.Exchange
 				}
 				pairsHistory = append(pairsHistory, pairHistory)
 			}
-			exchangeHistory[common.TokenPairID(key)] = pairsHistory
+			exchangeHistory[boltutil.BytesToUint64(key)] = pairsHistory
 		}
 		result = exchangeHistory
 		return nil

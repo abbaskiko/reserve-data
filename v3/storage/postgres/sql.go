@@ -107,7 +107,8 @@ CREATE TABLE IF NOT EXISTS "asset_exchanges"
     min_deposit        FLOAT                         NOT NULL,
     withdraw_fee       FLOAT                         NOT NULL,
     target_recommended FLOAT                         NOT NULL,
-    target_ratio       FLOAT                         NOT NULL
+    target_ratio       FLOAT                         NOT NULL,
+    UNIQUE (exchange_id, asset_id)
 );
 
 CREATE TABLE IF NOT EXISTS trading_pairs
@@ -189,7 +190,8 @@ BEGIN
                 target_rebalance_threshold,
                 target_transfer_threshold,
                 created,
-                updated)
+                updated
+    )
     VALUES (_symbol,
             _name,
             _address_id,
@@ -573,7 +575,19 @@ WHERE exchange_id = $1
 		return nil, err
 	}
 
-	const getTradingPairSymbolsQuery = `SELECT DISTINCT bae.symbol AS base_symbol, qae.symbol AS quote_symbol
+	const getTradingPairSymbolsQuery = `SELECT DISTINCT tp.id,
+                tp.exchange_id,
+                tp.base_id,
+                tp.quote_id,
+                tp.price_precision,
+                tp.amount_precision,
+                tp.amount_limit_min,
+                tp.amount_limit_max,
+                tp.price_limit_min,
+                tp.price_limit_max,
+                tp.min_notional,
+                bae.symbol AS base_symbol,
+                qae.symbol AS quote_symbol
 FROM trading_pairs AS tp
          INNER JOIN assets AS ba ON tp.base_id = ba.id
          INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id

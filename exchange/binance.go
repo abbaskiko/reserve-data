@@ -141,7 +141,7 @@ func (bn *Binance) ID() common.ExchangeID {
 }
 
 func (bn *Binance) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
-	pairs, err := bn.sr.GetTradingPairSymbols(uint64(common.Binance))
+	pairs, err := bn.sr.GetTradingPairs(uint64(common.Binance))
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (bn *Binance) CancelOrder(id string, base, quote string) error {
 
 func (bn *Binance) FetchOnePairData(
 	wg *sync.WaitGroup,
-	baseID, quoteID string,
+	pair commonv3.TradingPairSymbols,
 	data *sync.Map,
 	timepoint uint64) {
 
@@ -205,7 +205,7 @@ func (bn *Binance) FetchOnePairData(
 	timestamp := common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Timestamp = timestamp
 	result.Valid = true
-	respData, err := bn.interf.GetDepthOnePair(baseID, quoteID)
+	respData, err := bn.interf.GetDepthOnePair(pair.BaseSymbol, pair.QuoteSymbol)
 	returnTime := common.GetTimestamp()
 	result.ReturnTime = returnTime
 	if err != nil {
@@ -240,10 +240,10 @@ func (bn *Binance) FetchOnePairData(
 			}
 		}
 	}
-	data.Store(common.NewTokenPairID(baseID, quoteID), result)
+	data.Store(pair.ID, result)
 }
 
-func (bn *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (bn *Binance) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := bn.TokenPairs()
@@ -258,16 +258,15 @@ func (bn *Binance) FetchPriceData(timepoint uint64) (map[common.TokenPairID]comm
 		for x = i; x < len(pairs) && x < i+batchSize; x++ {
 			wait.Add(1)
 			pair := pairs[x]
-			baseID, quoteID := pair.BaseSymbol, pair.QuoteSymbol
-			go bn.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
+			go bn.FetchOnePairData(&wait, pair, &data, timepoint)
 		}
 		wait.Wait()
 		i = x
 	}
-	result := map[common.TokenPairID]common.ExchangePrice{}
+	result := map[uint64]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {
 		//if there is conversion error, continue to next key,val
-		tokenPairID, ok := key.(common.TokenPairID)
+		tokenPairID, ok := key.(uint64)
 		if !ok {
 			err = fmt.Errorf("key (%v) cannot be asserted to TokenPairID", key)
 			return false
@@ -337,7 +336,6 @@ func (bn *Binance) FetchOnePairTradeHistory(
 	if err != nil {
 		log.Printf("Binance Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
 	}
-	pairString := pair.PairID()
 	for _, trade := range resp {
 		price, _ := strconv.ParseFloat(trade.Price, 64)
 		quantity, _ := strconv.ParseFloat(trade.Qty, 64)
@@ -354,7 +352,7 @@ func (bn *Binance) FetchOnePairTradeHistory(
 		)
 		result = append(result, tradeHistory)
 	}
-	data.Store(pairString, result)
+	data.Store(pair.ID, result)
 }
 
 //FetchTradeHistory get all trade history for all tokens in the exchange
@@ -383,7 +381,7 @@ func (bn *Binance) FetchTradeHistory() {
 			}
 			var integrity = true
 			data.Range(func(key, value interface{}) bool {
-				tokenPairID, ok := key.(common.TokenPairID)
+				tokenPairID, ok := key.(uint64)
 				//if there is conversion error, continue to next key,val
 				if !ok {
 					log.Printf("Key (%v) cannot be asserted to TokenPairID", key)

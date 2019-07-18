@@ -117,7 +117,7 @@ func (h *Huobi) ID() common.ExchangeID {
 }
 
 func (h *Huobi) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
-	pairs, err := h.sr.GetTradingPairSymbols(uint64(common.Binance))
+	pairs, err := h.sr.GetTradingPairs(uint64(common.Huobi))
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (h *Huobi) CancelOrder(id, base, quote string) error {
 
 func (h *Huobi) FetchOnePairData(
 	wg *sync.WaitGroup,
-	baseID, quoteID string,
+	pair commonv3.TradingPairSymbols,
 	data *sync.Map,
 	timepoint uint64) {
 
@@ -209,7 +209,7 @@ func (h *Huobi) FetchOnePairData(
 	timestamp := common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Timestamp = timestamp
 	result.Valid = true
-	respData, err := h.interf.GetDepthOnePair(baseID, quoteID)
+	respData, err := h.interf.GetDepthOnePair(pair.BaseSymbol, pair.QuoteSymbol)
 	returnTime := common.GetTimestamp()
 	result.ReturnTime = returnTime
 	if err != nil {
@@ -243,10 +243,10 @@ func (h *Huobi) FetchOnePairData(
 			}
 		}
 	}
-	data.Store(common.NewTokenPairID(baseID, quoteID), result)
+	data.Store(pair.ID, result)
 }
 
-func (h *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := h.TokenPairs()
@@ -255,13 +255,12 @@ func (h *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.
 	}
 	for _, pair := range pairs {
 		wait.Add(1)
-		baseID, quoteID := pair.BaseSymbol, pair.QuoteSymbol
-		go h.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
+		go h.FetchOnePairData(&wait, pair, &data, timepoint)
 	}
 	wait.Wait()
-	result := map[common.TokenPairID]common.ExchangePrice{}
+	result := map[uint64]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {
-		tokenPairID, ok := key.(common.TokenPairID)
+		tokenPairID, ok := key.(uint64)
 		//if there is conversion error, continue to next key,val
 		if !ok {
 			err = fmt.Errorf("key (%v) cannot be asserted to TokenPairID", key)
@@ -367,7 +366,6 @@ func (h *Huobi) FetchOnePairTradeHistory(
 			pair.BaseSymbol, pair.QuoteSymbol, err.Error())
 		return
 	}
-	pairString := pair.PairID()
 	for _, trade := range resp.Data {
 		price, _ := strconv.ParseFloat(trade.Price, 64)
 		quantity, _ := strconv.ParseFloat(trade.Amount, 64)
@@ -384,7 +382,7 @@ func (h *Huobi) FetchOnePairTradeHistory(
 		)
 		result = append(result, tradeHistory)
 	}
-	data.Store(pairString, result)
+	data.Store(pair.ID, result)
 }
 
 //FetchTradeHistory get all trade history for all pairs from huobi exchange
@@ -392,7 +390,7 @@ func (h *Huobi) FetchTradeHistory() {
 	t := time.NewTicker(10 * time.Minute)
 	go func() {
 		for {
-			result := map[common.TokenPairID][]common.TradeHistory{}
+			result := map[uint64][]common.TradeHistory{}
 			data := sync.Map{}
 			pairs, err := h.TokenPairs()
 			if err != nil {
@@ -407,7 +405,7 @@ func (h *Huobi) FetchTradeHistory() {
 			wait.Wait()
 			var integrity = true
 			data.Range(func(key, value interface{}) bool {
-				tokenPairID, ok := key.(common.TokenPairID)
+				tokenPairID, ok := key.(uint64)
 				//if there is conversion error, continue to next key,val
 				if !ok {
 					log.Printf("Key (%v) cannot be asserted to TokenPairID", key)
