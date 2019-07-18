@@ -671,12 +671,12 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 					log.Printf("WARNING: can't parse activity Params amount %s to float64", amountStr)
 					continue
 				}
-				currency, ok := activity.Params["token"].(string)
+				assetID, ok := activity.Params["asset"].(uint64)
 				if !ok {
-					log.Printf("WARNING: activity Params token (%v) can't be converted to type string", activity.Params["token"])
+					log.Printf("WARNING: activity Params token (%v) can't be converted to type uint64", activity.Params["asset"])
 					continue
 				}
-				status, err = exchange.DepositStatus(id, txHash, currency, amount, timepoint)
+				status, err = exchange.DepositStatus(id, txHash, assetID, amount, timepoint)
 				log.Printf("Got deposit status for %v: (%s), error(%s)", activity, status, common.ErrorToString(err))
 			case common.ActionWithdraw:
 				amountStr, ok := activity.Params["amount"].(string)
@@ -689,9 +689,9 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 					log.Printf("WARNING: can't parse activity Params amount %s to float64", amountStr)
 					continue
 				}
-				currency, ok := activity.Params["token"].(string)
+				assetID, ok := activity.Params["asset"].(uint64)
 				if !ok {
-					log.Printf("WARNING: activity Params token (%v) can't be converted to type string", activity.Params["token"])
+					log.Printf("WARNING: activity Params token (%v) can't be converted to type string", activity.Params["asset"])
 					continue
 				}
 				_, ok = activity.Result["tx"].(string)
@@ -699,7 +699,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 					log.Printf("WARNING: activity Result tx (%v) can't be converted to type string", activity.Result["tx"])
 					continue
 				}
-				status, tx, err = exchange.WithdrawStatus(id.EID, currency, amount, timepoint)
+				status, tx, err = exchange.WithdrawStatus(id.EID, assetID, amount, timepoint)
 				log.Printf("Got withdraw status for %v: (%s), error(%s)", activity, status, common.ErrorToString(err))
 			default:
 				continue

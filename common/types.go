@@ -9,6 +9,8 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 type Version uint64
@@ -225,21 +227,21 @@ type ActivityRecord struct {
 	Timestamp      Timestamp
 }
 
-//New ActivityRecord return an activity record with params["token"] only as token.ID
+//New ActivityRecord return an activity record with params["assets"] only as asset.ID
 func NewActivityRecord(action string, id ActivityID, destination string, params, result map[string]interface{}, exStatus, miStatus string, timestamp Timestamp) ActivityRecord {
-	//if any params is a token, save it as tokenID
+	//if any params is an asset, save it ID instead of whole struct
 	for k, v := range params {
-		if tok, ok := v.(Token); ok {
-			params[k] = tok.ID
+		if asset, ok := v.(common.Asset); ok {
+			params[k] = asset.ID
 		}
 	}
-	tokens, ok := params["tokens"].([]Token)
+	assets, ok := params["assets"].([]common.Asset)
 	if ok {
-		var tokenIDs []string
-		for _, t := range tokens {
-			tokenIDs = append(tokenIDs, t.ID)
+		var assetIDs []uint64
+		for _, t := range assets {
+			assetIDs = append(assetIDs, t.ID)
 		}
-		params["tokens"] = tokenIDs
+		params["assets"] = assetIDs
 	}
 	return ActivityRecord{
 		Action:         action,
@@ -522,7 +524,7 @@ func NewRateEntry(baseBuy *big.Int, compactBuy int8, baseSell *big.Int, compactS
 type TXEntry struct {
 	Hash           string
 	Exchange       string
-	Token          string
+	AssetID        uint64
 	MiningStatus   string
 	ExchangeStatus string
 	Amount         float64
@@ -530,11 +532,11 @@ type TXEntry struct {
 }
 
 // NewTXEntry creates new instance of TXEntry.
-func NewTXEntry(hash, exchange, token, miningStatus, exchangeStatus string, amount float64, timestamp Timestamp) TXEntry {
+func NewTXEntry(hash, exchange string, assetID uint64, miningStatus, exchangeStatus string, amount float64, timestamp Timestamp) TXEntry {
 	return TXEntry{
 		Hash:           hash,
 		Exchange:       exchange,
-		Token:          token,
+		AssetID:        assetID,
 		MiningStatus:   miningStatus,
 		ExchangeStatus: exchangeStatus,
 		Amount:         amount,

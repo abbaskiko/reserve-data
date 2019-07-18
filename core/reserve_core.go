@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 const (
@@ -145,25 +146,30 @@ func (rc ReserveCore) Trade(
 
 func (rc ReserveCore) Deposit(
 	exchange common.Exchange,
-	token common.Token,
+	asset commonv3.Asset,
 	amount *big.Int,
 	timepoint uint64) (common.ActivityID, error) {
-	address, supported := exchange.Address(token)
+	address, supported := exchange.Address(asset)
 	var (
 		err         error
 		ok          bool
 		tx          *types.Transaction
-		amountFloat = common.BigToFloat(amount, token.Decimals)
+		amountFloat = common.BigToFloat(amount, int64(asset.Decimals))
 	)
 
 	uidGenerator := func(txhex string) common.ActivityID {
-		return timebasedID(txhex + "|" + token.ID + "|" + strconv.FormatFloat(amountFloat, 'f', -1, 64))
+		id := fmt.Sprintf("%s|%s|%s",
+			txhex,
+			asset.Symbol,
+			strconv.FormatFloat(amountFloat, 'f', -1, 64),
+		)
+		return timebasedID(id)
 	}
 	recordActivity := func(status, txhex, txnonce, txprice string, err error) error {
 		uid := uidGenerator(txhex)
 		log.Printf(
 			"Core ----------> Deposit to %s: token: %s, amount: %s, timestamp: %d ==> Result: tx: %s, error: %s",
-			exchange.ID(), token.ID, amount.Text(10), timepoint, txhex, common.ErrorToString(err),
+			exchange.ID(), asset.Symbol, amount.Text(10), timepoint, txhex, common.ErrorToString(err),
 		)
 
 		return rc.activityStorage.Record(
@@ -172,7 +178,7 @@ func (rc ReserveCore) Deposit(
 			string(exchange.ID()),
 			map[string]interface{}{
 				"exchange":  exchange,
-				"token":     token,
+				"asset":     asset,
 				"amount":    strconv.FormatFloat(amountFloat, 'f', -1, 64),
 				"timepoint": timepoint,
 			}, map[string]interface{}{
@@ -188,7 +194,7 @@ func (rc ReserveCore) Deposit(
 	}
 
 	if !supported {
-		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
+		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), asset.Symbol)
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -196,7 +202,7 @@ func (rc ReserveCore) Deposit(
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 
-	if ok, err = rc.activityStorage.HasPendingDeposit(token, exchange); err != nil {
+	if ok, err = rc.activityStorage.HasPendingDeposit(asset, exchange); err != nil {
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -204,7 +210,7 @@ func (rc ReserveCore) Deposit(
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 	if ok {
-		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
+		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", asset.Symbol, exchange.ID())
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -212,14 +218,14 @@ func (rc ReserveCore) Deposit(
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 
-	if err = sanityCheckAmount(exchange, token, amount); err != nil {
+	if err = sanityCheckAmount(exchange, asset, amount); err != nil {
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
-	if tx, err = rc.blockchain.Send(token, amount, address); err != nil {
+	if tx, err = rc.blockchain.Send(asset, amount, address); err != nil {
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -238,15 +244,15 @@ func (rc ReserveCore) Deposit(
 }
 
 func (rc ReserveCore) Withdraw(
-	exchange common.Exchange, token common.Token,
+	exchange common.Exchange, asset commonv3.Asset,
 	amount *big.Int, timepoint uint64) (common.ActivityID, error) {
 	var err error
 
 	activityRecord := func(id, status string, err error) error {
 		uid := timebasedID(id)
 		log.Printf(
-			"Core ----------> Withdraw from %s: token: %s, amount: %s, timestamp: %d ==> Result: id: %s, error: %s",
-			exchange.ID(), token.ID, amount.Text(10), timepoint, id, err,
+			"Core ----------> Withdraw from %s: asset: %s, amount: %s, timestamp: %d ==> Result: id: %s, error: %s",
+			exchange.ID(), asset.ID, amount.Text(10), timepoint, id, err,
 		)
 		return rc.activityStorage.Record(
 			common.ActionWithdraw,
@@ -254,8 +260,8 @@ func (rc ReserveCore) Withdraw(
 			string(exchange.ID()),
 			map[string]interface{}{
 				"exchange":  exchange,
-				"token":     token,
-				"amount":    strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
+				"asset":     asset,
+				"amount":    strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
 				"timepoint": timepoint,
 			}, map[string]interface{}{
 				"error": common.ErrorToString(err),
@@ -270,9 +276,9 @@ func (rc ReserveCore) Withdraw(
 		)
 	}
 
-	_, supported := exchange.Address(token)
+	_, supported := exchange.Address(asset)
 	if !supported {
-		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
+		err = fmt.Errorf("exchange %s doesn't support asset %d", exchange.ID(), asset.ID)
 		sErr := activityRecord("", statusFailed, err)
 		if sErr != nil {
 			log.Printf("failed to store activiry record: %s", sErr.Error())
@@ -280,7 +286,7 @@ func (rc ReserveCore) Withdraw(
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 
-	if err = sanityCheckAmount(exchange, token, amount); err != nil {
+	if err = sanityCheckAmount(exchange, asset, amount); err != nil {
 		sErr := activityRecord("", statusFailed, err)
 		if sErr != nil {
 			log.Printf("failed to store activiry record: %s", sErr.Error())
@@ -290,7 +296,7 @@ func (rc ReserveCore) Withdraw(
 
 	reserveAddr := rc.addressConf.Reserve
 
-	id, err := exchange.Withdraw(token, amount, reserveAddr, timepoint)
+	id, err := exchange.Withdraw(asset, amount, reserveAddr, timepoint)
 	if err != nil {
 		sErr := activityRecord("", statusFailed, err)
 		if sErr != nil {
@@ -351,7 +357,7 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
 
-func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
+func (rc ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 	buys, sells, afpMids []*big.Int,
 	block *big.Int) (*types.Transaction, error) {
 	var (
@@ -373,7 +379,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	}
 	var tokenAddrs []ethereum.Address
 	for _, token := range tokens {
-		tokenAddrs = append(tokenAddrs, ethereum.HexToAddress(token.Address))
+		tokenAddrs = append(tokenAddrs, token.Address)
 	}
 	// if there is a pending set rate tx, we replace it
 	var (
@@ -427,7 +433,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 }
 
 func (rc ReserveCore) SetRates(
-	tokens []common.Token,
+	assets []commonv3.Asset,
 	buys []*big.Int,
 	sells []*big.Int,
 	block *big.Int,
@@ -443,7 +449,7 @@ func (rc ReserveCore) SetRates(
 		miningStatus string
 	)
 
-	tx, err = rc.GetSetRateResult(tokens, buys, sells, afpMids, block)
+	tx, err = rc.GetSetRateResult(assets, buys, sells, afpMids, block)
 	if err != nil {
 		miningStatus = common.MiningStatusFailed
 	} else {
@@ -458,7 +464,7 @@ func (rc ReserveCore) SetRates(
 		uid,
 		"blockchain",
 		map[string]interface{}{
-			"tokens": tokens,
+			"assets": assets,
 			"buys":   buys,
 			"sells":  sells,
 			"block":  block,
@@ -526,21 +532,22 @@ func sanityCheckTrading(exchange common.Exchange, base, quote common.Token, rate
 	return nil
 }
 
-func sanityCheckAmount(exchange common.Exchange, token common.Token, amount *big.Int) error {
-	// TODO: reenable sanity check amount
-	//exchangeFee, err := exchange.GetFee()
-	//if err != nil {
-	//	return err
-	//}
-	//amountFloat := big.NewFloat(0).SetInt(amount)
-	//feeWithdrawing := exchangeFee.Funding.GetTokenFee(token.ID)
-	//expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(token.Decimals), nil)
-	//minAmountWithdraw := big.NewFloat(0)
-	//
-	//minAmountWithdraw.Mul(big.NewFloat(feeWithdrawing), big.NewFloat(0).SetInt(expDecimal))
-	//if amountFloat.Cmp(minAmountWithdraw) < 0 {
-	//	return errors.New("amount is too small")
-	//}
+func sanityCheckAmount(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) error {
+	var feeWithdrawing float64
+	for _, exchg := range asset.Exchanges {
+		if common.ExchangeName(exchg.ExchangeID).String() == string(exchange.ID()) {
+			feeWithdrawing = exchg.WithdrawFee
+		}
+	}
+
+	amountFloat := big.NewFloat(0).SetInt(amount)
+	expDecimal := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(0).SetUint64(asset.Decimals), nil)
+	minAmountWithdraw := big.NewFloat(0)
+
+	minAmountWithdraw.Mul(big.NewFloat(feeWithdrawing), big.NewFloat(0).SetInt(expDecimal))
+	if amountFloat.Cmp(minAmountWithdraw) < 0 {
+		return errors.New("amount is too small")
+	}
 	return nil
 }
 

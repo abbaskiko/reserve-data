@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // ActivityStorage is the interface contains all database operations of core.
@@ -15,8 +16,7 @@ type ActivityStorage interface {
 		estatus string,
 		mstatus string,
 		timepoint uint64) error
-	HasPendingDeposit(
-		token common.Token, exchange common.Exchange) (bool, error)
+	HasPendingDeposit(token commonv3.Asset, exchange common.Exchange) (bool, error)
 
 	GetActivity(id common.ActivityID) (common.ActivityRecord, error)
 

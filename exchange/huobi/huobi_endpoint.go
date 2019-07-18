@@ -18,6 +18,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 const (
@@ -277,15 +278,21 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.HuobiOrder, 
 	return result, err
 }
 
-func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (string, error) {
+func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
+	var symbol string
+	for _, exchg := range asset.Exchanges {
+		if exchg.ExchangeID == uint64(common.Binance) {
+			symbol = exchg.Symbol
+		}
+	}
 	result := exchange.HuobiWithdraw{}
 	respBody, err := ep.GetResponse(
 		"POST",
 		ep.interf.AuthenticatedEndpoint()+"/v1/dw/withdraw/api/create",
 		map[string]string{
 			"address":  address.Hex(),
-			"amount":   strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
-			"currency": strings.ToLower(token.ID),
+			"amount":   strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
+			"currency": strings.ToLower(symbol),
 		},
 		true,
 	)

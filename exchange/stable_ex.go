@@ -28,12 +28,12 @@ func (se *StableEx) MarshalText() (text []byte, err error) {
 	return []byte(se.ID()), nil
 }
 
-func (se *StableEx) Address(token common.Token) (ethereum.Address, bool) {
+func (se *StableEx) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 	addrs, err := se.TokenAddresses()
 	if err != nil {
 		return ethereum.Address{}, false
 	}
-	addr, supported := addrs[token.ID]
+	addr, supported := addrs[asset.Symbol]
 	return addr, supported
 }
 
@@ -73,7 +73,7 @@ func (se *StableEx) Trade(tradeType string, base common.Token, quote common.Toke
 	return "not supported", 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (se *StableEx) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	// TODO: communicate with dgx connector to withdraw
 	return "not supported", errors.New("not supported")
 }
@@ -111,12 +111,12 @@ func (se *StableEx) FetchTradeHistory(timepoint uint64) (map[uint64][]common.Tra
 	return result, errors.New("not supported")
 }
 
-func (se *StableEx) DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error) {
+func (se *StableEx) DepositStatus(id common.ActivityID, txHash string, assetID uint64, amount float64, timepoint uint64) (string, error) {
 	// TODO: checking txHash status
 	return "", errors.New("not supported")
 }
 
-func (se *StableEx) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
+func (se *StableEx) WithdrawStatus(id string, assetID uint64, amount float64, timepoint uint64) (string, string, error) {
 	// TODO: checking id (id is the txhash) status
 	return "", "", errors.New("not supported")
 }
@@ -124,6 +124,10 @@ func (se *StableEx) WithdrawStatus(id, currency string, amount float64, timepoin
 func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 	// TODO: checking id (id is the txhash) status
 	return "", errors.New("not supported")
+}
+
+func (se *StableEx) Configuration() (commonv3.Exchange, error) {
+	return commonv3.Exchange{}, nil
 }
 
 func NewStableEx() (*StableEx, error) {

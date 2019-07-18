@@ -25,7 +25,7 @@ const (
 type Binance struct {
 	interf  BinanceInterface
 	storage BinanceStorage
-	sr      storage.SettingReader
+	sr      storage.Interface
 }
 
 func (bn *Binance) TokenAddresses() (map[string]ethereum.Address, error) {
@@ -41,26 +41,33 @@ func (bn *Binance) MarshalText() (text []byte, err error) {
 }
 
 // Address returns the deposit address of given token.
-func (bn *Binance) Address(token common.Token) (ethereum.Address, bool) {
-	liveAddress, err := bn.interf.GetDepositAddress(token.ID)
+func (bn *Binance) Address(asset commonv3.Asset) (ethereum.Address, bool) {
+	var symbol string
+	for _, exchange := range asset.Exchanges {
+		if exchange.ExchangeID == uint64(common.Binance) {
+			symbol = exchange.Symbol
+		}
+	}
+	liveAddress, err := bn.interf.GetDepositAddress(symbol)
 	if err != nil || liveAddress.Address == "" {
-		log.Printf("WARNING: Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
+		log.Printf("WARNING: Get Binance live deposit address for token %d failed: err: (%v) or the address repplied is empty . Use the currently available address instead", asset.ID, err)
 		addrs, uErr := bn.sr.GetDepositAddresses(uint64(common.Binance))
 		if uErr != nil {
-			log.Printf("WARNING: get address of token %s in Binance exchange failed:(%s), it will be considered as not supported", token.ID, err.Error())
+			log.Printf("WARNING: get address of token %d in Binance exchange failed:(%s), it will be considered as not supported", asset.ID, err.Error())
 			return ethereum.Address{}, false
 		}
-		depositAddr, ok := addrs[token.ID]
+		depositAddr, ok := addrs[symbol]
 		return depositAddr, ok
 	}
-	log.Printf("Got Binance live deposit address for token %s, attempt to update it to current setting", token.ID)
-	addrs := common.NewExchangeAddresses()
-	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
+	log.Printf("Got Binance live deposit address for token %d, attempt to update it to current setting", asset.ID)
+	if err = bn.sr.UpdateDepositAddress(
+		asset.ID,
+		uint64(common.Binance),
+		ethereum.HexToAddress(liveAddress.Address)); err != nil {
+		log.Printf("failed to update deposit address err=%s", err.Error())
+		return ethereum.Address{}, false
 
-	// TODO: update deposit address
-	//if err = bn.setting.UpdateDepositAddress(common.Binance, *addrs, common.GetTimepoint()); err != nil {
-	//	log.Printf("WARNING: cannot update deposit address for token %s on Binance: (%s)", token.ID, err.Error())
-	//}
+	}
 	return ethereum.HexToAddress(liveAddress.Address), true
 }
 
@@ -175,8 +182,8 @@ func (bn *Binance) Trade(tradeType string, base common.Token, quote common.Token
 	return id, done, remaining, finished, err
 }
 
-func (bn *Binance) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
-	tx, err := bn.interf.Withdraw(token, amount, address)
+func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+	tx, err := bn.interf.Withdraw(asset, amount, address)
 	return tx, err
 }
 
@@ -303,15 +310,22 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 			result.Error = fmt.Sprintf("Code: %d, Msg: %s", respData.Code, respData.Msg)
 			result.Status = false
 		} else {
+			assets, err := bn.sr.GetAssets()
+			if err != nil {
+				return common.EBalanceEntry{}, err
+			}
 			for _, b := range respData.Balances {
-				tokenID := b.Asset
-				_, err := bn.sr.GetAssetBySymbol(uint64(common.Binance), tokenID)
-				if err == nil {
-					avai, _ := strconv.ParseFloat(b.Free, 64)
-					locked, _ := strconv.ParseFloat(b.Locked, 64)
-					result.AvailableBalance[tokenID] = avai
-					result.LockedBalance[tokenID] = locked
-					result.DepositBalance[tokenID] = 0
+				tokenSymbol := b.Asset
+				for _, asset := range assets {
+					for _, exchg := range asset.Exchanges {
+						if exchg.ID == uint64(common.Binance) && exchg.Symbol == tokenSymbol {
+							avai, _ := strconv.ParseFloat(b.Free, 64)
+							locked, _ := strconv.ParseFloat(b.Locked, 64)
+							result.AvailableBalance[tokenSymbol] = avai
+							result.LockedBalance[tokenSymbol] = locked
+							result.DepositBalance[tokenSymbol] = 0
+						}
+					}
 				}
 			}
 		}
@@ -412,7 +426,7 @@ func (bn *Binance) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTrad
 	return bn.storage.GetTradeHistory(fromTime, toTime)
 }
 
-func (bn *Binance) DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error) {
+func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID uint64, amount float64, timepoint uint64) (string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
 	deposits, err := bn.interf.DepositHistory(startTime, endTime)
@@ -431,7 +445,7 @@ func (bn *Binance) DepositStatus(id common.ActivityID, txHash, currency string, 
 	return "", nil
 }
 
-func (bn *Binance) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
+func (bn *Binance) WithdrawStatus(id string, assetID uint64, amount float64, timepoint uint64) (string, string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
 	withdraws, err := bn.interf.WithdrawHistory(startTime, endTime)
@@ -466,10 +480,14 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 	return common.ExchangeStatusDone, nil
 }
 
+func (bn *Binance) Configuration() (commonv3.Exchange, error) {
+	return bn.sr.GetExchange(uint64(common.Binance))
+}
+
 func NewBinance(
 	interf BinanceInterface,
 	storage BinanceStorage,
-	sr storage.SettingReader) (*Binance, error) {
+	sr storage.Interface) (*Binance, error) {
 	binance := &Binance{
 		interf:  interf,
 		storage: storage,

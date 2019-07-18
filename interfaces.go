@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // Data is the interface of of all data query methods.
@@ -53,18 +54,18 @@ type Core interface {
 
 	Deposit(
 		exchange common.Exchange,
-		token common.Token,
+		asset commonv3.Asset,
 		amount *big.Int,
 		timestamp uint64) (common.ActivityID, error)
 
 	Withdraw(
 		exchange common.Exchange,
-		token common.Token,
+		token commonv3.Asset,
 		amount *big.Int,
 		timestamp uint64) (common.ActivityID, error)
 
 	CancelOrder(id common.ActivityID, exchange common.Exchange) error
 
 	// blockchain related action
-	SetRates(tokens []common.Token, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string) (common.ActivityID, error)
+	SetRates(tokens []commonv3.Asset, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string) (common.ActivityID, error)
 }

@@ -70,21 +70,3 @@ func (s *Storage) GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, e
 	}
 	return minNotional, nil
 }
-
-// TODO: rewrite this function with proper SQL statement
-func (s *Storage) GetAssetBySymbol(exchangeID uint64, symbol string) (common.Asset, error) {
-	allAssets, err := s.GetAssets()
-	if err != nil {
-		return common.Asset{}, err
-	}
-
-	for _, asset := range allAssets {
-		for _, exchange := range asset.Exchanges {
-			if exchange.ExchangeID == exchangeID && exchange.Symbol == symbol {
-				return asset, nil
-			}
-		}
-	}
-
-	return common.Asset{}, common.ErrNotFound
-}

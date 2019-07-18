@@ -24,7 +24,7 @@ type BinanceInterface interface {
 	GetAccountTradeHistory(baseSymbol, quoteSymbol, fromID string) (BinaAccountTradeHistory, error)
 
 	Withdraw(
-		token common.Token,
+		asset commonv3.Asset,
 		amount *big.Int,
 		address ethereum.Address) (string, error)
 

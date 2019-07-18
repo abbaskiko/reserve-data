@@ -309,16 +309,22 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 	return result, err
 }
 
-func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (string, error) {
+func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
+	var symbol string
+	for _, exchg := range asset.Exchanges {
+		if exchg.ExchangeID == uint64(common.Binance) {
+			symbol = exchg.Symbol
+		}
+	}
 	result := exchange.Binawithdraw{}
 	respBody, err := ep.GetResponse(
 		"POST",
 		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/withdraw.html",
 		map[string]string{
-			"asset":   token.ID,
+			"asset":   symbol,
 			"address": address.Hex(),
 			"name":    "reserve",
-			"amount":  strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
+			"amount":  strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
 		},
 		true,
 		common.GetTimepoint(),

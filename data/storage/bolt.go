@@ -17,6 +17,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
@@ -863,7 +864,7 @@ func (bs *BoltStorage) UpdateActivity(id common.ActivityID, activity common.Acti
 }
 
 //HasPendingDeposit check if a deposit is pending
-func (bs *BoltStorage) HasPendingDeposit(token common.Token, exchange common.Exchange) (bool, error) {
+func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.Exchange) (bool, error) {
 	var (
 		err    error
 		result = false
@@ -877,12 +878,12 @@ func (bs *BoltStorage) HasPendingDeposit(token common.Token, exchange common.Exc
 				return uErr
 			}
 			if record.Action == common.ActionDeposit {
-				tokenID, ok := record.Params["token"].(string)
+				assetID, ok := record.Params["asset"].(uint64)
 				if !ok {
-					log.Printf("ERROR: record Params token (%v) can not be converted to string", record.Params["token"])
+					log.Printf("ERROR: record Params token (%v) can not be converted to string", record.Params["asset"])
 					continue
 				}
-				if tokenID == token.ID && record.Destination == string(exchange.ID()) {
+				if assetID == asset.ID && record.Destination == string(exchange.ID()) {
 					result = true
 				}
 			}

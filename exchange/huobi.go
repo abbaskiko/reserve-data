@@ -66,9 +66,15 @@ func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 // Address return the deposit address of a token in Huobi exchange.
 // Due to the logic of Huobi exchange, every token if supported will be
 // deposited to an Intermediator address instead.
-func (h *Huobi) Address(token common.Token) (ethereum.Address, bool) {
+func (h *Huobi) Address(asset commonv3.Asset) (ethereum.Address, bool) {
+	var symbol string
+	for _, exchange := range asset.Exchanges {
+		if exchange.ExchangeID == uint64(common.Huobi) {
+			symbol = exchange.Symbol
+		}
+	}
 	result := h.blockchain.GetIntermediatorAddr()
-	_, err := h.RealDepositAddress(token.ID)
+	_, err := h.RealDepositAddress(symbol)
 	//if the realDepositAddress can not be querried, that mean the token isn't supported on Huobi
 	if err != nil {
 		return result, false
@@ -173,8 +179,8 @@ func (h *Huobi) Trade(tradeType string, base common.Token, quote common.Token, r
 }
 
 //Withdraw return withdraw id from huobi
-func (h *Huobi) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
-	withdrawID, err := h.interf.Withdraw(token, amount, address)
+func (h *Huobi) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+	withdrawID, err := h.interf.Withdraw(asset, amount, address)
 	if err != nil {
 		return "", err
 	}
@@ -335,18 +341,26 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 			result.Error = fmt.Sprintf("Cannot fetch ebalance")
 			result.Status = false
 		} else {
+			assets, err := h.sr.GetAssets()
+			if err != nil {
+				return common.EBalanceEntry{}, err
+			}
+
 			balances := respData.Data.List
 			for _, b := range balances {
-				tokenID := strings.ToUpper(b.Currency)
-				_, err := h.sr.GetAssetBySymbol(uint64(common.Huobi), tokenID)
-				if err == nil {
-					balance, _ := strconv.ParseFloat(b.Balance, 64)
-					if b.Type == "trade" {
-						result.AvailableBalance[tokenID] = balance
-					} else {
-						result.LockedBalance[tokenID] = balance
+				tokenSymbol := strings.ToUpper(b.Currency)
+				for _, asset := range assets {
+					for _, exchg := range asset.Exchanges {
+						if exchg.ID == uint64(common.Huobi) && exchg.Symbol == tokenSymbol {
+							balance, _ := strconv.ParseFloat(b.Balance, 64)
+							if b.Type == "trade" {
+								result.AvailableBalance[tokenSymbol] = balance
+							} else {
+								result.LockedBalance[tokenSymbol] = balance
+							}
+							result.DepositBalance[tokenSymbol] = 0
+						}
 					}
-					result.DepositBalance[tokenID] = 0
 				}
 			}
 		}
@@ -498,7 +512,7 @@ func (h *Huobi) FindTx2(id common.ActivityID) (tx2 common.TXEntry, found bool) {
 	return tx2, found
 }
 
-func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEntry, currency string, sentAmount float64) (string, error) {
+func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEntry, assetID uint64, sentAmount float64) (string, error) {
 	assets, err := h.sr.GetAssets()
 	if err != nil {
 		log.Printf("Huobi ERROR: Can not get list of assets from setting (%s)", err)
@@ -521,7 +535,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 			if deposit.State == "safe" || deposit.State == "confirmed" {
 				data := common.NewTXEntry(tx2Entry.Hash,
 					h.Name(),
-					currency,
+					assetID,
 					"mined",
 					exchangeStatusDone,
 					sentAmount,
@@ -542,7 +556,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 	return "", nil
 }
 
-func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sentAmount float64) (string, error) {
+func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID uint64, sentAmount float64) (string, error) {
 	status, blockno, err := h.blockchain.TxStatus(ethereum.HexToHash(tx1Hash))
 	if err != nil {
 		log.Printf("Huobi Can not get TX status (%s)", err.Error())
@@ -551,13 +565,21 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sen
 	log.Printf("Huobi Status for Tx1 was %s at block %d ", status, blockno)
 	if status == common.MiningStatusMined {
 		//if it is mined, send 2nd tx.
-		log.Printf("Found a new deposit status, which deposit %f %s. Procceed to send it to Huobi", sentAmount, currency)
+		log.Printf("Found a new deposit status, which deposit %f %d. Procceed to send it to Huobi", sentAmount, assetID)
 		//check if the asset is supported, the asset can be active or inactivee
-		asset, err := h.sr.GetAssetBySymbol(uint64(common.Binance), currency)
+		asset, err := h.sr.GetAsset(assetID)
 		if err != nil {
 			return "", err
 		}
-		exchangeAddress, err := h.RealDepositAddress(currency)
+
+		var symbol string
+		for _, exchg := range asset.Exchanges {
+			if exchg.ExchangeID == uint64(common.Huobi) {
+				symbol = exchg.Symbol
+			}
+		}
+
+		exchangeAddress, err := h.RealDepositAddress(symbol)
 		if err != nil {
 			return "", err
 		}
@@ -570,7 +592,7 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sen
 		data := common.NewTXEntry(
 			tx2.Hash().Hex(),
 			h.Name(),
-			currency,
+			assetID,
 			common.MiningStatusSubmitted,
 			"",
 			sentAmount,
@@ -585,12 +607,12 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sen
 	return "", nil
 }
 
-func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, sentAmount float64, timepoint uint64) (string, error) {
+func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint64, sentAmount float64, timepoint uint64) (string, error) {
 	var data common.TXEntry
 	tx2Entry, found := h.FindTx2(id)
 	//if not found, meaning there is no tx2 yet, process 1st Tx and send 2nd Tx.
 	if !found {
-		return h.process1stTx(id, tx1Hash, currency, sentAmount)
+		return h.process1stTx(id, tx1Hash, assetID, sentAmount)
 	}
 	// if there is tx2Entry, check it blockchain status and handle the status accordingly:
 	miningStatus, _, err := h.blockchain.TxStatus(ethereum.HexToHash(tx2Entry.Hash))
@@ -603,7 +625,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
 			h.Name(),
-			currency,
+			assetID,
 			common.MiningStatusMined,
 			"",
 			sentAmount,
@@ -612,12 +634,12 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 			log.Printf("Huobi Trying to store intermediate tx to huobi storage, error: %s. Ignore it and try later", uErr.Error())
 			return "", nil
 		}
-		return h.exchangeDepositStatus(id, tx2Entry, currency, sentAmount)
+		return h.exchangeDepositStatus(id, tx2Entry, assetID, sentAmount)
 	case common.MiningStatusFailed:
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
 			h.Name(),
-			currency,
+			assetID,
 			common.MiningStatusFailed,
 			common.ExchangeStatusFailed,
 			sentAmount,
@@ -634,7 +656,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 			data = common.NewTXEntry(
 				tx2Entry.Hash,
 				h.Name(),
-				currency,
+				assetID,
 				common.MiningStatusLost,
 				common.ExchangeStatusLost,
 				sentAmount,
@@ -654,7 +676,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 
 //WithdrawStatus return withdraw status from huobi
 func (h *Huobi) WithdrawStatus(
-	id, currency string, amount float64, timepoint uint64) (string, string, error) {
+	id string, assetID uint64, amount float64, timepoint uint64) (string, string, error) {
 	withdrawID, _ := strconv.ParseUint(id, 10, 64)
 	assets, err := h.sr.GetAssets()
 	if err != nil {
@@ -694,6 +716,10 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 		return "", nil
 	}
 	return common.ExchangeStatusDone, nil
+}
+
+func (h *Huobi) Configuration() (commonv3.Exchange, error) {
+	return h.sr.GetExchange(uint64(common.Huobi))
 }
 
 //NewHuobi creates new Huobi exchange instance

@@ -7,6 +7,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 const binanceTestExchangeID = "binance"
@@ -21,11 +22,11 @@ type BinanceTestExchange struct{}
 func (bte *BinanceTestExchange) ID() common.ExchangeID {
 	return "binance"
 }
-func (bte *BinanceTestExchange) Address(token common.Token) (address ethereum.Address, supported bool) {
+func (bte *BinanceTestExchange) Address(_ commonv3.Asset) (address ethereum.Address, supported bool) {
 	return ethereum.Address{}, true
 }
 
-func (bte *BinanceTestExchange) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (bte *BinanceTestExchange) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	return "withdrawid", nil
 }
 func (bte *BinanceTestExchange) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
@@ -42,15 +43,18 @@ func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common
 	return common.ExchangeTradeHistory{}, nil
 }
 
+func (bte *BinanceTestExchange) Configuration() (commonv3.Exchange, error) {
+	return commonv3.Exchange{}, nil
+}
+
 // GetLiveExchangeInfos of TestExchangeForSetting return a valid result for
-func (bte *BinanceTestExchange) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
-	ETHKNCpairID := common.NewTokenPairID("KNC", "ETH")
+func (bte *BinanceTestExchange) GetLiveExchangeInfos(tokenPairIDs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
 	result := make(common.ExchangeInfo)
 	for _, pairID := range tokenPairIDs {
-		if pairID != ETHKNCpairID {
+		if pairID.ID != 1 {
 			return result, errors.New("token pair ID is not support")
 		}
-		result[pairID] = common.ExchangePrecisionLimit{
+		result[1] = common.ExchangePrecisionLimit{
 			AmountLimit: common.TokenPairAmountLimit{
 				Min: 1,
 				Max: 900000,

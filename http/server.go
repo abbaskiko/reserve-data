@@ -21,6 +21,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/metric"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
@@ -252,22 +253,29 @@ func (s *Server) SetRate(c *gin.Context) {
 	if !ok {
 		return
 	}
-	//tokenAddrs := postForm.Get("tokens")
+	assetIDs := postForm.Get("assets")
 	buys := postForm.Get("buys")
 	sells := postForm.Get("sells")
 	block := postForm.Get("block")
 	afpMid := postForm.Get("afp_mid")
 	msgs := strings.Split(postForm.Get("msgs"), "-")
-	tokens := []common.Token{}
-	// TODO: set rate should accept asset_id
-	//for _, tok := range strings.Split(tokenAddrs, "-") {
-	//	token, err := s.assetStorage.GetInternalTokenByID(tok)
-	//	if err != nil {
-	//		httputil.ResponseFailure(c, httputil.WithError(err))
-	//		return
-	//	}
-	//	tokens = append(tokens, token)
-	//}
+	var assets []commonv3.Asset
+	{
+	}
+	for _, assetID := range strings.Split(assetIDs, "-") {
+		id, err := strconv.Atoi(assetID)
+		if err != nil {
+			httputil.ResponseFailure(
+				c,
+				httputil.WithError(fmt.Errorf("invalid asset id: err=%s", err.Error())))
+		}
+		asset, err := s.assetStorage.GetAsset(uint64(id))
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+		assets = append(assets, asset)
+	}
 	bigBuys := []*big.Int{}
 	for _, rate := range strings.Split(buys, "-") {
 		r, err := hexutil.DecodeBig(rate)
@@ -300,7 +308,7 @@ func (s *Server) SetRate(c *gin.Context) {
 		}
 		bigAfpMid = append(bigAfpMid, r)
 	}
-	id, err := s.core.SetRates(tokens, bigBuys, bigSells, big.NewInt(intBlock), bigAfpMid, msgs)
+	id, err := s.core.SetRates(assets, bigBuys, bigSells, big.NewInt(intBlock), bigAfpMid, msgs)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -398,13 +406,13 @@ func (s *Server) CancelOrder(c *gin.Context) {
 }
 
 func (s *Server) Withdraw(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"token", "amount"}, []Permission{RebalancePermission})
+	postForm, ok := s.Authenticated(c, []string{"asset", "amount"}, []Permission{RebalancePermission})
 	if !ok {
 		return
 	}
 
 	exchangeParam := c.Param("exchangeid")
-	//tokenParam := postForm.Get("token")
+	assetParam := postForm.Get("token")
 	amountParam := postForm.Get("amount")
 
 	exchange, err := common.GetExchange(exchangeParam)
@@ -412,20 +420,24 @@ func (s *Server) Withdraw(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	// TODO: withdraw should accept asset_id instead of token
-	//token, err := s.setting.GetInternalTokenByID(tokenParam)
-	//if err != nil {
-	//	httputil.ResponseFailure(c, httputil.WithError(err))
-	//	return
-	//}
+
+	assetID, err := strconv.Atoi(assetParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	asset, err := s.assetStorage.GetAsset(uint64(assetID))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 	amount, err := hexutil.DecodeBig(amountParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	var token common.Token // TODO: remove me
-	log.Printf("Withdraw %s %s from %s\n", amount.Text(10), token.ID, exchange.ID())
-	id, err := s.core.Withdraw(exchange, token, amount, getTimePoint(c, false))
+	log.Printf("Withdraw %s %d from %s\n", amount.Text(10), asset.ID, exchange.ID())
+	id, err := s.core.Withdraw(exchange, asset, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -434,35 +446,38 @@ func (s *Server) Withdraw(c *gin.Context) {
 }
 
 func (s *Server) Deposit(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"amount", "token"}, []Permission{RebalancePermission})
+	postForm, ok := s.Authenticated(c, []string{"amount", "asset_id"}, []Permission{RebalancePermission})
 	if !ok {
 		return
 	}
 
 	exchangeParam := c.Param("exchangeid")
 	amountParam := postForm.Get("amount")
-	//tokenParam := postForm.Get("token")
+	assetIDParam := postForm.Get("asset_id")
+	assetID, err := strconv.Atoi(assetIDParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 
 	exchange, err := common.GetExchange(exchangeParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	// TODO: deposit should accept asset_id instead of symbol
-	//token, err := s.setting.GetInternalTokenByID(tokenParam)
-	//if err != nil {
-	//	httputil.ResponseFailure(c, httputil.WithError(err))
-	//	return
-	//}
+	asset, err := s.assetStorage.GetAsset(uint64(assetID))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 	amount, err := hexutil.DecodeBig(amountParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	var token common.Token // TODO: remove me
-	log.Printf("Depositing %s %s to %s\n", amount.Text(10), token.ID, exchange.ID())
-	id, err := s.core.Deposit(exchange, token, amount, getTimePoint(c, false))
+	log.Printf("Depositing %s %s to %s\n", amount.Text(10), asset.ID, exchange.ID())
+	id, err := s.core.Deposit(exchange, asset, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

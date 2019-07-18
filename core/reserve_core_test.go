@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 type testExchange struct {
@@ -45,7 +46,7 @@ type testBlockchain struct {
 }
 
 func (tbc testBlockchain) Send(
-	token common.Token,
+	asset commonv3.Asset,
 	amount *big.Int,
 	address ethereum.Address) (*types.Transaction, error) {
 	tx := types.NewTransaction(
