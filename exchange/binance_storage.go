@@ -7,5 +7,5 @@ type BinanceStorage interface {
 	StoreTradeHistory(data common.ExchangeTradeHistory) error
 
 	GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error)
-	GetLastIDTradeHistory(pair string) (string, error)
+	GetLastIDTradeHistory(pairID uint64) (string, error)
 }

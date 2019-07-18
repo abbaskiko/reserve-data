@@ -881,7 +881,7 @@ func TestStorage_GetTradingPairSymbols(t *testing.T) {
 		}
 	}
 
-	pairs, err := s.GetTradingPairSymbols(uint64(common.Binance))
+	pairs, err := s.GetTradingPairs(uint64(common.Binance))
 	require.NoError(t, err)
 	require.Len(t, pairs, 1)
 	assert.Equal(t, "BNB", pairs[0].BaseSymbol)

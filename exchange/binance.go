@@ -327,8 +327,7 @@ func (bn *Binance) FetchOnePairTradeHistory(
 
 	defer wait.Done()
 	result := []common.TradeHistory{}
-	tokenPair := fmt.Sprintf("%s-%s", pair.BaseSymbol, pair.QuoteSymbol)
-	fromID, err := bn.storage.GetLastIDTradeHistory(tokenPair)
+	fromID, err := bn.storage.GetLastIDTradeHistory(pair.ID)
 	if err != nil {
 		log.Printf("Cannot get last ID trade history: %s", err.Error())
 	}

@@ -27,7 +27,7 @@ func TestHuobiStoreTradeHistory(t *testing.T) {
 	}
 	//Mock exchange history
 	exchangeTradeHistory := common.ExchangeTradeHistory{
-		common.TokenPairID("OMGETH"): []common.TradeHistory{
+		2: []common.TradeHistory{
 			{
 				ID:        "12342",
 				Price:     0.132131,

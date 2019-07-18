@@ -112,11 +112,11 @@ func (bs *Storage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTrad
 
 //GetLastIDTradeHistory return last id of trade history of a token
 //using for query trade history from binance
-func (bs *Storage) GetLastIDTradeHistory(pair string) (string, error) {
+func (bs *Storage) GetLastIDTradeHistory(pairID uint64) (string, error) {
 	history := common.TradeHistory{}
 	err := bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tradeHistory))
-		pairBk, err := b.CreateBucketIfNotExists([]byte(pair))
+		pairBk, err := b.CreateBucketIfNotExists(boltutil.Uint64ToBytes(pairID))
 		if err != nil {
 			log.Printf("Cannot get pair bucket: %s", err.Error())
 			return err
