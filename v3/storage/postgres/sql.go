@@ -128,6 +128,27 @@ CREATE TABLE IF NOT EXISTS trading_pairs
     CONSTRAINT trading_pair_check CHECK ( base_id != quote_id)
 );
 
+CREATE TABLE IF NOT EXISTS pending_assets (
+	id	SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION new_pending_asset(_data pending_assets.data%TYPE)
+RETURNS int AS 
+$$
+
+DECLARE
+	_id         pending_assets.id%TYPE;
+
+BEGIN
+	DELETE FROM pending_assets;
+	INSERT INTO pending_assets(created,data) VALUES(now(),_data) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
+
 CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _name assets.symbol%TYPE,
                                      _address addresses.address%TYPE,
@@ -318,12 +339,13 @@ $$ LANGUAGE PLPGSQL;
 `
 
 type preparedStmts struct {
-	getExchanges     *sqlx.Stmt
-	getExchange      *sqlx.Stmt
-	updateExchange   *sqlx.NamedStmt
-	newAsset         *sqlx.NamedStmt
-	newAssetExchange *sqlx.NamedStmt
-	newTradingPair   *sqlx.NamedStmt
+	getExchanges        *sqlx.Stmt
+	getExchange         *sqlx.Stmt
+	updateExchange      *sqlx.NamedStmt
+	newAsset            *sqlx.NamedStmt
+	newAssetExchange    *sqlx.NamedStmt
+	updateAssetExchange *sqlx.NamedStmt
+	newTradingPair      *sqlx.NamedStmt
 
 	getAsset             *sqlx.Stmt
 	getAssetExchange     *sqlx.Stmt
@@ -336,6 +358,9 @@ type preparedStmts struct {
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
 	getTransferableAssets *sqlx.Stmt
+	getPendingAssets      *sqlx.Stmt
+	newPendingAsset       *sqlx.Stmt
+	deletePendingAsset    *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -412,6 +437,37 @@ VALUES (:exchange_id,
         :target_recommended,
         :target_ratio) RETURNING id`
 	newAssetExchange, err := db.PrepareNamed(newAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const updateAssetExchangeQuery string = `UPDATE "asset_exchanges"
+SET symbol = COALESCE(:symbol, symbol),
+    deposit_address = COALESCE(:deposit_address, deposit_address),
+    min_deposit           = COALESCE(:min_deposit, min_deposit),
+	withdraw_fee = coalesce(:withdraw_fee, withdraw_fee),
+    target_recommended = coalesce(:target_recommended,target_recommended),
+    target_ratio = coalesce(:target_ratio, target_ratio)
+WHERE id = :id`
+	updateAssetExchange, err := db.PrepareNamed(updateAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	// we have at most one pending at a time, so we delete all exists one before insert new one.
+	const newPendingAssetQuery = `SELECT new_pending_asset FROM new_pending_asset ($1);`
+	newPendingAsset, err := db.Preparex(newPendingAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deletePendingAssetQuery = `DELETE FROM pending_assets WHERE id=$1`
+	deletePendingAsset, err := db.Preparex(deletePendingAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+	const listPendingAssetQuery = `SELECT id,created,data FROM pending_assets WHERE id=COALESCE($1, pending_assets.id)`
+	getPendingAsset, err := db.Preparex(listPendingAssetQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -624,12 +680,13 @@ WHERE id = :id RETURNING id; `
 	}
 
 	return &preparedStmts{
-		getExchanges:     getExchanges,
-		getExchange:      getExchange,
-		updateExchange:   updateExchange,
-		newAsset:         newAsset,
-		newAssetExchange: newAssetExchange,
-		newTradingPair:   newTradingPair,
+		getExchanges:        getExchanges,
+		getExchange:         getExchange,
+		updateExchange:      updateExchange,
+		newAsset:            newAsset,
+		newAssetExchange:    newAssetExchange,
+		updateAssetExchange: updateAssetExchange,
+		newTradingPair:      newTradingPair,
 
 		getAsset:             getAsset,
 		getAssetExchange:     getAssetExchange,
@@ -641,5 +698,9 @@ WHERE id = :id RETURNING id; `
 
 		getTradingPairSymbols: getTradingPairSymbols,
 		getMinNotional:        getMinMotional,
+
+		newPendingAsset:    newPendingAsset,
+		getPendingAssets:   getPendingAsset,
+		deletePendingAsset: deletePendingAsset,
 	}, nil
 }
