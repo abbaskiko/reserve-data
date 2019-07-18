@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -28,7 +27,7 @@ func (s *Server) getAsset(c *gin.Context) {
 		responseWithBackendError(c, err)
 		return
 	}
-	responseSuccess(c, asset)
+	responseData(c, http.StatusOK, asset)
 }
 
 func (s *Server) getAssets(c *gin.Context) {
@@ -36,14 +35,11 @@ func (s *Server) getAssets(c *gin.Context) {
 	if err != nil {
 		responseWithBackendError(c, err)
 	}
-	responseSuccess(c, assets)
+	responseData(c, http.StatusOK, assets)
 }
 
 func (s *Server) createPendingAsset(c *gin.Context) {
-	if !strings.HasPrefix(c.ContentType(), "application/json") {
-		responseError(c, http.StatusBadRequest, "content type application/json expected")
-		return
-	}
+
 	body, err := readAndClose(c.Request.Body)
 	if err != nil {
 		responseError(c, http.StatusBadRequest, "corrupted")
@@ -75,12 +71,12 @@ func (s *Server) createPendingAsset(c *gin.Context) {
 		}
 	}
 
-	id, err := s.storage.CreatePendingAsset(body)
+	id, err := s.storage.CreatePendingAsset(createPendingAsset)
 	if err != nil {
 		responseWithBackendError(c, err)
 		return
 	}
-	responseSuccess(c, gin.H{"id": id})
+	responseData(c, http.StatusCreated, gin.H{"id": id})
 }
 
 func (s *Server) listPendingAsset(c *gin.Context) {
@@ -89,7 +85,7 @@ func (s *Server) listPendingAsset(c *gin.Context) {
 		responseWithBackendError(c, err)
 		return
 	}
-	responseSuccess(c, result)
+	responseData(c, http.StatusOK, result)
 }
 
 func (s *Server) confirmPendingAsset(c *gin.Context) {
@@ -141,7 +137,7 @@ func (s *Server) createAssetExchange(c *gin.Context) {
 		responseWithBackendError(c, err)
 		return
 	}
-	responseSuccess(c, gin.H{"id": id})
+	responseData(c, http.StatusCreated, gin.H{"id": id})
 }
 
 func (s *Server) updateAssetExchange(c *gin.Context) {

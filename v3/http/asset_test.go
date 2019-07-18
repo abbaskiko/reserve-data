@@ -1,8 +1,6 @@
 package http
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -54,11 +52,9 @@ func TestReCreatePendingAsset(t *testing.T) {
 	}()
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-	jsonPayload, err := json.Marshal(createPEA)
+	_, err = s.CreatePendingAsset(createPEA)
 	require.NoError(t, err)
-	_, err = s.CreatePendingAsset(jsonPayload)
-	require.NoError(t, err)
-	id2, err := s.CreatePendingAsset(jsonPayload)
+	id2, err := s.CreatePendingAsset(createPEA)
 	require.NoError(t, err)
 	pending, err := s.ListPendingAsset()
 	require.NoError(t, err)
@@ -81,7 +77,7 @@ func TestHTTPServerAsset(t *testing.T) {
 
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-	assetID := 1
+	// asset = 1 for ETH is pre-insert in DB.
 	_, err = s.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
@@ -96,7 +92,7 @@ func TestHTTPServerAsset(t *testing.T) {
 		},
 		{
 			msg:      "receive asset",
-			endpoint: assetBase + fmt.Sprintf("/%d", assetID),
+			endpoint: assetBase + "/1",
 			method:   http.MethodGet,
 			assert:   httputil.ExpectFailure,
 		},

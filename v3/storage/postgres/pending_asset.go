@@ -9,8 +9,13 @@ import (
 )
 
 // CreatePendingAsset create a new pending asset, this will delete all old pending as we maintain 1 pending asset only.
-func (s *Storage) CreatePendingAsset(jsonData json.RawMessage) (uint64, error) {
+func (s *Storage) CreatePendingAsset(c common.CreatePendingAsset) (uint64, error) {
 	var id uint64
+	jsonData, err := json.Marshal(c)
+	if err != nil {
+		return 0, err
+	}
+
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return 0, err

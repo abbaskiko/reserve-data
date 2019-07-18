@@ -221,6 +221,7 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, opts storage.Updat
 	} else if err != nil {
 		return fmt.Errorf("failed to update asset err=%s", err)
 	}
+	// TODO: check more error
 	return nil
 }
 

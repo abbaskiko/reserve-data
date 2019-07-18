@@ -155,7 +155,6 @@ type PendingAsset struct {
 
 // CreateAssetExchange is the configuration of an asset for a specific exchange.
 type CreateAssetExchange struct {
-	// ID                uint64           `json:"id"`
 	AssetID           uint64           `json:"asset_id"`
 	ExchangeID        uint64           `json:"exchange_id"`
 	Symbol            string           `json:"symbol"`
@@ -164,7 +163,6 @@ type CreateAssetExchange struct {
 	WithdrawFee       float64          `json:"withdraw_fee"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
-	//TradingPairs      []TradingPair    `json:"trading_pairs"`
 }
 
 // CreatePendingAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...

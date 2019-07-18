@@ -66,8 +66,8 @@ func responseStatus(c *gin.Context, code int, message string) {
 	c.JSON(code, gin.H{"status": message})
 }
 
-func responseSuccess(c *gin.Context, obj interface{}) {
-	c.JSON(http.StatusOK, obj)
+func responseData(c *gin.Context, status int, obj interface{}) {
+	c.JSON(status, obj)
 }
 
 func readAndClose(body io.ReadCloser) ([]byte, error) {

@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
-
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	v3 "github.com/KyberNetwork/reserve-data/v3/common"
@@ -44,7 +42,7 @@ type Interface interface {
 	// TODO method for batch update exchange configuration
 	// TODO meethod for batch update target
 	// TODO method for update address
-	CreatePendingAsset(body json.RawMessage) (uint64, error)
+	CreatePendingAsset(v3.CreatePendingAsset) (uint64, error)
 	ListPendingAsset() ([]*v3.PendingAsset, error)
 	RejectPendingAsset(id uint64) error
 	ConfirmPendingAsset(id uint64) error
@@ -65,60 +63,6 @@ type SettingReader interface {
 }
 
 type UpdateAssetExchangeOpts = v3.UpdateAssetExchange
-
-/*
-func (u *UpdateAssetExchangeOpts) Symbol() *string {
-	return u.symbol
-}
-func (u *UpdateAssetExchangeOpts) DepositAddress() *ethereum.Address {
-	return u.depositAddress
-}
-func (u *UpdateAssetExchangeOpts) MinDeposit() *float64 {
-	return u.minDeposit
-}
-func (u *UpdateAssetExchangeOpts) WithdrawFee() *float64 {
-	return u.withdrawFee
-}
-func (u *UpdateAssetExchangeOpts) TargetRecommended() *float64 {
-	return u.targetRecommended
-}
-func (u *UpdateAssetExchangeOpts) TargetRatio() *float64 {
-	return u.targetRatio
-}
-
-type UpdateAssetExchangeOption func(opts *UpdateAssetExchangeOpts)
-
-func WithSymbolUpdateAssetExchangeOpt(symbol string) UpdateAssetExchangeOption {
-	return func(opts *UpdateAssetExchangeOpts) {
-		opts.symbol = &symbol
-	}
-}
-func WithDepositAddressUpdateAssetExchangeOpt(depositAddress ethereum.Address) UpdateAssetExchangeOption {
-	return func(opts *UpdateAssetExchangeOpts) {
-		opts.depositAddress = &depositAddress
-	}
-}
-func WithMinDepositUpdateAssetExchangeOpt(minDeposit float64) UpdateAssetExchangeOption {
-	return func(opts *UpdateAssetExchangeOpts) {
-		opts.minDeposit = &minDeposit
-	}
-}
-func WithWithdrawFeeUpdateAssetExchangeOpt(withdrawFee float64) UpdateAssetExchangeOption {
-	return func(opts *UpdateAssetExchangeOpts) {
-		opts.withdrawFee = &withdrawFee
-	}
-}
-func WithTargetRecommendedUpdateAssetExchangeOpt(v float64) UpdateAssetExchangeOption {
-	return func(opts *UpdateAssetExchangeOpts) {
-		opts.targetRecommended = &v
-	}
-}
-func WithTargetRatioUpdateAssetExchangeOpt(v float64) UpdateAssetExchangeOption {
-	return func(opts *UpdateAssetExchangeOpts) {
-		opts.targetRatio = &v
-	}
-}
-*/
 
 // UpdateExchangeOpts is the options of UpdateAsset method.
 type UpdateExchangeOpts struct {
