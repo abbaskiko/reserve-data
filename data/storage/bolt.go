@@ -878,12 +878,18 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 				return uErr
 			}
 			if record.Action == common.ActionDeposit {
-				assetID, ok := record.Params["asset"].(uint64)
+				assetIDStr, ok := record.Params["asset"].(string)
 				if !ok {
 					log.Printf("ERROR: record Params token (%v) can not be converted to string", record.Params["asset"])
 					continue
 				}
-				if assetID == asset.ID && record.Destination == string(exchange.ID()) {
+
+				assetID, err := strconv.Atoi(assetIDStr)
+				if err != nil {
+					log.Printf("stored assset id is not an int64 number stored=%v err=%s", assetIDStr, err.Error())
+				}
+
+				if uint64(assetID) == asset.ID && record.Destination == string(exchange.ID()) {
 					result = true
 				}
 			}

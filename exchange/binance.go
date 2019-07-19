@@ -476,10 +476,6 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 	return common.ExchangeStatusDone, nil
 }
 
-func (bn *Binance) Configuration() (commonv3.Exchange, error) {
-	return bn.sr.GetExchange(uint64(common.Binance))
-}
-
 func (bn *Binance) Name() common.ExchangeName {
 	return common.Binance
 }

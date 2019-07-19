@@ -43,10 +43,6 @@ func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (bte *BinanceTestExchange) Configuration() (commonv3.Exchange, error) {
-	return commonv3.Exchange{}, nil
-}
-
 func (bte *BinanceTestExchange) Name() common.ExchangeName {
 	return common.Binance
 }

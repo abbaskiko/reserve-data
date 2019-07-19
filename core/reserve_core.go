@@ -250,7 +250,7 @@ func (rc ReserveCore) Withdraw(
 	activityRecord := func(id, status string, err error) error {
 		uid := timebasedID(id)
 		log.Printf(
-			"Core ----------> Withdraw from %s: asset: %s, amount: %s, timestamp: %d ==> Result: id: %s, error: %s",
+			"Core ----------> Withdraw from %s: asset: %d, amount: %s, timestamp: %d ==> Result: id: %s, error: %s",
 			exchange.ID(), asset.ID, amount.Text(10), timepoint, id, err,
 		)
 		return rc.activityStorage.Record(

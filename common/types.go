@@ -232,7 +232,7 @@ func NewActivityRecord(action string, id ActivityID, destination string, params,
 	//if any params is an asset, save it ID instead of whole struct
 	for k, v := range params {
 		if asset, ok := v.(common.Asset); ok {
-			params[k] = asset.ID
+			params[k] = strconv.FormatUint(asset.ID, 10)
 		}
 	}
 	assets, ok := params["assets"].([]common.Asset)

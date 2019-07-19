@@ -5,9 +5,13 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/data/testutil"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 func TestHasPendingDepositBoltStorage(t *testing.T) {
@@ -20,10 +24,27 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Couldn't init bolt storage %v", err)
 	}
-	token := common.NewToken("OMG", "Omise-go", "0x1111111111111111111111111111111111111111", 18, true, true, 0)
 	exchange := common.TestExchange{}
 	timepoint := common.GetTimepoint()
-	out, err := storage.HasPendingDeposit(token, exchange)
+	asset := commonv3.Asset{
+		ID:                 1,
+		Symbol:             "OMG",
+		Name:               "omise-go",
+		Address:            ethereum.HexToAddress("0x1111111111111111111111111111111111111111"),
+		OldAddresses:       nil,
+		Decimals:           12,
+		Transferable:       true,
+		SetRate:            commonv3.SetRateNotSet,
+		Rebalance:          false,
+		IsQuote:            false,
+		PWI:                nil,
+		RebalanceQuadratic: nil,
+		Exchanges:          nil,
+		Target:             nil,
+		Created:            time.Now(),
+		Updated:            time.Now(),
+	}
+	out, err := storage.HasPendingDeposit(asset, exchange)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -36,7 +57,7 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 		string(exchange.ID()),
 		map[string]interface{}{
 			"exchange":  exchange,
-			"token":     token,
+			"asset":     asset,
 			"amount":    "1.0",
 			"timepoint": timepoint,
 		},
@@ -50,7 +71,25 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Store activity error: %s", err.Error())
 	}
-	out, err = storage.HasPendingDeposit(token, exchange)
+	b, err := storage.HasPendingDeposit(commonv3.Asset{
+		ID:                 1,
+		Symbol:             "OMG",
+		Name:               "omise-go",
+		Address:            ethereum.HexToAddress("0x1111111111111111111111111111111111111111"),
+		OldAddresses:       nil,
+		Decimals:           12,
+		Transferable:       true,
+		SetRate:            commonv3.SetRateNotSet,
+		Rebalance:          false,
+		IsQuote:            false,
+		PWI:                nil,
+		RebalanceQuadratic: nil,
+		Exchanges:          nil,
+		Target:             nil,
+		Created:            time.Now(),
+		Updated:            time.Now(),
+	}, exchange)
+	out, err = b, err
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

@@ -122,10 +122,6 @@ func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 	return "", errors.New("not supported")
 }
 
-func (se *StableEx) Configuration() (commonv3.Exchange, error) {
-	return commonv3.Exchange{}, nil
-}
-
 func (se *StableEx) Name() common.ExchangeName {
 	return common.StableExchange
 }

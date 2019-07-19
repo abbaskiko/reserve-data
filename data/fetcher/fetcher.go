@@ -671,12 +671,19 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 					log.Printf("WARNING: can't parse activity Params amount %s to float64", amountStr)
 					continue
 				}
-				assetID, ok := activity.Params["asset"].(uint64)
+				assetIDStr, ok := activity.Params["asset"].(string)
 				if !ok {
-					log.Printf("WARNING: activity Params token (%v) can't be converted to type uint64", activity.Params["asset"])
+					log.Printf("WARNING: activity Params token (%v) can't be converted to type string", activity.Params["asset"])
 					continue
 				}
-				status, err = exchange.DepositStatus(id, txHash, assetID, amount, timepoint)
+
+				assetID, err := strconv.Atoi(assetIDStr)
+				if err != nil {
+					log.Printf("WARNING: invalid stored asset id=%s", assetIDStr)
+					continue
+				}
+
+				status, err = exchange.DepositStatus(id, txHash, uint64(assetID), amount, timepoint)
 				log.Printf("Got deposit status for %v: (%s), error(%s)", activity, status, common.ErrorToString(err))
 			case common.ActionWithdraw:
 				amountStr, ok := activity.Params["amount"].(string)
@@ -689,17 +696,23 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 					log.Printf("WARNING: can't parse activity Params amount %s to float64", amountStr)
 					continue
 				}
-				assetID, ok := activity.Params["asset"].(uint64)
+				assetIDStr, ok := activity.Params["asset"].(string)
 				if !ok {
 					log.Printf("WARNING: activity Params token (%v) can't be converted to type string", activity.Params["asset"])
 					continue
 				}
+
+				assetID, err := strconv.Atoi(assetIDStr)
+				if err != nil {
+					log.Printf("WARNING: invalid stored asset id id=%s err=%s", assetIDStr, err.Error())
+				}
+
 				_, ok = activity.Result["tx"].(string)
 				if !ok {
 					log.Printf("WARNING: activity Result tx (%v) can't be converted to type string", activity.Result["tx"])
 					continue
 				}
-				status, tx, err = exchange.WithdrawStatus(id.EID, assetID, amount, timepoint)
+				status, tx, err = exchange.WithdrawStatus(id.EID, uint64(assetID), amount, timepoint)
 				log.Printf("Got withdraw status for %v: (%s), error(%s)", activity, status, common.ErrorToString(err))
 			default:
 				continue

@@ -475,7 +475,7 @@ func (s *Server) Deposit(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Depositing %s %s to %s\n", amount.Text(10), asset.ID, exchange.ID())
+	log.Printf("Depositing %s %d to %s\n", amount.Text(10), asset.ID, exchange.ID())
 	id, err := s.core.Deposit(exchange, asset, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))

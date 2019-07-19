@@ -714,10 +714,6 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 	return common.ExchangeStatusDone, nil
 }
 
-func (h *Huobi) Configuration() (commonv3.Exchange, error) {
-	return h.sr.GetExchange(uint64(common.Huobi))
-}
-
 func (h *Huobi) Name() common.ExchangeName {
 	return common.Huobi
 }
