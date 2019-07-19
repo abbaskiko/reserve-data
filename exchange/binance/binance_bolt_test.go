@@ -23,7 +23,7 @@ func TestBinanceStorage(t *testing.T) {
 	}()
 
 	exchangeTradeHistory := common.ExchangeTradeHistory{
-		common.TokenPairID("OMGETH"): []common.TradeHistory{
+		1: []common.TradeHistory{
 			{
 				ID:        "12342",
 				Price:     0.132131,
@@ -59,7 +59,7 @@ func TestBinanceStorage(t *testing.T) {
 
 	// get last trade history id
 	var lastHistoryID string
-	lastHistoryID, err = storage.GetLastIDTradeHistory("OMGETH")
+	lastHistoryID, err = storage.GetLastIDTradeHistory(1)
 	if err != nil {
 		t.Fatalf("Get last trade history id error: %s", err.Error())
 	}

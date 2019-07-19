@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -58,13 +57,9 @@ type TradingPair struct {
 }
 
 type TradingPairSymbols struct {
+	TradingPair
 	BaseSymbol  string `json:"base_symbol"`
 	QuoteSymbol string `json:"quote_symbol"`
-}
-
-// PairID generates a unique id for the trading pair, will be used a the key in database record.
-func (t *TradingPairSymbols) PairID() string {
-	return fmt.Sprintf("%s-%s", t.BaseSymbol, t.QuoteSymbol)
 }
 
 // AssetExchange is the configuration of an asset for a specific exchange.

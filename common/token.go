@@ -48,21 +48,3 @@ func NewToken(id, name, address string, decimal int64, active, internal bool, ti
 func (t Token) IsETH() bool {
 	return t.ID == "ETH"
 }
-
-type TokenPair struct {
-	Base  Token
-	Quote Token
-}
-
-func NewTokenPair(base, quote Token) TokenPair {
-	return TokenPair{base, quote}
-}
-
-func (tp *TokenPair) PairID() TokenPairID {
-	return NewTokenPairID(tp.Base.ID, tp.Quote.ID)
-}
-
-// GetBaseQuoteID return base and quoteID as strings
-func (tp *TokenPair) GetBaseQuoteID() (string, string) {
-	return tp.Base.ID, tp.Quote.ID
-}

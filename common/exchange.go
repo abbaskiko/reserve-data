@@ -5,6 +5,8 @@ import (
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // ExchangeName is the name of exchanges of which core will use to rebalance.
@@ -29,19 +31,21 @@ var ValidExchangeNames = map[string]ExchangeName{
 
 // Exchange represents a centralized exchange like Binance, Huobi...
 type Exchange interface {
+	// TODO ExchangeName should be called ExchangeID, and ExchangeID should be removed
 	ID() ExchangeID
-	// Address return the deposit address of a token and return true if token is supported in the exchange.
-	// Otherwise return false. This function will prioritize live address from exchange above the current stored address.
-	// TODO rename this to deposit address
-	Address(token Token) (address ethereum.Address, supported bool)
-	Withdraw(token Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error)
-	Trade(tradeType string, base, quote Token, rate, amount float64, timepoint uint64) (id string, done, remaining float64, finished bool, err error)
+	Name() ExchangeName
+	// Address return the deposit address of an asset and return true
+	// if token is supported in the exchange, otherwise return false.
+	// This function will prioritize live address from exchange above the current stored address.
+	Address(asset common.Asset) (address ethereum.Address, supported bool)
+	Withdraw(asset common.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error)
+	Trade(tradeType string, pair common.TradingPairSymbols, rate, amount float64, timepoint uint64) (id string, done, remaining float64, finished bool, err error)
 	CancelOrder(id, base, quote string) error
 	MarshalText() (text []byte, err error)
 
 	// GetLiveExchangeInfo querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
 	// It return error if occurs.
-	GetLiveExchangeInfos([]TokenPairID) (ExchangeInfo, error)
+	GetLiveExchangeInfos([]common.TradingPairSymbols) (ExchangeInfo, error)
 	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)
 }
 

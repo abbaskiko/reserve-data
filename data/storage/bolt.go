@@ -17,6 +17,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
@@ -431,7 +432,7 @@ func (bs *BoltStorage) GetAllPrices(version common.Version) (common.AllPriceEntr
 	return result, err
 }
 
-func (bs *BoltStorage) GetOnePrice(pair common.TokenPairID, version common.Version) (common.OnePrice, error) {
+func (bs *BoltStorage) GetOnePrice(pairID uint64, version common.Version) (common.OnePrice, error) {
 	result := common.AllPriceEntry{}
 	var err error
 	err = bs.db.View(func(tx *bolt.Tx) error {
@@ -447,7 +448,7 @@ func (bs *BoltStorage) GetOnePrice(pair common.TokenPairID, version common.Versi
 	if err != nil {
 		return common.OnePrice{}, err
 	}
-	dataPair, exist := result.Data[pair]
+	dataPair, exist := result.Data[pairID]
 	if exist {
 		return dataPair, nil
 	}
@@ -863,7 +864,7 @@ func (bs *BoltStorage) UpdateActivity(id common.ActivityID, activity common.Acti
 }
 
 //HasPendingDeposit check if a deposit is pending
-func (bs *BoltStorage) HasPendingDeposit(token common.Token, exchange common.Exchange) (bool, error) {
+func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.Exchange) (bool, error) {
 	var (
 		err    error
 		result = false
@@ -877,12 +878,18 @@ func (bs *BoltStorage) HasPendingDeposit(token common.Token, exchange common.Exc
 				return uErr
 			}
 			if record.Action == common.ActionDeposit {
-				tokenID, ok := record.Params["token"].(string)
+				assetIDStr, ok := record.Params["asset"].(string)
 				if !ok {
-					log.Printf("ERROR: record Params token (%v) can not be converted to string", record.Params["token"])
+					log.Printf("ERROR: record Params token (%v) can not be converted to string", record.Params["asset"])
 					continue
 				}
-				if tokenID == token.ID && record.Destination == string(exchange.ID()) {
+
+				assetID, err := strconv.Atoi(assetIDStr)
+				if err != nil {
+					log.Printf("stored assset id is not an int64 number stored=%v err=%s", assetIDStr, err.Error())
+				}
+
+				if uint64(assetID) == asset.ID && record.Destination == string(exchange.ID()) {
 					result = true
 				}
 			}
@@ -910,8 +917,8 @@ func (bs *BoltStorage) StoreMetric(data *common.MetricEntry, timepoint uint64) e
 }
 
 //GetMetric return metric data
-func (bs *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint64) (map[string]common.MetricList, error) {
-	imResult := map[string]*common.MetricList{}
+func (bs *BoltStorage) GetMetric(tokens []commonv3.Asset, fromTime, toTime uint64) (map[uint64]common.MetricList, error) {
+	imResult := map[uint64]*common.MetricList{}
 	for _, tok := range tokens {
 		imResult[tok.ID] = &common.MetricList{}
 	}
@@ -942,7 +949,7 @@ func (bs *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint64)
 		}
 		return nil
 	})
-	result := map[string]common.MetricList{}
+	result := map[uint64]common.MetricList{}
 	for k, v := range imResult {
 		result[k] = *v
 	}

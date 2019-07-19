@@ -19,6 +19,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // Endpoint object stand for Binance endpoint
@@ -143,9 +144,9 @@ func (ep *Endpoint) GetDepthOnePair(baseID, quoteID string) (exchange.Binaresp, 
 //
 // In this version, we only support LIMIT order which means only buy/sell with acceptable price,
 // and GTC time in force which means that the order will be active until it's implicitly canceled
-func (ep *Endpoint) Trade(tradeType string, base, quote common.Token, rate, amount float64) (exchange.Binatrade, error) {
+func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate, amount float64) (exchange.Binatrade, error) {
 	result := exchange.Binatrade{}
-	symbol := base.ID + quote.ID
+	symbol := pair.BaseSymbol + pair.QuoteSymbol
 	orderType := "LIMIT"
 	params := map[string]string{
 		"symbol":      symbol,
@@ -308,16 +309,22 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 	return result, err
 }
 
-func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (string, error) {
+func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
+	var symbol string
+	for _, exchg := range asset.Exchanges {
+		if exchg.ExchangeID == uint64(common.Binance) {
+			symbol = exchg.Symbol
+		}
+	}
 	result := exchange.Binawithdraw{}
 	respBody, err := ep.GetResponse(
 		"POST",
 		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/withdraw.html",
 		map[string]string{
-			"asset":   token.ID,
+			"asset":   symbol,
 			"address": address.Hex(),
 			"name":    "reserve",
-			"amount":  strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
+			"amount":  strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
 		},
 		true,
 		common.GetTimepoint(),
@@ -354,14 +361,14 @@ func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	return result, err
 }
 
-func (ep *Endpoint) OpenOrdersForOnePair(pair common.TokenPair) (exchange.Binaorders, error) {
+func (ep *Endpoint) OpenOrdersForOnePair(pair commonv3.TradingPairSymbols) (exchange.Binaorders, error) {
 
 	result := exchange.Binaorders{}
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
 		map[string]string{
-			"symbol": pair.Base.ID + pair.Quote.ID,
+			"symbol": pair.BaseSymbol + pair.QuoteSymbol,
 		},
 		true,
 		common.GetTimepoint(),

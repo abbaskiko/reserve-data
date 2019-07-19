@@ -3,9 +3,10 @@ package core
 import (
 	"math/big"
 
-	"github.com/KyberNetwork/reserve-data/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // Blockchain is the interface wraps around all core methods to interact
@@ -13,7 +14,7 @@ import (
 type Blockchain interface {
 	StandardGasPrice() float64
 	Send(
-		token common.Token,
+		asset common.Asset,
 		amount *big.Int,
 		address ethereum.Address) (*types.Transaction, error)
 	SetRates(

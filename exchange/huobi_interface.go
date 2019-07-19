@@ -5,7 +5,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // HuobiInterface contains the methods to interact with Huobi centralized exchange.
@@ -21,13 +21,13 @@ type HuobiInterface interface {
 	GetAccountTradeHistory(baseSymbol, quoteSymbol string) (HuobiTradeHistory, error)
 
 	Withdraw(
-		token common.Token,
+		asset commonv3.Asset,
 		amount *big.Int,
 		address ethereum.Address) (string, error)
 
 	Trade(
 		tradeType string,
-		base, quote common.Token,
+		pair commonv3.TradingPairSymbols,
 		rate, amount float64,
 		timepoint uint64) (HuobiTrade, error)
 

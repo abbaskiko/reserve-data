@@ -3,11 +3,13 @@ package core
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 type testExchange struct {
@@ -17,13 +19,17 @@ func (te testExchange) ID() common.ExchangeID {
 	return "bittrex"
 }
 
-func (te testExchange) Address(token common.Token) (address ethereum.Address, supported bool) {
+func (te testExchange) Name() common.ExchangeName {
+	return common.Binance
+}
+
+func (te testExchange) Address(_ commonv3.Asset) (address ethereum.Address, supported bool) {
 	return ethereum.Address{}, true
 }
-func (te testExchange) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (te testExchange) Withdraw(token commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	return "withdrawid", nil
 }
-func (te testExchange) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (te testExchange) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
 func (te testExchange) CancelOrder(id string, base, quote string) error {
@@ -37,7 +43,7 @@ func (te testExchange) GetTradeHistory(fromTime, toTime uint64) (common.Exchange
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (te testExchange) GetLiveExchangeInfos(pairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (te testExchange) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
 	return common.ExchangeInfo{}, nil
 }
 
@@ -45,7 +51,7 @@ type testBlockchain struct {
 }
 
 func (tbc testBlockchain) Send(
-	token common.Token,
+	asset commonv3.Asset,
 	amount *big.Int,
 	address ethereum.Address) (*types.Transaction, error) {
 	tx := types.NewTransaction(
@@ -107,8 +113,8 @@ func (tas testActivityStorage) PendingSetRate(minedNonce uint64) (*common.Activi
 	return nil, 0, nil
 }
 
-func (tas testActivityStorage) HasPendingDeposit(token common.Token, exchange common.Exchange) (bool, error) {
-	if token.ID == "OMG" && exchange.ID() == "bittrex" {
+func (tas testActivityStorage) HasPendingDeposit(token commonv3.Asset, exchange common.Exchange) (bool, error) {
+	if token.Symbol == "OMG" && exchange.ID() == "bittrex" {
 		return tas.PendingDeposit, nil
 	}
 	return false, nil
@@ -128,7 +134,24 @@ func TestNotAllowDeposit(t *testing.T) {
 	core := getTestCore(true)
 	_, err := core.Deposit(
 		testExchange{},
-		common.NewToken("OMG", "omise-go", "0x1111111111111111111111111111111111111111", 18, true, true, 0),
+		commonv3.Asset{
+			ID:                 0,
+			Symbol:             "OMG",
+			Name:               "omise-go",
+			Address:            ethereum.HexToAddress("0x1111111111111111111111111111111111111111"),
+			OldAddresses:       nil,
+			Decimals:           12,
+			Transferable:       true,
+			SetRate:            commonv3.SetRateNotSet,
+			Rebalance:          false,
+			IsQuote:            false,
+			PWI:                nil,
+			RebalanceQuadratic: nil,
+			Exchanges:          nil,
+			Target:             nil,
+			Created:            time.Now(),
+			Updated:            time.Now(),
+		},
 		big.NewInt(10),
 		common.GetTimepoint(),
 	)
@@ -137,7 +160,24 @@ func TestNotAllowDeposit(t *testing.T) {
 	}
 	_, err = core.Deposit(
 		testExchange{},
-		common.NewToken("KNC", "Kyber-coin", "0x1111111111111111111111111111111111111111", 18, true, true, 0),
+		commonv3.Asset{
+			ID:                 0,
+			Symbol:             "KNC",
+			Name:               "Kyber Network Crystal",
+			Address:            ethereum.HexToAddress("0x1111111111111111111111111111111111111111"),
+			OldAddresses:       nil,
+			Decimals:           12,
+			Transferable:       true,
+			SetRate:            commonv3.SetRateNotSet,
+			Rebalance:          false,
+			IsQuote:            false,
+			PWI:                nil,
+			RebalanceQuadratic: nil,
+			Exchanges:          nil,
+			Target:             nil,
+			Created:            time.Now(),
+			Updated:            time.Now(),
+		},
 		big.NewInt(10),
 		common.GetTimepoint(),
 	)

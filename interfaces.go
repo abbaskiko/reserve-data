@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 // Data is the interface of of all data query methods.
@@ -11,7 +12,7 @@ import (
 type Data interface {
 	CurrentPriceVersion(timestamp uint64) (common.Version, error)
 	GetAllPrices(timestamp uint64) (common.AllPriceResponse, error)
-	GetOnePrice(id common.TokenPairID, timestamp uint64) (common.OnePriceResponse, error)
+	GetOnePrice(id uint64, timestamp uint64) (common.OnePriceResponse, error)
 
 	CurrentAuthDataVersion(timestamp uint64) (common.Version, error)
 	GetAuthData(timestamp uint64) (common.AuthDataResponse, error)
@@ -45,26 +46,25 @@ type Core interface {
 	Trade(
 		exchange common.Exchange,
 		tradeType string,
-		base common.Token,
-		quote common.Token,
+		pair commonv3.TradingPairSymbols,
 		rate float64,
 		amount float64,
 		timestamp uint64) (id common.ActivityID, done float64, remaining float64, finished bool, err error)
 
 	Deposit(
 		exchange common.Exchange,
-		token common.Token,
+		asset commonv3.Asset,
 		amount *big.Int,
 		timestamp uint64) (common.ActivityID, error)
 
 	Withdraw(
 		exchange common.Exchange,
-		token common.Token,
+		token commonv3.Asset,
 		amount *big.Int,
 		timestamp uint64) (common.ActivityID, error)
 
 	CancelOrder(id common.ActivityID, exchange common.Exchange) error
 
 	// blockchain related action
-	SetRates(tokens []common.Token, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string) (common.ActivityID, error)
+	SetRates(tokens []commonv3.Asset, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string) (common.ActivityID, error)
 }

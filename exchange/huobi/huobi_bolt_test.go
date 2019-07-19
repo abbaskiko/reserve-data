@@ -27,7 +27,7 @@ func TestHuobiStoreTradeHistory(t *testing.T) {
 	}
 	//Mock exchange history
 	exchangeTradeHistory := common.ExchangeTradeHistory{
-		common.TokenPairID("OMGETH"): []common.TradeHistory{
+		2: []common.TradeHistory{
 			{
 				ID:        "12342",
 				Price:     0.132131,
@@ -78,7 +78,7 @@ func TestHuobiStoreDepositActivity(t *testing.T) {
 	txEntry := common.TXEntry{
 		Hash:           "0x884767eb42edef14b1a00759cf4050ea49a612424dbf484f8672fd17ebb92752",
 		Exchange:       "huobi",
-		Token:          "KNC",
+		AssetID:        1,
 		MiningStatus:   "",
 		ExchangeStatus: "",
 		Amount:         10,

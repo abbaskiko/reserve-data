@@ -9,6 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 type StableEx struct {
@@ -27,20 +28,20 @@ func (se *StableEx) MarshalText() (text []byte, err error) {
 	return []byte(se.ID()), nil
 }
 
-func (se *StableEx) Address(token common.Token) (ethereum.Address, bool) {
+func (se *StableEx) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 	addrs, err := se.TokenAddresses()
 	if err != nil {
 		return ethereum.Address{}, false
 	}
-	addr, supported := addrs[token.ID]
+	addr, supported := addrs[asset.Symbol]
 	return addr, supported
 }
 
-func (se *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (se *StableEx) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
 	log.Print("WARNING stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
 	result := make(common.ExchangeInfo)
-	for _, tokenPairID := range tokenPairIDs {
-		result[tokenPairID] = common.ExchangePrecisionLimit{
+	for _, pair := range pairs {
+		result[pair.ID] = common.ExchangePrecisionLimit{
 			Precision:   common.TokenPairPrecision{},
 			AmountLimit: common.TokenPairAmountLimit{},
 			PriceLimit:  common.TokenPairPriceLimit{},
@@ -55,10 +56,6 @@ func (se *StableEx) ID() common.ExchangeID {
 	return common.ExchangeID(common.StableExchange.String())
 }
 
-func (se *StableEx) Name() string {
-	return "stable token exchange"
-}
-
 func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
 	// TODO: see if trade order (a tx to dgx contract) is successful or not
 	// - successful: done = order amount, remaining = 0, finished = true, err = nil
@@ -67,12 +64,12 @@ func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remainin
 	return 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (se *StableEx) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	// TODO: communicate with dgx connector to do the trade
 	return "not supported", 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (se *StableEx) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	// TODO: communicate with dgx connector to withdraw
 	return "not supported", errors.New("not supported")
 }
@@ -81,8 +78,8 @@ func (se *StableEx) CancelOrder(id, base, quote string) error {
 	return errors.New("dgx doesn't support trade cancelling")
 }
 
-func (se *StableEx) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
-	result := map[common.TokenPairID]common.ExchangePrice{}
+func (se *StableEx) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
+	result := map[uint64]common.ExchangePrice{}
 	// TODO: Get price data from dgx connector and construct valid orderbooks
 	return result, nil
 }
@@ -104,18 +101,18 @@ func (se *StableEx) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTra
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (se *StableEx) FetchTradeHistory(timepoint uint64) (map[common.TokenPairID][]common.TradeHistory, error) {
-	result := map[common.TokenPairID][]common.TradeHistory{}
+func (se *StableEx) FetchTradeHistory(timepoint uint64) (map[uint64][]common.TradeHistory, error) {
+	result := map[uint64][]common.TradeHistory{}
 	// TODO: get trade history
 	return result, errors.New("not supported")
 }
 
-func (se *StableEx) DepositStatus(id common.ActivityID, txHash, currency string, amount float64, timepoint uint64) (string, error) {
+func (se *StableEx) DepositStatus(id common.ActivityID, txHash string, assetID uint64, amount float64, timepoint uint64) (string, error) {
 	// TODO: checking txHash status
 	return "", errors.New("not supported")
 }
 
-func (se *StableEx) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
+func (se *StableEx) WithdrawStatus(id string, assetID uint64, amount float64, timepoint uint64) (string, string, error) {
 	// TODO: checking id (id is the txhash) status
 	return "", "", errors.New("not supported")
 }
@@ -123,6 +120,10 @@ func (se *StableEx) WithdrawStatus(id, currency string, amount float64, timepoin
 func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 	// TODO: checking id (id is the txhash) status
 	return "", errors.New("not supported")
+}
+
+func (se *StableEx) Name() common.ExchangeName {
+	return common.StableExchange
 }
 
 func NewStableEx() (*StableEx, error) {

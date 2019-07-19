@@ -228,7 +228,7 @@ func (bc *Blockchain) SetRates(
 }
 
 func (bc *Blockchain) Send(
-	token common.Token,
+	asset commonv3.Asset,
 	amount *big.Int,
 	dest ethereum.Address) (*types.Transaction, error) {
 
@@ -238,8 +238,9 @@ func (bc *Blockchain) Send(
 	}
 	tx, err := bc.GeneratedWithdraw(
 		opts,
-		ethereum.HexToAddress(token.Address),
-		amount, dest)
+		asset.Address,
+		amount,
+		dest)
 	if err != nil {
 		return nil, err
 	}

@@ -18,6 +18,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 const (
@@ -147,9 +148,9 @@ func (ep *Endpoint) GetDepthOnePair(
 	return respData, err
 }
 
-func (ep *Endpoint) Trade(tradeType string, base, quote common.Token, rate, amount float64, timepoint uint64) (exchange.HuobiTrade, error) {
+func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate, amount float64, timepoint uint64) (exchange.HuobiTrade, error) {
 	result := exchange.HuobiTrade{}
-	symbol := strings.ToLower(base.ID) + strings.ToLower(quote.ID)
+	symbol := strings.ToLower(pair.BaseSymbol) + strings.ToLower(pair.QuoteSymbol)
 	orderType := tradeType + "-limit"
 	accounts, err := ep.GetAccounts()
 	if err != nil {
@@ -277,15 +278,21 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.HuobiOrder, 
 	return result, err
 }
 
-func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (string, error) {
+func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
+	var symbol string
+	for _, exchg := range asset.Exchanges {
+		if exchg.ExchangeID == uint64(common.Binance) {
+			symbol = exchg.Symbol
+		}
+	}
 	result := exchange.HuobiWithdraw{}
 	respBody, err := ep.GetResponse(
 		"POST",
 		ep.interf.AuthenticatedEndpoint()+"/v1/dw/withdraw/api/create",
 		map[string]string{
 			"address":  address.Hex(),
-			"amount":   strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
-			"currency": strings.ToLower(token.ID),
+			"amount":   strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
+			"currency": strings.ToLower(symbol),
 		},
 		true,
 	)

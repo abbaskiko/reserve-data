@@ -12,7 +12,7 @@ type TokenMetric struct {
 type MetricEntry struct {
 	Timestamp uint64
 	// data contain all token metric for all tokens
-	Data map[string]TokenMetric
+	Data map[uint64]TokenMetric
 }
 
 type TokenMetricResponse struct {
@@ -27,7 +27,7 @@ type MetricList []TokenMetricResponse
 type MetricResponse struct {
 	Timestamp  uint64
 	ReturnTime uint64
-	Data       map[string]MetricList
+	Data       map[uint64]MetricList
 }
 
 type TokenTargetQty struct {

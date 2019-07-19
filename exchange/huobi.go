@@ -66,9 +66,15 @@ func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 // Address return the deposit address of a token in Huobi exchange.
 // Due to the logic of Huobi exchange, every token if supported will be
 // deposited to an Intermediator address instead.
-func (h *Huobi) Address(token common.Token) (ethereum.Address, bool) {
+func (h *Huobi) Address(asset commonv3.Asset) (ethereum.Address, bool) {
+	var symbol string
+	for _, exchange := range asset.Exchanges {
+		if exchange.ExchangeID == uint64(common.Huobi) {
+			symbol = exchange.Symbol
+		}
+	}
 	result := h.blockchain.GetIntermediatorAddr()
-	_, err := h.RealDepositAddress(token.ID)
+	_, err := h.RealDepositAddress(symbol)
 	//if the realDepositAddress can not be querried, that mean the token isn't supported on Huobi
 	if err != nil {
 		return result, false
@@ -78,27 +84,27 @@ func (h *Huobi) Address(token common.Token) (ethereum.Address, bool) {
 
 // GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
 // It return error if occurs.
-func (h *Huobi) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
+func (h *Huobi) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
 	result := make(common.ExchangeInfo)
 	exchangeInfo, err := h.interf.GetExchangeInfo()
 	if err != nil {
 		return result, err
 	}
-	for _, pairID := range tokenPairIDs {
-		exchangePrecisionLimit, ok := h.getPrecisionLimitFromSymbols(pairID, exchangeInfo)
+	for _, pair := range pairs {
+		exchangePrecisionLimit, ok := h.getPrecisionLimitFromSymbols(pair, exchangeInfo)
 		if !ok {
-			return result, fmt.Errorf("huobi Exchange Info reply doesn't contain token pair %s", string(pairID))
+			return result, fmt.Errorf("huobi Exchange Info reply doesn't contain token pair %d", pair.ID)
 		}
-		result[pairID] = exchangePrecisionLimit
+		result[pair.ID] = exchangePrecisionLimit
 	}
 	return result, nil
 }
 
 // getPrecisionLimitFromSymbols find the pairID amongs symbols from exchanges,
 // return ExchangePrecisionLimit of that pair and true if the pairID exist amongs symbols, false if otherwise
-func (h *Huobi) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols HuobiExchangeInfo) (common.ExchangePrecisionLimit, bool) {
+func (h *Huobi) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSymbols, symbols HuobiExchangeInfo) (common.ExchangePrecisionLimit, bool) {
 	var result common.ExchangePrecisionLimit
-	pairName := strings.ToUpper(strings.Replace(string(pair), "-", "", 1))
+	pairName := strings.ToUpper(fmt.Sprintf("%s%s", pair.BaseSymbol, pair.QuoteSymbol))
 	for _, symbol := range symbols.Data {
 		symbolName := strings.ToUpper(symbol.Base + symbol.Quote)
 		if symbolName == pairName {
@@ -117,15 +123,11 @@ func (h *Huobi) ID() common.ExchangeID {
 }
 
 func (h *Huobi) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
-	pairs, err := h.sr.GetTradingPairSymbols(uint64(common.Binance))
+	pairs, err := h.sr.GetTradingPairs(uint64(common.Huobi))
 	if err != nil {
 		return nil, err
 	}
 	return pairs, nil
-}
-
-func (h *Huobi) Name() string {
-	return "huobi"
 }
 
 func (h *Huobi) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
@@ -149,8 +151,8 @@ func (h *Huobi) QueryOrder(symbol string, id uint64) (done float64, remaining fl
 	return done, total - done, total-done < huobiEpsilon, nil
 }
 
-func (h *Huobi) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
-	result, err := h.interf.Trade(tradeType, base, quote, rate, amount, timepoint)
+func (h *Huobi) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+	result, err := h.interf.Trade(tradeType, pair, rate, amount, timepoint)
 
 	if err != nil {
 		return "", 0, 0, false, err
@@ -163,7 +165,7 @@ func (h *Huobi) Trade(tradeType string, base common.Token, quote common.Token, r
 		}
 	}
 	done, remaining, finished, err = h.QueryOrder(
-		base.ID+quote.ID,
+		pair.BaseSymbol+pair.QuoteSymbol,
 		orderID,
 	)
 	if err != nil {
@@ -173,8 +175,8 @@ func (h *Huobi) Trade(tradeType string, base common.Token, quote common.Token, r
 }
 
 //Withdraw return withdraw id from huobi
-func (h *Huobi) Withdraw(token common.Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
-	withdrawID, err := h.interf.Withdraw(token, amount, address)
+func (h *Huobi) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+	withdrawID, err := h.interf.Withdraw(asset, amount, address)
 	if err != nil {
 		return "", err
 	}
@@ -199,7 +201,7 @@ func (h *Huobi) CancelOrder(id, base, quote string) error {
 
 func (h *Huobi) FetchOnePairData(
 	wg *sync.WaitGroup,
-	baseID, quoteID string,
+	pair commonv3.TradingPairSymbols,
 	data *sync.Map,
 	timepoint uint64) {
 
@@ -209,7 +211,7 @@ func (h *Huobi) FetchOnePairData(
 	timestamp := common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Timestamp = timestamp
 	result.Valid = true
-	respData, err := h.interf.GetDepthOnePair(baseID, quoteID)
+	respData, err := h.interf.GetDepthOnePair(pair.BaseSymbol, pair.QuoteSymbol)
 	returnTime := common.GetTimestamp()
 	result.ReturnTime = returnTime
 	if err != nil {
@@ -243,10 +245,10 @@ func (h *Huobi) FetchOnePairData(
 			}
 		}
 	}
-	data.Store(common.NewTokenPairID(baseID, quoteID), result)
+	data.Store(pair.ID, result)
 }
 
-func (h *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.ExchangePrice, error) {
+func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := h.TokenPairs()
@@ -255,13 +257,12 @@ func (h *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.
 	}
 	for _, pair := range pairs {
 		wait.Add(1)
-		baseID, quoteID := pair.BaseSymbol, pair.QuoteSymbol
-		go h.FetchOnePairData(&wait, baseID, quoteID, &data, timepoint)
+		go h.FetchOnePairData(&wait, pair, &data, timepoint)
 	}
 	wait.Wait()
-	result := map[common.TokenPairID]common.ExchangePrice{}
+	result := map[uint64]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {
-		tokenPairID, ok := key.(common.TokenPairID)
+		tokenPairID, ok := key.(uint64)
 		//if there is conversion error, continue to next key,val
 		if !ok {
 			err = fmt.Errorf("key (%v) cannot be asserted to TokenPairID", key)
@@ -280,7 +281,7 @@ func (h *Huobi) FetchPriceData(timepoint uint64) (map[common.TokenPairID]common.
 
 func (h *Huobi) OpenOrdersForOnePair(
 	wg *sync.WaitGroup,
-	pair common.TokenPair,
+	pair commonv3.TradingPairSymbols,
 	data *sync.Map,
 	timepoint uint64) {
 
@@ -336,18 +337,26 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 			result.Error = fmt.Sprintf("Cannot fetch ebalance")
 			result.Status = false
 		} else {
+			assets, err := h.sr.GetAssets()
+			if err != nil {
+				return common.EBalanceEntry{}, err
+			}
+
 			balances := respData.Data.List
 			for _, b := range balances {
-				tokenID := strings.ToUpper(b.Currency)
-				_, err := h.sr.GetAssetBySymbol(uint64(common.Huobi), tokenID)
-				if err == nil {
-					balance, _ := strconv.ParseFloat(b.Balance, 64)
-					if b.Type == "trade" {
-						result.AvailableBalance[tokenID] = balance
-					} else {
-						result.LockedBalance[tokenID] = balance
+				tokenSymbol := strings.ToUpper(b.Currency)
+				for _, asset := range assets {
+					for _, exchg := range asset.Exchanges {
+						if exchg.ExchangeID == uint64(common.Huobi) && exchg.Symbol == tokenSymbol {
+							balance, _ := strconv.ParseFloat(b.Balance, 64)
+							if b.Type == "trade" {
+								result.AvailableBalance[tokenSymbol] = balance
+							} else {
+								result.LockedBalance[tokenSymbol] = balance
+							}
+							result.DepositBalance[tokenSymbol] = 0
+						}
 					}
-					result.DepositBalance[tokenID] = 0
 				}
 			}
 		}
@@ -367,7 +376,6 @@ func (h *Huobi) FetchOnePairTradeHistory(
 			pair.BaseSymbol, pair.QuoteSymbol, err.Error())
 		return
 	}
-	pairString := pair.PairID()
 	for _, trade := range resp.Data {
 		price, _ := strconv.ParseFloat(trade.Price, 64)
 		quantity, _ := strconv.ParseFloat(trade.Amount, 64)
@@ -384,7 +392,7 @@ func (h *Huobi) FetchOnePairTradeHistory(
 		)
 		result = append(result, tradeHistory)
 	}
-	data.Store(pairString, result)
+	data.Store(pair.ID, result)
 }
 
 //FetchTradeHistory get all trade history for all pairs from huobi exchange
@@ -392,7 +400,7 @@ func (h *Huobi) FetchTradeHistory() {
 	t := time.NewTicker(10 * time.Minute)
 	go func() {
 		for {
-			result := map[common.TokenPairID][]common.TradeHistory{}
+			result := map[uint64][]common.TradeHistory{}
 			data := sync.Map{}
 			pairs, err := h.TokenPairs()
 			if err != nil {
@@ -407,7 +415,7 @@ func (h *Huobi) FetchTradeHistory() {
 			wait.Wait()
 			var integrity = true
 			data.Range(func(key, value interface{}) bool {
-				tokenPairID, ok := key.(common.TokenPairID)
+				tokenPairID, ok := key.(uint64)
 				//if there is conversion error, continue to next key,val
 				if !ok {
 					log.Printf("Key (%v) cannot be asserted to TokenPairID", key)
@@ -500,7 +508,7 @@ func (h *Huobi) FindTx2(id common.ActivityID) (tx2 common.TXEntry, found bool) {
 	return tx2, found
 }
 
-func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEntry, currency string, sentAmount float64) (string, error) {
+func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEntry, assetID uint64, sentAmount float64) (string, error) {
 	assets, err := h.sr.GetAssets()
 	if err != nil {
 		log.Printf("Huobi ERROR: Can not get list of assets from setting (%s)", err)
@@ -522,8 +530,8 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 		if deposit.TxHash == tx2Entry.Hash {
 			if deposit.State == "safe" || deposit.State == "confirmed" {
 				data := common.NewTXEntry(tx2Entry.Hash,
-					h.Name(),
-					currency,
+					h.Name().String(),
+					assetID,
 					"mined",
 					exchangeStatusDone,
 					sentAmount,
@@ -544,7 +552,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 	return "", nil
 }
 
-func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sentAmount float64) (string, error) {
+func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID uint64, sentAmount float64) (string, error) {
 	status, blockno, err := h.blockchain.TxStatus(ethereum.HexToHash(tx1Hash))
 	if err != nil {
 		log.Printf("Huobi Can not get TX status (%s)", err.Error())
@@ -553,13 +561,21 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sen
 	log.Printf("Huobi Status for Tx1 was %s at block %d ", status, blockno)
 	if status == common.MiningStatusMined {
 		//if it is mined, send 2nd tx.
-		log.Printf("Found a new deposit status, which deposit %f %s. Procceed to send it to Huobi", sentAmount, currency)
+		log.Printf("Found a new deposit status, which deposit %f %d. Procceed to send it to Huobi", sentAmount, assetID)
 		//check if the asset is supported, the asset can be active or inactivee
-		asset, err := h.sr.GetAssetBySymbol(uint64(common.Binance), currency)
+		asset, err := h.sr.GetAsset(assetID)
 		if err != nil {
 			return "", err
 		}
-		exchangeAddress, err := h.RealDepositAddress(currency)
+
+		var symbol string
+		for _, exchg := range asset.Exchanges {
+			if exchg.ExchangeID == uint64(common.Huobi) {
+				symbol = exchg.Symbol
+			}
+		}
+
+		exchangeAddress, err := h.RealDepositAddress(symbol)
 		if err != nil {
 			return "", err
 		}
@@ -571,8 +587,8 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sen
 		//store tx2 to pendingIntermediateTx
 		data := common.NewTXEntry(
 			tx2.Hash().Hex(),
-			h.Name(),
-			currency,
+			h.Name().String(),
+			assetID,
 			common.MiningStatusSubmitted,
 			"",
 			sentAmount,
@@ -587,12 +603,12 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash, currency string, sen
 	return "", nil
 }
 
-func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, sentAmount float64, timepoint uint64) (string, error) {
+func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint64, sentAmount float64, timepoint uint64) (string, error) {
 	var data common.TXEntry
 	tx2Entry, found := h.FindTx2(id)
 	//if not found, meaning there is no tx2 yet, process 1st Tx and send 2nd Tx.
 	if !found {
-		return h.process1stTx(id, tx1Hash, currency, sentAmount)
+		return h.process1stTx(id, tx1Hash, assetID, sentAmount)
 	}
 	// if there is tx2Entry, check it blockchain status and handle the status accordingly:
 	miningStatus, _, err := h.blockchain.TxStatus(ethereum.HexToHash(tx2Entry.Hash))
@@ -604,8 +620,8 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 		log.Println("Huobi 2nd Transaction is mined. Processed to store it and check the Huobi Deposit history")
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
-			h.Name(),
-			currency,
+			h.Name().String(),
+			assetID,
 			common.MiningStatusMined,
 			"",
 			sentAmount,
@@ -614,12 +630,12 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 			log.Printf("Huobi Trying to store intermediate tx to huobi storage, error: %s. Ignore it and try later", uErr.Error())
 			return "", nil
 		}
-		return h.exchangeDepositStatus(id, tx2Entry, currency, sentAmount)
+		return h.exchangeDepositStatus(id, tx2Entry, assetID, sentAmount)
 	case common.MiningStatusFailed:
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
-			h.Name(),
-			currency,
+			h.Name().String(),
+			assetID,
 			common.MiningStatusFailed,
 			common.ExchangeStatusFailed,
 			sentAmount,
@@ -635,8 +651,8 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 		if elapsed > uint64(15*time.Minute/time.Millisecond) {
 			data = common.NewTXEntry(
 				tx2Entry.Hash,
-				h.Name(),
-				currency,
+				h.Name().String(),
+				assetID,
 				common.MiningStatusLost,
 				common.ExchangeStatusLost,
 				sentAmount,
@@ -656,7 +672,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 
 //WithdrawStatus return withdraw status from huobi
 func (h *Huobi) WithdrawStatus(
-	id, currency string, amount float64, timepoint uint64) (string, string, error) {
+	id string, assetID uint64, amount float64, timepoint uint64) (string, string, error) {
 	withdrawID, _ := strconv.ParseUint(id, 10, 64)
 	assets, err := h.sr.GetAssets()
 	if err != nil {
@@ -696,6 +712,10 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 		return "", nil
 	}
 	return common.ExchangeStatusDone, nil
+}
+
+func (h *Huobi) Name() common.ExchangeName {
+	return common.Huobi
 }
 
 //NewHuobi creates new Huobi exchange instance

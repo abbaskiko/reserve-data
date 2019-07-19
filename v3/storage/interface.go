@@ -11,7 +11,6 @@ type Interface interface {
 	SettingReader
 
 	GetExchanges() ([]v3.Exchange, error)
-	GetExchange(id uint64) (v3.Exchange, error)
 	UpdateExchange(id uint64, opts ...UpdateExchangeOption) error
 
 	CreateAsset(
@@ -27,13 +26,12 @@ type Interface interface {
 		exchanges []v3.AssetExchange,
 		target *v3.AssetTarget,
 	) (uint64, error)
-	GetAsset(id uint64) (v3.Asset, error)
 	UpdateAsset(id uint64, opts ...UpdateAssetOption) error
 	// ChangeAssetAddress make the current address address of asset old address and set new address as current.
 	ChangeAssetAddress(id uint64, address ethereum.Address) error
 	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
 
-	// TODO update precision pairs and live deposit addresses on startup
+	UpdateTradingPair(id uint64, opts UpdateTradingPairOpts) error
 
 	// TODO method for batch update PWI
 	// TODO method for batch update rebalance quadratic
@@ -43,14 +41,16 @@ type Interface interface {
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
 type SettingReader interface {
-	GetTradingPairSymbols(exchangeID uint64) ([]v3.TradingPairSymbols, error)
+	GetAsset(id uint64) (v3.Asset, error)
+	GetExchange(id uint64) (v3.Exchange, error)
+	// TODO: add GetTradingPair method that accept trading_pair_id
+	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
+	// TODO: check usages of this method to see if it should be replaced with GetDepositAddress(exchangeID, tokenID)
 	GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error)
 	GetAssets() ([]v3.Asset, error)
 	// GetTransferableAssets returns all assets that the set rate strategy is not not_set.
 	GetTransferableAssets() ([]v3.Asset, error)
 	GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error)
-	// TODO: this method should be removed, as we will accept asset_id instead of symbol everywhere
-	GetAssetBySymbol(exchangeID uint64, symbol string) (v3.Asset, error)
 }
 
 // UpdateExchangeOpts is the options of UpdateAsset method.
@@ -183,4 +183,14 @@ func WithIsQuoteUpdateAssetOption(isQuote bool) UpdateAssetOption {
 	return func(opts *UpdateAssetOpts) {
 		opts.isQuote = &isQuote
 	}
+}
+
+type UpdateTradingPairOpts struct {
+	PricePrecision  *uint64
+	AmountPrecision *uint64
+	AmountLimitMin  *float64
+	AmountLimitMax  *float64
+	PriceLimitMin   *float64
+	PriceLimitMax   *float64
+	MinNotional     *float64
 }

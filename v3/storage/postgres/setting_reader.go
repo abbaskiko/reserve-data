@@ -15,11 +15,12 @@ func (s *Storage) GetTransferableAssets() ([]common.Asset, error) {
 }
 
 type tradingPairSymbolsDB struct {
+	tradingPairDB
 	BaseSymbol  string `db:"base_symbol"`
 	QuoteSymbol string `db:"quote_symbol"`
 }
 
-func (s *Storage) GetTradingPairSymbols(id uint64) ([]common.TradingPairSymbols, error) {
+func (s *Storage) GetTradingPairs(id uint64) ([]common.TradingPairSymbols, error) {
 	var (
 		tradingPairs []tradingPairSymbolsDB
 		result       []common.TradingPairSymbols
@@ -29,6 +30,7 @@ func (s *Storage) GetTradingPairSymbols(id uint64) ([]common.TradingPairSymbols,
 	}
 	for _, pair := range tradingPairs {
 		result = append(result, common.TradingPairSymbols{
+			TradingPair: pair.tradingPairDB.ToCommon(),
 			BaseSymbol:  pair.BaseSymbol,
 			QuoteSymbol: pair.QuoteSymbol,
 		})
@@ -67,22 +69,4 @@ func (s *Storage) GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, e
 		return 0, err
 	}
 	return minNotional, nil
-}
-
-// TODO: rewrite this function with proper SQL statement
-func (s *Storage) GetAssetBySymbol(exchangeID uint64, symbol string) (common.Asset, error) {
-	allAssets, err := s.GetAssets()
-	if err != nil {
-		return common.Asset{}, err
-	}
-
-	for _, asset := range allAssets {
-		for _, exchange := range asset.Exchanges {
-			if exchange.ExchangeID == exchangeID && exchange.Symbol == symbol {
-				return asset, nil
-			}
-		}
-	}
-
-	return common.Asset{}, common.ErrNotFound
 }
