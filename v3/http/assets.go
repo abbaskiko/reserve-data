@@ -1,9 +1,6 @@
 package http
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -39,36 +36,13 @@ func (s *Server) getAssets(c *gin.Context) {
 }
 
 func (s *Server) createPendingAsset(c *gin.Context) {
-
-	body, err := readAndClose(c.Request.Body)
-	if err != nil {
-		responseError(c, http.StatusBadRequest, "corrupted")
-		return
-	}
-
 	var createPendingAsset common.CreatePendingAsset
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&createPendingAsset)
+
+	err := c.ShouldBindJSON(&createPendingAsset)
+
 	if err != nil {
 		responseError(c, http.StatusBadRequest, err.Error())
 		return
-	}
-	for i, asset := range createPendingAsset.AssetInputs {
-		err = validate.Struct(asset)
-		if err != nil {
-			responseError(c, http.StatusBadRequest, fmt.Sprintf("validate failed at #%d, %v", i, err))
-			return
-		}
-		for _, xch := range asset.Exchanges {
-			for _, tp := range xch.TradingPairs {
-				err = validate.Struct(tp)
-				if err != nil {
-					responseError(c, http.StatusBadRequest, err.Error())
-					return
-				}
-			}
-		}
 	}
 
 	id, err := s.storage.CreatePendingAsset(createPendingAsset)
@@ -127,6 +101,7 @@ func (s *Server) createAssetExchange(c *gin.Context) {
 	err := c.ShouldBindJSON(&r)
 	if err != nil {
 		responseError(c, http.StatusBadRequest, "failed to bind request")
+		log.Println("failed to bind request", err)
 		return
 	}
 

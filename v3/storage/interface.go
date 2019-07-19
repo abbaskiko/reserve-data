@@ -11,7 +11,7 @@ type Interface interface {
 	SettingReader
 
 	GetExchanges() ([]v3.Exchange, error)
-	UpdateExchange(id uint64, opts ...UpdateExchangeOption) error
+	UpdateExchange(id uint64, opts UpdateExchangeOpts) error
 
 	CreateAssetExchange(exchangeID, assetID uint64, symbol string, depositAddress ethereum.Address,
 		minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error)
@@ -62,46 +62,10 @@ type SettingReader interface {
 	GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error)
 }
 
+// these type match user type define in common package so we just need to make an alias here
+// in case they did not later, we need to redefine the structure here, or review this again.
 type UpdateAssetExchangeOpts = v3.UpdateAssetExchange
-
-// UpdateExchangeOpts is the options of UpdateAsset method.
-type UpdateExchangeOpts struct {
-	tradingFeeMaker *float64
-	tradingFeeTaker *float64
-	disable         *bool
-}
-
-func (u *UpdateExchangeOpts) TradingFeeMaker() *float64 {
-	return u.tradingFeeMaker
-}
-
-func (u *UpdateExchangeOpts) TradingFeeTaker() *float64 {
-	return u.tradingFeeTaker
-}
-
-func (u *UpdateExchangeOpts) Disable() *bool {
-	return u.disable
-}
-
-type UpdateExchangeOption func(opts *UpdateExchangeOpts)
-
-func WithTradingFeeMakerUpdateExchangeOpt(tradingFeeMaker float64) UpdateExchangeOption {
-	return func(opts *UpdateExchangeOpts) {
-		opts.tradingFeeMaker = &tradingFeeMaker
-	}
-}
-
-func WithTradingFeeTakerUpdateExchangeOpt(tradingFeeTaker float64) UpdateExchangeOption {
-	return func(opts *UpdateExchangeOpts) {
-		opts.tradingFeeTaker = &tradingFeeTaker
-	}
-}
-
-func WithDisableExchangeOpt(disable bool) UpdateExchangeOption {
-	return func(opts *UpdateExchangeOpts) {
-		opts.disable = &disable
-	}
-}
+type UpdateExchangeOpts = v3.UpdateExchange
 
 type UpdateAssetOpts struct {
 	symbol       *string

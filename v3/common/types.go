@@ -10,11 +10,11 @@ import (
 
 // Exchange represents a centralized exchange in database.
 type Exchange struct {
-	ID              uint64
-	Name            string
-	TradingFeeMaker float64
-	TradingFeeTaker float64
-	Disable         bool
+	ID              uint64  `json:"id"`
+	Name            string  `json:"name"`
+	TradingFeeMaker float64 `json:"trading_fee_maker"`
+	TradingFeeTaker float64 `json:"trading_fee_taker"`
+	Disable         bool    `json:"disable"`
 }
 
 //go:generate stringer -type=SetRate -linecomment
@@ -92,7 +92,7 @@ type AssetExchange struct {
 	WithdrawFee       float64          `json:"withdraw_fee"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
-	TradingPairs      []TradingPair    `json:"trading_pairs"`
+	TradingPairs      []TradingPair    `json:"trading_pairs" binding:"dive"`
 }
 
 // AssetTarget is the target setting of an asset.
@@ -138,7 +138,7 @@ type Asset struct {
 	IsQuote            bool                `json:"is_quote"`
 	PWI                *AssetPWI           `json:"pwi"`
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
-	Exchanges          []AssetExchange     `json:"exchanges"`
+	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
 	Target             *AssetTarget        `json:"target"`
 	Created            time.Time           `json:"created"`
 	Updated            time.Time           `json:"updated"`
@@ -167,8 +167,8 @@ type CreateAssetExchange struct {
 
 // CreatePendingAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
 type CreatePendingAssetEntry struct {
-	Symbol             string              `json:"symbol"`
-	Name               string              `json:"name"`
+	Symbol             string              `json:"symbol" binding:"required"`
+	Name               string              `json:"name" binding:"required"`
 	Address            ethereum.Address    `json:"address"`
 	OldAddresses       []ethereum.Address  `json:"old_addresses"`
 	Decimals           uint64              `json:"decimals"`
@@ -178,13 +178,13 @@ type CreatePendingAssetEntry struct {
 	IsQuote            bool                `json:"is_quote"`
 	PWI                *AssetPWI           `json:"pwi"`
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
-	Exchanges          []AssetExchange     `json:"exchanges"`
+	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
 	Target             *AssetTarget        `json:"target"`
 }
 
 // CreatePendingAsset
 type CreatePendingAsset struct {
-	AssetInputs []CreatePendingAssetEntry `json:"assets"`
+	AssetInputs []CreatePendingAssetEntry `json:"assets" binding:"required,dive"`
 }
 
 // UpdateAssetExchange is the options of UpdateAssetExchange method.
@@ -195,4 +195,10 @@ type UpdateAssetExchange struct {
 	WithdrawFee       *float64          `json:"withdraw_fee"`
 	TargetRecommended *float64          `json:"target_recommended"`
 	TargetRatio       *float64          `json:"target_ratio"`
+}
+
+type UpdateExchange struct {
+	TradingFeeMaker *float64 `json:"trading_fee_maker"`
+	TradingFeeTaker *float64 `json:"trading_fee_taker"`
+	Disable         *bool    `json:"disable"`
 }

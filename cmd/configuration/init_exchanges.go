@@ -88,6 +88,10 @@ func updateDepositAddress(
 					asset.ID,
 					common.Binance.String(),
 					ae.Symbol)
+				if be == nil {
+					log.Printf("abort updating deposit address due binance exchange disabled")
+					continue
+				}
 				depositAddress, err := be.GetDepositAddress(ae.Symbol)
 				if err != nil {
 					log.Printf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
@@ -109,6 +113,10 @@ func updateDepositAddress(
 					asset.ID,
 					common.Huobi.String(),
 					ae.Symbol)
+				if he == nil {
+					log.Printf("abort updating deposit address due huobi exchange disabled")
+					continue
+				}
 				depositAddress, err := he.GetDepositAddress(ae.Symbol)
 				if err != nil {
 					log.Printf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
@@ -141,8 +149,8 @@ func NewExchangePool(
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
 	var (
-		be      *binance.Endpoint
-		he      *huobi.Endpoint
+		be      exchange.BinanceInterface
+		he      exchange.HuobiInterface
 		bin, hb common.Exchange
 	)
 	for _, exparam := range enabledExchanges {

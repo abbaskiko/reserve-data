@@ -19,11 +19,10 @@ type Server struct {
 
 // NewServer creates new HTTP server for v3 APIs.
 func NewServer(storage storage.Interface, r *gin.Engine) *Server {
-	server := &Server{storage: storage}
 	if r == nil {
 		r = gin.Default()
 	}
-	server.r = r
+	server := &Server{storage: storage, r: r}
 	g := r.Group("/v3")
 
 	g.GET("/asset/:id", server.getAsset)
@@ -37,6 +36,8 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	g.POST("/asset-exchange", server.createAssetExchange)
 	g.PUT("/asset-exchange/:id", server.updateAssetExchange)
 
+	g.PUT("/exchange/:id", server.updateExchange)
+	g.GET("/exchange", server.getExchanges)
 	return server
 }
 

@@ -26,8 +26,8 @@ func newAssertCreated(expectedData []byte) assertFn {
 	return func(t *testing.T, resp *httptest.ResponseRecorder) {
 		t.Helper()
 
-		if resp.Code != http.StatusOK {
-			t.Fatalf("wrong return code, expected: %d, got: %d, body[%s]", http.StatusOK, resp.Code, resp.Body.String())
+		if resp.Code != http.StatusCreated {
+			t.Fatalf("wrong return code, expected: %d, got: %d, body[%s]", http.StatusCreated, resp.Code, resp.Body.String())
 		}
 
 		type responseBody struct {
