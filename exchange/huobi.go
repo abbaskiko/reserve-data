@@ -351,7 +351,7 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 				tokenSymbol := strings.ToUpper(b.Currency)
 				for _, asset := range assets {
 					for _, exchg := range asset.Exchanges {
-						if exchg.ID == uint64(common.Huobi) && exchg.Symbol == tokenSymbol {
+						if exchg.ExchangeID == uint64(common.Huobi) && exchg.Symbol == tokenSymbol {
 							balance, _ := strconv.ParseFloat(b.Balance, 64)
 							if b.Type == "trade" {
 								result.AvailableBalance[tokenSymbol] = balance

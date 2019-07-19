@@ -318,7 +318,7 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 				tokenSymbol := b.Asset
 				for _, asset := range assets {
 					for _, exchg := range asset.Exchanges {
-						if exchg.ID == uint64(common.Binance) && exchg.Symbol == tokenSymbol {
+						if exchg.ExchangeID == uint64(common.Binance) && exchg.Symbol == tokenSymbol {
 							avai, _ := strconv.ParseFloat(b.Free, 64)
 							locked, _ := strconv.ParseFloat(b.Locked, 64)
 							result.AvailableBalance[tokenSymbol] = avai
