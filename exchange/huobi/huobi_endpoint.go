@@ -148,9 +148,9 @@ func (ep *Endpoint) GetDepthOnePair(
 	return respData, err
 }
 
-func (ep *Endpoint) Trade(tradeType string, base, quote common.Token, rate, amount float64, timepoint uint64) (exchange.HuobiTrade, error) {
+func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate, amount float64, timepoint uint64) (exchange.HuobiTrade, error) {
 	result := exchange.HuobiTrade{}
-	symbol := strings.ToLower(base.ID) + strings.ToLower(quote.ID)
+	symbol := strings.ToLower(pair.BaseSymbol) + strings.ToLower(pair.QuoteSymbol)
 	orderType := tradeType + "-limit"
 	accounts, err := ep.GetAccounts()
 	if err != nil {

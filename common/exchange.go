@@ -31,13 +31,15 @@ var ValidExchangeNames = map[string]ExchangeName{
 
 // Exchange represents a centralized exchange like Binance, Huobi...
 type Exchange interface {
+	// TODO ExchangeName should be called ExchangeID, and ExchangeID should be removed
 	ID() ExchangeID
+	Name() ExchangeName
 	// Address return the deposit address of an asset and return true
 	// if token is supported in the exchange, otherwise return false.
 	// This function will prioritize live address from exchange above the current stored address.
 	Address(asset common.Asset) (address ethereum.Address, supported bool)
 	Withdraw(asset common.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error)
-	Trade(tradeType string, base, quote Token, rate, amount float64, timepoint uint64) (id string, done, remaining float64, finished bool, err error)
+	Trade(tradeType string, pair common.TradingPairSymbols, rate, amount float64, timepoint uint64) (id string, done, remaining float64, finished bool, err error)
 	CancelOrder(id, base, quote string) error
 	MarshalText() (text []byte, err error)
 	Configuration() (common.Exchange, error)

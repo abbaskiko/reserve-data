@@ -56,10 +56,6 @@ func (se *StableEx) ID() common.ExchangeID {
 	return common.ExchangeID(common.StableExchange.String())
 }
 
-func (se *StableEx) Name() string {
-	return "stable token exchange"
-}
-
 func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
 	// TODO: see if trade order (a tx to dgx contract) is successful or not
 	// - successful: done = order amount, remaining = 0, finished = true, err = nil
@@ -68,7 +64,7 @@ func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remainin
 	return 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (se *StableEx) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	// TODO: communicate with dgx connector to do the trade
 	return "not supported", 0, 0, false, errors.New("not supported")
 }
@@ -128,6 +124,10 @@ func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 
 func (se *StableEx) Configuration() (commonv3.Exchange, error) {
 	return commonv3.Exchange{}, nil
+}
+
+func (se *StableEx) Name() common.ExchangeName {
+	return common.StableExchange
 }
 
 func NewStableEx() (*StableEx, error) {

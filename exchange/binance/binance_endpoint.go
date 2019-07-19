@@ -144,9 +144,9 @@ func (ep *Endpoint) GetDepthOnePair(baseID, quoteID string) (exchange.Binaresp, 
 //
 // In this version, we only support LIMIT order which means only buy/sell with acceptable price,
 // and GTC time in force which means that the order will be active until it's implicitly canceled
-func (ep *Endpoint) Trade(tradeType string, base, quote common.Token, rate, amount float64) (exchange.Binatrade, error) {
+func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate, amount float64) (exchange.Binatrade, error) {
 	result := exchange.Binatrade{}
-	symbol := base.ID + quote.ID
+	symbol := pair.BaseSymbol + pair.QuoteSymbol
 	orderType := "LIMIT"
 	params := map[string]string{
 		"symbol":      symbol,

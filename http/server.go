@@ -317,34 +317,35 @@ func (s *Server) SetRate(c *gin.Context) {
 }
 
 func (s *Server) Trade(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"base", "quote", "amount", "rate", "type"}, []Permission{RebalancePermission})
+	postForm, ok := s.Authenticated(c, []string{"pair", "amount", "rate", "type"}, []Permission{RebalancePermission})
 	if !ok {
 		return
 	}
 
 	exchangeParam := c.Param("exchangeid")
-	//baseTokenParam := postForm.Get("base")
-	//quoteTokenParam := postForm.Get("quote")
+	pairIDParam := c.Param("pair")
 	amountParam := postForm.Get("amount")
 	rateParam := postForm.Get("rate")
 	typeParam := postForm.Get("type")
+
+	pairID, err := strconv.Atoi(pairIDParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("invalid pair id %s err=%s", pairIDParam, err.Error())))
+	}
 
 	exchange, err := common.GetExchange(exchangeParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	// TODO: trade should accept asset_id instead of exchange id
-	//base, err := s.setting.GetInternalTokenByID(baseTokenParam)
-	//if err != nil {
-	//	httputil.ResponseFailure(c, httputil.WithError(err))
-	//	return
-	//}
-	//quote, err := s.setting.GetInternalTokenByID(quoteTokenParam)
-	//if err != nil {
-	//	httputil.ResponseFailure(c, httputil.WithError(err))
-	//	return
-	//}
+	//TODO: use GetTradingPair method
+	var pair commonv3.TradingPairSymbols
+	pairs, err := s.assetStorage.GetTradingPairs(uint64(exchange.Name()))
+	for _, p := range pairs {
+		if p.ID == uint64(pairID) {
+			pair = p
+		}
+	}
 	amount, err := strconv.ParseFloat(amountParam, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -361,10 +362,8 @@ func (s *Server) Trade(c *gin.Context) {
 		return
 	}
 
-	// TODO: remove me
-	var base, quote common.Token
 	id, done, remaining, finished, err := s.core.Trade(
-		exchange, typeParam, base, quote, rate, amount, getTimePoint(c, false))
+		exchange, typeParam, pair, rate, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -412,7 +411,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 	}
 
 	exchangeParam := c.Param("exchangeid")
-	assetParam := postForm.Get("token")
+	assetParam := postForm.Get("asset")
 	amountParam := postForm.Get("amount")
 
 	exchange, err := common.GetExchange(exchangeParam)
@@ -446,14 +445,14 @@ func (s *Server) Withdraw(c *gin.Context) {
 }
 
 func (s *Server) Deposit(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"amount", "asset_id"}, []Permission{RebalancePermission})
+	postForm, ok := s.Authenticated(c, []string{"amount", "asset"}, []Permission{RebalancePermission})
 	if !ok {
 		return
 	}
 
 	exchangeParam := c.Param("exchangeid")
 	amountParam := postForm.Get("amount")
-	assetIDParam := postForm.Get("asset_id")
+	assetIDParam := postForm.Get("asset")
 	assetID, err := strconv.Atoi(assetIDParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -534,23 +533,26 @@ func (s *Server) Metrics(c *gin.Context) {
 		Timestamp: common.GetTimepoint(),
 	}
 	log.Printf("Getting metrics")
-	postForm, ok := s.Authenticated(c, []string{"tokens", "from", "to"}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
+	postForm, ok := s.Authenticated(c, []string{"assets", "from", "to"}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
-	//tokenParam := postForm.Get("tokens")
+	assetIDsParam := postForm.Get("assets")
 	fromParam := postForm.Get("from")
 	toParam := postForm.Get("to")
-	tokens := []common.Token{}
-	// TODO: this should accept asset_id instead of symbol
-	//for _, tok := range strings.Split(tokenParam, "-") {
-	//	token, err := s.setting.GetInternalTokenByID(tok)
-	//	if err != nil {
-	//		httputil.ResponseFailure(c, httputil.WithError(err))
-	//		return
-	//	}
-	//	tokens = append(tokens, token)
-	//}
+	var assets []commonv3.Asset
+	for _, assetID := range strings.Split(assetIDsParam, "-") {
+		id, err := strconv.Atoi(assetID)
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+		}
+		asset, err := s.assetStorage.GetAsset(uint64(id))
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+		assets = append(assets, asset)
+	}
 	from, err := strconv.ParseUint(fromParam, 10, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -559,7 +561,7 @@ func (s *Server) Metrics(c *gin.Context) {
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
-	data, err := s.metric.GetMetric(tokens, from, to)
+	data, err := s.metric.GetMetric(assets, from, to)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
@@ -584,10 +586,11 @@ func (s *Server) StoreMetrics(c *gin.Context) {
 	timestamp, err := strconv.ParseUint(timestampParam, 10, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	metricEntry := common.MetricEntry{}
 	metricEntry.Timestamp = timestamp
-	metricEntry.Data = map[string]common.TokenMetric{}
+	metricEntry.Data = map[uint64]common.TokenMetric{}
 	// data must be in form of <token>_afpmid_spread|<token>_afpmid_spread|...
 	for _, tokenData := range strings.Split(dataParam, "|") {
 		var (
@@ -600,7 +603,12 @@ func (s *Server) StoreMetrics(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithReason("submitted data is not in correct format"))
 			return
 		}
-		token := parts[0]
+		assetIDStr := parts[0]
+		assetID, err := strconv.Atoi(assetIDStr)
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
 		afpmidStr := parts[1]
 		spreadStr := parts[2]
 
@@ -613,7 +621,7 @@ func (s *Server) StoreMetrics(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithReason("Spread "+spreadStr+" is not float64"))
 			return
 		}
-		metricEntry.Data[token] = common.TokenMetric{
+		metricEntry.Data[uint64(assetID)] = common.TokenMetric{
 			AfpMid: afpmid,
 			Spread: spread,
 		}

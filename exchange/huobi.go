@@ -130,10 +130,6 @@ func (h *Huobi) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
 	return pairs, nil
 }
 
-func (h *Huobi) Name() string {
-	return "huobi"
-}
-
 func (h *Huobi) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
 	result, err := h.interf.OrderStatus(symbol, id)
 	if err != nil {
@@ -155,8 +151,8 @@ func (h *Huobi) QueryOrder(symbol string, id uint64) (done float64, remaining fl
 	return done, total - done, total-done < huobiEpsilon, nil
 }
 
-func (h *Huobi) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
-	result, err := h.interf.Trade(tradeType, base, quote, rate, amount, timepoint)
+func (h *Huobi) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+	result, err := h.interf.Trade(tradeType, pair, rate, amount, timepoint)
 
 	if err != nil {
 		return "", 0, 0, false, err
@@ -169,7 +165,7 @@ func (h *Huobi) Trade(tradeType string, base common.Token, quote common.Token, r
 		}
 	}
 	done, remaining, finished, err = h.QueryOrder(
-		base.ID+quote.ID,
+		pair.BaseSymbol+pair.QuoteSymbol,
 		orderID,
 	)
 	if err != nil {
@@ -534,7 +530,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 		if deposit.TxHash == tx2Entry.Hash {
 			if deposit.State == "safe" || deposit.State == "confirmed" {
 				data := common.NewTXEntry(tx2Entry.Hash,
-					h.Name(),
+					h.Name().String(),
 					assetID,
 					"mined",
 					exchangeStatusDone,
@@ -591,7 +587,7 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID uint6
 		//store tx2 to pendingIntermediateTx
 		data := common.NewTXEntry(
 			tx2.Hash().Hex(),
-			h.Name(),
+			h.Name().String(),
 			assetID,
 			common.MiningStatusSubmitted,
 			"",
@@ -624,7 +620,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint
 		log.Println("Huobi 2nd Transaction is mined. Processed to store it and check the Huobi Deposit history")
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
-			h.Name(),
+			h.Name().String(),
 			assetID,
 			common.MiningStatusMined,
 			"",
@@ -638,7 +634,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint
 	case common.MiningStatusFailed:
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
-			h.Name(),
+			h.Name().String(),
 			assetID,
 			common.MiningStatusFailed,
 			common.ExchangeStatusFailed,
@@ -655,7 +651,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint
 		if elapsed > uint64(15*time.Minute/time.Millisecond) {
 			data = common.NewTXEntry(
 				tx2Entry.Hash,
-				h.Name(),
+				h.Name().String(),
 				assetID,
 				common.MiningStatusLost,
 				common.ExchangeStatusLost,
@@ -720,6 +716,10 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 
 func (h *Huobi) Configuration() (commonv3.Exchange, error) {
 	return h.sr.GetExchange(uint64(common.Huobi))
+}
+
+func (h *Huobi) Name() common.ExchangeName {
+	return common.Huobi
 }
 
 //NewHuobi creates new Huobi exchange instance

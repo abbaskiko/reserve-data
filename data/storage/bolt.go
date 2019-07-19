@@ -911,8 +911,8 @@ func (bs *BoltStorage) StoreMetric(data *common.MetricEntry, timepoint uint64) e
 }
 
 //GetMetric return metric data
-func (bs *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint64) (map[string]common.MetricList, error) {
-	imResult := map[string]*common.MetricList{}
+func (bs *BoltStorage) GetMetric(tokens []commonv3.Asset, fromTime, toTime uint64) (map[uint64]common.MetricList, error) {
+	imResult := map[uint64]*common.MetricList{}
 	for _, tok := range tokens {
 		imResult[tok.ID] = &common.MetricList{}
 	}
@@ -943,7 +943,7 @@ func (bs *BoltStorage) GetMetric(tokens []common.Token, fromTime, toTime uint64)
 		}
 		return nil
 	})
-	result := map[string]common.MetricList{}
+	result := map[uint64]common.MetricList{}
 	for k, v := range imResult {
 		result[k] = *v
 	}

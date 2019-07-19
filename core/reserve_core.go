@@ -70,8 +70,7 @@ func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange
 func (rc ReserveCore) Trade(
 	exchange common.Exchange,
 	tradeType string,
-	base common.Token,
-	quote common.Token,
+	pair commonv3.TradingPairSymbols,
 	rate float64,
 	amount float64,
 	timepoint uint64) (common.ActivityID, float64, float64, bool, error) {
@@ -81,7 +80,7 @@ func (rc ReserveCore) Trade(
 		uid := timebasedID(id)
 		log.Printf(
 			"Core ----------> %s on %s: base: %s, quote: %s, rate: %s, amount: %s, timestamp: %d ==> Result: id: %s, done: %s, remaining: %s, finished: %t, error: %s",
-			tradeType, exchange.ID(), base.ID, quote.ID,
+			tradeType, exchange.ID(), pair.BaseSymbol, pair.QuoteSymbol,
 			strconv.FormatFloat(rate, 'f', -1, 64),
 			strconv.FormatFloat(amount, 'f', -1, 64), timepoint,
 			uid,
@@ -97,8 +96,8 @@ func (rc ReserveCore) Trade(
 			map[string]interface{}{
 				"exchange":  exchange,
 				"type":      tradeType,
-				"base":      base,
-				"quote":     quote,
+				"base":      pair.BaseSymbol,
+				"quote":     pair.QuoteSymbol,
 				"rate":      rate,
 				"amount":    strconv.FormatFloat(amount, 'f', -1, 64),
 				"timepoint": timepoint,
@@ -115,7 +114,7 @@ func (rc ReserveCore) Trade(
 		)
 	}
 
-	if err = sanityCheckTrading(exchange, base, quote, rate, amount); err != nil {
+	if err = sanityCheckTrading(pair, rate, amount); err != nil {
 		if sErr := recordActivity("", statusFailed, 0, 0, false, err); sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 			return common.ActivityID{}, 0, 0, false, common.CombineActivityStorageErrs(err, sErr)
@@ -123,7 +122,7 @@ func (rc ReserveCore) Trade(
 		return common.ActivityID{}, 0, 0, false, err
 	}
 
-	id, done, remaining, finished, err := exchange.Trade(tradeType, base, quote, rate, amount, timepoint)
+	id, done, remaining, finished, err := exchange.Trade(tradeType, pair, rate, amount, timepoint)
 	uid := timebasedID(id)
 	if err != nil {
 		if sErr := recordActivity(id, statusFailed, done, remaining, finished, err); sErr != nil {
@@ -515,20 +514,14 @@ func sanityCheck(buys, afpMid, sells []*big.Int) error {
 	return nil
 }
 
-func sanityCheckTrading(exchange common.Exchange, base, quote common.Token, rate, amount float64) error {
-	//TODO: reenable sanity check trading
-	//tokenPair := makeTokenPair(base, quote)
-	//exchangeInfo, err := exchange.GetExchangeInfo(tokenPair.PairID())
-	//if err != nil {
-	//	return err
-	//}
-	//currentNotional := rate * amount
-	//minNotional := exchangeInfo.MinNotional
-	//if minNotional != float64(0) {
-	//	if currentNotional < minNotional {
-	//		return errors.New("notional must be bigger than exchange's MinNotional")
-	//	}
-	//}
+func sanityCheckTrading(pair commonv3.TradingPairSymbols, rate, amount float64) error {
+	currentNotional := rate * amount
+	minNotional := pair.MinNotional
+	if minNotional != float64(0) {
+		if currentNotional < minNotional {
+			return errors.New("notional must be bigger than exchange's MinNotional")
+		}
+	}
 	return nil
 }
 

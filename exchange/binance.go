@@ -155,10 +155,6 @@ func (bn *Binance) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
 	return pairs, nil
 }
 
-func (bn *Binance) Name() string {
-	return "binance"
-}
-
 func (bn *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
 	result, err := bn.interf.OrderStatus(symbol, id)
 	if err != nil {
@@ -169,13 +165,13 @@ func (bn *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining
 	return done, total - done, total-done < binanceEpsilon, nil
 }
 
-func (bn *Binance) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
-	result, err := bn.interf.Trade(tradeType, base, quote, rate, amount)
+func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+	result, err := bn.interf.Trade(tradeType, pair, rate, amount)
 	if err != nil {
 		return "", 0, 0, false, err
 	}
 	done, remaining, finished, err = bn.QueryOrder(
-		base.ID+quote.ID,
+		pair.BaseSymbol+pair.QuoteSymbol,
 		result.OrderID,
 	)
 	id = strconv.FormatUint(result.OrderID, 10)
@@ -482,6 +478,10 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 
 func (bn *Binance) Configuration() (commonv3.Exchange, error) {
 	return bn.sr.GetExchange(uint64(common.Binance))
+}
+
+func (bn *Binance) Name() common.ExchangeName {
+	return common.Binance
 }
 
 func NewBinance(

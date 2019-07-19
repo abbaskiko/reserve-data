@@ -43,6 +43,7 @@ type Interface interface {
 type SettingReader interface {
 	GetAsset(id uint64) (v3.Asset, error)
 	GetExchange(id uint64) (v3.Exchange, error)
+	// TODO: add GetTradingPair method that accept trading_pair_id
 	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
 	// TODO: check usages of this method to see if it should be replaced with GetDepositAddress(exchangeID, tokenID)
 	GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error)
