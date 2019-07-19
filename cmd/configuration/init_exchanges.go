@@ -23,6 +23,54 @@ type ExchangePool struct {
 	Exchanges map[common.ExchangeID]interface{}
 }
 
+func updateTradingPairConf(
+	assetStorage storage.Interface,
+	ex common.Exchange, exchangeID uint64) {
+	pairs, err := assetStorage.GetTradingPairs(exchangeID)
+	if err != nil {
+		log.Printf("failed to get trading pairs exchange_id=%d err=%s ", exchangeID, err.Error())
+		return
+	}
+	exInfo, err := ex.GetLiveExchangeInfos(pairs)
+	if err != nil {
+		log.Printf("failed to get pair configuration for binance err=%s", err.Error())
+		return
+	}
+
+	for _, pair := range pairs {
+		pairConf, ok := exInfo[pair.ID]
+		if !ok {
+			log.Printf("no configuration found for trading pair %d", pair.ID)
+			return
+		}
+
+		var (
+			pricePrecision  = uint64(pairConf.Precision.Price)
+			amountPrecision = uint64(pairConf.Precision.Amount)
+			amountLimitMin  = pairConf.AmountLimit.Min
+			amountLimitMax  = pairConf.AmountLimit.Max
+			priceLimitMin   = pairConf.PriceLimit.Min
+			priceLimitMax   = pairConf.PriceLimit.Max
+			minNotional     = pairConf.MinNotional
+		)
+
+		log.Printf("updating pair configuration id=%d exchange_id=%d", pair.ID, exchangeID)
+		err = assetStorage.UpdateTradingPair(pair.ID, storage.UpdateTradingPairOpts{
+			PricePrecision:  &pricePrecision,
+			AmountPrecision: &amountPrecision,
+			AmountLimitMin:  &amountLimitMin,
+			AmountLimitMax:  &amountLimitMax,
+			PriceLimitMin:   &priceLimitMin,
+			PriceLimitMax:   &priceLimitMax,
+			MinNotional:     &minNotional,
+		})
+		if err != nil {
+			log.Printf("failed to update trading pair id=%d exchange_id=%d err=%s", pair.ID, exchangeID, err.Error())
+			return
+		}
+	}
+}
+
 func updateDepositAddress(
 	assetStorage storage.Interface,
 	be exchange.BinanceInterface,
@@ -93,8 +141,9 @@ func NewExchangePool(
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
 	var (
-		be *binance.Endpoint
-		he *huobi.Endpoint
+		be      *binance.Endpoint
+		he      *huobi.Endpoint
+		bin, hb common.Exchange
 	)
 	for _, exparam := range enabledExchanges {
 		switch exparam {
@@ -111,7 +160,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
-			bin, err := exchange.NewBinance(
+			bin, err = exchange.NewBinance(
 				be,
 				binanceStorage,
 				assetStorage)
@@ -132,7 +181,7 @@ func NewExchangePool(
 				return nil, err
 			}
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
-			hb, err := exchange.NewHuobi(
+			hb, err = exchange.NewHuobi(
 				he,
 				blockchain,
 				intermediatorSigner,
@@ -148,6 +197,8 @@ func NewExchangePool(
 	}
 
 	go updateDepositAddress(assetStorage, be, he)
+	go updateTradingPairConf(assetStorage, bin, uint64(common.Binance))
+	go updateTradingPairConf(assetStorage, hb, uint64(common.Huobi))
 	return &ExchangePool{exchanges}, nil
 }
 

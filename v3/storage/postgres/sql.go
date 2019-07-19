@@ -331,6 +331,7 @@ type preparedStmts struct {
 	updateAsset          *sqlx.NamedStmt
 	changeAssetAddress   *sqlx.Stmt
 	updateDepositAddress *sqlx.Stmt
+	updateTradingPair    *sqlx.NamedStmt
 
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
@@ -593,8 +594,7 @@ FROM trading_pairs AS tp
          INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
          INNER JOIN assets AS qa ON tp.quote_id = qa.id
          INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-WHERE bae.exchange_id = $1
-  AND qae.exchange_id = $1; `
+WHERE tp.exchange_id = $1;`
 	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
 	if err != nil {
 		return nil, err
@@ -605,6 +605,20 @@ SET deposit_address = $3
 WHERE asset_id = $1
   AND exchange_id = $2 RETURNING id;`
 	updateDepositAddress, err := db.Preparex(updateDepositAddressQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const updateTradingPairQuery = `UPDATE "trading_pairs"
+SET price_precision  = coalesce(:price_precision, price_precision),
+    amount_precision = coalesce(:amount_precision, amount_precision),
+    amount_limit_min = coalesce(:amount_limit_min, amount_limit_min),
+    amount_limit_max = coalesce(:amount_limit_max, amount_limit_max),
+    price_limit_min  = coalesce(:price_limit_min, price_limit_min),
+    price_limit_max  = coalesce(:price_limit_max, price_limit_max),
+    min_notional= coalesce(:min_notional, min_notional)
+WHERE id = :id RETURNING id; `
+	updateTradingPair, err := db.PrepareNamed(updateTradingPairQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -623,6 +637,7 @@ WHERE asset_id = $1
 		updateAsset:          updateAsset,
 		changeAssetAddress:   changeAssetAddress,
 		updateDepositAddress: updateDepositAddress,
+		updateTradingPair:    updateTradingPair,
 
 		getTradingPairSymbols: getTradingPairSymbols,
 		getMinNotional:        getMinMotional,

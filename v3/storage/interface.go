@@ -31,7 +31,7 @@ type Interface interface {
 	ChangeAssetAddress(id uint64, address ethereum.Address) error
 	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
 
-	// TODO update precision pairs and live deposit addresses on startup
+	UpdateTradingPair(id uint64, opts UpdateTradingPairOpts) error
 
 	// TODO method for batch update PWI
 	// TODO method for batch update rebalance quadratic
@@ -182,4 +182,14 @@ func WithIsQuoteUpdateAssetOption(isQuote bool) UpdateAssetOption {
 	return func(opts *UpdateAssetOpts) {
 		opts.isQuote = &isQuote
 	}
+}
+
+type UpdateTradingPairOpts struct {
+	PricePrecision  *uint64
+	AmountPrecision *uint64
+	AmountLimitMin  *float64
+	AmountLimitMax  *float64
+	PriceLimitMin   *float64
+	PriceLimitMax   *float64
+	MinNotional     *float64
 }
