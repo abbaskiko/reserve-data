@@ -191,7 +191,7 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, opts storage.Updat
 		updateMsgs = append(updateMsgs, fmt.Sprintf("target_recommended=%f", *updateOpts.TargetRecommended))
 	}
 	if updateOpts.TargetRatio != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("target_ratio=%f", updateOpts.TargetRatio))
+		updateMsgs = append(updateMsgs, fmt.Sprintf("target_ratio=%f", *updateOpts.TargetRatio))
 	}
 
 	log.Printf("updating asset_exchange %d %s", id, strings.Join(updateMsgs, " "))
