@@ -205,8 +205,12 @@ func NewExchangePool(
 	}
 
 	go updateDepositAddress(assetStorage, be, he)
-	go updateTradingPairConf(assetStorage, bin, uint64(common.Binance))
-	go updateTradingPairConf(assetStorage, hb, uint64(common.Huobi))
+	if bin != nil {
+		go updateTradingPairConf(assetStorage, bin, uint64(common.Binance))
+	}
+	if hb != nil {
+		go updateTradingPairConf(assetStorage, hb, uint64(common.Huobi))
+	}
 	return &ExchangePool{exchanges}, nil
 }
 
