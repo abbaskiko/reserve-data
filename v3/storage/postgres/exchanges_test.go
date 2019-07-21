@@ -41,14 +41,17 @@ func TestExchangeStorage(t *testing.T) {
 
 	// exchange should not be allowed to enable if trading fees are not all set
 	err = s.UpdateExchange(uint64(common.Huobi),
-		storage.WithTradingFeeTakerUpdateExchangeOpt(0.02),
-		storage.WithDisableExchangeOpt(false))
+		storage.UpdateExchangeOpts{
+			TradingFeeTaker: commonv3.FloatPointer(0.02),
+			Disable:         commonv3.BoolPointer(false),
+		})
 	assert.Error(t, err)
 	assert.Equal(t, commonv3.ErrExchangeFeeMissing, err)
 
-	err = s.UpdateExchange(uint64(common.Huobi),
-		storage.WithTradingFeeMakerUpdateExchangeOpt(0.01),
-		storage.WithTradingFeeTakerUpdateExchangeOpt(0.02),
+	err = s.UpdateExchange(uint64(common.Huobi), storage.UpdateExchangeOpts{
+		TradingFeeTaker: commonv3.FloatPointer(0.01),
+		TradingFeeMaker: commonv3.FloatPointer(0.02),
+	},
 	)
 	require.NoError(t, err)
 
@@ -69,9 +72,11 @@ func TestExchangeStorage(t *testing.T) {
 	}
 
 	err = s.UpdateExchange(uint64(common.Huobi),
-		storage.WithTradingFeeMakerUpdateExchangeOpt(0.01),
-		storage.WithTradingFeeTakerUpdateExchangeOpt(0.02),
-		storage.WithDisableExchangeOpt(false))
+		storage.UpdateExchangeOpts{
+			TradingFeeMaker: commonv3.FloatPointer(0.01),
+			TradingFeeTaker: commonv3.FloatPointer(0.02),
+			Disable:         commonv3.BoolPointer(false),
+		})
 	require.NoError(t, err)
 
 	exchanges, err = s.GetExchanges()

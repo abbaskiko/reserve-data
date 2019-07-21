@@ -1,8 +1,6 @@
 package http
 
 import (
-	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -69,10 +67,4 @@ func responseStatus(c *gin.Context, code int, message string) {
 
 func responseData(c *gin.Context, status int, obj interface{}) {
 	c.JSON(status, obj)
-}
-
-func readAndClose(body io.ReadCloser) ([]byte, error) {
-	data, err := ioutil.ReadAll(body)
-	_ = body.Close()
-	return data, err
 }
