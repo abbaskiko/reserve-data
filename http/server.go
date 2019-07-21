@@ -332,6 +332,7 @@ func (s *Server) Trade(c *gin.Context) {
 	pairID, err := strconv.Atoi(pairIDParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("invalid pair id %s err=%s", pairIDParam, err.Error())))
+		return
 	}
 
 	exchange, err := common.GetExchange(exchangeParam)
@@ -342,6 +343,10 @@ func (s *Server) Trade(c *gin.Context) {
 	//TODO: use GetTradingPair method
 	var pair v3common.TradingPairSymbols
 	pairs, err := s.assetStorage.GetTradingPairs(uint64(exchange.Name()))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 	for _, p := range pairs {
 		if p.ID == uint64(pairID) {
 			pair = p
