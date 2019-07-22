@@ -67,7 +67,7 @@ func (s *Storage) CreateAsset(
 	defer rollbackUnlessCommitted(tx)
 
 	id, err := s.createAsset(
-		nil,
+		tx,
 		symbol,
 		name,
 		address,
@@ -92,6 +92,139 @@ func (s *Storage) CreateAsset(
 	return id, nil
 }
 
+func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string, depositAddress ethereum.Address,
+	minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error) {
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return 0, err
+	}
+	defer rollbackUnlessCommitted(tx)
+	id, err := s.createAssetExchange(tx, exchangeID, assetID, symbol, depositAddress, minDeposit, withdrawFee,
+		targetRecommended, targetRatio)
+	if err != nil {
+		return 0, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (s *Storage) UpdateAssetExchange(id uint64, opts storage.UpdateAssetExchangeOpts) error {
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	defer rollbackUnlessCommitted(tx)
+	err = s.updateAssetExchange(tx, id, opts)
+	if err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, symbol string,
+	depositAddress ethereum.Address, minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error) {
+	var assetExchangeID uint64
+	var depositAddressParam *string
+
+	// TODO: validate depositAddress, require if transferable
+
+	if !common.IsZeroAddress(depositAddress) {
+		depositAddressHex := depositAddress.String()
+		depositAddressParam = &depositAddressHex
+	}
+	err := tx.NamedStmt(s.stmts.newAssetExchange).Get(&assetExchangeID, struct {
+		ExchangeID        uint64  `db:"exchange_id"`
+		AssetID           uint64  `db:"asset_id"`
+		Symbol            string  `db:"symbol"`
+		DepositAddress    *string `db:"deposit_address"`
+		MinDeposit        float64 `db:"min_deposit"`
+		WithdrawFee       float64 `db:"withdraw_fee"`
+		TargetRecommended float64 `db:"target_recommended"`
+		TargetRatio       float64 `db:"target_ratio"`
+	}{
+		ExchangeID:        exchangeID,
+		AssetID:           assetID,
+		Symbol:            symbol,
+		DepositAddress:    depositAddressParam,
+		MinDeposit:        minDeposit,
+		WithdrawFee:       withdrawFee,
+		TargetRecommended: targetRecommended,
+		TargetRatio:       targetRatio,
+	})
+	return assetExchangeID, err
+}
+
+func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, opts storage.UpdateAssetExchangeOpts) error {
+	var (
+		updateOpts   = &storage.UpdateAssetExchangeOpts{}
+		addressParam *string
+	)
+
+	var updateMsgs []string
+	if updateOpts.Symbol != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("symbol=%s", *updateOpts.Symbol))
+	}
+	if updateOpts.DepositAddress != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("deposit_address=%s", updateOpts.DepositAddress))
+		addressStr := updateOpts.DepositAddress.String()
+		addressParam = &addressStr
+	}
+	if updateOpts.MinDeposit != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("min_deposit=%f", *updateOpts.MinDeposit))
+	}
+	if updateOpts.WithdrawFee != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("withdraw_fee=%f", *updateOpts.WithdrawFee))
+	}
+	if updateOpts.TargetRecommended != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("target_recommended=%f", *updateOpts.TargetRecommended))
+	}
+	if updateOpts.TargetRatio != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("target_ratio=%f", *updateOpts.TargetRatio))
+	}
+
+	log.Printf("updating asset_exchange %d %s", id, strings.Join(updateMsgs, " "))
+	var updatedID uint64
+	err := s.stmts.updateAssetExchange.Get(&updatedID,
+		struct {
+			ID                uint64   `db:"id"`
+			Symbol            *string  `db:"symbol"`
+			DepositAddress    *string  `db:"deposit_address"`
+			MinDeposit        *float64 `db:"min_deposit"`
+			WithdrawFee       *float64 `db:"withdraw_fee"`
+			TargetRecommended *float64 `db:"target_recommended"`
+			TargetRatio       *float64 `db:"target_ratio"`
+		}{
+			ID:                id,
+			Symbol:            updateOpts.Symbol,
+			DepositAddress:    addressParam,
+			MinDeposit:        updateOpts.MinDeposit,
+			WithdrawFee:       updateOpts.WithdrawFee,
+			TargetRecommended: updateOpts.TargetRecommended,
+			TargetRatio:       updateOpts.TargetRatio,
+		},
+	)
+	if err == sql.ErrNoRows {
+		log.Printf("asset_exchange not found in database id=%d", id)
+		return common.ErrNotFound
+	} else if err != nil {
+		return fmt.Errorf("failed to update asset err=%s", err)
+	}
+	// TODO: check more error
+	return nil
+}
+
 func (s *Storage) createAsset(
 	tx *sqlx.Tx,
 	symbol, name string,
@@ -106,12 +239,6 @@ func (s *Storage) createAsset(
 	target *common.AssetTarget,
 ) (uint64, error) {
 	var assetID uint64
-
-	tx, err := s.db.Beginx()
-	if err != nil {
-		return 0, err
-	}
-	defer rollbackUnlessCommitted(tx)
 
 	if transferable && common.IsZeroAddress(address) {
 		return 0, common.ErrAddressMissing
@@ -315,9 +442,6 @@ func (s *Storage) createAsset(
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
-		return 0, err
-	}
 	return assetID, nil
 }
 

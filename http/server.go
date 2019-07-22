@@ -21,7 +21,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/metric"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	v3common "github.com/KyberNetwork/reserve-data/v3/common"
+	v3http "github.com/KyberNetwork/reserve-data/v3/http"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
@@ -259,7 +260,7 @@ func (s *Server) SetRate(c *gin.Context) {
 	block := postForm.Get("block")
 	afpMid := postForm.Get("afp_mid")
 	msgs := strings.Split(postForm.Get("msgs"), "-")
-	var assets []commonv3.Asset
+	var assets []v3common.Asset
 	{
 	}
 	for _, assetID := range strings.Split(assetIDs, "-") {
@@ -331,6 +332,7 @@ func (s *Server) Trade(c *gin.Context) {
 	pairID, err := strconv.Atoi(pairIDParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("invalid pair id %s err=%s", pairIDParam, err.Error())))
+		return
 	}
 
 	exchange, err := common.GetExchange(exchangeParam)
@@ -339,8 +341,12 @@ func (s *Server) Trade(c *gin.Context) {
 		return
 	}
 	//TODO: use GetTradingPair method
-	var pair commonv3.TradingPairSymbols
+	var pair v3common.TradingPairSymbols
 	pairs, err := s.assetStorage.GetTradingPairs(uint64(exchange.Name()))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 	for _, p := range pairs {
 		if p.ID == uint64(pairID) {
 			pair = p
@@ -540,7 +546,7 @@ func (s *Server) Metrics(c *gin.Context) {
 	assetIDsParam := postForm.Get("assets")
 	fromParam := postForm.Get("from")
 	toParam := postForm.Get("to")
-	var assets []commonv3.Asset
+	var assets []v3common.Asset
 	for _, assetID := range strings.Split(assetIDsParam, "-") {
 		id, err := strconv.Atoi(assetID)
 		if err != nil {
@@ -876,6 +882,8 @@ func (s *Server) register() {
 		s.r.GET("/btc-feed", s.GetBTCData)
 		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
+
+		_ = v3http.NewServer(s.assetStorage, s.r) // ignore server object because we just use the route part
 	}
 }
 

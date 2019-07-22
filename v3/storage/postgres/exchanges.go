@@ -75,21 +75,17 @@ func (s *Storage) GetExchange(id uint64) (common.Exchange, error) {
 	return result, nil
 }
 
-func (s *Storage) UpdateExchange(id uint64, opts ...storage.UpdateExchangeOption) error {
-	var updateOpts = &storage.UpdateExchangeOpts{}
-	for _, opt := range opts {
-		opt(updateOpts)
-	}
+func (s *Storage) UpdateExchange(id uint64, updateOpts storage.UpdateExchangeOpts) error {
 
 	var updateMsgs []string
-	if updateOpts.TradingFeeMaker() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("trading_fee_maker=%f", *updateOpts.TradingFeeMaker()))
+	if updateOpts.TradingFeeMaker != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("trading_fee_maker=%f", *updateOpts.TradingFeeMaker))
 	}
-	if updateOpts.TradingFeeTaker() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("trading_fee_taker=%f", *updateOpts.TradingFeeTaker()))
+	if updateOpts.TradingFeeTaker != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("trading_fee_taker=%f", *updateOpts.TradingFeeTaker))
 	}
-	if updateOpts.Disable() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("disable=%t", *updateOpts.Disable()))
+	if updateOpts.Disable != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("disable=%t", *updateOpts.Disable))
 	}
 
 	log.Printf("updating exchange %d %s", id, strings.Join(updateMsgs, " "))
@@ -102,9 +98,9 @@ func (s *Storage) UpdateExchange(id uint64, opts ...storage.UpdateExchangeOption
 			Disable         *bool    `db:"disable"`
 		}{
 			ID:              id,
-			TradingFeeMaker: updateOpts.TradingFeeMaker(),
-			TradingFeeTaker: updateOpts.TradingFeeTaker(),
-			Disable:         updateOpts.Disable(),
+			TradingFeeMaker: updateOpts.TradingFeeMaker,
+			TradingFeeTaker: updateOpts.TradingFeeTaker,
+			Disable:         updateOpts.Disable,
 		},
 	)
 	if err != nil {

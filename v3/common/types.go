@@ -1,6 +1,8 @@
 package common
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -8,11 +10,11 @@ import (
 
 // Exchange represents a centralized exchange in database.
 type Exchange struct {
-	ID              uint64
-	Name            string
-	TradingFeeMaker float64
-	TradingFeeTaker float64
-	Disable         bool
+	ID              uint64  `json:"id"`
+	Name            string  `json:"name"`
+	TradingFeeMaker float64 `json:"trading_fee_maker"`
+	TradingFeeTaker float64 `json:"trading_fee_taker"`
+	Disable         bool    `json:"disable"`
 }
 
 //go:generate stringer -type=SetRate -linecomment
@@ -40,6 +42,24 @@ var validSetRateTypes = map[string]SetRate{
 func SetRateFromString(s string) (SetRate, bool) {
 	sr, ok := validSetRateTypes[s]
 	return sr, ok
+}
+
+func (s *SetRate) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, s.String())), nil
+}
+func isString(input []byte) bool {
+	return len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"'
+}
+func (s *SetRate) UnmarshalJSON(input []byte) error {
+	if !isString(input) {
+		return fmt.Errorf("not is string")
+	}
+	r, ok := SetRateFromString(string(input[1 : len(input)-1]))
+	if !ok {
+		return fmt.Errorf("%s is not a valid SetRate", input)
+	}
+	*s = r
+	return nil
 }
 
 // TradingPair is a trading in an exchange.
@@ -72,7 +92,7 @@ type AssetExchange struct {
 	WithdrawFee       float64          `json:"withdraw_fee"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
-	TradingPairs      []TradingPair    `json:"trading_pairs"`
+	TradingPairs      []TradingPair    `json:"trading_pairs" binding:"dive"`
 }
 
 // AssetTarget is the target setting of an asset.
@@ -118,10 +138,67 @@ type Asset struct {
 	IsQuote            bool                `json:"is_quote"`
 	PWI                *AssetPWI           `json:"pwi"`
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
-	Exchanges          []AssetExchange     `json:"exchanges"`
+	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
 	Target             *AssetTarget        `json:"target"`
 	Created            time.Time           `json:"created"`
 	Updated            time.Time           `json:"updated"`
 }
 
 // TODO: write custom marshal json for created/updated fields
+
+// PendingAsset hold state of being create Asset and waiting for confirm to be Asset.
+type PendingAsset struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// CreateAssetExchange is the configuration of an asset for a specific exchange.
+type CreateAssetExchange struct {
+	AssetID           uint64           `json:"asset_id"`
+	ExchangeID        uint64           `json:"exchange_id"`
+	Symbol            string           `json:"symbol"`
+	DepositAddress    ethereum.Address `json:"deposit_address"`
+	MinDeposit        float64          `json:"min_deposit"`
+	WithdrawFee       float64          `json:"withdraw_fee"`
+	TargetRecommended float64          `json:"target_recommended"`
+	TargetRatio       float64          `json:"target_ratio"`
+}
+
+// CreatePendingAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
+type CreatePendingAssetEntry struct {
+	Symbol             string              `json:"symbol" binding:"required"`
+	Name               string              `json:"name" binding:"required"`
+	Address            ethereum.Address    `json:"address"`
+	OldAddresses       []ethereum.Address  `json:"old_addresses"`
+	Decimals           uint64              `json:"decimals"`
+	Transferable       bool                `json:"transferable"`
+	SetRate            SetRate             `json:"set_rate"`
+	Rebalance          bool                `json:"rebalance"`
+	IsQuote            bool                `json:"is_quote"`
+	PWI                *AssetPWI           `json:"pwi"`
+	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
+	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
+	Target             *AssetTarget        `json:"target"`
+}
+
+// CreatePendingAsset
+type CreatePendingAsset struct {
+	AssetInputs []CreatePendingAssetEntry `json:"assets" binding:"required,dive"`
+}
+
+// UpdateAssetExchange is the options of UpdateAssetExchange method.
+type UpdateAssetExchange struct {
+	Symbol            *string           `json:"symbol"`
+	DepositAddress    *ethereum.Address `json:"deposit_address"`
+	MinDeposit        *float64          `json:"min_deposit"`
+	WithdrawFee       *float64          `json:"withdraw_fee"`
+	TargetRecommended *float64          `json:"target_recommended"`
+	TargetRatio       *float64          `json:"target_ratio"`
+}
+
+type UpdateExchange struct {
+	TradingFeeMaker *float64 `json:"trading_fee_maker"`
+	TradingFeeTaker *float64 `json:"trading_fee_taker"`
+	Disable         *bool    `json:"disable"`
+}
