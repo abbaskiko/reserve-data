@@ -42,10 +42,10 @@ type Interface interface {
 	// TODO method for batch update exchange configuration
 	// TODO meethod for batch update target
 	// TODO method for update address
-	CreatePendingAsset(v3.CreatePendingAsset) (uint64, error)
-	ListPendingAsset() ([]*v3.PendingAsset, error)
-	RejectPendingAsset(id uint64) error
-	ConfirmPendingAsset(id uint64) error
+	CreateCreateAsset(v3.CreateCreateAsset) (uint64, error)
+	ListCreateAsset() ([]*v3.CreateAsset, error)
+	RejectCreateAsset(id uint64) error
+	ConfirmCreateAsset(id uint64) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.

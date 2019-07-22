@@ -146,8 +146,8 @@ type Asset struct {
 
 // TODO: write custom marshal json for created/updated fields
 
-// PendingAsset hold state of being create Asset and waiting for confirm to be Asset.
-type PendingAsset struct {
+// CreateAsset hold state of being create Asset and waiting for confirm to be Asset.
+type CreateAsset struct {
 	ID      uint64          `json:"id"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data"`
@@ -165,8 +165,8 @@ type CreateAssetExchange struct {
 	TargetRatio       float64          `json:"target_ratio"`
 }
 
-// CreatePendingAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
-type CreatePendingAssetEntry struct {
+// CreateAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
+type CreateAssetEntry struct {
 	Symbol             string              `json:"symbol" binding:"required"`
 	Name               string              `json:"name" binding:"required"`
 	Address            ethereum.Address    `json:"address"`
@@ -182,9 +182,9 @@ type CreatePendingAssetEntry struct {
 	Target             *AssetTarget        `json:"target"`
 }
 
-// CreatePendingAsset
-type CreatePendingAsset struct {
-	AssetInputs []CreatePendingAssetEntry `json:"assets" binding:"required,dive"`
+// CreateCreateAsset present for a CreateAsset(pending) request
+type CreateCreateAsset struct {
+	AssetInputs []CreateAssetEntry `json:"assets" binding:"required,dive"`
 }
 
 // UpdateAssetExchange is the options of UpdateAssetExchange method.

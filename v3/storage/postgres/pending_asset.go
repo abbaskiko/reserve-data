@@ -8,8 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-// CreatePendingAsset create a new pending asset, this will delete all old pending as we maintain 1 pending asset only.
-func (s *Storage) CreatePendingAsset(c common.CreatePendingAsset) (uint64, error) {
+// CreateCreateAsset create a new pending asset, this will delete all old pending as we maintain 1 pending asset only.
+func (s *Storage) CreateCreateAsset(c common.CreateCreateAsset) (uint64, error) {
 	var id uint64
 	jsonData, err := json.Marshal(c)
 	if err != nil {
@@ -21,7 +21,7 @@ func (s *Storage) CreatePendingAsset(c common.CreatePendingAsset) (uint64, error
 		return 0, err
 	}
 	defer rollbackUnlessCommitted(tx)
-	err = tx.Stmtx(s.stmts.newPendingAsset).Get(&id, jsonData)
+	err = tx.Stmtx(s.stmts.newCreateAsset).Get(&id, jsonData)
 	if err != nil {
 		return 0, err
 	}
@@ -33,41 +33,41 @@ func (s *Storage) CreatePendingAsset(c common.CreatePendingAsset) (uint64, error
 	return id, nil
 }
 
-type pendingAsset struct {
+type createAsset struct {
 	ID      uint64    `db:"id"`
 	Created time.Time `db:"created"`
 	Data    []byte    `db:"data"`
 }
 
-func (p *pendingAsset) ToCommon() *common.PendingAsset {
-	return &common.PendingAsset{
+func (p *createAsset) ToCommon() *common.CreateAsset {
+	return &common.CreateAsset{
 		ID:      p.ID,
 		Created: p.Created,
 		Data:    p.Data,
 	}
 }
 
-// ListPendingAsset list all PendingAsset exist in database
-func (s *Storage) ListPendingAsset() ([]*common.PendingAsset, error) {
-	var pendings []pendingAsset
-	err := s.stmts.getPendingAssets.Select(&pendings, nil)
+// ListCreateAsset list all CreateAsset exist in database
+func (s *Storage) ListCreateAsset() ([]*common.CreateAsset, error) {
+	var pendings []createAsset
+	err := s.stmts.getCreateAssets.Select(&pendings, nil)
 	if err != nil {
 		return nil, err
 	}
-	var result = make([]*common.PendingAsset, 0, 1) // although it's a slice, we expect only 1 for now.
+	var result = make([]*common.CreateAsset, 0, 1) // although it's a slice, we expect only 1 for now.
 	for _, p := range pendings {
 		result = append(result, p.ToCommon())
 	}
 	return result, nil
 }
 
-func (s *Storage) RejectPendingAsset(id uint64) error {
+func (s *Storage) RejectCreateAsset(id uint64) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return err
 	}
 	defer rollbackUnlessCommitted(tx)
-	_, err = tx.Stmtx(s.stmts.deletePendingAsset).Exec(id)
+	_, err = tx.Stmtx(s.stmts.deleteCreateAsset).Exec(id)
 	if err != nil {
 		return err
 	}
@@ -79,14 +79,14 @@ func (s *Storage) RejectPendingAsset(id uint64) error {
 	return nil
 }
 
-func (s *Storage) ConfirmPendingAsset(id uint64) error {
-	var pending pendingAsset
-	err := s.stmts.getPendingAssets.Get(&pending, id)
+func (s *Storage) ConfirmCreateAsset(id uint64) error {
+	var pending createAsset
+	err := s.stmts.getCreateAssets.Get(&pending, id)
 	if err != nil {
 		return err
 	}
-	var createPendingRequest common.CreatePendingAsset
-	err = json.Unmarshal(pending.Data, &createPendingRequest)
+	var createCreateAsset common.CreateCreateAsset
+	err = json.Unmarshal(pending.Data, &createCreateAsset)
 	if err != nil {
 		return err
 	}
@@ -96,14 +96,14 @@ func (s *Storage) ConfirmPendingAsset(id uint64) error {
 		return err
 	}
 	defer rollbackUnlessCommitted(tx)
-	for _, a := range createPendingRequest.AssetInputs {
+	for _, a := range createCreateAsset.AssetInputs {
 		_, err := s.createAsset(tx, a.Symbol, a.Name, a.Address, a.Decimals, a.Transferable, a.SetRate, a.Rebalance,
 			a.IsQuote, a.PWI, a.RebalanceQuadratic, a.Exchanges, a.Target)
 		if err != nil {
 			return err
 		}
 	}
-	_, err = tx.Stmtx(s.stmts.deletePendingAsset).Exec(id)
+	_, err = tx.Stmtx(s.stmts.deleteCreateAsset).Exec(id)
 	if err != nil {
 		return err
 	}
