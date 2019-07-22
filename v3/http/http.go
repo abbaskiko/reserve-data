@@ -1,11 +1,8 @@
 package http
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
-	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
@@ -37,34 +34,4 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	g.PUT("/exchange/:id", server.updateExchange)
 	g.GET("/exchange", server.getExchanges)
 	return server
-}
-
-func responseWithBackendError(c *gin.Context, err error) {
-	var code int
-	switch err {
-	case common.ErrNotFound:
-		code = http.StatusNotFound
-	case common.ErrAddressMissing, common.ErrAssetExchangeMissing,
-		common.ErrAssetTargetMissing, common.ErrBadTradingPairConfiguration,
-		common.ErrExchangeFeeMissing, common.ErrPWIMissing,
-		common.ErrRebalanceQuadraticMissing:
-		code = http.StatusBadRequest
-	case common.ErrAddressExists, common.ErrSymbolExists:
-		code = http.StatusConflict
-	default:
-		code = http.StatusInternalServerError
-	}
-	responseError(c, code, err.Error())
-}
-
-func responseError(c *gin.Context, code int, message string) {
-	c.JSON(code, gin.H{"error": message})
-}
-
-func responseStatus(c *gin.Context, code int, message string) {
-	c.JSON(code, gin.H{"status": message})
-}
-
-func responseData(c *gin.Context, status int, obj interface{}) {
-	c.JSON(status, obj)
 }

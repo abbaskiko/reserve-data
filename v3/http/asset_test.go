@@ -91,12 +91,6 @@ func TestHTTPServerAsset(t *testing.T) {
 			assert:   httputil.ExpectFailure,
 		},
 		{
-			msg:      "receive asset",
-			endpoint: assetBase + "/1",
-			method:   http.MethodGet,
-			assert:   httputil.ExpectFailure,
-		},
-		{
 			msg:      "list all asset",
 			endpoint: assetBase,
 			method:   http.MethodGet,
@@ -106,28 +100,34 @@ func TestHTTPServerAsset(t *testing.T) {
 			msg:      "create pending asset",
 			endpoint: pendingAssetBase,
 			method:   http.MethodPost,
-			assert:   newAssertCreated(nil),
+			assert:   httputil.ExpectSuccess,
 			data:     createPEA,
 		},
 		{
 			msg:      "list all pending asset",
 			endpoint: pendingAssetBase,
 			method:   http.MethodGet,
-			assert:   newAssertHTTPCode(http.StatusOK),
+			assert:   httputil.ExpectSuccess,
 		},
 		{
 			msg:      "confirm invalid pending asset",
 			endpoint: pendingAssetBase + "/-1",
 			method:   http.MethodPut,
 			data:     nil,
-			assert:   newAssertHTTPCode(http.StatusBadRequest),
+			assert:   httputil.ExpectFailure,
 		},
 		{
 			msg:      "confirm pending asset",
 			endpoint: pendingAssetBase + "/1",
 			method:   http.MethodPut,
 			data:     nil,
-			assert:   newAssertHTTPCode(http.StatusOK),
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "receive asset",
+			endpoint: assetBase + "/1",
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
 		},
 	}
 
