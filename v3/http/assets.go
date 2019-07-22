@@ -53,8 +53,8 @@ func (s *Server) createCreateAsset(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
-func (s *Server) listCreateAsset(c *gin.Context) {
-	result, err := s.storage.ListCreateAsset()
+func (s *Server) getCreateAssets(c *gin.Context) {
+	result, err := s.storage.GetCreateAssets()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

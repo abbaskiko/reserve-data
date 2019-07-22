@@ -56,7 +56,7 @@ func TestReCreateCreateAsset(t *testing.T) {
 	require.NoError(t, err)
 	id2, err := s.CreateCreateAsset(createPEA)
 	require.NoError(t, err)
-	pending, err := s.ListCreateAsset()
+	pending, err := s.GetCreateAssets()
 	require.NoError(t, err)
 	if len(pending) != 1 || pending[0].ID != id2 {
 		t.Fatal("expect 1 element with latest create one")

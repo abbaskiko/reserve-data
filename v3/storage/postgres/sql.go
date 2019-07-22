@@ -149,6 +149,24 @@ END
 
 $$ LANGUAGE PLPGSQL;
 
+CREATE TABLE IF NOT EXISTS update_assets (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
+CREATE OR REPLACE  FUNCTION  new_update_asset(_data update_assets.data%TYPE)
+RETURNS int AS 
+    $$
+DECLARE 
+	_id update_assets.id%TYPE;
+BEGIN
+	DELETE FROM update_assets;
+	INSERT INTO update_assets(created,data) VALUES (now(),_data) RETURNING id into _id;
+	RETURN _id;
+END;
+$$ LANGUAGE PLPGSQL;
+
 CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _name assets.symbol%TYPE,
                                      _address addresses.address%TYPE,
@@ -361,6 +379,10 @@ type preparedStmts struct {
 	getCreateAssets       *sqlx.Stmt
 	newCreateAsset        *sqlx.Stmt
 	deleteCreateAsset     *sqlx.Stmt
+
+	newUpdateAsset    *sqlx.Stmt
+	getUpdateAssets   *sqlx.Stmt
+	deleteUpdateAsset *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -468,6 +490,24 @@ WHERE id = :id`
 	}
 	const listCreateAssetQuery = `SELECT id,created,data FROM create_assets WHERE id=COALESCE($1, create_assets.id)`
 	getCreateAsset, err := db.Preparex(listCreateAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const newUpdateAssetQuery = `SELECT new_update_asset FROM new_update_asset($1)`
+	newUpdateAsset, err := db.Preparex(newUpdateAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deleteUpdateAssetQuery = `DELETE FROM update_assets WHERE id=$1`
+	deleteUpdateAsset, err := db.Preparex(deleteUpdateAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const listUpdateAssetQuery = `SELECT id,created,data FROM update_assets WHERE id=COALESCE($1, update_assets.id)`
+	listUpdateAsset, err := db.Preparex(listUpdateAssetQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -702,5 +742,9 @@ WHERE id = :id RETURNING id; `
 		newCreateAsset:    newCreateAsset,
 		getCreateAssets:   getCreateAsset,
 		deleteCreateAsset: deleteCreateAsset,
+
+		newUpdateAsset:    newUpdateAsset,
+		getUpdateAssets:   listUpdateAsset,
+		deleteUpdateAsset: deleteUpdateAsset,
 	}, nil
 }

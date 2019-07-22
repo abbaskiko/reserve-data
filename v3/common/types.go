@@ -187,6 +187,26 @@ type CreateCreateAsset struct {
 	AssetInputs []CreateAssetEntry `json:"assets" binding:"required,dive"`
 }
 
+// UpdateAsset hold state of being update Asset and waiting for confirm to apply.
+type UpdateAsset struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// CreateUpdateAsset present for an UpdateAsset request
+type CreateUpdateAsset struct {
+	AssetID      uint64            `json:"asset_id"`
+	Symbol       *string           `json:"symbol"`
+	Name         *string           `json:"name"`
+	Address      *ethereum.Address `json:"address"`
+	Decimals     *uint64           `json:"decimals"`
+	Transferable *bool             `json:"transferable"`
+	SetRate      *SetRate          `json:"set_rate"`
+	Rebalance    *bool             `json:"rebalance"`
+	IsQuote      *bool             `json:"is_quote"`
+}
+
 // UpdateAssetExchange is the options of UpdateAssetExchange method.
 type UpdateAssetExchange struct {
 	Symbol            *string           `json:"symbol"`

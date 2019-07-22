@@ -26,9 +26,14 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	// because we don't allow to create asset directly, it must go through pending operation
 	// so all 'create' operation mean to operate on pending object.
 	g.POST("/create-asset", server.createCreateAsset)
-	g.GET("/create-asset", server.listCreateAsset)
+	g.GET("/create-asset", server.getCreateAssets)
 	g.PUT("/create-asset/:id", server.confirmCreateAsset)
 	g.DELETE("/create-asset/:id", server.rejectCreateAsset)
+
+	g.POST("/update-asset", server.createUpdateAsset)
+	g.GET("/update-asset", server.getUpdateAssets)
+	g.PUT("/update-asset/:id", server.confirmUpdateAsset)
+	g.DELETE("/update-asset/:id", server.rejectUpdateAsset)
 
 	g.POST("/asset-exchange", server.createAssetExchange)
 	g.PUT("/asset-exchange/:id", server.updateAssetExchange)

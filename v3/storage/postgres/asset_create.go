@@ -39,22 +39,22 @@ type createAsset struct {
 	Data    []byte    `db:"data"`
 }
 
-func (p *createAsset) ToCommon() *common.CreateAsset {
-	return &common.CreateAsset{
+func (p *createAsset) ToCommon() common.CreateAsset {
+	return common.CreateAsset{
 		ID:      p.ID,
 		Created: p.Created,
 		Data:    p.Data,
 	}
 }
 
-// ListCreateAsset list all CreateAsset exist in database
-func (s *Storage) ListCreateAsset() ([]*common.CreateAsset, error) {
+// GetCreateAssets list all CreateAsset exist in database
+func (s *Storage) GetCreateAssets() ([]common.CreateAsset, error) {
 	var pendings []createAsset
 	err := s.stmts.getCreateAssets.Select(&pendings, nil)
 	if err != nil {
 		return nil, err
 	}
-	var result = make([]*common.CreateAsset, 0, 1) // although it's a slice, we expect only 1 for now.
+	var result = make([]common.CreateAsset, 0, 1) // although it's a slice, we expect only 1 for now.
 	for _, p := range pendings {
 		result = append(result, p.ToCommon())
 	}

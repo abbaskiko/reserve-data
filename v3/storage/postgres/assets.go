@@ -194,6 +194,10 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, opts storage.Updat
 		updateMsgs = append(updateMsgs, fmt.Sprintf("target_ratio=%f", *updateOpts.TargetRatio))
 	}
 
+	if len(updateMsgs) == 0 {
+		log.Printf("nothing set for update asset exchange, skip now")
+	}
+
 	log.Printf("updating asset_exchange %d %s", id, strings.Join(updateMsgs, " "))
 	var updatedID uint64
 	err := s.stmts.updateAssetExchange.Get(&updatedID,
@@ -734,55 +738,60 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 	}
 }
 
-func (s *Storage) UpdateAsset(id uint64, opts ...storage.UpdateAssetOption) error {
+// UpdateAsset update asset with provide option
+func (s *Storage) UpdateAsset(id uint64, opts storage.UpdateAssetOpts) error {
+	return s.updateAsset(nil, id, opts)
+}
+
+func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, opts storage.UpdateAssetOpts) error {
 	var (
 		updateOpts   = &storage.UpdateAssetOpts{}
 		addressParam *string
 		setRatePram  *string
 	)
 
-	if len(opts) == 0 {
-		log.Printf("no update option is provided, doing nothing")
-		return nil
-	}
-
-	for _, opt := range opts {
-		opt(updateOpts)
-	}
-
 	var updateMsgs []string
-	if updateOpts.Symbol() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("symbol=%s", *updateOpts.Symbol()))
+	if updateOpts.Symbol != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("symbol=%s", *updateOpts.Symbol))
 	}
-	if updateOpts.Name() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("name=%s", *updateOpts.Name()))
+	if updateOpts.Name != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("name=%s", *updateOpts.Name))
 	}
-	if updateOpts.Address() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("address=%s", updateOpts.Address().String()))
-		addressStr := updateOpts.Address().String()
+	if updateOpts.Address != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("address=%s", updateOpts.Address.String()))
+		addressStr := updateOpts.Address.String()
 		addressParam = &addressStr
 	}
-	if updateOpts.Decimals() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("decimals=%d", *updateOpts.Decimals()))
+	if updateOpts.Decimals != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("decimals=%d", *updateOpts.Decimals))
 	}
-	if updateOpts.Transferable() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("transferable=%p", updateOpts.Transferable()))
+	if updateOpts.Transferable != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("transferable=%p", updateOpts.Transferable))
 	}
-	if updateOpts.SetRate() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("set_rate=%s", updateOpts.SetRate().String()))
-		setRateStr := updateOpts.SetRate().String()
+	if updateOpts.SetRate != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("set_rate=%s", updateOpts.SetRate.String()))
+		setRateStr := updateOpts.SetRate.String()
 		setRatePram = &setRateStr
 	}
-	if updateOpts.Rebalance() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("rebalance=%t", *updateOpts.Rebalance()))
+	if updateOpts.Rebalance != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("rebalance=%t", *updateOpts.Rebalance))
 	}
-	if updateOpts.IsQuote() != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("is_quote=%t", *updateOpts.IsQuote()))
+	if updateOpts.IsQuote != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("is_quote=%t", *updateOpts.IsQuote))
+	}
+
+	if len(updateMsgs) == 0 {
+		log.Printf("nothing set for update asset, skip now")
+		return nil
+	}
+	var sts = s.stmts.updateAsset
+	if tx != nil {
+		sts = tx.NamedStmt(s.stmts.updateAsset)
 	}
 
 	log.Printf("updating asset %d %s", id, strings.Join(updateMsgs, " "))
 	var updatedID uint64
-	err := s.stmts.updateAsset.Get(&updatedID,
+	err := sts.Get(&updatedID,
 		struct {
 			ID           uint64  `db:"id"`
 			Symbol       *string `db:"symbol"`
@@ -795,14 +804,14 @@ func (s *Storage) UpdateAsset(id uint64, opts ...storage.UpdateAssetOption) erro
 			IsQuote      *bool   `db:"is_quote"`
 		}{
 			ID:           id,
-			Symbol:       updateOpts.Symbol(),
-			Name:         updateOpts.Name(),
+			Symbol:       updateOpts.Symbol,
+			Name:         updateOpts.Name,
 			Address:      addressParam,
-			Decimals:     updateOpts.Decimals(),
-			Transferable: updateOpts.Transferable(),
+			Decimals:     updateOpts.Decimals,
+			Transferable: updateOpts.Transferable,
 			SetRate:      setRatePram,
-			Rebalance:    updateOpts.Rebalance(),
-			IsQuote:      updateOpts.IsQuote(),
+			Rebalance:    updateOpts.Rebalance,
+			IsQuote:      updateOpts.IsQuote,
 		},
 	)
 	if err == sql.ErrNoRows {
