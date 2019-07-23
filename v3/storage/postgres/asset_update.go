@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"time"
@@ -86,6 +87,10 @@ func (s *Storage) ConfirmUpdateAsset(id uint64) error {
 	var update updateAsset
 	err := s.stmts.getUpdateAssets.Get(&update, id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("update asset not found in database id=%d", id)
+			return common.ErrNotFound
+		}
 		return err
 	}
 	var r common.CreateUpdateAsset

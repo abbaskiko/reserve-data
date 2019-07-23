@@ -743,9 +743,8 @@ func (s *Storage) UpdateAsset(id uint64, opts storage.UpdateAssetOpts) error {
 	return s.updateAsset(nil, id, opts)
 }
 
-func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, opts storage.UpdateAssetOpts) error {
+func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, updateOpts storage.UpdateAssetOpts) error {
 	var (
-		updateOpts   = &storage.UpdateAssetOpts{}
 		addressParam *string
 		setRatePram  *string
 	)
