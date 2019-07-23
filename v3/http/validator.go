@@ -21,9 +21,9 @@ func isEthereumAddress(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	return true
 }
 
-func validateCreatePendingAsset(v *validator.Validate, sl *validator.StructLevel) {
+func validateCreateAsset(v *validator.Validate, sl *validator.StructLevel) {
 
-	r := sl.CurrentStruct.Interface().(v3.CreatePendingAssetEntry)
+	r := sl.CurrentStruct.Interface().(v3.CreateAssetEntry)
 	if !r.IsQuote && v3.IsZeroAddress(r.Address) {
 		sl.ReportError(reflect.ValueOf(r.Address), "address", "address", "address is required for non-quote")
 	}
@@ -67,7 +67,7 @@ func init() {
 				panic(err)
 			}
 		}
-		v.RegisterStructValidation(validateCreatePendingAsset, v3.CreatePendingAssetEntry{})
+		v.RegisterStructValidation(validateCreateAsset, v3.CreateAssetEntry{})
 		v.RegisterStructValidation(validateTradingPair, v3.TradingPair{})
 	}
 }

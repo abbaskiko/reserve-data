@@ -35,17 +35,17 @@ func (s *Server) getAssets(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(assets))
 }
 
-func (s *Server) createPendingAsset(c *gin.Context) {
-	var createPendingAsset common.CreatePendingAsset
+func (s *Server) createCreateAsset(c *gin.Context) {
+	var createAsset common.CreateCreateAsset
 
-	err := c.ShouldBindJSON(&createPendingAsset)
+	err := c.ShouldBindJSON(&createAsset)
 
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	id, err := s.storage.CreatePendingAsset(createPendingAsset)
+	id, err := s.storage.CreateCreateAsset(createAsset)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -53,8 +53,8 @@ func (s *Server) createPendingAsset(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
-func (s *Server) listPendingAsset(c *gin.Context) {
-	result, err := s.storage.ListPendingAsset()
+func (s *Server) getCreateAssets(c *gin.Context) {
+	result, err := s.storage.GetCreateAssets()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -62,7 +62,7 @@ func (s *Server) listPendingAsset(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
-func (s *Server) confirmPendingAsset(c *gin.Context) {
+func (s *Server) confirmCreateAsset(c *gin.Context) {
 	var input struct {
 		ID uint64 `uri:"id" binding:"required"`
 	}
@@ -71,7 +71,7 @@ func (s *Server) confirmPendingAsset(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	err := s.storage.ConfirmPendingAsset(input.ID)
+	err := s.storage.ConfirmCreateAsset(input.ID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -79,7 +79,7 @@ func (s *Server) confirmPendingAsset(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
-func (s *Server) rejectPendingAsset(c *gin.Context) {
+func (s *Server) rejectCreateAsset(c *gin.Context) {
 	var input struct {
 		ID uint64 `uri:"id" binding:"required"`
 	}
@@ -87,7 +87,7 @@ func (s *Server) rejectPendingAsset(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	err := s.storage.RejectPendingAsset(input.ID)
+	err := s.storage.RejectCreateAsset(input.ID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

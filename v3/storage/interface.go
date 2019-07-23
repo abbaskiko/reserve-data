@@ -30,7 +30,7 @@ type Interface interface {
 		exchanges []v3.AssetExchange,
 		target *v3.AssetTarget,
 	) (uint64, error)
-	UpdateAsset(id uint64, opts ...UpdateAssetOption) error
+	UpdateAsset(id uint64, opts UpdateAssetOpts) error
 	// ChangeAssetAddress make the current address address of asset old address and set new address as current.
 	ChangeAssetAddress(id uint64, address ethereum.Address) error
 	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
@@ -42,10 +42,15 @@ type Interface interface {
 	// TODO method for batch update exchange configuration
 	// TODO meethod for batch update target
 	// TODO method for update address
-	CreatePendingAsset(v3.CreatePendingAsset) (uint64, error)
-	ListPendingAsset() ([]*v3.PendingAsset, error)
-	RejectPendingAsset(id uint64) error
-	ConfirmPendingAsset(id uint64) error
+	CreateCreateAsset(v3.CreateCreateAsset) (uint64, error)
+	GetCreateAssets() ([]v3.CreateAsset, error)
+	RejectCreateAsset(id uint64) error
+	ConfirmCreateAsset(id uint64) error
+
+	CreateUpdateAsset(asset v3.CreateUpdateAsset) (uint64, error)
+	GetUpdateAssets() ([]v3.UpdateAsset, error)
+	RejectUpdateAsset(id uint64) error
+	ConfirmUpdateAsset(id uint64) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
@@ -68,96 +73,14 @@ type UpdateAssetExchangeOpts = v3.UpdateAssetExchange
 type UpdateExchangeOpts = v3.UpdateExchange
 
 type UpdateAssetOpts struct {
-	symbol       *string
-	name         *string
-	address      *ethereum.Address
-	decimals     *uint64
-	transferable *bool
-	setRate      *v3.SetRate
-	rebalance    *bool
-	isQuote      *bool
-}
-
-func (u *UpdateAssetOpts) Symbol() *string {
-	return u.symbol
-}
-
-func (u *UpdateAssetOpts) Name() *string {
-	return u.name
-}
-
-func (u *UpdateAssetOpts) Address() *ethereum.Address {
-	return u.address
-}
-
-func (u *UpdateAssetOpts) Decimals() *uint64 {
-	return u.decimals
-}
-
-func (u *UpdateAssetOpts) Transferable() *bool {
-	return u.transferable
-}
-
-func (u *UpdateAssetOpts) SetRate() *v3.SetRate {
-	return u.setRate
-}
-
-func (u *UpdateAssetOpts) Rebalance() *bool {
-	return u.rebalance
-}
-
-func (u *UpdateAssetOpts) IsQuote() *bool {
-	return u.isQuote
-}
-
-type UpdateAssetOption func(opts *UpdateAssetOpts)
-
-func WithSymbolUpdateAssetOption(symbol string) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.symbol = &symbol
-	}
-}
-
-func WithNameUpdateAssetOption(name string) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.name = &name
-	}
-}
-
-func WithAddressUpdateAssetOption(address ethereum.Address) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.address = &address
-	}
-}
-
-func WithDecimalsUpdateAssetOption(decimals uint64) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.decimals = &decimals
-	}
-}
-
-func WithTransferableUpdateAssetOption(transferable bool) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.transferable = &transferable
-	}
-}
-
-func WithSetRateUpdateAssetOption(setRate v3.SetRate) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.setRate = &setRate
-	}
-}
-
-func WithRebalanceUpdateAssetOption(rebalance bool) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.rebalance = &rebalance
-	}
-}
-
-func WithIsQuoteUpdateAssetOption(isQuote bool) UpdateAssetOption {
-	return func(opts *UpdateAssetOpts) {
-		opts.isQuote = &isQuote
-	}
+	Symbol       *string           `json:"symbol"`
+	Name         *string           `json:"name"`
+	Address      *ethereum.Address `json:"address"`
+	Decimals     *uint64           `json:"decimals"`
+	Transferable *bool             `json:"transferable"`
+	SetRate      *v3.SetRate       `json:"set_rate"`
+	Rebalance    *bool             `json:"rebalance"`
+	IsQuote      *bool             `json:"is_quote"`
 }
 
 type UpdateTradingPairOpts struct {

@@ -462,16 +462,22 @@ func TestStorage_UpdateAsset(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = s.UpdateAsset(999, storage.WithSymbolUpdateAssetOption("random"))
+	err = s.UpdateAsset(999, storage.UpdateAssetOpts{
+		Symbol: commonv3.StringPointer("random"),
+	})
 	require.Equal(t, commonv3.ErrNotFound, err)
 
-	err = s.UpdateAsset(testAssetID1, storage.WithSymbolUpdateAssetOption("DEF"))
+	err = s.UpdateAsset(testAssetID1, storage.UpdateAssetOpts{
+		Symbol: commonv3.StringPointer("DEF"),
+	})
 	require.Equal(t, commonv3.ErrSymbolExists, err)
 
 	testAsset1, err := s.GetAsset(testAssetID1)
 	require.NoError(t, err)
 	oldUpdated := testAsset1.Updated
-	err = s.UpdateAsset(testAssetID1, storage.WithSymbolUpdateAssetOption("ABC2"))
+	err = s.UpdateAsset(testAssetID1, storage.UpdateAssetOpts{
+		Symbol: commonv3.StringPointer("ABC2"),
+	})
 	require.NoError(t, err)
 	testAsset1, err = s.GetAsset(testAssetID1)
 	require.NoError(t, err)
@@ -479,13 +485,17 @@ func TestStorage_UpdateAsset(t *testing.T) {
 	assert.NotEqual(t, testAsset1.Updated, oldUpdated)
 
 	// verify that we could have assets with same name
-	err = s.UpdateAsset(testAssetID2, storage.WithNameUpdateAssetOption("ABC Advanced Token"))
+	err = s.UpdateAsset(testAssetID2, storage.UpdateAssetOpts{
+		Name: commonv3.StringPointer("ABC Advanced Token"),
+	})
 	require.NoError(t, err)
 	testAsset2, err := s.GetAsset(testAssetID2)
 	require.NoError(t, err)
 	assert.Equal(t, "ABC Advanced Token", testAsset2.Name)
 
-	err = s.UpdateAsset(testAssetID2, storage.WithNameUpdateAssetOption("DEF Super Token 2"))
+	err = s.UpdateAsset(testAssetID2, storage.UpdateAssetOpts{
+		Name: commonv3.StringPointer("DEF Super Token 2"),
+	})
 	require.NoError(t, err)
 	testAsset2, err = s.GetAsset(testAssetID2)
 	require.NoError(t, err)
@@ -493,20 +503,31 @@ func TestStorage_UpdateAsset(t *testing.T) {
 
 	err = s.UpdateAsset(
 		testAssetID1,
-		storage.WithAddressUpdateAssetOption(ethereum.HexToAddress("0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8")))
+		storage.UpdateAssetOpts{
+			Address: commonv3.AddressPointer(ethereum.HexToAddress("0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8")),
+		},
+	)
 	require.NoError(t, err)
 	err = s.UpdateAsset(
 		testAssetID2,
-		storage.WithAddressUpdateAssetOption(ethereum.HexToAddress("0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8")))
+		storage.UpdateAssetOpts{
+			Address: commonv3.AddressPointer(ethereum.HexToAddress("0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8")),
+		},
+	)
 	assert.Equal(t, commonv3.ErrAddressExists, err)
 	err = s.UpdateAsset(
 		testAssetID2,
-		storage.WithAddressUpdateAssetOption(ethereum.HexToAddress("0xea674fdde714fd979de3edf0f56aa9716b898ec8")))
+		storage.UpdateAssetOpts{
+			Address: commonv3.AddressPointer(ethereum.HexToAddress("0xea674fdde714fd979de3edf0f56aa9716b898ec8")),
+		},
+	)
 	assert.Equal(t, commonv3.ErrAddressExists, err)
 
 	err = s.UpdateAsset(
 		testAssetID1,
-		storage.WithDecimalsUpdateAssetOption(10),
+		storage.UpdateAssetOpts{
+			Decimals: commonv3.Uint64Pointer(10),
+		},
 	)
 	require.NoError(t, err)
 	testAsset1, err = s.GetAsset(testAssetID1)
@@ -515,7 +536,9 @@ func TestStorage_UpdateAsset(t *testing.T) {
 
 	err = s.UpdateAsset(
 		testAssetID1,
-		storage.WithSetRateUpdateAssetOption(commonv3.SetRateNotSet),
+		storage.UpdateAssetOpts{
+			SetRate: commonv3.SetRatePointer(commonv3.SetRateNotSet),
+		},
 	)
 	require.NoError(t, err)
 	testAsset1, err = s.GetAsset(testAssetID1)
@@ -524,7 +547,9 @@ func TestStorage_UpdateAsset(t *testing.T) {
 
 	err = s.UpdateAsset(
 		testAssetID1,
-		storage.WithRebalanceUpdateAssetOption(false),
+		storage.UpdateAssetOpts{
+			Rebalance: commonv3.BoolPointer(false),
+		},
 	)
 	require.NoError(t, err)
 	testAsset1, err = s.GetAsset(testAssetID1)
@@ -533,7 +558,9 @@ func TestStorage_UpdateAsset(t *testing.T) {
 
 	err = s.UpdateAsset(
 		testAssetID1,
-		storage.WithIsQuoteUpdateAssetOption(true),
+		storage.UpdateAssetOpts{
+			IsQuote: commonv3.BoolPointer(true),
+		},
 	)
 	require.NoError(t, err)
 	testAsset1, err = s.GetAsset(testAssetID1)
@@ -543,13 +570,15 @@ func TestStorage_UpdateAsset(t *testing.T) {
 	testAsset1, err = s.GetAsset(testAssetID1)
 	require.NoError(t, err)
 	oldUpdated = testAsset1.Updated
-	err = s.UpdateAsset(testAssetID1)
+	err = s.UpdateAsset(testAssetID1, storage.UpdateAssetOpts{})
 	require.NoError(t, err)
 	assert.Equal(t, oldUpdated, testAsset1.Updated)
 
 	err = s.UpdateAsset(
 		testAssetID1,
-		storage.WithTransferableUpdateAssetOption(true),
+		storage.UpdateAssetOpts{
+			Transferable: commonv3.BoolPointer(true),
+		},
 	)
 	testAsset1, err = s.GetAsset(testAssetID1)
 	require.NoError(t, err)

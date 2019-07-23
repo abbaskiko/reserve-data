@@ -128,25 +128,43 @@ CREATE TABLE IF NOT EXISTS trading_pairs
     CONSTRAINT trading_pair_check CHECK ( base_id != quote_id)
 );
 
-CREATE TABLE IF NOT EXISTS pending_assets (
+CREATE TABLE IF NOT EXISTS create_assets (
 	id	SERIAL PRIMARY KEY,
 	created TIMESTAMP NOT NULL,
 	data JSON NOT NULL
 );
 
-CREATE OR REPLACE FUNCTION new_pending_asset(_data pending_assets.data%TYPE)
+CREATE OR REPLACE FUNCTION new_create_asset(_data create_assets.data%TYPE)
 RETURNS int AS 
 $$
 
 DECLARE
-	_id         pending_assets.id%TYPE;
+	_id         create_assets.id%TYPE;
 
 BEGIN
-	DELETE FROM pending_assets;
-	INSERT INTO pending_assets(created,data) VALUES(now(),_data) RETURNING id INTO _id;
+	DELETE FROM create_assets;
+	INSERT INTO create_assets(created,data) VALUES(now(),_data) RETURNING id INTO _id;
 	RETURN _id;
 END
 
+$$ LANGUAGE PLPGSQL;
+
+CREATE TABLE IF NOT EXISTS update_assets (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
+CREATE OR REPLACE  FUNCTION  new_update_asset(_data update_assets.data%TYPE)
+RETURNS int AS 
+    $$
+DECLARE 
+	_id update_assets.id%TYPE;
+BEGIN
+	DELETE FROM update_assets;
+	INSERT INTO update_assets(created,data) VALUES (now(),_data) RETURNING id into _id;
+	RETURN _id;
+END;
 $$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
@@ -358,9 +376,13 @@ type preparedStmts struct {
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
 	getTransferableAssets *sqlx.Stmt
-	getPendingAssets      *sqlx.Stmt
-	newPendingAsset       *sqlx.Stmt
-	deletePendingAsset    *sqlx.Stmt
+	getCreateAssets       *sqlx.Stmt
+	newCreateAsset        *sqlx.Stmt
+	deleteCreateAsset     *sqlx.Stmt
+
+	newUpdateAsset    *sqlx.Stmt
+	getUpdateAssets   *sqlx.Stmt
+	deleteUpdateAsset *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -455,19 +477,37 @@ WHERE id = :id`
 	}
 
 	// we have at most one pending at a time, so we delete all exists one before insert new one.
-	const newPendingAssetQuery = `SELECT new_pending_asset FROM new_pending_asset ($1);`
-	newPendingAsset, err := db.Preparex(newPendingAssetQuery)
+	const newCreateAssetQuery = `SELECT new_create_asset FROM new_create_asset ($1);`
+	newCreateAsset, err := db.Preparex(newCreateAssetQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	const deletePendingAssetQuery = `DELETE FROM pending_assets WHERE id=$1`
-	deletePendingAsset, err := db.Preparex(deletePendingAssetQuery)
+	const deleteCreateAssetQuery = `DELETE FROM create_assets WHERE id=$1`
+	deleteCreateAsset, err := db.Preparex(deleteCreateAssetQuery)
 	if err != nil {
 		return nil, err
 	}
-	const listPendingAssetQuery = `SELECT id,created,data FROM pending_assets WHERE id=COALESCE($1, pending_assets.id)`
-	getPendingAsset, err := db.Preparex(listPendingAssetQuery)
+	const listCreateAssetQuery = `SELECT id,created,data FROM create_assets WHERE id=COALESCE($1, create_assets.id)`
+	getCreateAsset, err := db.Preparex(listCreateAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const newUpdateAssetQuery = `SELECT new_update_asset FROM new_update_asset($1)`
+	newUpdateAsset, err := db.Preparex(newUpdateAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deleteUpdateAssetQuery = `DELETE FROM update_assets WHERE id=$1`
+	deleteUpdateAsset, err := db.Preparex(deleteUpdateAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const listUpdateAssetQuery = `SELECT id,created,data FROM update_assets WHERE id=COALESCE($1, update_assets.id)`
+	listUpdateAsset, err := db.Preparex(listUpdateAssetQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -699,8 +739,12 @@ WHERE id = :id RETURNING id; `
 		getTradingPairSymbols: getTradingPairSymbols,
 		getMinNotional:        getMinMotional,
 
-		newPendingAsset:    newPendingAsset,
-		getPendingAssets:   getPendingAsset,
-		deletePendingAsset: deletePendingAsset,
+		newCreateAsset:    newCreateAsset,
+		getCreateAssets:   getCreateAsset,
+		deleteCreateAsset: deleteCreateAsset,
+
+		newUpdateAsset:    newUpdateAsset,
+		getUpdateAssets:   listUpdateAsset,
+		deleteUpdateAsset: deleteUpdateAsset,
 	}, nil
 }

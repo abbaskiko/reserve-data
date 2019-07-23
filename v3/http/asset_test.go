@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	createPEA = common.CreatePendingAsset{AssetInputs: []common.CreatePendingAssetEntry{
+	createPEA = common.CreateCreateAsset{AssetInputs: []common.CreateAssetEntry{
 		{
 			Address:   eth.HexToAddress("0x01"),
 			Symbol:    "ABC",
@@ -44,7 +44,7 @@ var (
 	}}
 )
 
-func TestReCreatePendingAsset(t *testing.T) {
+func TestReCreateCreateAsset(t *testing.T) {
 
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
@@ -52,11 +52,11 @@ func TestReCreatePendingAsset(t *testing.T) {
 	}()
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-	_, err = s.CreatePendingAsset(createPEA)
+	_, err = s.CreateCreateAsset(createPEA)
 	require.NoError(t, err)
-	id2, err := s.CreatePendingAsset(createPEA)
+	id2, err := s.CreateCreateAsset(createPEA)
 	require.NoError(t, err)
-	pending, err := s.ListPendingAsset()
+	pending, err := s.GetCreateAssets()
 	require.NoError(t, err)
 	if len(pending) != 1 || pending[0].ID != id2 {
 		t.Fatal("expect 1 element with latest create one")
@@ -66,8 +66,8 @@ func TestReCreatePendingAsset(t *testing.T) {
 func TestHTTPServerAsset(t *testing.T) {
 
 	const (
-		assetBase        = "/v3/asset"
-		pendingAssetBase = "/v3/pending-asset"
+		assetBase       = "/v3/asset"
+		createAssetBase = "/v3/create-asset"
 	)
 
 	db, tearDown := testutil.MustNewDevelopmentDB()
@@ -98,27 +98,27 @@ func TestHTTPServerAsset(t *testing.T) {
 		},
 		{
 			msg:      "create pending asset",
-			endpoint: pendingAssetBase,
+			endpoint: createAssetBase,
 			method:   http.MethodPost,
 			assert:   httputil.ExpectSuccess,
 			data:     createPEA,
 		},
 		{
 			msg:      "list all pending asset",
-			endpoint: pendingAssetBase,
+			endpoint: createAssetBase,
 			method:   http.MethodGet,
 			assert:   httputil.ExpectSuccess,
 		},
 		{
 			msg:      "confirm invalid pending asset",
-			endpoint: pendingAssetBase + "/-1",
+			endpoint: createAssetBase + "/-1",
 			method:   http.MethodPut,
 			data:     nil,
 			assert:   httputil.ExpectFailure,
 		},
 		{
 			msg:      "confirm pending asset",
-			endpoint: pendingAssetBase + "/1",
+			endpoint: createAssetBase + "/1",
 			method:   http.MethodPut,
 			data:     nil,
 			assert:   httputil.ExpectSuccess,

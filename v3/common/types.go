@@ -44,13 +44,13 @@ func SetRateFromString(s string) (SetRate, bool) {
 	return sr, ok
 }
 
-func (s *SetRate) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, s.String())), nil
+func (i SetRate) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, i.String())), nil
 }
 func isString(input []byte) bool {
 	return len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"'
 }
-func (s *SetRate) UnmarshalJSON(input []byte) error {
+func (i *SetRate) UnmarshalJSON(input []byte) error {
 	if !isString(input) {
 		return fmt.Errorf("not is string")
 	}
@@ -58,7 +58,7 @@ func (s *SetRate) UnmarshalJSON(input []byte) error {
 	if !ok {
 		return fmt.Errorf("%s is not a valid SetRate", input)
 	}
-	*s = r
+	*i = r
 	return nil
 }
 
@@ -146,8 +146,8 @@ type Asset struct {
 
 // TODO: write custom marshal json for created/updated fields
 
-// PendingAsset hold state of being create Asset and waiting for confirm to be Asset.
-type PendingAsset struct {
+// CreateAsset hold state of being create Asset and waiting for confirm to be Asset.
+type CreateAsset struct {
 	ID      uint64          `json:"id"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data"`
@@ -165,8 +165,8 @@ type CreateAssetExchange struct {
 	TargetRatio       float64          `json:"target_ratio"`
 }
 
-// CreatePendingAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
-type CreatePendingAssetEntry struct {
+// CreateAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
+type CreateAssetEntry struct {
 	Symbol             string              `json:"symbol" binding:"required"`
 	Name               string              `json:"name" binding:"required"`
 	Address            ethereum.Address    `json:"address"`
@@ -182,9 +182,29 @@ type CreatePendingAssetEntry struct {
 	Target             *AssetTarget        `json:"target"`
 }
 
-// CreatePendingAsset
-type CreatePendingAsset struct {
-	AssetInputs []CreatePendingAssetEntry `json:"assets" binding:"required,dive"`
+// CreateCreateAsset present for a CreateAsset(pending) request
+type CreateCreateAsset struct {
+	AssetInputs []CreateAssetEntry `json:"assets" binding:"required,dive"`
+}
+
+// UpdateAsset hold state of being update Asset and waiting for confirm to apply.
+type UpdateAsset struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// CreateUpdateAsset present for an UpdateAsset request
+type CreateUpdateAsset struct {
+	AssetID      uint64            `json:"asset_id"`
+	Symbol       *string           `json:"symbol"`
+	Name         *string           `json:"name"`
+	Address      *ethereum.Address `json:"address"`
+	Decimals     *uint64           `json:"decimals"`
+	Transferable *bool             `json:"transferable"`
+	SetRate      *SetRate          `json:"set_rate"`
+	Rebalance    *bool             `json:"rebalance"`
+	IsQuote      *bool             `json:"is_quote"`
 }
 
 // UpdateAssetExchange is the options of UpdateAssetExchange method.

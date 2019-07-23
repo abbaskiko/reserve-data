@@ -25,3 +25,18 @@ func StringPointer(s string) *string {
 func BoolPointer(b bool) *bool {
 	return &b
 }
+
+// AddressPointer convert address to pointer
+func AddressPointer(a common.Address) *common.Address {
+	return &a
+}
+
+// Uint64Pointer convert uint64 to pointer
+func Uint64Pointer(i uint64) *uint64 {
+	return &i
+}
+
+// SetRatePointer return SetRate pointer
+func SetRatePointer(i SetRate) *SetRate {
+	return &i
+}
