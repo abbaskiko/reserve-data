@@ -44,13 +44,13 @@ func SetRateFromString(s string) (SetRate, bool) {
 	return sr, ok
 }
 
-func (s *SetRate) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, s.String())), nil
+func (i SetRate) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, i.String())), nil
 }
 func isString(input []byte) bool {
 	return len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"'
 }
-func (s *SetRate) UnmarshalJSON(input []byte) error {
+func (i *SetRate) UnmarshalJSON(input []byte) error {
 	if !isString(input) {
 		return fmt.Errorf("not is string")
 	}
@@ -58,7 +58,7 @@ func (s *SetRate) UnmarshalJSON(input []byte) error {
 	if !ok {
 		return fmt.Errorf("%s is not a valid SetRate", input)
 	}
-	*s = r
+	*i = r
 	return nil
 }
 
