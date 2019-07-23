@@ -194,8 +194,13 @@ type UpdateAsset struct {
 	Data    json.RawMessage `json:"data"`
 }
 
-// CreateUpdateAsset present for an UpdateAsset request
+// CreateUpdateAsset present for an CreateUpdateAsset request
 type CreateUpdateAsset struct {
+	Assets []UpdateAssetEntry `json:"assets"`
+}
+
+// UpdateAssetEntry
+type UpdateAssetEntry struct {
 	AssetID      uint64            `json:"asset_id"`
 	Symbol       *string           `json:"symbol"`
 	Name         *string           `json:"name"`
