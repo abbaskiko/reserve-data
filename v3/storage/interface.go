@@ -73,14 +73,17 @@ type UpdateAssetExchangeOpts = v3.UpdateAssetExchange
 type UpdateExchangeOpts = v3.UpdateExchange
 
 type UpdateAssetOpts struct {
-	Symbol       *string           `json:"symbol"`
-	Name         *string           `json:"name"`
-	Address      *ethereum.Address `json:"address"`
-	Decimals     *uint64           `json:"decimals"`
-	Transferable *bool             `json:"transferable"`
-	SetRate      *v3.SetRate       `json:"set_rate"`
-	Rebalance    *bool             `json:"rebalance"`
-	IsQuote      *bool             `json:"is_quote"`
+	Symbol             *string                `json:"symbol"`
+	Name               *string                `json:"name"`
+	Address            *ethereum.Address      `json:"address"`
+	Decimals           *uint64                `json:"decimals"`
+	Transferable       *bool                  `json:"transferable"`
+	SetRate            *v3.SetRate            `json:"set_rate"`
+	Rebalance          *bool                  `json:"rebalance"`
+	IsQuote            *bool                  `json:"is_quote"`
+	PWI                *v3.AssetPWI           `json:"pwi"`
+	RebalanceQuadratic *v3.RebalanceQuadratic `json:"rebalance_quadratic"`
+	Target             *v3.AssetTarget        `json:"target"`
 }
 
 type UpdateTradingPairOpts struct {

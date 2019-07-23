@@ -638,7 +638,7 @@ WHERE ae.asset_id = coalesce($1, ae.asset_id);
         SET address = COALESCE(:address, addresses.address)
         FROM "assets"
         WHERE assets.id = :id AND assets.address_id = addresses.id
-)
+	)
 UPDATE "assets"
 SET symbol       = COALESCE(:symbol, symbol),
     name         = COALESCE(:name, name),
@@ -647,6 +647,23 @@ SET symbol       = COALESCE(:symbol, symbol),
     set_rate     = COALESCE(:set_rate, set_rate),
     rebalance    = COALESCE(:rebalance, rebalance),
     is_quote     = COALESCE(:is_quote, is_quote),
+    pwi_ask_a = COALESCE(:ask_a,pwi_ask_a),
+	pwi_ask_b = COALESCE(:ask_b, pwi_ask_b),
+	pwi_ask_c = COALESCE(:ask_c, pwi_ask_c),
+	pwi_ask_min_min_spread = COALESCE(:ask_min_min_spread,pwi_ask_min_min_spread),
+	pwi_ask_price_multiply_factor = COALESCE(:ask_price_multiply_factor, pwi_ask_price_multiply_factor),
+	pwi_bid_a = COALESCE(:bid_a,pwi_bid_a),
+	pwi_bid_b = COALESCE(:bid_b,pwi_bid_b),
+	pwi_bid_c = COALESCE(:bid_c,pwi_bid_c),
+	pwi_bid_min_min_spread = COALESCE(:bid_min_min_spread,pwi_bid_min_min_spread),
+	pwi_bid_price_multiply_factor = COALESCE(:bid_price_multiply_factor,pwi_bid_price_multiply_factor),
+	rebalance_quadratic_a = COALESCE(:rebalance_quadratic_a,rebalance_quadratic_a),
+	rebalance_quadratic_b = COALESCE(:rebalance_quadratic_b,rebalance_quadratic_b),
+	rebalance_quadratic_c = COALESCE(:rebalance_quadratic_c,rebalance_quadratic_c),
+	target_total = COALESCE(:target_total,target_total),
+	target_reserve = COALESCE(:target_total,target_reserve),
+	target_rebalance_threshold = COALESCE(:target_total,target_rebalance_threshold),
+	target_transfer_threshold = COALESCE(:target_total,target_transfer_threshold),
     updated      = now()
 WHERE id = :id RETURNING id;
 `
