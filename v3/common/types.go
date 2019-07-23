@@ -194,9 +194,14 @@ type UpdateAsset struct {
 	Data    json.RawMessage `json:"data"`
 }
 
-// CreateUpdateAsset present for an UpdateAsset request
+// CreateUpdateAsset present for an CreateUpdateAsset request
 type CreateUpdateAsset struct {
-	AssetID      uint64            `json:"asset_id"`
+	Assets []UpdateAssetEntry `json:"assets" binding:"required,dive"`
+}
+
+// UpdateAssetEntry
+type UpdateAssetEntry struct {
+	AssetID      uint64            `json:"asset_id" binding:"required"`
 	Symbol       *string           `json:"symbol"`
 	Name         *string           `json:"name"`
 	Address      *ethereum.Address `json:"address"`

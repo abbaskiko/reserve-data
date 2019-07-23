@@ -104,19 +104,22 @@ func (s *Storage) ConfirmUpdateAsset(id uint64) error {
 		return err
 	}
 	defer rollbackUnlessCommitted(tx)
-	err = s.updateAsset(tx, r.AssetID, storage.UpdateAssetOpts{
-		Symbol:       r.Symbol,
-		Transferable: r.Transferable,
-		Address:      r.Address,
-		IsQuote:      r.IsQuote,
-		Rebalance:    r.Rebalance,
-		SetRate:      r.SetRate,
-		Decimals:     r.Decimals,
-		Name:         r.Name,
-	})
-	if err != nil {
-		return err
+	for _, e := range r.Assets {
+		err = s.updateAsset(tx, e.AssetID, storage.UpdateAssetOpts{
+			Symbol:       e.Symbol,
+			Transferable: e.Transferable,
+			Address:      e.Address,
+			IsQuote:      e.IsQuote,
+			Rebalance:    e.Rebalance,
+			SetRate:      e.SetRate,
+			Decimals:     e.Decimals,
+			Name:         e.Name,
+		})
+		if err != nil {
+			return err
+		}
 	}
+
 	_, err = tx.Stmtx(s.stmts.deleteUpdateAsset).Exec(id)
 	if err != nil {
 		return err

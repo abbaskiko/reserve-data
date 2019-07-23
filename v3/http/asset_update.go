@@ -18,7 +18,7 @@ func (s *Server) createUpdateAsset(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-
+	// TODO validate if the update request satisfy constraint
 	id, err := s.storage.CreateUpdateAsset(updateAsset)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))

@@ -114,15 +114,19 @@ func TestCreateUpdateAsset(t *testing.T) {
 			endpoint: updateAsset,
 			method:   http.MethodPost,
 			data: &common.CreateUpdateAsset{
-				AssetID:      assetID,
-				Symbol:       common.StringPointer("XYZ"),
-				Name:         common.StringPointer("ZXC"),
-				Address:      common.AddressPointer(eth.HexToAddress("0x02")),
-				Decimals:     common.Uint64Pointer(19),
-				Transferable: common.BoolPointer(false),
-				SetRate:      common.SetRatePointer(common.BTCFeed),
-				Rebalance:    common.BoolPointer(true),
-				IsQuote:      common.BoolPointer(false),
+				Assets: []common.UpdateAssetEntry{
+					{
+						AssetID:      assetID,
+						Symbol:       common.StringPointer("XYZ"),
+						Name:         common.StringPointer("ZXC"),
+						Address:      common.AddressPointer(eth.HexToAddress("0x02")),
+						Decimals:     common.Uint64Pointer(19),
+						Transferable: common.BoolPointer(false),
+						SetRate:      common.SetRatePointer(common.BTCFeed),
+						Rebalance:    common.BoolPointer(true),
+						IsQuote:      common.BoolPointer(false),
+					},
+				},
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
@@ -191,8 +195,12 @@ func TestCreateUpdateAsset(t *testing.T) {
 			endpoint: updateAsset,
 			method:   http.MethodPost,
 			data: &common.CreateUpdateAsset{
-				AssetID: assetID,
-				Symbol:  common.StringPointer("ETC"),
+				Assets: []common.UpdateAssetEntry{
+					{
+						AssetID: assetID,
+						Symbol:  common.StringPointer("ETC"),
+					},
+				},
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
