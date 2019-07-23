@@ -125,6 +125,33 @@ func TestCreateUpdateAsset(t *testing.T) {
 						SetRate:      common.SetRatePointer(common.BTCFeed),
 						Rebalance:    common.BoolPointer(true),
 						IsQuote:      common.BoolPointer(false),
+						Target: &common.AssetTarget{
+							Total:              5.0,
+							Reserve:            5.0,
+							RebalanceThreshold: 5.0,
+							TransferThreshold:  5.0,
+						},
+						RebalanceQuadratic: &common.RebalanceQuadratic{
+							A: 5.0,
+							B: 5.0,
+							C: 5.0,
+						},
+						PWI: &common.AssetPWI{
+							Ask: common.PWIEquation{
+								A:                   5.0,
+								B:                   5.0,
+								C:                   5.0,
+								MinMinSpread:        5.0,
+								PriceMultiplyFactor: 5.0,
+							},
+							Bid: common.PWIEquation{
+								A:                   5.0,
+								B:                   5.0,
+								C:                   5.0,
+								MinMinSpread:        5.0,
+								PriceMultiplyFactor: 5.0,
+							},
+						},
 					},
 				},
 			},
@@ -173,6 +200,33 @@ func TestCreateUpdateAsset(t *testing.T) {
 				assert.Equal(t, common.BTCFeed, response.Data.SetRate)
 				assert.Equal(t, true, response.Data.Rebalance)
 				assert.Equal(t, false, response.Data.IsQuote)
+				assert.Equal(t, &common.AssetTarget{
+					Total:              5.0,
+					Reserve:            5.0,
+					RebalanceThreshold: 5.0,
+					TransferThreshold:  5.0,
+				}, response.Data.Target)
+				assert.Equal(t, &common.RebalanceQuadratic{
+					A: 5.0,
+					B: 5.0,
+					C: 5.0,
+				}, response.Data.RebalanceQuadratic)
+				assert.Equal(t, &common.AssetPWI{
+					Ask: common.PWIEquation{
+						A:                   5.0,
+						B:                   5.0,
+						C:                   5.0,
+						MinMinSpread:        5.0,
+						PriceMultiplyFactor: 5.0,
+					},
+					Bid: common.PWIEquation{
+						A:                   5.0,
+						B:                   5.0,
+						C:                   5.0,
+						MinMinSpread:        5.0,
+						PriceMultiplyFactor: 5.0,
+					},
+				}, response.Data.PWI)
 			},
 		},
 		{

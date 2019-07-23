@@ -201,15 +201,18 @@ type CreateUpdateAsset struct {
 
 // UpdateAssetEntry
 type UpdateAssetEntry struct {
-	AssetID      uint64            `json:"asset_id" binding:"required"`
-	Symbol       *string           `json:"symbol"`
-	Name         *string           `json:"name"`
-	Address      *ethereum.Address `json:"address"`
-	Decimals     *uint64           `json:"decimals"`
-	Transferable *bool             `json:"transferable"`
-	SetRate      *SetRate          `json:"set_rate"`
-	Rebalance    *bool             `json:"rebalance"`
-	IsQuote      *bool             `json:"is_quote"`
+	AssetID            uint64              `json:"asset_id" binding:"required"`
+	Symbol             *string             `json:"symbol"`
+	Name               *string             `json:"name"`
+	Address            *ethereum.Address   `json:"address"`
+	Decimals           *uint64             `json:"decimals"`
+	Transferable       *bool               `json:"transferable"`
+	SetRate            *SetRate            `json:"set_rate"`
+	Rebalance          *bool               `json:"rebalance"`
+	IsQuote            *bool               `json:"is_quote"`
+	PWI                *AssetPWI           `json:"pwi"`
+	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
+	Target             *AssetTarget        `json:"target"`
 }
 
 // UpdateAssetExchange is the options of UpdateAssetExchange method.
