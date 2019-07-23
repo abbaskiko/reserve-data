@@ -196,12 +196,12 @@ type UpdateAsset struct {
 
 // CreateUpdateAsset present for an CreateUpdateAsset request
 type CreateUpdateAsset struct {
-	Assets []UpdateAssetEntry `json:"assets"`
+	Assets []UpdateAssetEntry `json:"assets" binding:"required,dive"`
 }
 
 // UpdateAssetEntry
 type UpdateAssetEntry struct {
-	AssetID      uint64            `json:"asset_id"`
+	AssetID      uint64            `json:"asset_id" binding:"required"`
 	Symbol       *string           `json:"symbol"`
 	Name         *string           `json:"name"`
 	Address      *ethereum.Address `json:"address"`
