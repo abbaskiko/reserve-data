@@ -76,6 +76,7 @@ type TradingPair struct {
 	MinNotional     float64 `json:"min_notional"`
 }
 
+// TradingPairSymbols is a pair of token trading
 type TradingPairSymbols struct {
 	TradingPair
 	BaseSymbol  string `json:"base_symbol"`
@@ -118,6 +119,7 @@ type AssetPWI struct {
 	Bid PWIEquation `json:"bid"`
 }
 
+// RebalanceQuadratic is params of quadratic equation
 type RebalanceQuadratic struct {
 	A float64 `json:"a"`
 	B float64 `json:"b"`
@@ -148,6 +150,13 @@ type Asset struct {
 
 // CreateAsset hold state of being create Asset and waiting for confirm to be Asset.
 type CreateAsset struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// PendingAssetExchange holds state of being create AssetExchange and waiting for confirm to be AssetExchange
+type PendingAssetExchange struct {
 	ID      uint64          `json:"id"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data"`
