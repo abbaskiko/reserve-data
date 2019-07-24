@@ -36,6 +36,23 @@ func (s *Server) getCreateAssets(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
+func (s *Server) getCreateAsset(c *gin.Context) {
+	var input struct {
+		ID uint64 `uri:"id" binding:"required"`
+	}
+	if err := c.ShouldBindUri(&input); err != nil {
+		log.Println(err)
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	result, err := s.storage.GetCreateAsset(input.ID)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(result))
+}
+
 func (s *Server) confirmCreateAsset(c *gin.Context) {
 	var input struct {
 		ID uint64 `uri:"id" binding:"required"`
