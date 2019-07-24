@@ -61,6 +61,16 @@ func (s *Storage) GetCreateAssets() ([]common.CreateAsset, error) {
 	return result, nil
 }
 
+// GetCreateAsset get CreateAsset by provided id
+func (s *Storage) GetCreateAsset(id uint64) (common.CreateAsset, error) {
+	var res createAsset
+	err := s.stmts.getCreateAssets.Get(&res, id)
+	if err != nil {
+		return common.CreateAsset{}, err
+	}
+	return res.ToCommon(), nil
+}
+
 func (s *Storage) RejectCreateAsset(id uint64) error {
 	tx, err := s.db.Beginx()
 	if err != nil {

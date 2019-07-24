@@ -44,11 +44,13 @@ type Interface interface {
 	// TODO method for update address
 	CreateCreateAsset(v3.CreateCreateAsset) (uint64, error)
 	GetCreateAssets() ([]v3.CreateAsset, error)
+	GetCreateAsset(uint64) (v3.CreateAsset, error)
 	RejectCreateAsset(id uint64) error
 	ConfirmCreateAsset(id uint64) error
 
 	CreateUpdateAsset(asset v3.CreateUpdateAsset) (uint64, error)
 	GetUpdateAssets() ([]v3.UpdateAsset, error)
+	GetUpdateAsset(uint64) (v3.UpdateAsset, error)
 	RejectUpdateAsset(id uint64) error
 	ConfirmUpdateAsset(id uint64) error
 
