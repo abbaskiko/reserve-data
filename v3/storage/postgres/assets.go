@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -48,6 +49,7 @@ type createAssetParams struct {
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
 }
 
+// CreateAsset create a new asset
 func (s *Storage) CreateAsset(
 	symbol, name string,
 	address ethereum.Address,
@@ -92,6 +94,91 @@ func (s *Storage) CreateAsset(
 	return id, nil
 }
 
+// CreatePendingAssetExchange create pending asset exchange
+func (s *Storage) CreatePendingAssetExchange(pendingAssetExchange common.CreateAssetExchange) (uint64, error) {
+	var (
+		id uint64
+	)
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return 0, err
+	}
+
+	defer rollbackUnlessCommitted(tx)
+	jsonData, err := json.Marshal(pendingAssetExchange)
+	if err != nil {
+		return 0, err
+	}
+	err = tx.Stmtx(s.stmts.newPendingAssetExchanges).Get(&id, jsonData)
+	if err != nil {
+		return 0, err
+	}
+	log.Printf("create pending asset exchange success with id = %d\n", id)
+	return id, nil
+}
+
+type pendingAssetExchange struct {
+	ID      uint64    `db:"id"`
+	Created time.Time `db:"created"`
+	Data    []byte    `db:"data"`
+}
+
+func (p pendingAssetExchange) toCommon() *common.PendingAssetExchange {
+	return &common.PendingAssetExchange{
+		ID:      p.ID,
+		Created: p.Created,
+		Data:    p.Data,
+	}
+}
+
+//ListPendingAssetExchange list all pending exchange
+func (s *Storage) ListPendingAssetExchange() ([]*common.PendingAssetExchange, error) {
+	var (
+		pendings []*pendingAssetExchange
+		result   []*common.PendingAssetExchange
+	)
+	err := s.stmts.getPendingAssetExchanges.Select(&pendings, nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range pendings {
+		result = append(result, p.toCommon())
+	}
+	return result, nil
+}
+
+// ConfirmPendingAssetExchange confirm pending asset exchange, return err if any
+func (s *Storage) ConfirmPendingAssetExchange(id uint64) error {
+	var pendingAssetExchange common.PendingAssetExchange
+	err := s.stmts.getPendingAssetExchanges.Get(&pendingAssetExchange, id)
+	if err != nil {
+		return err
+	}
+	var pending common.CreateAssetExchange
+	err = json.Unmarshal(pendingAssetExchange.Data, &pending)
+	if err != nil {
+		return err
+	}
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return err
+	}
+	_, err = s.createAssetExchange(tx, pending.ExchangeID, pending.AssetID, pending.Symbol,
+		pending.DepositAddress, pending.MinDeposit, pending.WithdrawFee, pending.TargetRecommended,
+		pending.TargetRatio)
+	return nil
+}
+
+// RejectPendingAssetExchange reject pending asset exchange
+func (s *Storage) RejectPendingAssetExchange(id uint64) error {
+	_, err := s.stmts.deletePendingAssetExchange.Exec(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreateAssetExchange create a new asset exchange (asset support by exchange)
 func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string, depositAddress ethereum.Address,
 	minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error) {
 
@@ -113,6 +200,7 @@ func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string,
 	return id, nil
 }
 
+// UpdateAssetExchange update information about asset exchange
 func (s *Storage) UpdateAssetExchange(id uint64, opts storage.UpdateAssetExchangeOpts) error {
 
 	tx, err := s.db.Beginx()
@@ -632,6 +720,7 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 	return result, nil
 }
 
+// GetAssets return all assets listed
 func (s *Storage) GetAssets() ([]common.Asset, error) {
 	return s.getAssets(nil)
 }
@@ -686,6 +775,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	return results, nil
 }
 
+// GetAsset get a single asset by id
 func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 	var (
 		assetDBResult        assetDB
@@ -838,6 +928,7 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, updateOpts storage.UpdateA
 	return nil
 }
 
+// ChangeAssetAddress change address of an asset
 func (s *Storage) ChangeAssetAddress(id uint64, address ethereum.Address) error {
 	log.Printf("changing address of asset id=%d new_address=%s", id, address.String())
 
@@ -863,6 +954,7 @@ func (s *Storage) ChangeAssetAddress(id uint64, address ethereum.Address) error 
 	return nil
 }
 
+// UpdateDepositAddress update deposit addresss for an AssetExchange
 func (s *Storage) UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error {
 	var updated uint64
 	err := s.stmts.updateDepositAddress.Get(&updated, assetID, exchangeID, address.Hex())
@@ -878,6 +970,7 @@ func (s *Storage) UpdateDepositAddress(assetID, exchangeID uint64, address ether
 	}
 }
 
+// UpdateTradingPair update a trading pair information
 func (s *Storage) UpdateTradingPair(id uint64, opts storage.UpdateTradingPairOpts) error {
 	var updatedID uint64
 	err := s.stmts.updateTradingPair.Get(&updatedID, struct {

@@ -17,6 +17,11 @@ type Interface interface {
 		minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error)
 	UpdateAssetExchange(id uint64, opts UpdateAssetExchangeOpts) error
 
+	CreatePendingAssetExchange(v3.PendingAssetExchange) (uint64, error)
+	ListPendingAssetExchange() ([]*v3.PendingAssetExchange, error)
+	RejectPendingAssetExchange(id uint64) error
+	ConfirmPendingAssetExchange(id uint64) error
+
 	CreateAsset(
 		symbol, name string,
 		address ethereum.Address,

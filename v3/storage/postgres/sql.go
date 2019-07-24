@@ -183,6 +183,25 @@ BEGIN
 	INSERT INTO update_exchanges(created,data) VALUES (now(),_data) RETURNING id into _id;
 	RETURN _id;
 END;
+CREATE TABLE IF NOT EXISTS pending_asset_exchanges (
+	id	SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION new_pending_asset_exchanges(_data pending_assets.data%TYPE)
+RETURNS int AS 
+$$
+
+DECLARE
+	_id         pending_asset_exchanges.id%TYPE;
+
+BEGIN
+	DELETE FROM pending_asset_exchanges;
+	INSERT INTO pending_asset_exchanges(created,data) VALUES(now(),_data) RETURNING id INTO _id;
+	RETURN _id;
+END
+
 $$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
@@ -375,13 +394,16 @@ $$ LANGUAGE PLPGSQL;
 `
 
 type preparedStmts struct {
-	getExchanges        *sqlx.Stmt
-	getExchange         *sqlx.Stmt
-	updateExchange      *sqlx.NamedStmt
-	newAsset            *sqlx.NamedStmt
-	newAssetExchange    *sqlx.NamedStmt
-	updateAssetExchange *sqlx.NamedStmt
-	newTradingPair      *sqlx.NamedStmt
+	getExchanges               *sqlx.Stmt
+	getExchange                *sqlx.Stmt
+	updateExchange             *sqlx.NamedStmt
+	newAsset                   *sqlx.NamedStmt
+	newAssetExchange           *sqlx.NamedStmt
+	updateAssetExchange        *sqlx.NamedStmt
+	newPendingAssetExchanges   *sqlx.Stmt
+	getPendingAssetExchanges   *sqlx.Stmt
+	deletePendingAssetExchange *sqlx.Stmt
+	newTradingPair             *sqlx.NamedStmt
 
 	getAsset             *sqlx.Stmt
 	getAssetExchange     *sqlx.Stmt
@@ -759,14 +781,34 @@ WHERE id = :id RETURNING id; `
 		return nil, err
 	}
 
+	const newPendingAssetExchangesQuery = `SELECT new_pending_asset FROM new_pending_asset ($1);`
+	newPendingAssetExchanges, err := db.Preparex(newPendingAssetExchangesQuery)
+	if err != nil {
+		return nil, err
+	}
+	const listPendingAssetExchangeQuery = `SELECT id,created,data FROM pending_asset_exchanges WHERE id=COALESCE($1, pending_asset_exchanges.id)`
+	getPendingAssetExchanges, err := db.Preparex(listPendingAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deletePendingAssetExchangeQuery = `DELETE FROM pending_asset_exchanges WHERE id=$1`
+	deletePendingAssetExchanges, err := db.Preparex(deletePendingAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	return &preparedStmts{
-		getExchanges:        getExchanges,
-		getExchange:         getExchange,
-		updateExchange:      updateExchange,
-		newAsset:            newAsset,
-		newAssetExchange:    newAssetExchange,
-		updateAssetExchange: updateAssetExchange,
-		newTradingPair:      newTradingPair,
+		getExchanges:               getExchanges,
+		getExchange:                getExchange,
+		updateExchange:             updateExchange,
+		newAsset:                   newAsset,
+		newAssetExchange:           newAssetExchange,
+		updateAssetExchange:        updateAssetExchange,
+		newPendingAssetExchanges:   newPendingAssetExchanges,
+		getPendingAssetExchanges:   getPendingAssetExchanges,
+		deletePendingAssetExchange: deletePendingAssetExchanges,
+		newTradingPair:             newTradingPair,
 
 		getAsset:             getAsset,
 		getAssetExchange:     getAssetExchange,

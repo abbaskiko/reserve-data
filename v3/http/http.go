@@ -52,5 +52,9 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	g.GET("/update-exchange/:id", server.getUpdateExchange)
 	g.POST("/update-exchange", server.createUpdateExchange)
 	g.DELETE("/update-exchange/:id", server.rejectUpdateExchange)
+	g.POST("/pending-asset-exchange", server.createPendingAssetExchange)
+
+	g.PUT("/exchange/:id", server.updateExchange)
+	g.GET("/exchange", server.getExchanges)
 	return server
 }

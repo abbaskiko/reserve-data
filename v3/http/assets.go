@@ -55,6 +55,22 @@ func (s *Server) createAssetExchange(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+func (s *Server) createPendingAssetExchange(c *gin.Context) {
+	var p common.PendingAssetExchange
+
+	if err := c.ShouldBindJSON(&p); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	id, err := s.storage.CreatePendingAssetExchange(p)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithField("id", id))
+}
+
 func (s *Server) updateAssetExchange(c *gin.Context) {
 	var u storage.UpdateAssetExchangeOpts
 
