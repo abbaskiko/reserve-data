@@ -51,6 +51,12 @@ type Interface interface {
 	GetUpdateAssets() ([]v3.UpdateAsset, error)
 	RejectUpdateAsset(id uint64) error
 	ConfirmUpdateAsset(id uint64) error
+
+	CreateUpdateExchange(exchange v3.CreateUpdateExchange) (uint64, error)
+	GetUpdateExchanges() ([]v3.UpdateExchange, error)
+	GetUpdateExchange(id uint64) (v3.UpdateExchange, error)
+	RejectUpdateExchange(id uint64) error
+	ConfirmUpdateExchange(id uint64) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
@@ -70,7 +76,12 @@ type SettingReader interface {
 // these type match user type define in common package so we just need to make an alias here
 // in case they did not later, we need to redefine the structure here, or review this again.
 type UpdateAssetExchangeOpts = v3.UpdateAssetExchange
-type UpdateExchangeOpts = v3.UpdateExchange
+
+type UpdateExchangeOpts struct {
+	TradingFeeMaker *float64 `json:"trading_fee_maker"`
+	TradingFeeTaker *float64 `json:"trading_fee_taker"`
+	Disable         *bool    `json:"disable"`
+}
 
 type UpdateAssetOpts struct {
 	Symbol       *string           `json:"symbol"`

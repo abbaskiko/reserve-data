@@ -167,6 +167,24 @@ BEGIN
 END;
 $$ LANGUAGE PLPGSQL;
 
+CREATE TABLE IF NOT EXISTS update_exchanges (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
+CREATE OR REPLACE  FUNCTION  new_update_exchange(_data update_exchanges.data%TYPE)
+RETURNS int AS 
+    $$
+DECLARE 
+	_id update_exchanges.id%TYPE;
+BEGIN
+	DELETE FROM update_exchanges;
+	INSERT INTO update_exchanges(created,data) VALUES (now(),_data) RETURNING id into _id;
+	RETURN _id;
+END;
+$$ LANGUAGE PLPGSQL;
+
 CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _name assets.symbol%TYPE,
                                      _address addresses.address%TYPE,
@@ -383,6 +401,10 @@ type preparedStmts struct {
 	newUpdateAsset    *sqlx.Stmt
 	getUpdateAssets   *sqlx.Stmt
 	deleteUpdateAsset *sqlx.Stmt
+
+	newUpdateExchange    *sqlx.Stmt
+	getUpdateExchanges   *sqlx.Stmt
+	deleteUpdateExchange *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -508,6 +530,24 @@ WHERE id = :id`
 
 	const listUpdateAssetQuery = `SELECT id,created,data FROM update_assets WHERE id=COALESCE($1, update_assets.id)`
 	listUpdateAsset, err := db.Preparex(listUpdateAssetQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const newUpdateExchangeQuery = `SELECT new_update_exchange FROM new_update_exchange($1)`
+	newUpdateExchange, err := db.Preparex(newUpdateExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deleteUpdateExchangeQuery = `DELETE FROM update_exchanges WHERE id=$1`
+	deleteUpdateExchange, err := db.Preparex(deleteUpdateExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const listUpdateExchangeQuery = `SELECT id,created,data FROM update_exchanges WHERE id=COALESCE($1, update_exchanges.id)`
+	listUpdateExchange, err := db.Preparex(listUpdateExchangeQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -746,5 +786,9 @@ WHERE id = :id RETURNING id; `
 		newUpdateAsset:    newUpdateAsset,
 		getUpdateAssets:   listUpdateAsset,
 		deleteUpdateAsset: deleteUpdateAsset,
+
+		newUpdateExchange:    newUpdateExchange,
+		getUpdateExchanges:   listUpdateExchange,
+		deleteUpdateExchange: deleteUpdateExchange,
 	}, nil
 }
