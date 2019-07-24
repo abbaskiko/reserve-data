@@ -36,6 +36,23 @@ func (s *Server) getUpdateAssets(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
+func (s *Server) getUpdateAsset(c *gin.Context) {
+	var input struct {
+		ID uint64 `uri:"id" binding:"required"`
+	}
+	if err := c.ShouldBindUri(&input); err != nil {
+		log.Println(err)
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	result, err := s.storage.GetUpdateAsset(input.ID)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(result))
+}
+
 func (s *Server) confirmUpdateAsset(c *gin.Context) {
 	var input struct {
 		ID uint64 `uri:"id" binding:"required"`
