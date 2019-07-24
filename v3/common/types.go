@@ -222,8 +222,20 @@ type UpdateAssetExchange struct {
 	TargetRatio       *float64          `json:"target_ratio"`
 }
 
-type UpdateExchange struct {
+type UpdateExchangeEntry struct {
+	ExchangeID      uint64   `json:"exchange_id"`
 	TradingFeeMaker *float64 `json:"trading_fee_maker"`
 	TradingFeeTaker *float64 `json:"trading_fee_taker"`
 	Disable         *bool    `json:"disable"`
+}
+
+type CreateUpdateExchange struct {
+	Exchanges []UpdateExchangeEntry `json:"exchanges"`
+}
+
+// UpdateExchange hold state of being update Exchange and waiting for confirm to apply.
+type UpdateExchange struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
 }

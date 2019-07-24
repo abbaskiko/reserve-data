@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -76,6 +77,10 @@ func (s *Storage) GetExchange(id uint64) (common.Exchange, error) {
 }
 
 func (s *Storage) UpdateExchange(id uint64, updateOpts storage.UpdateExchangeOpts) error {
+	return s.updateExchange(nil, id, updateOpts)
+}
+
+func (s *Storage) updateExchange(tx *sqlx.Tx, id uint64, updateOpts storage.UpdateExchangeOpts) error {
 
 	var updateMsgs []string
 	if updateOpts.TradingFeeMaker != nil {
@@ -89,8 +94,11 @@ func (s *Storage) UpdateExchange(id uint64, updateOpts storage.UpdateExchangeOpt
 	}
 
 	log.Printf("updating exchange %d %s", id, strings.Join(updateMsgs, " "))
-
-	_, err := s.stmts.updateExchange.Exec(
+	sts := s.stmts.updateExchange
+	if tx != nil {
+		sts = tx.NamedStmt(s.stmts.updateExchange)
+	}
+	_, err := sts.Exec(
 		struct {
 			ID              uint64   `db:"id"`
 			TradingFeeMaker *float64 `db:"trading_fee_maker"`
