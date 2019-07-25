@@ -393,10 +393,10 @@ type preparedStmts struct {
 
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
-	getTransferableAssets *sqlx.Stmt
-	getCreateAssets       *sqlx.Stmt
-	newCreateAsset        *sqlx.Stmt
-	deleteCreateAsset     *sqlx.Stmt
+	// getTransferableAssets *sqlx.Stmt
+	getCreateAssets   *sqlx.Stmt
+	newCreateAsset    *sqlx.Stmt
+	deleteCreateAsset *sqlx.Stmt
 
 	newUpdateAsset    *sqlx.Stmt
 	getUpdateAssets   *sqlx.Stmt

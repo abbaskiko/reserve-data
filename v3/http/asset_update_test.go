@@ -28,6 +28,9 @@ func createSampleAsset(store storage.Interface) (uint64, error) {
 	err = store.UpdateExchange(0, storage.UpdateExchangeOpts{
 		Disable: common.BoolPointer(false),
 	})
+	if err != nil {
+		return 0, err
+	}
 
 	id, err := store.CreateAsset("ABC", "ABC", eth.HexToAddress("0x00000000000000001"),
 		18, true, common.ExchangeFeed, true, false, &common.AssetPWI{
