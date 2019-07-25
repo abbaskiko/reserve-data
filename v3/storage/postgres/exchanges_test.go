@@ -49,8 +49,8 @@ func TestExchangeStorage(t *testing.T) {
 	assert.Equal(t, commonv3.ErrExchangeFeeMissing, err)
 
 	err = s.UpdateExchange(uint64(common.Huobi), storage.UpdateExchangeOpts{
-		TradingFeeTaker: commonv3.FloatPointer(0.01),
-		TradingFeeMaker: commonv3.FloatPointer(0.02),
+		TradingFeeMaker: commonv3.FloatPointer(0.01),
+		TradingFeeTaker: commonv3.FloatPointer(0.02),
 	},
 	)
 	require.NoError(t, err)
