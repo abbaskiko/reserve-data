@@ -26,7 +26,9 @@ func createSampleAsset(store storage.Interface) (uint64, error) {
 		return 0, err
 	}
 	err = store.UpdateExchange(0, storage.UpdateExchangeOpts{
-		Disable: common.BoolPointer(false),
+		Disable:         common.BoolPointer(false),
+		TradingFeeTaker: common.FloatPointer(0.1),
+		TradingFeeMaker: common.FloatPointer(0.2),
 	})
 	if err != nil {
 		return 0, err
