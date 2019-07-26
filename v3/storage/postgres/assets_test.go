@@ -580,7 +580,7 @@ func TestStorage_UpdateAsset(t *testing.T) {
 			Transferable: commonv3.BoolPointer(true),
 		},
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	testAsset1, err = s.GetAsset(testAssetID1)
 	require.NoError(t, err)
 	assert.True(t, testAsset1.Transferable)
