@@ -743,40 +743,109 @@ func (s *Storage) UpdateAsset(id uint64, opts storage.UpdateAssetOpts) error {
 	return s.updateAsset(nil, id, opts)
 }
 
-func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, updateOpts storage.UpdateAssetOpts) error {
-	var (
-		addressParam *string
-		setRatePram  *string
-	)
+type updateAssetParam struct {
+	ID           uint64  `db:"id"`
+	Symbol       *string `db:"symbol"`
+	Name         *string `db:"name"`
+	Address      *string `db:"address"`
+	Decimals     *uint64 `db:"decimals"`
+	Transferable *bool   `db:"transferable"`
+	SetRate      *string `db:"set_rate"`
+	Rebalance    *bool   `db:"rebalance"`
+	IsQuote      *bool   `db:"is_quote"`
+
+	AskA                   *float64 `db:"ask_a"`
+	AskB                   *float64 `db:"ask_b"`
+	AskC                   *float64 `db:"ask_c"`
+	AskMinMinSpread        *float64 `db:"ask_min_min_spread"`
+	AskPriceMultiplyFactor *float64 `db:"ask_price_multiply_factor"`
+	BidA                   *float64 `db:"bid_a"`
+	BidB                   *float64 `db:"bid_b"`
+	BidC                   *float64 `db:"bid_c"`
+	BidMinMinSpread        *float64 `db:"bid_min_min_spread"`
+	BidPriceMultiplyFactor *float64 `db:"bid_price_multiply_factor"`
+
+	RebalanceQuadraticA *float64 `db:"rebalance_quadratic_a"`
+	RebalanceQuadraticB *float64 `db:"rebalance_quadratic_b"`
+	RebalanceQuadraticC *float64 `db:"rebalance_quadratic_c"`
+
+	TargetTotal              *float64 `db:"target_total"`
+	TargetReserve            *float64 `db:"target_reserve"`
+	TargetRebalanceThreshold *float64 `db:"target_rebalance_threshold"`
+	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
+}
+
+func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts) error {
+	arg := updateAssetParam{
+		ID:           id,
+		Symbol:       uo.Symbol,
+		Name:         uo.Name,
+		Decimals:     uo.Decimals,
+		Transferable: uo.Transferable,
+		Rebalance:    uo.Rebalance,
+		IsQuote:      uo.IsQuote,
+	}
 
 	var updateMsgs []string
-	if updateOpts.Symbol != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("symbol=%s", *updateOpts.Symbol))
+	if uo.Symbol != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("symbol=%s", *uo.Symbol))
 	}
-	if updateOpts.Name != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("name=%s", *updateOpts.Name))
+	if uo.Name != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("name=%s", *uo.Name))
 	}
-	if updateOpts.Address != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("address=%s", updateOpts.Address.String()))
-		addressStr := updateOpts.Address.String()
-		addressParam = &addressStr
+	if uo.Address != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("address=%s", uo.Address.String()))
+		addressStr := uo.Address.String()
+		arg.Address = &addressStr
 	}
-	if updateOpts.Decimals != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("decimals=%d", *updateOpts.Decimals))
+	if uo.Decimals != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("decimals=%d", *uo.Decimals))
 	}
-	if updateOpts.Transferable != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("transferable=%p", updateOpts.Transferable))
+	if uo.Transferable != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("transferable=%p", uo.Transferable))
 	}
-	if updateOpts.SetRate != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("set_rate=%s", updateOpts.SetRate.String()))
-		setRateStr := updateOpts.SetRate.String()
-		setRatePram = &setRateStr
+	if uo.SetRate != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("set_rate=%s", uo.SetRate.String()))
+		setRateStr := uo.SetRate.String()
+		arg.SetRate = &setRateStr
 	}
-	if updateOpts.Rebalance != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("rebalance=%t", *updateOpts.Rebalance))
+	if uo.Rebalance != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("rebalance=%t", *uo.Rebalance))
 	}
-	if updateOpts.IsQuote != nil {
-		updateMsgs = append(updateMsgs, fmt.Sprintf("is_quote=%t", *updateOpts.IsQuote))
+	if uo.IsQuote != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("is_quote=%t", *uo.IsQuote))
+	}
+	pwi := uo.PWI
+	if pwi != nil {
+		arg.AskA = &pwi.Ask.A
+		arg.AskB = &pwi.Ask.B
+		arg.AskC = &pwi.Ask.C
+		arg.AskMinMinSpread = &pwi.Ask.MinMinSpread
+		arg.AskPriceMultiplyFactor = &pwi.Ask.PriceMultiplyFactor
+		arg.BidA = &pwi.Bid.A
+		arg.BidB = &pwi.Bid.B
+		arg.BidC = &pwi.Bid.C
+		arg.BidMinMinSpread = &pwi.Bid.MinMinSpread
+		arg.BidPriceMultiplyFactor = &pwi.Bid.PriceMultiplyFactor
+		updateMsgs = append(updateMsgs, fmt.Sprintf("pwi=%+v", pwi))
+	}
+	rb := uo.RebalanceQuadratic
+
+	if rb != nil {
+		arg.RebalanceQuadraticA = &rb.A
+		arg.RebalanceQuadraticB = &rb.B
+		arg.RebalanceQuadraticC = &rb.C
+		updateMsgs = append(updateMsgs, fmt.Sprintf("rebalance_quadratic=%+v", rb))
+	}
+
+	target := uo.Target
+
+	if target != nil {
+		arg.TargetTotal = &target.Total
+		arg.TargetReserve = &target.Reserve
+		arg.TargetRebalanceThreshold = &target.RebalanceThreshold
+		arg.TargetTransferThreshold = &target.TransferThreshold
+		updateMsgs = append(updateMsgs, fmt.Sprintf("target=%+v", target))
 	}
 
 	if len(updateMsgs) == 0 {
@@ -790,29 +859,7 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, updateOpts storage.UpdateA
 
 	log.Printf("updating asset %d %s", id, strings.Join(updateMsgs, " "))
 	var updatedID uint64
-	err := sts.Get(&updatedID,
-		struct {
-			ID           uint64  `db:"id"`
-			Symbol       *string `db:"symbol"`
-			Name         *string `db:"name"`
-			Address      *string `db:"address"`
-			Decimals     *uint64 `db:"decimals"`
-			Transferable *bool   `db:"transferable"`
-			SetRate      *string `db:"set_rate"`
-			Rebalance    *bool   `db:"rebalance"`
-			IsQuote      *bool   `db:"is_quote"`
-		}{
-			ID:           id,
-			Symbol:       updateOpts.Symbol,
-			Name:         updateOpts.Name,
-			Address:      addressParam,
-			Decimals:     updateOpts.Decimals,
-			Transferable: updateOpts.Transferable,
-			SetRate:      setRatePram,
-			Rebalance:    updateOpts.Rebalance,
-			IsQuote:      updateOpts.IsQuote,
-		},
-	)
+	err := sts.Get(&updatedID, arg)
 	if err == sql.ErrNoRows {
 		log.Printf("asset not found in database id=%d", id)
 		return common.ErrNotFound
