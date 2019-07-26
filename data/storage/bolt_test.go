@@ -89,10 +89,10 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 		Created:            time.Now(),
 		Updated:            time.Now(),
 	}, exchange)
-	out, err = b, err
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+	out = b
 	if out != true {
 		t.Fatalf("Expected ram storage to return true when there is pending deposit")
 	}
