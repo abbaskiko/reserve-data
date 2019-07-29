@@ -69,6 +69,7 @@ func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pr
 	return tradingPairID, nil
 }
 
+// UpdateTradingPair update a trading pair information
 func (s *Storage) UpdateTradingPair(id uint64, updateOpts storage.UpdateTradingPairOpts) error {
 	return s.updateTradingPair(nil, id, updateOpts)
 }

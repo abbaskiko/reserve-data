@@ -41,10 +41,17 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	g.DELETE("/update-asset/:id", server.rejectUpdateAsset)
 
 	// API for CreateAssetExchange object
-	g.POST("/asset-exchange", server.createAssetExchange)
+	g.PUT("/create-asset-exchange/:id", server.confirmCreateAssetExchange)
+	g.GET("/create-asset-exchange", server.getCreateAssetExchanges)
+	g.GET("/create-asset-exchange/:id", server.getCreateAssetExchange)
+	g.POST("/create-asset-exchange", server.createCreateAssetExchange)
+	g.DELETE("/create-asset-exchange/:id", server.rejectCreateAssetExchange)
 
-	// API for UpdateAssetExchange object
-	g.PUT("/asset-exchange/:id", server.updateAssetExchange)
+	g.PUT("/update-asset-exchange/:id", server.confirmUpdateAssetExchange)
+	g.GET("/update-asset-exchange", server.getUpdateAssetExchanges)
+	g.GET("/update-asset-exchange/:id", server.getUpdateAssetExchange)
+	g.POST("/update-asset-exchange", server.createUpdateAssetExchange)
+	g.DELETE("/update-asset-exchange/:id", server.rejectUpdateAssetExchange)
 
 	// API for UpdateExchange object
 	g.PUT("/update-exchange/:id", server.confirmUpdateExchange)

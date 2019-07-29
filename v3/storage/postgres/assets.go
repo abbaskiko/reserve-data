@@ -48,6 +48,7 @@ type createAssetParams struct {
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
 }
 
+// CreateAsset create a new asset
 func (s *Storage) CreateAsset(
 	symbol, name string,
 	address ethereum.Address,
@@ -92,6 +93,7 @@ func (s *Storage) CreateAsset(
 	return id, nil
 }
 
+// CreateAssetExchange create a new asset exchange (asset support by exchange)
 func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string, depositAddress ethereum.Address,
 	minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error) {
 
@@ -113,6 +115,7 @@ func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string,
 	return id, nil
 }
 
+// UpdateAssetExchange update information about asset exchange
 func (s *Storage) UpdateAssetExchange(id uint64, opts storage.UpdateAssetExchangeOpts) error {
 
 	tx, err := s.db.Beginx()
@@ -632,6 +635,7 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 	return result, nil
 }
 
+// GetAssets return all assets listed
 func (s *Storage) GetAssets() ([]common.Asset, error) {
 	return s.getAssets(nil)
 }
@@ -686,6 +690,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	return results, nil
 }
 
+// GetAsset get a single asset by id
 func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 	var (
 		assetDBResult        assetDB
@@ -885,6 +890,7 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 	return nil
 }
 
+// ChangeAssetAddress change address of an asset
 func (s *Storage) ChangeAssetAddress(id uint64, address ethereum.Address) error {
 	log.Printf("changing address of asset id=%d new_address=%s", id, address.String())
 
@@ -910,6 +916,7 @@ func (s *Storage) ChangeAssetAddress(id uint64, address ethereum.Address) error 
 	return nil
 }
 
+// UpdateDepositAddress update deposit addresss for an AssetExchange
 func (s *Storage) UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error {
 	var updated uint64
 	err := s.stmts.updateDepositAddress.Get(&updated, assetID, exchangeID, address.Hex())

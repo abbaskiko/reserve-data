@@ -134,6 +134,41 @@ CREATE TABLE IF NOT EXISTS create_assets (
 	data JSON NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS update_exchanges (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
+CREATE TABLE IF NOT EXISTS create_asset_exchanges (
+	id	SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS update_asset_exchanges (
+	id	SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS update_assets (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
+CREATE TABLE IF NOT EXISTS create_trading_pairs (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+CREATE TABLE IF NOT EXISTS update_trading_pairs (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
 CREATE OR REPLACE FUNCTION new_create_asset(_data create_assets.data%TYPE)
 RETURNS int AS 
 $$
@@ -149,12 +184,6 @@ END
 
 $$ LANGUAGE PLPGSQL;
 
-CREATE TABLE IF NOT EXISTS update_assets (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
-);
-
 CREATE OR REPLACE  FUNCTION  new_update_asset(_data update_assets.data%TYPE)
 RETURNS int AS 
     $$
@@ -167,12 +196,6 @@ BEGIN
 END;
 $$ LANGUAGE PLPGSQL;
 
-CREATE TABLE IF NOT EXISTS update_exchanges (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
-);
-
 CREATE OR REPLACE  FUNCTION  new_update_exchange(_data update_exchanges.data%TYPE)
 RETURNS int AS 
     $$
@@ -183,13 +206,38 @@ BEGIN
 	INSERT INTO update_exchanges(created,data) VALUES (now(),_data) RETURNING id into _id;
 	RETURN _id;
 END;
+    
 $$ LANGUAGE PLPGSQL;
 
-CREATE TABLE IF NOT EXISTS create_trading_pairs (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
-);
+CREATE OR REPLACE FUNCTION new_create_asset_exchange(_data create_asset_exchanges.data%TYPE)
+RETURNS int AS 
+$$
+
+DECLARE
+	_id         create_asset_exchanges.id%TYPE;
+
+BEGIN
+	DELETE FROM create_asset_exchanges;
+	INSERT INTO create_asset_exchanges(created,data) VALUES(now(),_data) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION new_update_asset_exchange(_data update_asset_exchanges.data%TYPE)
+RETURNS int AS 
+$$
+
+DECLARE
+	_id         update_asset_exchanges.id%TYPE;
+
+BEGIN
+	DELETE FROM update_asset_exchanges;
+	INSERT INTO update_asset_exchanges(created,data) VALUES(now(),_data) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE  FUNCTION  new_create_trading_pair(_data create_trading_pairs.data%TYPE)
 RETURNS int AS 
@@ -202,13 +250,6 @@ BEGIN
 	RETURN _id;
 END;
 $$ LANGUAGE PLPGSQL;
-
-
-CREATE TABLE IF NOT EXISTS update_trading_pairs (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
-);
 
 CREATE OR REPLACE  FUNCTION  new_update_trading_pair(_data update_trading_pairs.data%TYPE)
 RETURNS int AS 
@@ -412,13 +453,21 @@ $$ LANGUAGE PLPGSQL;
 `
 
 type preparedStmts struct {
-	getExchanges        *sqlx.Stmt
-	getExchange         *sqlx.Stmt
-	updateExchange      *sqlx.NamedStmt
-	newAsset            *sqlx.NamedStmt
-	newAssetExchange    *sqlx.NamedStmt
-	updateAssetExchange *sqlx.NamedStmt
-	newTradingPair      *sqlx.NamedStmt
+	getExchanges               *sqlx.Stmt
+	getExchange                *sqlx.Stmt
+	updateExchange             *sqlx.NamedStmt
+	newAsset                   *sqlx.NamedStmt
+	newAssetExchange           *sqlx.NamedStmt
+	updateAssetExchange        *sqlx.NamedStmt
+	newCreateAssetExchange     *sqlx.Stmt
+	getCreateAssetExchanges    *sqlx.Stmt
+	deletePendingAssetExchange *sqlx.Stmt
+
+	newUpdateAssetExchange    *sqlx.Stmt
+	getUpdateAssetExchanges   *sqlx.Stmt
+	deleteUpdateAssetExchange *sqlx.Stmt
+
+	newTradingPair *sqlx.NamedStmt
 
 	getAsset             *sqlx.Stmt
 	getAssetExchange     *sqlx.Stmt
@@ -857,6 +906,40 @@ WHERE id = :id RETURNING id; `
 		return nil, err
 	}
 
+	const newCreateAssetExchangesQuery = `SELECT new_create_asset_exchange FROM new_create_asset_exchange ($1);`
+	newCreateAssetExchanges, err := db.Preparex(newCreateAssetExchangesQuery)
+	if err != nil {
+		return nil, err
+	}
+	const getCreateAssetExchangeQuery = `SELECT id,created,data FROM create_asset_exchanges WHERE id=COALESCE($1, create_asset_exchanges.id)`
+	getPendingAssetExchanges, err := db.Preparex(getCreateAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deleteCreateAssetExchangeQuery = `DELETE FROM create_asset_exchanges WHERE id=$1`
+	deleteCreateAssetExchange, err := db.Preparex(deleteCreateAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const newUpdateAssetExchangesQuery = `SELECT new_update_asset_exchange FROM new_update_asset_exchange ($1);`
+	newUpdateAssetExchanges, err := db.Preparex(newUpdateAssetExchangesQuery)
+	if err != nil {
+		return nil, err
+	}
+	const listUpdateAssetExchangeQuery = `SELECT id,created,data FROM create_asset_exchanges WHERE id=COALESCE($1, create_asset_exchanges.id)`
+	getUpdateAssetExchanges, err := db.Preparex(listUpdateAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deleteUpdateAssetExchangeQuery = `DELETE FROM create_asset_exchanges WHERE id=$1`
+	deleteUpdateAssetExchange, err := db.Preparex(deleteUpdateAssetExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	return &preparedStmts{
 		getExchanges:        getExchanges,
 		getExchange:         getExchange,
@@ -864,7 +947,16 @@ WHERE id = :id RETURNING id; `
 		newAsset:            newAsset,
 		newAssetExchange:    newAssetExchange,
 		updateAssetExchange: updateAssetExchange,
-		newTradingPair:      newTradingPair,
+
+		newCreateAssetExchange:     newCreateAssetExchanges,
+		getCreateAssetExchanges:    getPendingAssetExchanges,
+		deletePendingAssetExchange: deleteCreateAssetExchange,
+
+		newUpdateAssetExchange:    newUpdateAssetExchanges,
+		getUpdateAssetExchanges:   getUpdateAssetExchanges,
+		deleteUpdateAssetExchange: deleteUpdateAssetExchange,
+
+		newTradingPair: newTradingPair,
 
 		getAsset:             getAsset,
 		getAssetExchange:     getAssetExchange,

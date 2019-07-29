@@ -64,6 +64,17 @@ func (s *Storage) GetUpdateAssets() ([]common.UpdateAsset, error) {
 	return result, nil
 }
 
+// GetUpdateAsset return UpdateAsset object by provided id
+func (s *Storage) GetUpdateAsset(id uint64) (common.UpdateAsset, error) {
+	var res updateAsset
+	err := s.stmts.getUpdateAssets.Get(&res, id)
+	if err != nil {
+		return common.UpdateAsset{}, err
+	}
+
+	return res.ToCommon(), nil
+}
+
 // RejectUpdateAsset reject by delete that UpdateAsset.
 func (s *Storage) RejectUpdateAsset(id uint64) error {
 	tx, err := s.db.Beginx()

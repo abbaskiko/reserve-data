@@ -17,6 +17,18 @@ type Interface interface {
 		minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error)
 	UpdateAssetExchange(id uint64, opts UpdateAssetExchangeOpts) error
 
+	CreateCreateAssetExchange(v3.CreateCreateAssetExchange) (uint64, error)
+	GetCreateAssetExchanges() ([]v3.CreateAssetExchange, error)
+	GetCreateAssetExchange(id uint64) (v3.CreateAssetExchange, error)
+	RejectCreateAssetExchange(id uint64) error
+	ConfirmCreateAssetExchange(id uint64) error
+
+	CreateUpdateAssetExchange(v3.CreateUpdateAssetExchange) (uint64, error)
+	GetUpdateAssetExchanges() ([]v3.UpdateAssetExchange, error)
+	GetUpdateAssetExchange(id uint64) (v3.UpdateAssetExchange, error)
+	RejectUpdateAssetExchange(id uint64) error
+	ConfirmUpdateAssetExchange(id uint64) error
+
 	CreateAsset(
 		symbol, name string,
 		address ethereum.Address,
@@ -44,11 +56,13 @@ type Interface interface {
 	// TODO method for update address
 	CreateCreateAsset(v3.CreateCreateAsset) (uint64, error)
 	GetCreateAssets() ([]v3.CreateAsset, error)
+	GetCreateAsset(uint64) (v3.CreateAsset, error)
 	RejectCreateAsset(id uint64) error
 	ConfirmCreateAsset(id uint64) error
 
 	CreateUpdateAsset(asset v3.CreateUpdateAsset) (uint64, error)
 	GetUpdateAssets() ([]v3.UpdateAsset, error)
+	GetUpdateAsset(uint64) (v3.UpdateAsset, error)
 	RejectUpdateAsset(id uint64) error
 	ConfirmUpdateAsset(id uint64) error
 
@@ -87,7 +101,7 @@ type SettingReader interface {
 
 // these type match user type define in common package so we just need to make an alias here
 // in case they did not later, we need to redefine the structure here, or review this again.
-type UpdateAssetExchangeOpts = v3.UpdateAssetExchange
+type UpdateAssetExchangeOpts = v3.UpdateAssetExchangeEntry
 
 type UpdateExchangeOpts struct {
 	TradingFeeMaker *float64 `json:"trading_fee_maker"`
