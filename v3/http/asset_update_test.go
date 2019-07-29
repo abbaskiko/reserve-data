@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	eth "github.com/ethereum/go-ethereum/common"
@@ -383,14 +384,13 @@ func TestCheckUpdateAssetParams(t *testing.T) {
 	server := NewServer(s, nil)
 
 	const updateAsset = "/v3/update-asset"
-	setRate1 := common.GoldFeed
 	var tests = []testCase{
 		{ // pwi in server is not nil
 			data: common.CreateUpdateAsset{
 				Assets: []common.UpdateAssetEntry{
 					{
 						AssetID: assetID,
-						SetRate: &setRate1,
+						SetRate: common.SetRatePointer(common.GoldFeed),
 					},
 				},
 			},
@@ -409,7 +409,7 @@ func TestCheckUpdateAssetParams(t *testing.T) {
 				Assets: []common.UpdateAssetEntry{
 					{
 						AssetID: emptyAssetID,
-						SetRate: &setRate1,
+						SetRate: common.SetRatePointer(common.GoldFeed),
 					},
 				},
 			},
@@ -421,7 +421,7 @@ func TestCheckUpdateAssetParams(t *testing.T) {
 				err = readResponse(resp, &idResponse)
 				require.NoError(t, err)
 				assert.False(t, idResponse.Success)
-				assert.Equal(t, common.ErrPWIMissing.Error(), idResponse.Reason)
+				assert.True(t, strings.HasPrefix(idResponse.Reason, common.ErrPWIMissing.Error()))
 			},
 			endpoint: updateAsset,
 			method:   http.MethodPost,
@@ -430,7 +430,7 @@ func TestCheckUpdateAssetParams(t *testing.T) {
 				Assets: []common.UpdateAssetEntry{
 					{
 						AssetID: emptyAssetID,
-						SetRate: &setRate1,
+						SetRate: common.SetRatePointer(common.GoldFeed),
 						PWI: &common.AssetPWI{
 							Ask: common.PWIEquation{
 								A:                   5.0,

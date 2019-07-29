@@ -36,35 +36,29 @@ func (s *Server) createUpdateAsset(c *gin.Context) {
 }
 
 func (s *Server) checkUpdateAssetParams(updateEntry common.UpdateAssetEntry) error {
-	access, err := s.storage.GetAsset(updateEntry.AssetID)
+	asset, err := s.storage.GetAsset(updateEntry.AssetID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get asset id: %v from db ", updateEntry.AssetID)
 	}
 
-	if updateEntry.Rebalance != nil {
-		if *updateEntry.Rebalance {
-			if access.RebalanceQuadratic == nil && updateEntry.RebalanceQuadratic == nil {
-				return common.ErrRebalanceQuadraticMissing
-			}
+	if updateEntry.Rebalance != nil && *updateEntry.Rebalance {
+		if asset.RebalanceQuadratic == nil && updateEntry.RebalanceQuadratic == nil {
+			return errors.Errorf("%v at asset id: %v", common.ErrRebalanceQuadraticMissing.Error(), updateEntry.AssetID)
+		}
 
-			if access.Target == nil && updateEntry.Target == nil {
-				return common.ErrAssetTargetMissing
-			}
+		if asset.Target == nil && updateEntry.Target == nil {
+			return errors.Errorf("%v at asset id: %v", common.ErrAssetTargetMissing.Error(), updateEntry.AssetID)
 		}
 	}
 
-	if updateEntry.SetRate != nil {
-		if *updateEntry.SetRate != common.SetRateNotSet && access.PWI == nil && updateEntry.PWI == nil {
-			return common.ErrPWIMissing
-		}
+	if updateEntry.SetRate != nil && *updateEntry.SetRate != common.SetRateNotSet && asset.PWI == nil && updateEntry.PWI == nil {
+		return errors.Errorf("%v at asset id: %v", common.ErrPWIMissing.Error(), updateEntry.AssetID)
 	}
 
-	if updateEntry.Transferable != nil {
-		if *updateEntry.Transferable {
-			for _, exchange := range access.Exchanges {
-				if common.IsZeroAddress(exchange.DepositAddress) {
-					return common.ErrDepositAddressMissing
-				}
+	if updateEntry.Transferable != nil && *updateEntry.Transferable {
+		for _, exchange := range asset.Exchanges {
+			if common.IsZeroAddress(exchange.DepositAddress) {
+				return errors.Errorf("%v at asset id: %v and asset_exchange: %v", common.ErrDepositAddressMissing, updateEntry.AssetID, exchange.ID)
 			}
 		}
 	}
