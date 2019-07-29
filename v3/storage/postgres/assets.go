@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -92,90 +91,6 @@ func (s *Storage) CreateAsset(
 	}
 
 	return id, nil
-}
-
-// CreatePendingAssetExchange create pending asset exchange
-func (s *Storage) CreatePendingAssetExchange(pendingAssetExchange common.CreateAssetExchange) (uint64, error) {
-	var (
-		id uint64
-	)
-	tx, err := s.db.Beginx()
-	if err != nil {
-		return 0, err
-	}
-
-	defer rollbackUnlessCommitted(tx)
-	jsonData, err := json.Marshal(pendingAssetExchange)
-	if err != nil {
-		return 0, err
-	}
-	err = tx.Stmtx(s.stmts.newPendingAssetExchanges).Get(&id, jsonData)
-	if err != nil {
-		return 0, err
-	}
-	log.Printf("create pending asset exchange success with id = %d\n", id)
-	return id, nil
-}
-
-type pendingAssetExchange struct {
-	ID      uint64    `db:"id"`
-	Created time.Time `db:"created"`
-	Data    []byte    `db:"data"`
-}
-
-func (p pendingAssetExchange) toCommon() *common.PendingAssetExchange {
-	return &common.PendingAssetExchange{
-		ID:      p.ID,
-		Created: p.Created,
-		Data:    p.Data,
-	}
-}
-
-//ListPendingAssetExchange list all pending exchange
-func (s *Storage) ListPendingAssetExchange() ([]*common.PendingAssetExchange, error) {
-	var (
-		pendings []*pendingAssetExchange
-		result   []*common.PendingAssetExchange
-	)
-	err := s.stmts.getPendingAssetExchanges.Select(&pendings, nil)
-	if err != nil {
-		return nil, err
-	}
-	for _, p := range pendings {
-		result = append(result, p.toCommon())
-	}
-	return result, nil
-}
-
-// ConfirmPendingAssetExchange confirm pending asset exchange, return err if any
-func (s *Storage) ConfirmPendingAssetExchange(id uint64) error {
-	var pendingAssetExchange common.PendingAssetExchange
-	err := s.stmts.getPendingAssetExchanges.Get(&pendingAssetExchange, id)
-	if err != nil {
-		return err
-	}
-	var pending common.CreateAssetExchange
-	err = json.Unmarshal(pendingAssetExchange.Data, &pending)
-	if err != nil {
-		return err
-	}
-	tx, err := s.db.Beginx()
-	if err != nil {
-		return err
-	}
-	_, err = s.createAssetExchange(tx, pending.ExchangeID, pending.AssetID, pending.Symbol,
-		pending.DepositAddress, pending.MinDeposit, pending.WithdrawFee, pending.TargetRecommended,
-		pending.TargetRatio)
-	return nil
-}
-
-// RejectPendingAssetExchange reject pending asset exchange
-func (s *Storage) RejectPendingAssetExchange(id uint64) error {
-	_, err := s.stmts.deletePendingAssetExchange.Exec(id)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // CreateAssetExchange create a new asset exchange (asset support by exchange)

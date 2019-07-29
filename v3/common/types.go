@@ -155,15 +155,15 @@ type CreateAsset struct {
 	Data    json.RawMessage `json:"data"`
 }
 
-// PendingAssetExchange holds state of being create AssetExchange and waiting for confirm to be AssetExchange
-type PendingAssetExchange struct {
+// CreateAssetExchange holds state of being create AssetExchange and waiting for confirm to be AssetExchange
+type CreateAssetExchange struct {
 	ID      uint64          `json:"id"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data"`
 }
 
-// CreateAssetExchange is the configuration of an asset for a specific exchange.
-type CreateAssetExchange struct {
+// CreateAssetExchangeEntry is the configuration of an asset for a specific exchange.
+type CreateAssetExchangeEntry struct {
 	AssetID           uint64           `json:"asset_id"`
 	ExchangeID        uint64           `json:"exchange_id"`
 	Symbol            string           `json:"symbol"`
@@ -172,6 +172,33 @@ type CreateAssetExchange struct {
 	WithdrawFee       float64          `json:"withdraw_fee"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
+}
+
+type CreateCreateAssetExchange struct {
+	AssetExchanges []CreateAssetExchangeEntry `json:"asset_exchanges" binding:"required,dive"`
+}
+
+// UpdateAssetExchange holds state of being update AssetExchanges and waiting for confirm.
+type UpdateAssetExchange struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// UpdateAssetExchangeEntry is the configuration of an asset for a specific exchange to be update
+type UpdateAssetExchangeEntry struct {
+	ID                uint64            `json:"id"`
+	Symbol            *string           `json:"symbol"`
+	DepositAddress    *ethereum.Address `json:"deposit_address"`
+	MinDeposit        *float64          `json:"min_deposit"`
+	WithdrawFee       *float64          `json:"withdraw_fee"`
+	TargetRecommended *float64          `json:"target_recommended"`
+	TargetRatio       *float64          `json:"target_ratio"`
+}
+
+// CreateUpdateAssetExchange present for a UpdateAssetExchange(pending) request
+type CreateUpdateAssetExchange struct {
+	AssetExchanges []UpdateAssetExchangeEntry `json:"asset_exchanges" binding:"required,dive"`
 }
 
 // CreateAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
@@ -222,16 +249,6 @@ type UpdateAssetEntry struct {
 	PWI                *AssetPWI           `json:"pwi"`
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
 	Target             *AssetTarget        `json:"target"`
-}
-
-// UpdateAssetExchange is the options of UpdateAssetExchange method.
-type UpdateAssetExchange struct {
-	Symbol            *string           `json:"symbol"`
-	DepositAddress    *ethereum.Address `json:"deposit_address"`
-	MinDeposit        *float64          `json:"min_deposit"`
-	WithdrawFee       *float64          `json:"withdraw_fee"`
-	TargetRecommended *float64          `json:"target_recommended"`
-	TargetRatio       *float64          `json:"target_ratio"`
 }
 
 type UpdateExchangeEntry struct {
