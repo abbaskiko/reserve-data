@@ -242,3 +242,45 @@ type UpdateExchange struct {
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data"`
 }
+
+// CreateTradingPair hold state of being create trading pair and waiting for confirm to apply, hold origin json content.
+type CreateTradingPair struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// CreateTradingPairEntry represents an trading pair in central exchange.
+type CreateTradingPairEntry struct {
+	TradingPair
+	ExchangeID uint64 `json:"exchange_id"`
+}
+
+// CreateCreateTradingPair present for a CreateTradingPair(pending) request
+type CreateCreateTradingPair struct {
+	TradingPairs []CreateTradingPairEntry `json:"trading_pairs" binding:"required,dive"`
+}
+
+// CreateTradingPair hold state of being create trading pair and waiting for confirm to apply, hold origin json content.
+type UpdateTradingPair struct {
+	ID      uint64          `json:"id"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data"`
+}
+
+// UpdateTradingPairOpts
+type UpdateTradingPairEntry struct {
+	ID              uint64   `json:"id"`
+	PricePrecision  *uint64  `json:"price_precision"`
+	AmountPrecision *uint64  `json:"amount_precision"`
+	AmountLimitMin  *float64 `json:"amount_limit_min"`
+	AmountLimitMax  *float64 `json:"amount_limit_max"`
+	PriceLimitMin   *float64 `json:"price_limit_min"`
+	PriceLimitMax   *float64 `json:"price_limit_max"`
+	MinNotional     *float64 `json:"min_notional"`
+}
+
+// CreateUpdateTradingPair present for a UpdateTradingPair(pending) request
+type CreateUpdateTradingPair struct {
+	TradingPairs []UpdateTradingPairEntry `json:"trading_pairs" binding:"required,dive"`
+}

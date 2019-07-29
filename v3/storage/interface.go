@@ -57,6 +57,18 @@ type Interface interface {
 	GetUpdateExchange(id uint64) (v3.UpdateExchange, error)
 	RejectUpdateExchange(id uint64) error
 	ConfirmUpdateExchange(id uint64) error
+
+	CreateCreateTradingPair(v3.CreateCreateTradingPair) (uint64, error)
+	GetCreateTradingPairs() ([]v3.CreateTradingPair, error)
+	GetCreateTradingPair(id uint64) (v3.CreateTradingPair, error)
+	RejectCreateTradingPair(id uint64) error
+	ConfirmCreateTradingPair(id uint64) error
+
+	CreateUpdateTradingPair(v3.CreateUpdateTradingPair) (uint64, error)
+	GetUpdateTradingPairs() ([]v3.UpdateTradingPair, error)
+	GetUpdateTradingPair(id uint64) (v3.UpdateTradingPair, error)
+	RejectUpdateTradingPair(id uint64) error
+	ConfirmUpdateTradingPair(id uint64) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
@@ -97,12 +109,5 @@ type UpdateAssetOpts struct {
 	Target             *v3.AssetTarget        `json:"target"`
 }
 
-type UpdateTradingPairOpts struct {
-	PricePrecision  *uint64
-	AmountPrecision *uint64
-	AmountLimitMin  *float64
-	AmountLimitMax  *float64
-	PriceLimitMin   *float64
-	PriceLimitMax   *float64
-	MinNotional     *float64
-}
+// UpdateTradingPairOpts ...
+type UpdateTradingPairOpts = v3.UpdateTradingPairEntry

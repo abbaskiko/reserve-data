@@ -11,7 +11,7 @@ import (
 )
 
 // CreateUpdateExchange create a new update exchange,
-// this will delete all old pending as we maintain 1 pending update asset only.
+// this will delete all old pending as we maintain 1 pending.
 func (s *Storage) CreateUpdateExchange(c common.CreateUpdateExchange) (uint64, error) {
 	var id uint64
 	jsonData, err := json.Marshal(c)
@@ -96,7 +96,7 @@ func (s *Storage) RejectUpdateExchange(id uint64) error {
 
 // ConfirmUpdateExchange apply pending changes in UpdateExchange object.
 func (s *Storage) ConfirmUpdateExchange(id uint64) error {
-	var update updateAsset
+	var update updateExchange
 	err := s.stmts.getUpdateExchanges.Get(&update, id)
 	if err != nil {
 		if err == sql.ErrNoRows {

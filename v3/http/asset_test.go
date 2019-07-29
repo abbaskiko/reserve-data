@@ -25,17 +25,39 @@ var (
 			Rebalance: true,
 			IsQuote:   true,
 			PWI: &common.AssetPWI{
-				Ask: common.PWIEquation{},
-				Bid: common.PWIEquation{},
+				Ask: common.PWIEquation{
+					A:                   1.0,
+					B:                   1.0,
+					C:                   1.0,
+					MinMinSpread:        2.0,
+					PriceMultiplyFactor: 2.0,
+				},
+				Bid: common.PWIEquation{
+					A:                   1.0,
+					B:                   1.0,
+					C:                   1.0,
+					MinMinSpread:        2.0,
+					PriceMultiplyFactor: 2.0,
+				},
 			},
-			RebalanceQuadratic: &common.RebalanceQuadratic{},
-			Target:             &common.AssetTarget{},
+			RebalanceQuadratic: &common.RebalanceQuadratic{
+				A: 100.0,
+				B: 200.0,
+				C: 150.0,
+			},
+			Target: &common.AssetTarget{
+				Total:              1000.0,
+				Reserve:            1000.0,
+				RebalanceThreshold: 1000.0,
+				TransferThreshold:  1000.0,
+			},
 			Exchanges: []common.AssetExchange{
 				{
+					ExchangeID: 0, // pre-define exchange
 					TradingPairs: []common.TradingPair{
 						{
-							Base:  1,
-							Quote: 0,
+							Base:  0,
+							Quote: 1,
 						},
 					},
 				},
