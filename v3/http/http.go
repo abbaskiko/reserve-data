@@ -31,12 +31,14 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	// API for CreateAsset object
 	g.POST("/create-asset", server.createCreateAsset)
 	g.GET("/create-asset", server.getCreateAssets)
+	g.GET("/create-asset/:id", server.getCreateAsset)
 	g.PUT("/create-asset/:id", server.confirmCreateAsset)
 	g.DELETE("/create-asset/:id", server.rejectCreateAsset)
 
 	// API for UpdateAsset object
 	g.POST("/update-asset", server.createUpdateAsset)
 	g.GET("/update-asset", server.getUpdateAssets)
+	g.GET("/update-asset/:id", server.getUpdateAsset)
 	g.PUT("/update-asset/:id", server.confirmUpdateAsset)
 	g.DELETE("/update-asset/:id", server.rejectUpdateAsset)
 
