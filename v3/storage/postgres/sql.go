@@ -185,6 +185,43 @@ BEGIN
 END;
 $$ LANGUAGE PLPGSQL;
 
+CREATE TABLE IF NOT EXISTS create_trading_pairs (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
+CREATE OR REPLACE  FUNCTION  new_create_trading_pair(_data create_trading_pairs.data%TYPE)
+RETURNS int AS 
+    $$
+DECLARE 
+	_id create_trading_pairs.id%TYPE;
+BEGIN
+	DELETE FROM create_trading_pairs;
+	INSERT INTO create_trading_pairs(created,data) VALUES (now(),_data) RETURNING id into _id;
+	RETURN _id;
+END;
+$$ LANGUAGE PLPGSQL;
+
+
+CREATE TABLE IF NOT EXISTS update_trading_pairs (
+	id SERIAL PRIMARY KEY,
+	created TIMESTAMP NOT NULL,
+	data JSON NOT NULL 
+);
+
+CREATE OR REPLACE  FUNCTION  new_update_trading_pair(_data update_trading_pairs.data%TYPE)
+RETURNS int AS 
+    $$
+DECLARE 
+	_id update_trading_pairs.id%TYPE;
+BEGIN
+	DELETE FROM update_trading_pairs;
+	INSERT INTO update_trading_pairs(created,data) VALUES (now(),_data) RETURNING id into _id;
+	RETURN _id;
+END;
+$$ LANGUAGE PLPGSQL;
+
 CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _name assets.symbol%TYPE,
                                      _address addresses.address%TYPE,
@@ -405,6 +442,14 @@ type preparedStmts struct {
 	newUpdateExchange    *sqlx.Stmt
 	getUpdateExchanges   *sqlx.Stmt
 	deleteUpdateExchange *sqlx.Stmt
+
+	newCreateTradingPair    *sqlx.Stmt
+	getCreateTradingPairs   *sqlx.Stmt
+	deleteCreateTradingPair *sqlx.Stmt
+
+	newUpdateTradingPair    *sqlx.Stmt
+	getUpdateTradingPairs   *sqlx.Stmt
+	deleteUpdateTradingPair *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -548,6 +593,42 @@ WHERE id = :id`
 
 	const listUpdateExchangeQuery = `SELECT id,created,data FROM update_exchanges WHERE id=COALESCE($1, update_exchanges.id)`
 	listUpdateExchange, err := db.Preparex(listUpdateExchangeQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const newCreateTradingPairQuery = `SELECT new_create_trading_pair FROM new_create_trading_pair($1)`
+	newCreateTradingPair, err := db.Preparex(newCreateTradingPairQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deleteCreateTradingPairQuery = `DELETE FROM create_trading_pairs WHERE id=$1`
+	deleteCreateTradingPair, err := db.Preparex(deleteCreateTradingPairQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const listCreateTradingPairQuery = `SELECT id,created,data FROM create_trading_pairs WHERE id=COALESCE($1, create_trading_pairs.id)`
+	listCreateTradingPair, err := db.Preparex(listCreateTradingPairQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const newUpdateTradingPairQuery = `SELECT new_create_trading_pair FROM new_create_trading_pair($1)`
+	newUpdateTradingPair, err := db.Preparex(newUpdateTradingPairQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const deleteUpdateTradingPairQuery = `DELETE FROM update_trading_pairs WHERE id=$1`
+	deleteUpdateTradingPair, err := db.Preparex(deleteUpdateTradingPairQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	const listUpdateTradingPairQuery = `SELECT id,created,data FROM update_trading_pairs WHERE id=COALESCE($1, update_trading_pairs.id)`
+	listUpdateTradingPair, err := db.Preparex(listUpdateTradingPairQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -807,5 +888,13 @@ WHERE id = :id RETURNING id; `
 		newUpdateExchange:    newUpdateExchange,
 		getUpdateExchanges:   listUpdateExchange,
 		deleteUpdateExchange: deleteUpdateExchange,
+
+		newCreateTradingPair:    newCreateTradingPair,
+		getCreateTradingPairs:   listCreateTradingPair,
+		deleteCreateTradingPair: deleteCreateTradingPair,
+
+		newUpdateTradingPair:    newUpdateTradingPair,
+		getUpdateTradingPairs:   listUpdateTradingPair,
+		deleteUpdateTradingPair: deleteUpdateTradingPair,
 	}, nil
 }

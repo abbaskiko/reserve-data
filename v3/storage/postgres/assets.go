@@ -924,33 +924,3 @@ func (s *Storage) UpdateDepositAddress(assetID, exchangeID uint64, address ether
 		return fmt.Errorf("failed to update deposit address asset_id=%d exchange_id=%d err=%s", assetID, exchangeID, err.Error())
 	}
 }
-
-func (s *Storage) UpdateTradingPair(id uint64, opts storage.UpdateTradingPairOpts) error {
-	var updatedID uint64
-	err := s.stmts.updateTradingPair.Get(&updatedID, struct {
-		ID              uint64   `db:"id"`
-		PricePrecision  *uint64  `db:"price_precision"`
-		AmountPrecision *uint64  `db:"amount_precision"`
-		AmountLimitMin  *float64 `db:"amount_limit_min"`
-		AmountLimitMax  *float64 `db:"amount_limit_max"`
-		PriceLimitMin   *float64 `db:"price_limit_min"`
-		PriceLimitMax   *float64 `db:"price_limit_max"`
-		MinNotional     *float64 `db:"min_notional"`
-	}{
-		ID:              id,
-		PricePrecision:  opts.PricePrecision,
-		AmountPrecision: opts.AmountPrecision,
-		AmountLimitMin:  opts.AmountLimitMin,
-		AmountLimitMax:  opts.AmountLimitMax,
-		PriceLimitMin:   opts.PriceLimitMin,
-		PriceLimitMax:   opts.PriceLimitMax,
-		MinNotional:     opts.MinNotional,
-	})
-	if err == sql.ErrNoRows {
-		return common.ErrNotFound
-	} else if err != nil {
-		return err
-	}
-	log.Printf("trading pair configuration %d is updated", id)
-	return nil
-}
