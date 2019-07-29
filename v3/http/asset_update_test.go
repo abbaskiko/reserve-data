@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	eth "github.com/ethereum/go-ethereum/common"
@@ -83,6 +84,52 @@ func createSampleAsset(store storage.Interface) (uint64, error) {
 			Reserve:            1.0,
 			Total:              100.0,
 		})
+	if err != nil {
+		return 0, err
+	}
+	return id, err
+}
+
+func createEmptySampleAsset(store storage.Interface) (uint64, error) {
+	_, err := store.CreateAssetExchange(2, 1, "KNC", eth.HexToAddress("0x00"), 10,
+		0.2, 5.0, 0.3)
+	if err != nil {
+		return 0, err
+	}
+	err = store.UpdateExchange(0, storage.UpdateExchangeOpts{
+		Disable:         common.BoolPointer(false),
+		TradingFeeTaker: common.FloatPointer(0.1),
+		TradingFeeMaker: common.FloatPointer(0.2),
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := store.CreateAsset("DEF", "DEF", eth.HexToAddress("0x00000000000000002"),
+		18, false, common.SetRateNotSet, false, false, nil, nil, []common.AssetExchange{
+			{
+				Symbol:            "KNC",
+				DepositAddress:    eth.HexToAddress("0x00002"),
+				ExchangeID:        2,
+				TargetRatio:       0.1,
+				TargetRecommended: 1000.0,
+				WithdrawFee:       0.5,
+				MinDeposit:        100.0,
+				TradingPairs: []common.TradingPair{
+					{
+						Quote:           1,
+						Base:            0,
+						AmountLimitMax:  1.0,
+						AmountLimitMin:  1.0,
+						MinNotional:     1.0,
+						AmountPrecision: 1.0,
+						PriceLimitMax:   1.0,
+						PriceLimitMin:   1.0,
+						PricePrecision:  1.0,
+					},
+				},
+			},
+		}, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -313,6 +360,106 @@ func TestCreateUpdateAsset(t *testing.T) {
 				require.NoError(t, err)
 				assert.Len(t, idResponse.Data, 0)
 			},
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestCheckUpdateAssetParams(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	assetID, err := createSampleAsset(s)
+	emptyAssetID, err := createEmptySampleAsset(s)
+	require.NoError(t, err)
+
+	server := NewServer(s, nil)
+
+	const updateAsset = "/v3/update-asset"
+	var tests = []testCase{
+		{ // pwi in server is not nil
+			data: common.CreateUpdateAsset{
+				Assets: []common.UpdateAssetEntry{
+					{
+						AssetID: assetID,
+						SetRate: common.SetRatePointer(common.GoldFeed),
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					Success bool `json:"success"`
+				}
+				err = readResponse(resp, &idResponse)
+				require.NoError(t, err)
+				assert.True(t, idResponse.Success)
+			},
+			endpoint: updateAsset,
+			method:   http.MethodPost,
+		}, { // pwi in server is  nil and pwi param is nil
+			data: common.CreateUpdateAsset{
+				Assets: []common.UpdateAssetEntry{
+					{
+						AssetID: emptyAssetID,
+						SetRate: common.SetRatePointer(common.GoldFeed),
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					Success bool   `json:"success"`
+					Reason  string `json:"reason"`
+				}
+				err = readResponse(resp, &idResponse)
+				require.NoError(t, err)
+				assert.False(t, idResponse.Success)
+				assert.True(t, strings.HasPrefix(idResponse.Reason, common.ErrPWIMissing.Error()))
+			},
+			endpoint: updateAsset,
+			method:   http.MethodPost,
+		}, { // pwi in server is  nil and pwi param is not nil
+			data: common.CreateUpdateAsset{
+				Assets: []common.UpdateAssetEntry{
+					{
+						AssetID: emptyAssetID,
+						SetRate: common.SetRatePointer(common.GoldFeed),
+						PWI: &common.AssetPWI{
+							Ask: common.PWIEquation{
+								A:                   5.0,
+								B:                   5.0,
+								C:                   5.0,
+								MinMinSpread:        5.0,
+								PriceMultiplyFactor: 5.0,
+							},
+							Bid: common.PWIEquation{
+								A:                   5.0,
+								B:                   5.0,
+								C:                   5.0,
+								MinMinSpread:        5.0,
+								PriceMultiplyFactor: 5.0,
+							},
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					Success bool `json:"success"`
+				}
+				err = readResponse(resp, &idResponse)
+				require.NoError(t, err)
+				assert.True(t, idResponse.Success)
+			},
+			endpoint: updateAsset,
+			method:   http.MethodPost,
 		},
 	}
 
