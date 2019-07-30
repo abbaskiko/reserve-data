@@ -148,19 +148,17 @@ type Asset struct {
 
 // TODO: write custom marshal json for created/updated fields
 
-// CreateAsset hold state of being create Asset and waiting for confirm to be Asset.
-type CreateAsset struct {
+type pendingObject struct {
 	ID      uint64          `json:"id"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data"`
 }
 
+// CreateAsset hold state of being create Asset and waiting for confirm to be Asset.
+type CreateAsset pendingObject
+
 // CreateAssetExchange holds state of being create AssetExchange and waiting for confirm to be AssetExchange
-type CreateAssetExchange struct {
-	ID      uint64          `json:"id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
+type CreateAssetExchange pendingObject
 
 // CreateAssetExchangeEntry is the configuration of an asset for a specific exchange.
 type CreateAssetExchangeEntry struct {
@@ -179,11 +177,7 @@ type CreateCreateAssetExchange struct {
 }
 
 // UpdateAssetExchange holds state of being update AssetExchanges and waiting for confirm.
-type UpdateAssetExchange struct {
-	ID      uint64          `json:"id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
+type UpdateAssetExchange pendingObject
 
 // UpdateAssetExchangeEntry is the configuration of an asset for a specific exchange to be update
 type UpdateAssetExchangeEntry struct {
@@ -224,11 +218,7 @@ type CreateCreateAsset struct {
 }
 
 // UpdateAsset hold state of being update Asset and waiting for confirm to apply.
-type UpdateAsset struct {
-	ID      uint64          `json:"id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
+type UpdateAsset pendingObject
 
 // CreateUpdateAsset present for an CreateUpdateAsset request
 type CreateUpdateAsset struct {
@@ -263,20 +253,13 @@ type CreateUpdateExchange struct {
 }
 
 // UpdateExchange hold state of being update Exchange and waiting for confirm to apply.
-type UpdateExchange struct {
-	ID      uint64          `json:"id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
+type UpdateExchange pendingObject
 
 // CreateTradingPair hold state of being create trading pair and waiting for confirm to apply, hold origin json content.
-type CreateTradingPair struct {
-	ID      uint64          `json:"id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
+type CreateTradingPair pendingObject
 
 // CreateTradingPairEntry represents an trading pair in central exchange.
+// this is use when create new trading pair in separate step(not when define Asset), so ExchangeID is required.
 type CreateTradingPairEntry struct {
 	TradingPair
 	ExchangeID uint64 `json:"exchange_id"`
@@ -288,11 +271,7 @@ type CreateCreateTradingPair struct {
 }
 
 // CreateTradingPair hold state of being create trading pair and waiting for confirm to apply, hold origin json content.
-type UpdateTradingPair struct {
-	ID      uint64          `json:"id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
+type UpdateTradingPair pendingObject
 
 // UpdateTradingPairOpts
 type UpdateTradingPairEntry struct {
