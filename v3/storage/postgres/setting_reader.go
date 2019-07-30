@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
+// GetTransferableAssets return list of transferable asset
 func (s *Storage) GetTransferableAssets() ([]common.Asset, error) {
 	transferable := true
 	return s.getAssets(&transferable)
@@ -20,6 +21,27 @@ type tradingPairSymbolsDB struct {
 	QuoteSymbol string `db:"quote_symbol"`
 }
 
+// GetTradingPair return trading pair by trading pair id
+func (s *Storage) GetTradingPair(id uint64) (common.TradingPairSymbols, error) {
+	var (
+		tradingPairDB tradingPairSymbolsDB
+		result        common.TradingPairSymbols
+	)
+
+	if err := s.stmts.getTradingPairByID.Get(&tradingPairDB, id); err != nil {
+		return result, err
+	}
+
+	result = common.TradingPairSymbols{
+		TradingPair: tradingPairDB.ToCommon(),
+		BaseSymbol:  tradingPairDB.BaseSymbol,
+		QuoteSymbol: tradingPairDB.QuoteSymbol,
+	}
+
+	return result, nil
+}
+
+// GetTradingPairs return list of trading pairs by exchangeID
 func (s *Storage) GetTradingPairs(id uint64) ([]common.TradingPairSymbols, error) {
 	var (
 		tradingPairs []tradingPairSymbolsDB
@@ -58,6 +80,7 @@ func (s *Storage) GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Ad
 	return results, nil
 }
 
+// GetMinNotional return min notional
 func (s *Storage) GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error) {
 	var minNotional float64
 	log.Printf("getting min notional for exchange=%d base=%d quote=%d",
