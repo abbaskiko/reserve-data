@@ -18,7 +18,7 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 
 	const (
 		createAssetExchange = "/v3/create-asset-exchange"
-		// updateAssetExchange = "/v3/update-asset-exchange"
+		updateAssetExchange = "/v3/update-asset-exchange"
 		// updateTradingPair = "/v3/update-trading-pair"
 	)
 
@@ -28,6 +28,9 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 	}()
 
 	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
 	server := NewServer(s, nil)
@@ -42,10 +45,10 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 			data: &common.CreateCreateAssetExchange{
 				AssetExchanges: []common.CreateAssetExchangeEntry{
 					{
-						AssetID:           1,
-						ExchangeID:        0,
+						AssetID:           assetID,
+						ExchangeID:        1,
 						Symbol:            "ETH",
-						DepositAddress:    eth.HexToAddress("0x00"),
+						DepositAddress:    eth.HexToAddress("0x001"),
 						MinDeposit:        10.0,
 						WithdrawFee:       11.0,
 						TargetRecommended: 12.0,
@@ -60,7 +63,45 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 			data:     nil,
 			assert:   httputil.ExpectSuccess,
 		},
-		// TODO add more test here
+		{ // test deposit addr = 0
+			data: common.CreateUpdateAssetExchange{
+				AssetExchanges: []common.UpdateAssetExchangeEntry{
+					{
+						ID:             1,
+						DepositAddress: common.AddressPointer(eth.HexToAddress("0x0000000000000")),
+						MinDeposit:     common.FloatPointer(6.0),
+						WithdrawFee:    common.FloatPointer(9.0),
+					},
+				},
+			},
+			endpoint: updateAssetExchange,
+			method:   http.MethodPost,
+			msg:      "update asset exchange",
+			assert:   httputil.ExpectFailureWithReason(common.ErrDepositAddressMissing.Error()),
+		},
+		{ // test create update asset exchange
+			data: common.CreateUpdateAssetExchange{
+				AssetExchanges: []common.UpdateAssetExchangeEntry{
+					{
+						ID:             2,
+						DepositAddress: common.AddressPointer(eth.HexToAddress("0x0000000000001")),
+						MinDeposit:     common.FloatPointer(6.0),
+						WithdrawFee:    common.FloatPointer(9.0),
+					},
+				},
+			},
+			endpoint: updateAssetExchange,
+			method:   http.MethodPost,
+			msg:      "update asset exchange",
+			assert:   httputil.ExpectSuccess,
+		},
+		{ // test confirm update asset exchange
+			msg:      "confirm pending update asset exchange",
+			endpoint: updateAssetExchange + "/1",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
 	}
 
 	for _, tc := range tests {

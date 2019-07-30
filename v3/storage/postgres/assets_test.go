@@ -356,6 +356,7 @@ func TestStorage_GetAssets(t *testing.T) {
 		assert.NotZero(t, testAsset.Exchanges[i].ID)
 		// the input asset exchange does not have id field
 		testAsset.Exchanges[i].ID = 0
+		testAsset.Exchanges[i].AssetID = 0
 	}
 	assert.Equal(t, testAssetExchanges, testAsset.Exchanges)
 	assert.Equal(t, testAssetTarget, testAsset.Target)
@@ -416,6 +417,7 @@ func TestStorage_GetAsset(t *testing.T) {
 		assert.NotZero(t, testAsset.Exchanges[i].ID)
 		// the input asset exchange does not have id field
 		testAsset.Exchanges[i].ID = 0
+		testAsset.Exchanges[i].AssetID = 0
 	}
 	assert.Equal(t, testAssetExchanges, testAsset.Exchanges)
 	assert.Equal(t, testAssetTarget, testAsset.Target)

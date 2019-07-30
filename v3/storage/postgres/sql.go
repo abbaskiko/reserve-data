@@ -587,7 +587,7 @@ SET symbol = COALESCE(:symbol, symbol),
 	withdraw_fee = coalesce(:withdraw_fee, withdraw_fee),
     target_recommended = coalesce(:target_recommended,target_recommended),
     target_ratio = coalesce(:target_ratio, target_ratio)
-WHERE id = :id`
+WHERE id = :id RETURNING id;`
 	updateAssetExchange, err := db.PrepareNamed(updateAssetExchangeQuery)
 	if err != nil {
 		return nil, err
@@ -778,7 +778,8 @@ ORDER BY assets.id`
        target_recommended,
        target_ratio
 FROM asset_exchanges
-WHERE asset_id = coalesce($1, asset_id)`
+WHERE asset_id = coalesce($1, asset_id)
+AND id = coalesce($2, id)`
 	getAssetExchange, err := db.Preparex(getAssetExchangeQuery)
 	if err != nil {
 		return nil, err
@@ -953,13 +954,13 @@ WHERE id = :id RETURNING id; `
 	if err != nil {
 		return nil, err
 	}
-	const listUpdateAssetExchangeQuery = `SELECT id,created,data FROM create_asset_exchanges WHERE id=COALESCE($1, create_asset_exchanges.id)`
+	const listUpdateAssetExchangeQuery = `SELECT id,created,data FROM update_asset_exchanges WHERE id=COALESCE($1, update_asset_exchanges.id)`
 	getUpdateAssetExchanges, err := db.Preparex(listUpdateAssetExchangeQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	const deleteUpdateAssetExchangeQuery = `DELETE FROM create_asset_exchanges WHERE id=$1`
+	const deleteUpdateAssetExchangeQuery = `DELETE FROM update_asset_exchanges WHERE id=$1`
 	deleteUpdateAssetExchange, err := db.Preparex(deleteUpdateAssetExchangeQuery)
 	if err != nil {
 		return nil, err

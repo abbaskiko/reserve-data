@@ -86,6 +86,7 @@ type TradingPairSymbols struct {
 // AssetExchange is the configuration of an asset for a specific exchange.
 type AssetExchange struct {
 	ID                uint64           `json:"id"`
+	AssetID           uint64           `json:"asset_id"`
 	ExchangeID        uint64           `json:"exchange_id"`
 	Symbol            string           `json:"symbol"`
 	DepositAddress    ethereum.Address `json:"deposit_address"`
