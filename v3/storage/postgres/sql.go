@@ -878,7 +878,7 @@ FROM trading_pairs AS tp
          INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
          INNER JOIN assets AS qa ON tp.quote_id = qa.id
          INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-WHERE tp.exchange_id = $1;`
+WHERE tp.id = $1;`
 	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
 	if err != nil {
 		return nil, err
