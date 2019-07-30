@@ -30,5 +30,5 @@ var (
 	// provided.
 	ErrDepositAddressMissing = errors.New("missing deposit address for transferable asset")
 	// ErrAssetExchangeAlreadyExist is return when create a asset_exchange existing in db
-	ErrAssetExchangeAlreadyExist = errors.New("asset exchange pair already exists, pls update it")
+	ErrAssetExchangeAlreadyExist = errors.New("asset already on exchange")
 )
