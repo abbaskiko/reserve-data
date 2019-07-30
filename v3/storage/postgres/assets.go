@@ -169,9 +169,8 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 	return assetExchangeID, err
 }
 
-func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, opts storage.UpdateAssetExchangeOpts) error {
+func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, updateOpts storage.UpdateAssetExchangeOpts) error {
 	var (
-		updateOpts   = &storage.UpdateAssetExchangeOpts{}
 		addressParam *string
 	)
 
