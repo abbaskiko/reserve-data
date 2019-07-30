@@ -198,6 +198,7 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, updateOpts storage
 
 	if len(updateMsgs) == 0 {
 		log.Printf("nothing set for update asset exchange, skip now")
+		return nil
 	}
 
 	log.Printf("updating asset_exchange %d %s", id, strings.Join(updateMsgs, " "))
@@ -472,6 +473,7 @@ type assetExchangeDB struct {
 func (aedb *assetExchangeDB) ToCommon() common.AssetExchange {
 	result := common.AssetExchange{
 		ID:           aedb.ID,
+		AssetID:      aedb.AssetID,
 		ExchangeID:   aedb.ExchangeID,
 		Symbol:       aedb.Symbol,
 		MinDeposit:   aedb.MinDeposit,
@@ -657,7 +659,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 		return nil, err
 	}
 
-	if err := tx.Stmtx(s.stmts.getAssetExchange).Select(&allAssetExchanges, nil); err != nil {
+	if err := tx.Stmtx(s.stmts.getAssetExchange).Select(&allAssetExchanges, nil, nil); err != nil {
 		return nil, err
 	}
 
@@ -704,7 +706,7 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 	}
 	defer rollbackUnlessCommitted(tx)
 
-	if err := tx.Stmtx(s.stmts.getAssetExchange).Select(&assetExchangeResults, id); err != nil {
+	if err := tx.Stmtx(s.stmts.getAssetExchange).Select(&assetExchangeResults, id, nil); err != nil {
 		return common.Asset{}, fmt.Errorf("failed to query asset exchanges err=%s", err.Error())
 	}
 

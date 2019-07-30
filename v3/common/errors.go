@@ -1,6 +1,6 @@
 package common
 
-import "errors"
+import "github.com/pkg/errors"
 
 var (
 	// ErrNotFound is the error to return when no record is found in database.
@@ -29,4 +29,6 @@ var (
 	// ErrDepositAddressMissing is returned when asset is transferable but no deposit address is
 	// provided.
 	ErrDepositAddressMissing = errors.New("missing deposit address for transferable asset")
+	// ErrAssetExchangeAlreadyExist is return when create a asset_exchange existing in db
+	ErrAssetExchangeAlreadyExist = errors.New("asset already on exchange")
 )

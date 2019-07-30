@@ -88,6 +88,7 @@ type Interface interface {
 // SettingReader is the common interface for reading exchanges, assets configuration.
 type SettingReader interface {
 	GetAsset(id uint64) (v3.Asset, error)
+	GetAssetExchange(id uint64) (v3.AssetExchange, error)
 	GetExchange(id uint64) (v3.Exchange, error)
 	GetTradingPair(id uint64) (v3.TradingPairSymbols, error)
 	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
