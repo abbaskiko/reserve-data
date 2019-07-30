@@ -665,7 +665,7 @@ WHERE id = :id`
 		return nil, err
 	}
 
-	const newUpdateTradingPairQuery = `SELECT new_create_trading_pair FROM new_create_trading_pair($1)`
+	const newUpdateTradingPairQuery = `SELECT new_update_trading_pair FROM new_update_trading_pair($1)`
 	newUpdateTradingPair, err := db.Preparex(newUpdateTradingPairQuery)
 	if err != nil {
 		return nil, err
@@ -878,7 +878,7 @@ FROM trading_pairs AS tp
          INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
          INNER JOIN assets AS qa ON tp.quote_id = qa.id
          INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-WHERE tp.id = $1;`
+WHERE tp.exchange_id = bae.exchange_id AND tp.exchange_id = qae.exchange_id AND tp.id = $1;`
 	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
 	if err != nil {
 		return nil, err

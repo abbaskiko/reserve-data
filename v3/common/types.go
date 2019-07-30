@@ -267,7 +267,7 @@ type CreateTradingPairEntry struct {
 
 // CreateCreateTradingPair present for a CreateTradingPair(pending) request
 type CreateCreateTradingPair struct {
-	TradingPairs []CreateTradingPairEntry `json:"trading_pairs" binding:"required,dive"`
+	TradingPairs []CreateTradingPairEntry `json:"trading_pairs" binding:"required"`
 }
 
 // CreateTradingPair hold state of being create trading pair and waiting for confirm to apply, hold origin json content.
