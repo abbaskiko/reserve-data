@@ -22,7 +22,7 @@ require (
 	github.com/gin-contrib/httpsign v0.0.0-20190528142004-2c3839fd2eac
 	github.com/gin-contrib/sentry v0.0.0-20190528141903-48a399dfd39f
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-contrib/zap v0.0.0-20190528085758-3cc18cd8fce3
+	github.com/gin-contrib/zap v0.0.0-20190528085758-3cc18cd8fce3 // indirect
 	github.com/gin-gonic/gin v1.4.0
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
@@ -55,7 +55,6 @@ require (
 	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/urfave/cli v1.20.0
 	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208 // indirect
-	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
