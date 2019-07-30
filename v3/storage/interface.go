@@ -89,7 +89,7 @@ type Interface interface {
 type SettingReader interface {
 	GetAsset(id uint64) (v3.Asset, error)
 	GetExchange(id uint64) (v3.Exchange, error)
-	// TODO: add GetTradingPair method that accept trading_pair_id
+	GetTradingPair(id uint64) (v3.TradingPairSymbols, error)
 	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
 	// TODO: check usages of this method to see if it should be replaced with GetDepositAddress(exchangeID, tokenID)
 	GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error)
@@ -99,16 +99,18 @@ type SettingReader interface {
 	GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error)
 }
 
-// these type match user type define in common package so we just need to make an alias here
+// UpdateAssetExchangeOpts these type match user type define in common package so we just need to make an alias here
 // in case they did not later, we need to redefine the structure here, or review this again.
 type UpdateAssetExchangeOpts = v3.UpdateAssetExchangeEntry
 
+//UpdateExchangeOpts options
 type UpdateExchangeOpts struct {
 	TradingFeeMaker *float64 `json:"trading_fee_maker"`
 	TradingFeeTaker *float64 `json:"trading_fee_taker"`
 	Disable         *bool    `json:"disable"`
 }
 
+//UpdateAssetOpts update asset options
 type UpdateAssetOpts struct {
 	Symbol             *string                `json:"symbol"`
 	Name               *string                `json:"name"`

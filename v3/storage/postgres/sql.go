@@ -477,6 +477,7 @@ type preparedStmts struct {
 	updateDepositAddress *sqlx.Stmt
 	updateTradingPair    *sqlx.NamedStmt
 
+	getTradingPairByID    *sqlx.Stmt
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
 	// getTransferableAssets *sqlx.Stmt
@@ -859,6 +860,30 @@ WHERE exchange_id = $1
 		return nil, err
 	}
 
+	const getTradingPairByIDQuery = `SELECT DISTINCT tp.id,
+                tp.exchange_id,
+                tp.base_id,
+                tp.quote_id,
+                tp.price_precision,
+                tp.amount_precision,
+                tp.amount_limit_min,
+                tp.amount_limit_max,
+                tp.price_limit_min,
+                tp.price_limit_max,
+                tp.min_notional,
+                bae.symbol AS base_symbol,
+                qae.symbol AS quote_symbol
+FROM trading_pairs AS tp
+         INNER JOIN assets AS ba ON tp.base_id = ba.id
+         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
+         INNER JOIN assets AS qa ON tp.quote_id = qa.id
+         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
+WHERE tp.id = $1;`
+	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	const getTradingPairSymbolsQuery = `SELECT DISTINCT tp.id,
                 tp.exchange_id,
                 tp.base_id,
@@ -966,6 +991,7 @@ WHERE id = :id RETURNING id; `
 		updateDepositAddress: updateDepositAddress,
 		updateTradingPair:    updateTradingPair,
 
+		getTradingPairByID:    getTradingPairByID,
 		getTradingPairSymbols: getTradingPairSymbols,
 		getMinNotional:        getMinMotional,
 
