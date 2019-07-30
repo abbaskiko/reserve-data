@@ -6,10 +6,12 @@ import (
 	"os"
 
 	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/httpsign-utils/authenticator"
 	"github.com/KyberNetwork/reserve-data/gateway/http"
+	"github.com/KyberNetwork/reserve-data/lib/httputil"
 )
 
 const (
@@ -21,6 +23,12 @@ const (
 	confirmSecretKeyFlag   = "confirm-secret-key"
 	rebalanceAccessKeyFlag = "rebalance-access-key"
 	rebalanceSecretKeyFlag = "rebalance-secret-key"
+
+	v3EndpointFlag = "v3-endpoint"
+)
+
+var (
+	v3EndpointDefaultValue = fmt.Sprint("http://127.0.0.1:8000")
 )
 
 func main() {
@@ -68,7 +76,15 @@ func main() {
 			Usage:  "secret key to access rebalance paths",
 			EnvVar: "REBALANCE_SECRET_KEY",
 		},
+		cli.StringFlag{
+			Name:   v3EndpointFlag,
+			Usage:  "v3 endpoint url",
+			EnvVar: "V3_ENDPOINT",
+			Value:  v3EndpointDefaultValue,
+		},
 	)
+
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -76,6 +92,13 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+
+	err := validation.Validate(c.String(v3EndpointFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("app names API URL: %s", c.String(v3EndpointFlag))
+	}
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("access key error: %s", err.Error())
 	}
@@ -97,7 +120,6 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("authentication object creation error: %s", err)
 	}
-	// TODO: add confirm permission and rebalance permission
 	perm, err := http.NewPermissioner(
 		c.String(readAccessKeyFlag),
 		c.String(writeAccessKeyFlag),
@@ -106,9 +128,14 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("permission object creation error: %s", err)
 	}
-	log.Printf("%v", auth)
-	log.Printf("%v", perm)
 
-	//TODO: create server
-	return nil
+	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
+		auth,
+		perm,
+		http.WithV3Endpoint(c.String(v3EndpointFlag)),
+	)
+	if err != nil {
+		return err
+	}
+	return svr.Start()
 }

@@ -31,9 +31,17 @@ m = g(r.sub, p.sub)  && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
 `
 	)
 	pol := fmt.Sprintf(`
-p, %s, /*, (GET)|(POST)|(PUT)|(DELETE)
-p, %s, /*, GET
-`, writeKeyID, readKeyID)
+p, %[1]s, /*, GET
+
+p, %[2]s, /*, GET
+p, %[2]s, /create-asset, POST
+
+p, %[3]s, /*, GET
+p, %[3]s, /create-asset/:id, PUT
+p, %[3]s, /create-asset/:id, DELETE
+
+p, %[4]s, /*, GET
+`, readKeyID, writeKeyID, confirmKeyID, rebalanceKeyID)
 	sa := scas.NewAdapter(pol)
 	e := casbin.NewEnforcer(casbin.NewModel(conf), sa)
 	if err := e.LoadPolicy(); err != nil {
