@@ -24,7 +24,7 @@ func expectStatus(t *testing.T, resp *httptest.ResponseRecorder, success bool, r
 		t.Fatal(err)
 	}
 	if decoded.Success != success {
-		t.Errorf("wrong success status, expected: %t, got: %t", success, decoded.Success)
+		t.Errorf("wrong success status, expected: %t, got: %t %v", success, decoded.Success, decoded.Reason)
 	}
 	if len(reason) != 0 && reason != decoded.Reason {
 		t.Errorf("wrong error msg, expected: %v, got: %v", reason, decoded.Reason)
