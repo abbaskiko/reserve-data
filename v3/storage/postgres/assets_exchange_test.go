@@ -65,7 +65,7 @@ func TestStorage_CreateAssetExchange(t *testing.T) {
 
 			assertFn: func(t *testing.T, id uint64, err error) {
 				assert.Zero(t, id)
-				require.Equal(t, commonv3.ErrDuplicateKey, err)
+				require.Equal(t, commonv3.ErrDuplicateExchangeIDAssetID, err)
 			},
 		},
 		{
@@ -81,7 +81,7 @@ func TestStorage_CreateAssetExchange(t *testing.T) {
 
 			assertFn: func(t *testing.T, id uint64, err error) {
 				assert.Zero(t, id)
-				require.Equal(t, commonv3.ErrForeignKeyNotExists, err)
+				require.Equal(t, commonv3.ErrExchangeIDNotExists, err)
 			},
 		},
 		{
@@ -97,7 +97,7 @@ func TestStorage_CreateAssetExchange(t *testing.T) {
 
 			assertFn: func(t *testing.T, id uint64, err error) {
 				assert.Zero(t, id)
-				require.Equal(t, commonv3.ErrForeignKeyNotExists, err)
+				require.Equal(t, commonv3.ErrAssetIDNotExists, err)
 			},
 		},
 	}

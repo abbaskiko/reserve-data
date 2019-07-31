@@ -180,12 +180,15 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 		log.Printf("failed to create new asset exchange err=%s", pErr.Message)
 		switch pErr.Code {
 		case errForeignKeyViolation:
-			if pErr.Constraint == exchangeForeignKeyConstraint || pErr.Constraint == assetForeignKeyConstraint {
-				return 0, common.ErrForeignKeyNotExists
+			switch pErr.Constraint {
+			case exchangeForeignKeyConstraint:
+				return 0, common.ErrExchangeIDNotExists
+			case assetForeignKeyConstraint:
+				return 0, common.ErrAssetIDNotExists
 			}
 		case errCodeUniqueViolation:
 			if pErr.Constraint == exchangeAssetUniqueConstraint {
-				return 0, common.ErrDuplicateKey
+				return 0, common.ErrDuplicateExchangeIDAssetID
 			}
 		}
 	}
