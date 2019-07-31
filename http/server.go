@@ -874,6 +874,72 @@ func (s *Server) GetStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+//EbalanceEntry is balance of exchange
+type EbalanceEntry struct {
+	Valid      bool
+	Error      string
+	Timestamp  common.Timestamp
+	ReturnTime common.Timestamp
+	// map asset id to its balance
+	AvailableBalance map[uint64]float64
+	LockedBalance    map[uint64]float64
+	DepositBalance   map[uint64]float64
+	Status           bool
+}
+
+// AuthdataFormat return authdata with v3 format
+type AuthdataFormat struct {
+	Data struct {
+		Valid      bool
+		Error      string
+		Timestamp  common.Timestamp
+		ReturnTime common.Timestamp
+		//map exchange id with its balance
+		ExchangeBalances map[uint64]EbalanceEntry
+		//map asset id with its balance
+		ReserveBalances   map[uint64]common.BalanceResponse
+		PendingActivities []common.ActivityRecord
+		Block             uint64
+	} `json:"data"`
+}
+
+func (s *Server) fromNameToID(exchangeName string) uint64 {
+	return 0
+}
+
+func (s *Server) fromSymbolToKey(data common.AuthDataResponse) (AuthdataFormat, error) {
+	var result AuthdataFormat
+	result.Data.Valid = data.Data.Valid
+	result.Data.Error = data.Data.Error
+	result.Data.Timestamp = data.Data.Timestamp
+	result.Data.ReturnTime = data.Data.ReturnTime
+	result.Data.ExchangeBalances = make(map[uint64]EbalanceEntry)
+	for exchangeName := range data.Data.ExchangeBalances {
+		exID := s.fromNameToID(string(exchangeName))
+		result.Data.ExchangeBalances[exID] = EbalanceEntry{}
+	}
+	return result, nil
+}
+
+// GetAuthdataV3 return authdata with v3 format
+func (s *Server) GetAuthdataV3(c *gin.Context) {
+	data, err := s.app.GetAuthData(getTimePoint(c, true))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	balance, err := s.fromSymbolToKey(data)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
+		"version":   data.Version,
+		"timestamp": data.Timestamp,
+		"data":      balance,
+	}))
+}
+
 func (s *Server) register() {
 	if s.core != nil && s.app != nil {
 		s.r.GET("/prices-version", s.AllPricesVersion)
@@ -918,6 +984,7 @@ func (s *Server) register() {
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
 		_ = v3http.NewServer(s.assetStorage, s.r) // ignore server object because we just use the route part
+		s.r.GET("/v3/authdata", s.GetAuthdataV3)
 	}
 }
 
