@@ -503,343 +503,47 @@ type preparedStmts struct {
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
-	const getExchangesQuery = `SELECT * FROM "exchanges";`
-	getExchanges, err := db.Preparex(getExchangesQuery)
+	getExchanges, getExchange, updateExchange, err := exchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const getExchangeQuery = `SELECT * FROM "exchanges" WHERE id = $1`
-	getExchange, err := db.Preparex(getExchangeQuery)
+	newAsset, getAsset, updateAsset, err := assetStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const updateExchangeQuery = `UPDATE "exchanges"
-SET trading_fee_maker = COALESCE(:trading_fee_maker, trading_fee_maker),
-    trading_fee_taker = COALESCE(:trading_fee_taker, trading_fee_taker),
-    disable           = COALESCE(:disable, disable)
-WHERE id = :id
-`
-	updateExchange, err := db.PrepareNamed(updateExchangeQuery)
+	newAssetExchange, updateAssetExchange, getAssetExchange, err := assetExchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const newAssetQuery = `SELECT new_asset
-FROM new_asset(
-             :symbol,
-             :name,
-             :address,
-             :decimals,
-             :transferable,
-             :set_rate,
-             :rebalance,
-             :is_quote,
-             :ask_a,
-             :ask_b,
-             :ask_c,
-             :ask_min_min_spread,
-             :ask_price_multiply_factor,
-             :bid_a,
-             :bid_b,
-             :bid_c,
-             :bid_min_min_spread,
-             :bid_price_multiply_factor,
-             :rebalance_quadratic_a,
-             :rebalance_quadratic_b,
-             :rebalance_quadratic_c,
-             :target_total,
-             :target_reserve,
-             :target_rebalance_threshold,
-             :target_transfer_threshold
-         );`
-	newAsset, err := db.PrepareNamed(newAssetQuery)
+	newCreateAsset, deleteCreateAsset, getCreateAsset, err := createAssetStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const newAssetExchangeQuery string = `INSERT INTO asset_exchanges(exchange_id,
-                            asset_id,
-                            symbol,
-                            deposit_address,
-                            min_deposit,
-                            withdraw_fee,
-                            target_recommended,
-                            target_ratio)
-VALUES (:exchange_id,
-        :asset_id,
-        :symbol,
-        :deposit_address,
-        :min_deposit,
-        :withdraw_fee,
-        :target_recommended,
-        :target_ratio) RETURNING id`
-	newAssetExchange, err := db.PrepareNamed(newAssetExchangeQuery)
+	newUpdateAsset, deleteUpdateAsset, listUpdateAsset, err := updateAssetStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const updateAssetExchangeQuery string = `UPDATE "asset_exchanges"
-SET symbol = COALESCE(:symbol, symbol),
-    deposit_address = COALESCE(:deposit_address, deposit_address),
-    min_deposit           = COALESCE(:min_deposit, min_deposit),
-	withdraw_fee = coalesce(:withdraw_fee, withdraw_fee),
-    target_recommended = coalesce(:target_recommended,target_recommended),
-    target_ratio = coalesce(:target_ratio, target_ratio)
-WHERE id = :id RETURNING id;`
-	updateAssetExchange, err := db.PrepareNamed(updateAssetExchangeQuery)
+	newUpdateExchange, deleteUpdateExchange, listUpdateExchange, err := updateExchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	// we have at most one pending at a time, so we delete all exists one before insert new one.
-	const newCreateAssetQuery = `SELECT new_create_asset FROM new_create_asset ($1);`
-	newCreateAsset, err := db.Preparex(newCreateAssetQuery)
+	newCreateTradingPair, deleteCreateTradingPair, listCreateTradingPair, err := createTradingPairStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const deleteCreateAssetQuery = `DELETE FROM create_assets WHERE id=$1`
-	deleteCreateAsset, err := db.Preparex(deleteCreateAssetQuery)
-	if err != nil {
-		return nil, err
-	}
-	const listCreateAssetQuery = `SELECT id,created,data FROM create_assets WHERE id=COALESCE($1, create_assets.id)`
-	getCreateAsset, err := db.Preparex(listCreateAssetQuery)
+	newUpdateTradingPair, deleteUpdateTradingPair, listUpdateTradingPair, err := updateTradingPairStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const newUpdateAssetQuery = `SELECT new_update_asset FROM new_update_asset($1)`
-	newUpdateAsset, err := db.Preparex(newUpdateAssetQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const deleteUpdateAssetQuery = `DELETE FROM update_assets WHERE id=$1`
-	deleteUpdateAsset, err := db.Preparex(deleteUpdateAssetQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const listUpdateAssetQuery = `SELECT id,created,data FROM update_assets WHERE id=COALESCE($1, update_assets.id)`
-	listUpdateAsset, err := db.Preparex(listUpdateAssetQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const newUpdateExchangeQuery = `SELECT new_update_exchange FROM new_update_exchange($1)`
-	newUpdateExchange, err := db.Preparex(newUpdateExchangeQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const deleteUpdateExchangeQuery = `DELETE FROM update_exchanges WHERE id=$1`
-	deleteUpdateExchange, err := db.Preparex(deleteUpdateExchangeQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const listUpdateExchangeQuery = `SELECT id,created,data FROM update_exchanges WHERE id=COALESCE($1, update_exchanges.id)`
-	listUpdateExchange, err := db.Preparex(listUpdateExchangeQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const newCreateTradingPairQuery = `SELECT new_create_trading_pair FROM new_create_trading_pair($1)`
-	newCreateTradingPair, err := db.Preparex(newCreateTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const deleteCreateTradingPairQuery = `DELETE FROM create_trading_pairs WHERE id=$1`
-	deleteCreateTradingPair, err := db.Preparex(deleteCreateTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const listCreateTradingPairQuery = `SELECT id,created,data FROM create_trading_pairs WHERE id=COALESCE($1, create_trading_pairs.id)`
-	listCreateTradingPair, err := db.Preparex(listCreateTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const newUpdateTradingPairQuery = `SELECT new_update_trading_pair FROM new_update_trading_pair($1)`
-	newUpdateTradingPair, err := db.Preparex(newUpdateTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const deleteUpdateTradingPairQuery = `DELETE FROM update_trading_pairs WHERE id=$1`
-	deleteUpdateTradingPair, err := db.Preparex(deleteUpdateTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const listUpdateTradingPairQuery = `SELECT id,created,data FROM update_trading_pairs WHERE id=COALESCE($1, update_trading_pairs.id)`
-	listUpdateTradingPair, err := db.Preparex(listUpdateTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const newTradingPairQuery = `SELECT new_trading_pair
-FROM new_trading_pair(:exchange_id,
-                      :base_id,
-                      :quote_id,
-                      :price_precision,
-                      :amount_precision,
-                      :amount_limit_min,
-                      :amount_limit_max,
-                      :price_limit_min,
-                      :price_limit_max,
-                      :min_notional);`
-	newTradingPair, err := db.PrepareNamed(newTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const getAssetQuery = `SELECT assets.id,
-       assets.symbol,
-       assets.name,
-       a.address,
-       array_agg(oa.address) FILTER ( WHERE oa.address IS NOT NULL ) AS old_addresses,
-       assets.decimals,
-       assets.transferable,
-       assets.set_rate,
-       assets.rebalance,
-       assets.is_quote,
-       assets.pwi_ask_a,
-       assets.pwi_ask_b,
-       assets.pwi_ask_c,
-       assets.pwi_ask_min_min_spread,
-       assets.pwi_ask_price_multiply_factor,
-       assets.pwi_bid_a,
-       assets.pwi_bid_b,
-       assets.pwi_bid_c,
-       assets.pwi_bid_min_min_spread,
-       assets.pwi_bid_price_multiply_factor,
-       assets.rebalance_quadratic_a,
-       assets.rebalance_quadratic_b,
-       assets.rebalance_quadratic_c,
-       assets.target_total,
-       assets.target_reserve,
-       assets.target_rebalance_threshold,
-       assets.target_transfer_threshold,
-       assets.created,
-       assets.updated
-FROM assets
-         LEFT JOIN addresses a on assets.address_id = a.id
-         LEFT JOIN asset_old_addresses aoa on assets.id = aoa.asset_id
-         LEFT JOIN addresses oa ON aoa.address_id = oa.id
-WHERE assets.id = coalesce($1, assets.id)
-  AND assets.transferable = coalesce($2, assets.transferable)
-GROUP BY assets.id,
-         assets.symbol,
-         assets.name,
-         a.address,
-         assets.decimals,
-         assets.transferable,
-         assets.set_rate,
-         assets.rebalance,
-         assets.is_quote,
-         assets.pwi_ask_a,
-         assets.pwi_ask_b,
-         assets.pwi_ask_c,
-         assets.pwi_ask_min_min_spread,
-         assets.pwi_ask_price_multiply_factor,
-         assets.pwi_bid_a,
-         assets.pwi_bid_b,
-         assets.pwi_bid_c,
-         assets.pwi_bid_min_min_spread,
-         assets.pwi_bid_price_multiply_factor,
-         assets.rebalance_quadratic_a,
-         assets.rebalance_quadratic_b,
-         assets.rebalance_quadratic_c,
-         assets.target_total,
-         assets.target_reserve,
-         assets.target_rebalance_threshold,
-         assets.target_transfer_threshold,
-         assets.created,
-         assets.updated
-ORDER BY assets.id`
-	getAsset, err := db.Preparex(getAssetQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const getAssetExchangeQuery = `SELECT id,
-       exchange_id,
-       asset_id,
-       symbol,
-       deposit_address,
-       min_deposit,
-       withdraw_fee,
-       target_recommended,
-       target_ratio
-FROM asset_exchanges
-WHERE asset_id = coalesce($1, asset_id)
-AND id = coalesce($2, id)`
-	getAssetExchange, err := db.Preparex(getAssetExchangeQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const getTradingPairQuery = `SELECT DISTINCT tp.id,
-                tp.exchange_id,
-                tp.base_id,
-                tp.quote_id,
-                tp.price_precision,
-                tp.amount_precision,
-                tp.amount_limit_min,
-                tp.amount_limit_max,
-                tp.price_limit_min,
-                tp.price_limit_max,
-                tp.min_notional
-FROM trading_pairs tp
-         INNER JOIN asset_exchanges ae ON tp.exchange_id = ae.exchange_id
-WHERE ae.asset_id = coalesce($1, ae.asset_id);
-`
-	getTradingPair, err := db.Preparex(getTradingPairQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const updateAssetQuery = `WITH updated AS (
-    UPDATE "addresses"
-        SET address = COALESCE(:address, addresses.address)
-        FROM "assets"
-        WHERE assets.id = :id AND assets.address_id = addresses.id
-	)
-UPDATE "assets"
-SET symbol       = COALESCE(:symbol, symbol),
-    name         = COALESCE(:name, name),
-    decimals     = COALESCE(:decimals, decimals),
-    transferable = COALESCE(:transferable, transferable),
-    set_rate     = COALESCE(:set_rate, set_rate),
-    rebalance    = COALESCE(:rebalance, rebalance),
-    is_quote     = COALESCE(:is_quote, is_quote),
-    pwi_ask_a = COALESCE(:ask_a,pwi_ask_a),
-	pwi_ask_b = COALESCE(:ask_b, pwi_ask_b),
-	pwi_ask_c = COALESCE(:ask_c, pwi_ask_c),
-	pwi_ask_min_min_spread = COALESCE(:ask_min_min_spread,pwi_ask_min_min_spread),
-	pwi_ask_price_multiply_factor = COALESCE(:ask_price_multiply_factor, pwi_ask_price_multiply_factor),
-	pwi_bid_a = COALESCE(:bid_a,pwi_bid_a),
-	pwi_bid_b = COALESCE(:bid_b,pwi_bid_b),
-	pwi_bid_c = COALESCE(:bid_c,pwi_bid_c),
-	pwi_bid_min_min_spread = COALESCE(:bid_min_min_spread,pwi_bid_min_min_spread),
-	pwi_bid_price_multiply_factor = COALESCE(:bid_price_multiply_factor,pwi_bid_price_multiply_factor),
-	rebalance_quadratic_a = COALESCE(:rebalance_quadratic_a,rebalance_quadratic_a),
-	rebalance_quadratic_b = COALESCE(:rebalance_quadratic_b,rebalance_quadratic_b),
-	rebalance_quadratic_c = COALESCE(:rebalance_quadratic_c,rebalance_quadratic_c),
-	target_total = COALESCE(:target_total,target_total),
-	target_reserve = COALESCE(:target_total,target_reserve),
-	target_rebalance_threshold = COALESCE(:target_total,target_rebalance_threshold),
-	target_transfer_threshold = COALESCE(:target_total,target_transfer_threshold),
-    updated      = now()
-WHERE id = :id RETURNING id;
-`
-	updateAsset, err := db.PrepareNamed(updateAssetQuery)
+	newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, err := tradingPairStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -851,117 +555,31 @@ WHERE id = :id RETURNING id;
 	}
 
 	const getMinNotionalQuery = `SELECT min_notional
-FROM trading_pairs
-WHERE exchange_id = $1
-  AND base_id = $2
-  AND quote_id = $3;
-`
-	getMinMotional, err := db.Preparex(getMinNotionalQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const getTradingPairByIDQuery = `SELECT DISTINCT tp.id,
-                tp.exchange_id,
-                tp.base_id,
-                tp.quote_id,
-                tp.price_precision,
-                tp.amount_precision,
-                tp.amount_limit_min,
-                tp.amount_limit_max,
-                tp.price_limit_min,
-                tp.price_limit_max,
-                tp.min_notional,
-                bae.symbol AS base_symbol,
-                qae.symbol AS quote_symbol
-FROM trading_pairs AS tp
-         INNER JOIN assets AS ba ON tp.base_id = ba.id
-         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
-         INNER JOIN assets AS qa ON tp.quote_id = qa.id
-         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-WHERE tp.exchange_id = bae.exchange_id AND tp.exchange_id = qae.exchange_id AND tp.id = $1;`
-	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const getTradingPairSymbolsQuery = `SELECT DISTINCT tp.id,
-                tp.exchange_id,
-                tp.base_id,
-                tp.quote_id,
-                tp.price_precision,
-                tp.amount_precision,
-                tp.amount_limit_min,
-                tp.amount_limit_max,
-                tp.price_limit_min,
-                tp.price_limit_max,
-                tp.min_notional,
-                bae.symbol AS base_symbol,
-                qae.symbol AS quote_symbol
-FROM trading_pairs AS tp
-         INNER JOIN assets AS ba ON tp.base_id = ba.id
-         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
-         INNER JOIN assets AS qa ON tp.quote_id = qa.id
-         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-WHERE tp.exchange_id = $1;`
-	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
+									FROM trading_pairs
+									WHERE exchange_id = $1
+									  AND base_id = $2
+									  AND quote_id = $3;
+									`
+	getMinNotional, err := db.Preparex(getMinNotionalQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	const updateDepositAddressQuery = `UPDATE asset_exchanges
-SET deposit_address = $3
-WHERE asset_id = $1
-  AND exchange_id = $2 RETURNING id;`
+									SET deposit_address = $3
+									WHERE asset_id = $1
+									  AND exchange_id = $2 RETURNING id;`
 	updateDepositAddress, err := db.Preparex(updateDepositAddressQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	const updateTradingPairQuery = `UPDATE "trading_pairs"
-SET price_precision  = coalesce(:price_precision, price_precision),
-    amount_precision = coalesce(:amount_precision, amount_precision),
-    amount_limit_min = coalesce(:amount_limit_min, amount_limit_min),
-    amount_limit_max = coalesce(:amount_limit_max, amount_limit_max),
-    price_limit_min  = coalesce(:price_limit_min, price_limit_min),
-    price_limit_max  = coalesce(:price_limit_max, price_limit_max),
-    min_notional= coalesce(:min_notional, min_notional)
-WHERE id = :id RETURNING id; `
-	updateTradingPair, err := db.PrepareNamed(updateTradingPairQuery)
+	newCreateAssetExchanges, getPendingAssetExchanges, deleteCreateAssetExchange, err := createAssetExchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	const newCreateAssetExchangesQuery = `SELECT new_create_asset_exchange FROM new_create_asset_exchange ($1);`
-	newCreateAssetExchanges, err := db.Preparex(newCreateAssetExchangesQuery)
-	if err != nil {
-		return nil, err
-	}
-	const getCreateAssetExchangeQuery = `SELECT id,created,data FROM create_asset_exchanges WHERE id=COALESCE($1, create_asset_exchanges.id)`
-	getPendingAssetExchanges, err := db.Preparex(getCreateAssetExchangeQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const deleteCreateAssetExchangeQuery = `DELETE FROM create_asset_exchanges WHERE id=$1`
-	deleteCreateAssetExchange, err := db.Preparex(deleteCreateAssetExchangeQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const newUpdateAssetExchangesQuery = `SELECT new_update_asset_exchange FROM new_update_asset_exchange ($1);`
-	newUpdateAssetExchanges, err := db.Preparex(newUpdateAssetExchangesQuery)
-	if err != nil {
-		return nil, err
-	}
-	const listUpdateAssetExchangeQuery = `SELECT id,created,data FROM update_asset_exchanges WHERE id=COALESCE($1, update_asset_exchanges.id)`
-	getUpdateAssetExchanges, err := db.Preparex(listUpdateAssetExchangeQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	const deleteUpdateAssetExchangeQuery = `DELETE FROM update_asset_exchanges WHERE id=$1`
-	deleteUpdateAssetExchange, err := db.Preparex(deleteUpdateAssetExchangeQuery)
+	newUpdateAssetExchanges, getUpdateAssetExchanges, deleteUpdateAssetExchange, err := updateAssetExchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -994,7 +612,7 @@ WHERE id = :id RETURNING id; `
 
 		getTradingPairByID:    getTradingPairByID,
 		getTradingPairSymbols: getTradingPairSymbols,
-		getMinNotional:        getMinMotional,
+		getMinNotional:        getMinNotional,
 
 		newCreateAsset:    newCreateAsset,
 		getCreateAssets:   getCreateAsset,
@@ -1016,4 +634,457 @@ WHERE id = :id RETURNING id; `
 		getUpdateTradingPairs:   listUpdateTradingPair,
 		deleteUpdateTradingPair: deleteUpdateTradingPair,
 	}, nil
+}
+
+func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newTradingPairQuery = `SELECT new_trading_pair
+									FROM new_trading_pair(:exchange_id,
+									                      :base_id,
+									                      :quote_id,
+									                      :price_precision,
+									                      :amount_precision,
+									                      :amount_limit_min,
+									                      :amount_limit_max,
+									                      :price_limit_min,
+									                      :price_limit_max,
+									                      :min_notional);`
+	newTradingPair, err := db.PrepareNamed(newTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	const getTradingPairQuery = `SELECT DISTINCT tp.id,
+									                tp.exchange_id,
+									                tp.base_id,
+									                tp.quote_id,
+									                tp.price_precision,
+									                tp.amount_precision,
+									                tp.amount_limit_min,
+									                tp.amount_limit_max,
+									                tp.price_limit_min,
+									                tp.price_limit_max,
+									                tp.min_notional
+									FROM trading_pairs tp
+									         INNER JOIN asset_exchanges ae ON tp.exchange_id = ae.exchange_id
+									WHERE ae.asset_id = coalesce($1, ae.asset_id);
+									`
+	getTradingPair, err := db.Preparex(getTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	const updateTradingPairQuery = `UPDATE "trading_pairs"
+									SET price_precision  = coalesce(:price_precision, price_precision),
+									    amount_precision = coalesce(:amount_precision, amount_precision),
+									    amount_limit_min = coalesce(:amount_limit_min, amount_limit_min),
+									    amount_limit_max = coalesce(:amount_limit_max, amount_limit_max),
+									    price_limit_min  = coalesce(:price_limit_min, price_limit_min),
+									    price_limit_max  = coalesce(:price_limit_max, price_limit_max),
+									    min_notional= coalesce(:min_notional, min_notional)
+									WHERE id = :id RETURNING id; `
+	updateTradingPair, err := db.PrepareNamed(updateTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	const getTradingPairByIDQuery = `SELECT DISTINCT tp.id,
+									                tp.exchange_id,
+									                tp.base_id,
+									                tp.quote_id,
+									                tp.price_precision,
+									                tp.amount_precision,
+									                tp.amount_limit_min,
+									                tp.amount_limit_max,
+									                tp.price_limit_min,
+									                tp.price_limit_max,
+									                tp.min_notional,
+									                bae.symbol AS base_symbol,
+									                qae.symbol AS quote_symbol
+									FROM trading_pairs AS tp
+									         INNER JOIN assets AS ba ON tp.base_id = ba.id
+									         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
+									         INNER JOIN assets AS qa ON tp.quote_id = qa.id
+									         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
+									WHERE tp.exchange_id = bae.exchange_id AND tp.exchange_id = qae.exchange_id AND tp.id = $1;`
+	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	const getTradingPairSymbolsQuery = `SELECT DISTINCT tp.id,
+									                tp.exchange_id,
+									                tp.base_id,
+									                tp.quote_id,
+									                tp.price_precision,
+									                tp.amount_precision,
+									                tp.amount_limit_min,
+									                tp.amount_limit_max,
+									                tp.price_limit_min,
+									                tp.price_limit_max,
+									                tp.min_notional,
+									                bae.symbol AS base_symbol,
+									                qae.symbol AS quote_symbol
+									FROM trading_pairs AS tp
+									         INNER JOIN assets AS ba ON tp.base_id = ba.id
+									         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
+									         INNER JOIN assets AS qa ON tp.quote_id = qa.id
+									         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
+									WHERE tp.exchange_id = $1;`
+	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+	return newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, nil
+}
+
+func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, error) {
+	const newAssetQuery = `SELECT new_asset
+		FROM new_asset(
+		             :symbol,
+		             :name,
+		             :address,
+		             :decimals,
+		             :transferable,
+		             :set_rate,
+		             :rebalance,
+		             :is_quote,
+		             :ask_a,
+		             :ask_b,
+		             :ask_c,
+		             :ask_min_min_spread,
+		             :ask_price_multiply_factor,
+		             :bid_a,
+		             :bid_b,
+		             :bid_c,
+		             :bid_min_min_spread,
+		             :bid_price_multiply_factor,
+		             :rebalance_quadratic_a,
+		             :rebalance_quadratic_b,
+		             :rebalance_quadratic_c,
+		             :target_total,
+		             :target_reserve,
+		             :target_rebalance_threshold,
+		             :target_transfer_threshold
+		         );`
+	newAsset, err := db.PrepareNamed(newAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const getAssetQuery = `SELECT assets.id,
+								       assets.symbol,
+								       assets.name,
+								       a.address,
+								       array_agg(oa.address) FILTER ( WHERE oa.address IS NOT NULL ) AS old_addresses,
+								       assets.decimals,
+								       assets.transferable,
+								       assets.set_rate,
+								       assets.rebalance,
+								       assets.is_quote,
+								       assets.pwi_ask_a,
+								       assets.pwi_ask_b,
+								       assets.pwi_ask_c,
+								       assets.pwi_ask_min_min_spread,
+								       assets.pwi_ask_price_multiply_factor,
+								       assets.pwi_bid_a,
+								       assets.pwi_bid_b,
+								       assets.pwi_bid_c,
+								       assets.pwi_bid_min_min_spread,
+								       assets.pwi_bid_price_multiply_factor,
+								       assets.rebalance_quadratic_a,
+								       assets.rebalance_quadratic_b,
+								       assets.rebalance_quadratic_c,
+								       assets.target_total,
+								       assets.target_reserve,
+								       assets.target_rebalance_threshold,
+								       assets.target_transfer_threshold,
+								       assets.created,
+								       assets.updated
+								FROM assets
+								         LEFT JOIN addresses a on assets.address_id = a.id
+								         LEFT JOIN asset_old_addresses aoa on assets.id = aoa.asset_id
+								         LEFT JOIN addresses oa ON aoa.address_id = oa.id
+								WHERE assets.id = coalesce($1, assets.id)
+								  AND assets.transferable = coalesce($2, assets.transferable)
+								GROUP BY assets.id,
+								         assets.symbol,
+								         assets.name,
+								         a.address,
+								         assets.decimals,
+								         assets.transferable,
+								         assets.set_rate,
+								         assets.rebalance,
+								         assets.is_quote,
+								         assets.pwi_ask_a,
+								         assets.pwi_ask_b,
+								         assets.pwi_ask_c,
+								         assets.pwi_ask_min_min_spread,
+								         assets.pwi_ask_price_multiply_factor,
+								         assets.pwi_bid_a,
+								         assets.pwi_bid_b,
+								         assets.pwi_bid_c,
+								         assets.pwi_bid_min_min_spread,
+								         assets.pwi_bid_price_multiply_factor,
+								         assets.rebalance_quadratic_a,
+								         assets.rebalance_quadratic_b,
+								         assets.rebalance_quadratic_c,
+								         assets.target_total,
+								         assets.target_reserve,
+								         assets.target_rebalance_threshold,
+								         assets.target_transfer_threshold,
+								         assets.created,
+								         assets.updated
+								ORDER BY assets.id`
+	getAsset, err := db.Preparex(getAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	const updateAssetQuery = `WITH updated AS (
+								    UPDATE "addresses"
+								        SET address = COALESCE(:address, addresses.address)
+								        FROM "assets"
+								        WHERE assets.id = :id AND assets.address_id = addresses.id
+									)
+								UPDATE "assets"
+								SET symbol       = COALESCE(:symbol, symbol),
+								    name         = COALESCE(:name, name),
+								    decimals     = COALESCE(:decimals, decimals),
+								    transferable = COALESCE(:transferable, transferable),
+								    set_rate     = COALESCE(:set_rate, set_rate),
+								    rebalance    = COALESCE(:rebalance, rebalance),
+								    is_quote     = COALESCE(:is_quote, is_quote),
+								    pwi_ask_a = COALESCE(:ask_a,pwi_ask_a),
+									pwi_ask_b = COALESCE(:ask_b, pwi_ask_b),
+									pwi_ask_c = COALESCE(:ask_c, pwi_ask_c),
+									pwi_ask_min_min_spread = COALESCE(:ask_min_min_spread,pwi_ask_min_min_spread),
+									pwi_ask_price_multiply_factor = COALESCE(:ask_price_multiply_factor, pwi_ask_price_multiply_factor),
+									pwi_bid_a = COALESCE(:bid_a,pwi_bid_a),
+									pwi_bid_b = COALESCE(:bid_b,pwi_bid_b),
+									pwi_bid_c = COALESCE(:bid_c,pwi_bid_c),
+									pwi_bid_min_min_spread = COALESCE(:bid_min_min_spread,pwi_bid_min_min_spread),
+									pwi_bid_price_multiply_factor = COALESCE(:bid_price_multiply_factor,pwi_bid_price_multiply_factor),
+									rebalance_quadratic_a = COALESCE(:rebalance_quadratic_a,rebalance_quadratic_a),
+									rebalance_quadratic_b = COALESCE(:rebalance_quadratic_b,rebalance_quadratic_b),
+									rebalance_quadratic_c = COALESCE(:rebalance_quadratic_c,rebalance_quadratic_c),
+									target_total = COALESCE(:target_total,target_total),
+									target_reserve = COALESCE(:target_total,target_reserve),
+									target_rebalance_threshold = COALESCE(:target_total,target_rebalance_threshold),
+									target_transfer_threshold = COALESCE(:target_total,target_transfer_threshold),
+								    updated      = now()
+								WHERE id = :id RETURNING id;
+								`
+	updateAsset, err := db.PrepareNamed(updateAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newAsset, getAsset, updateAsset, nil
+}
+
+func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.Stmt, error) {
+	const newAssetExchangeQuery string = `INSERT INTO asset_exchanges(exchange_id,
+		                            asset_id,
+		                            symbol,
+		                            deposit_address,
+		                            min_deposit,
+		                            withdraw_fee,
+		                            target_recommended,
+		                            target_ratio)
+		VALUES (:exchange_id,
+		        :asset_id,
+		        :symbol,
+		        :deposit_address,
+		        :min_deposit,
+		        :withdraw_fee,
+		        :target_recommended,
+		        :target_ratio) RETURNING id`
+	newAssetExchange, err := db.PrepareNamed(newAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const updateAssetExchangeQuery string = `UPDATE "asset_exchanges"
+		SET symbol = COALESCE(:symbol, symbol),
+		    deposit_address = COALESCE(:deposit_address, deposit_address),
+		    min_deposit           = COALESCE(:min_deposit, min_deposit),
+			withdraw_fee = coalesce(:withdraw_fee, withdraw_fee),
+		    target_recommended = coalesce(:target_recommended,target_recommended),
+		    target_ratio = coalesce(:target_ratio, target_ratio)
+		WHERE id = :id RETURNING id;`
+	updateAssetExchange, err := db.PrepareNamed(updateAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	const getAssetExchangeQuery = `SELECT id,
+			       exchange_id,
+			       asset_id,
+			       symbol,
+			       deposit_address,
+			       min_deposit,
+			       withdraw_fee,
+			       target_recommended,
+			       target_ratio
+			FROM asset_exchanges
+			WHERE asset_id = coalesce($1, asset_id)
+			AND id = coalesce($2, id)`
+	getAssetExchange, err := db.Preparex(getAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newAssetExchange, updateAssetExchange, getAssetExchange, nil
+}
+
+func exchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.NamedStmt, error) {
+	const getExchangesQuery = `SELECT * FROM "exchanges";`
+	getExchanges, err := db.Preparex(getExchangesQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const getExchangeQuery = `SELECT * FROM "exchanges" WHERE id = $1`
+	getExchange, err := db.Preparex(getExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const updateExchangeQuery = `UPDATE "exchanges"
+	SET trading_fee_maker = COALESCE(:trading_fee_maker, trading_fee_maker),
+	    trading_fee_taker = COALESCE(:trading_fee_taker, trading_fee_taker),
+	    disable           = COALESCE(:disable, disable)
+	WHERE id = :id
+	`
+	updateExchange, err := db.PrepareNamed(updateExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return getExchanges, getExchange, updateExchange, nil
+}
+
+func createAssetExchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newCreateAssetExchangesQuery = `SELECT new_create_asset_exchange FROM new_create_asset_exchange ($1);`
+	newCreateAssetExchanges, err := db.Preparex(newCreateAssetExchangesQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const getCreateAssetExchangeQuery = `SELECT id,created,data FROM create_asset_exchanges WHERE id=COALESCE($1, create_asset_exchanges.id)`
+	getPendingAssetExchanges, err := db.Preparex(getCreateAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteCreateAssetExchangeQuery = `DELETE FROM create_asset_exchanges WHERE id=$1`
+	deleteCreateAssetExchange, err := db.Preparex(deleteCreateAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newCreateAssetExchanges, getPendingAssetExchanges, deleteCreateAssetExchange, nil
+}
+
+func updateAssetExchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newUpdateAssetExchangesQuery = `SELECT new_update_asset_exchange FROM new_update_asset_exchange ($1);`
+	newUpdateAssetExchanges, err := db.Preparex(newUpdateAssetExchangesQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const listUpdateAssetExchangeQuery = `SELECT id,created,data FROM update_asset_exchanges WHERE id=COALESCE($1, update_asset_exchanges.id)`
+	getUpdateAssetExchanges, err := db.Preparex(listUpdateAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteUpdateAssetExchangeQuery = `DELETE FROM update_asset_exchanges WHERE id=$1`
+	deleteUpdateAssetExchange, err := db.Preparex(deleteUpdateAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newUpdateAssetExchanges, getUpdateAssetExchanges, deleteUpdateAssetExchange, nil
+}
+
+func updateTradingPairStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newUpdateTradingPairQuery = `SELECT new_update_trading_pair FROM new_update_trading_pair($1)`
+	newUpdateTradingPair, err := db.Preparex(newUpdateTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteUpdateTradingPairQuery = `DELETE FROM update_trading_pairs WHERE id=$1`
+	deleteUpdateTradingPair, err := db.Preparex(deleteUpdateTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const listUpdateTradingPairQuery = `SELECT id,created,data FROM update_trading_pairs WHERE id=COALESCE($1, update_trading_pairs.id)`
+	listUpdateTradingPair, err := db.Preparex(listUpdateTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newUpdateTradingPair, deleteUpdateTradingPair, listUpdateTradingPair, nil
+}
+
+func createTradingPairStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newCreateTradingPairQuery = `SELECT new_create_trading_pair FROM new_create_trading_pair($1)`
+	newCreateTradingPair, err := db.Preparex(newCreateTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteCreateTradingPairQuery = `DELETE FROM create_trading_pairs WHERE id=$1`
+	deleteCreateTradingPair, err := db.Preparex(deleteCreateTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const listCreateTradingPairQuery = `SELECT id,created,data FROM create_trading_pairs WHERE id=COALESCE($1, create_trading_pairs.id)`
+	listCreateTradingPair, err := db.Preparex(listCreateTradingPairQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newCreateTradingPair, deleteCreateTradingPair, listCreateTradingPair, nil
+}
+
+func updateExchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newUpdateExchangeQuery = `SELECT new_update_exchange FROM new_update_exchange($1)`
+	newUpdateExchange, err := db.Preparex(newUpdateExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteUpdateExchangeQuery = `DELETE FROM update_exchanges WHERE id=$1`
+	deleteUpdateExchange, err := db.Preparex(deleteUpdateExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const listUpdateExchangeQuery = `SELECT id,created,data FROM update_exchanges WHERE id=COALESCE($1, update_exchanges.id)`
+	listUpdateExchange, err := db.Preparex(listUpdateExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newUpdateExchange, deleteUpdateExchange, listUpdateExchange, nil
+}
+
+func updateAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newUpdateAssetQuery = `SELECT new_update_asset FROM new_update_asset($1)`
+	newUpdateAsset, err := db.Preparex(newUpdateAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteUpdateAssetQuery = `DELETE FROM update_assets WHERE id=$1`
+	deleteUpdateAsset, err := db.Preparex(deleteUpdateAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const listUpdateAssetQuery = `SELECT id,created,data FROM update_assets WHERE id=COALESCE($1, update_assets.id)`
+	listUpdateAsset, err := db.Preparex(listUpdateAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newUpdateAsset, deleteUpdateAsset, listUpdateAsset, nil
+}
+
+func createAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	// we have at most one pending at a time, so we delete all exists one before insert new one.
+	const newCreateAssetQuery = `SELECT new_create_asset FROM new_create_asset ($1);`
+	newCreateAsset, err := db.Preparex(newCreateAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteCreateAssetQuery = `DELETE FROM create_assets WHERE id=$1`
+	deleteCreateAsset, err := db.Preparex(deleteCreateAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const listCreateAssetQuery = `SELECT id,created,data FROM create_assets WHERE id=COALESCE($1, create_assets.id)`
+	getCreateAsset, err := db.Preparex(listCreateAssetQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newCreateAsset, deleteCreateAsset, getCreateAsset, nil
 }

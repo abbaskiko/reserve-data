@@ -76,7 +76,7 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 			},
 			endpoint: updateAssetExchange,
 			method:   http.MethodPost,
-			msg:      "update asset exchange",
+			msg:      "create invalid update asset exchange",
 			assert:   httputil.ExpectFailureWithReason(common.ErrDepositAddressMissing.Error()),
 		},
 		{ // test create update asset exchange
@@ -92,7 +92,7 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 			},
 			endpoint: updateAssetExchange,
 			method:   http.MethodPost,
-			msg:      "update asset exchange",
+			msg:      "create update asset exchange",
 			assert:   httputil.ExpectSuccess,
 		},
 		{ // test confirm update asset exchange
