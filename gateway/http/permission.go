@@ -7,11 +7,46 @@ import (
 	"github.com/casbin/casbin"
 	"github.com/gin-gonic/gin"
 	scas "github.com/qiangmzsx/string-adapter"
+
+	"github.com/KyberNetwork/httpsign-utils/authenticator"
 )
+
+func addKeyReadPolicy(key string) string {
+	return fmt.Sprintf(`
+p, %[1]s, /*, GET`, key)
+}
+
+func addKeyWritePolicy(key string) string {
+	return fmt.Sprintf(`
+p, %[1]s, /*, GET
+p, %[1]s, /create-asset, POST
+p, %[1]s, /update-asset, POST 
+p, %[1]s, /create-asset-exchange, POST
+p, %[1]s, /update-exchange, POST
+p, %[1]s, /create-trading-pair, POST
+p, %[1]s, /update-trading-pair, POST`, key)
+}
+
+func addKeyConfirmPolicy(key string) string {
+	return fmt.Sprintf(`
+p, %[1]s, /*, GET
+p, %[1]s, /create-asset/:id, (PUT)|(DELETE)
+p, %[1]s, /update-asset/:id, (PUT)|(DELETE)
+p, %[1]s, /create-asset-exchange/:id, (PUT)|(DELETE)
+p, %[1]s, /update-exchange/:id, (PUT)|(DELETE)
+p, %[1]s, /create-trading-pair/:id, (PUT)|(DELETE) 
+p, %[1]s, /update-trading-pair/:id, (PUT)|(DELETE) `, key)
+}
+
+//TODO: add endpoint rebalance
+func addKeyRebalancePolicy(key string) string {
+	return fmt.Sprintf(`
+p, %[1]s, /*, GET`, key)
+}
 
 //NewPermissioner creates a gin Handle Func to controll permission
 //currently there is only 2 permission for POST/GET requests
-func NewPermissioner(readKeyID, writeKeyID, confirmKeyID, rebalanceKeyID string) (gin.HandlerFunc, error) {
+func NewPermissioner(readKeys, writeKeys, confirmKeys, rebalanceKeys []authenticator.KeyPair) (gin.HandlerFunc, error) {
 	const (
 		conf = `
 [request_definition]
@@ -30,29 +65,20 @@ e = some(where (p.eft == allow))
 m = g(r.sub, p.sub)  && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
 `
 	)
+	var pol string
+	for _, key := range readKeys {
+		pol += addKeyReadPolicy(key.AccessKeyID)
+	}
+	for _, key := range writeKeys {
+		pol += addKeyWritePolicy(key.AccessKeyID)
+	}
+	for _, key := range confirmKeys {
+		pol += addKeyConfirmPolicy(key.AccessKeyID)
+	}
+	for _, key := range rebalanceKeys {
+		pol += addKeyRebalancePolicy(key.AccessKeyID)
+	}
 
-	//TODO: add rebalance action
-	pol := fmt.Sprintf(`
-p, %[1]s, /*, GET
-
-p, %[2]s, /*, GET
-p, %[2]s, /create-asset, POST
-p, %[2]s, /update-asset, POST 
-p, %[2]s, /create-asset-exchange, POST
-p, %[2]s, /update-exchange, POST
-p, %[2]s, /create-trading-pair, POST
-p, %[2]s, /update-trading-pair, POST
-
-p, %[3]s, /*, GET
-p, %[3]s, /create-asset/:id, (PUT)|(DELETE)
-p, %[3]s, /update-asset/:id, (PUT)|(DELETE)
-p, %[3]s, /create-asset-exchange/:id, (PUT)|(DELETE)
-p, %[3]s, /update-exchange/:id, (PUT)|(DELETE)
-p, %[3]s, /create-trading-pair/:id, (PUT)|(DELETE) 
-p, %[3]s, /update-trading-pair/:id, (PUT)|(DELETE) 
-
-p, %[4]s, /*, GET
-`, readKeyID, writeKeyID, confirmKeyID, rebalanceKeyID)
 	sa := scas.NewAdapter(pol)
 	e := casbin.NewEnforcer(casbin.NewModel(conf), sa)
 	if err := e.LoadPolicy(); err != nil {

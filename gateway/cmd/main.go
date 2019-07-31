@@ -37,42 +37,42 @@ func main() {
 	app.Name = "HTTP gateway for reserve core"
 	app.Action = run
 	app.Flags = append(app.Flags,
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   readAccessKeyFlag,
 			Usage:  "key for access read paths",
 			EnvVar: "READ_ACCESS_KEY",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   readSecretKeyFlag,
 			Usage:  "secret key for read paths",
 			EnvVar: "READ_SECRET_KEY",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   writeAccessKeyFlag,
 			Usage:  "key for access write paths",
 			EnvVar: "WRITE_ACCESS_KEY",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   writeSecretKeyFlag,
 			Usage:  "secret key for access write paths",
 			EnvVar: "WRITE_SECRET_KEY",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   confirmAccessKeyFlag,
 			Usage:  "access key for access confirm paths",
 			EnvVar: "CONFIRM_ACCESS_KEY",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   confirmSecretKeyFlag,
 			Usage:  "secret key for access confirm paths",
 			EnvVar: "CONFIRM_SECRET_KEY",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   rebalanceAccessKeyFlag,
 			Usage:  "access key for access rebalance paths",
 			EnvVar: "REBALANCE_ACCESS_KEY",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   rebalanceSecretKeyFlag,
 			Usage:  "secret key to access rebalance paths",
 			EnvVar: "REBALANCE_SECRET_KEY",
@@ -92,14 +92,43 @@ func main() {
 	}
 }
 
-func run(c *cli.Context) error {
+func getKeyList(c *cli.Context, accessKeyFlag, secretKeyFlag string) ([]authenticator.KeyPair, error) {
+	var keyPairs []authenticator.KeyPair
+	accessKeys := c.StringSlice(accessKeyFlag)
+	secretKeys := c.StringSlice(secretKeyFlag)
+	if len(accessKeys) != len(secretKeys) {
+		return nil, errors.Errorf("length read access keys (%d) and read secret keys (%d)", len(accessKeys), len(secretKeys))
+	}
 
+	for index := range accessKeys {
+		keyPairs = append(keyPairs, authenticator.KeyPair{
+			AccessKeyID:     accessKeys[index],
+			SecretAccessKey: secretKeys[index],
+		})
+	}
+	return keyPairs, nil
+}
+
+func run(c *cli.Context) error {
+	var (
+		keyPairs []authenticator.KeyPair
+	)
 	err := validation.Validate(c.String(v3EndpointFlag),
 		validation.Required,
 		is.URL)
 	if err != nil {
 		return errors.Wrapf(err, "app names API URL error: %s", c.String(v3EndpointFlag))
 	}
+
+	readKeys, err := getKeyList(c, readAccessKeyFlag, readSecretKeyFlag)
+	keyPairs = append(keyPairs, readKeys...)
+	writeKeys, err := getKeyList(c, writeAccessKeyFlag, writeSecretKeyFlag)
+	keyPairs = append(keyPairs, writeKeys...)
+	confirmKeys, err := getKeyList(c, confirmAccessKeyFlag, confirmSecretKeyFlag)
+	keyPairs = append(keyPairs, confirmKeys...)
+	rebalanceKeys, err := getKeyList(c, rebalanceAccessKeyFlag, rebalanceSecretKeyFlag)
+	keyPairs = append(keyPairs, rebalanceKeys...)
+
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
 		return errors.Wrap(err, "write access key error")
 	}
@@ -107,25 +136,12 @@ func run(c *cli.Context) error {
 	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
 		return errors.Wrap(err, "secret key error")
 	}
-	keyPairs := []authenticator.KeyPair{
-		{
-			AccessKeyID:     c.String(readAccessKeyFlag),
-			SecretAccessKey: c.String(readSecretKeyFlag),
-		},
-		{
-			AccessKeyID:     c.String(writeAccessKeyFlag),
-			SecretAccessKey: c.String(writeSecretKeyFlag),
-		},
-	}
+
 	auth, err := authenticator.NewAuthenticator(keyPairs...)
 	if err != nil {
 		return errors.Wrap(err, "authentication object creation error")
 	}
-	perm, err := http.NewPermissioner(
-		c.String(readAccessKeyFlag),
-		c.String(writeAccessKeyFlag),
-		c.String(confirmAccessKeyFlag),
-		c.String(rebalanceAccessKeyFlag))
+	perm, err := http.NewPermissioner(readKeys, writeKeys, confirmKeys, rebalanceKeys)
 	if err != nil {
 		return errors.Wrap(err, "permission object creation error")
 	}
