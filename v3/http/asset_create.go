@@ -1,10 +1,10 @@
 package http
 
 import (
-	"github.com/pkg/errors"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -74,7 +74,7 @@ func (s *Server) checkCreateAssetEntry(createEntry common.CreateAssetEntry) erro
 			}
 
 			if tradingPair.Quote == 0 {
-				_, err := s.storage.GetAsset(tradingPair.Quote)
+				_, err := s.storage.GetAsset(tradingPair.Base)
 				if err != nil {
 					return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", tradingPair.Base)
 				}

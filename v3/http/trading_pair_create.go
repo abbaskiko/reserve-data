@@ -1,10 +1,10 @@
 package http
 
 import (
-	"github.com/pkg/errors"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -39,10 +39,14 @@ func (s *Server) createCreateTradingPair(c *gin.Context) {
 func (s *Server) checkCreateTradingPairEntry(createEntry common.CreateTradingPairEntry) error {
 	base, err := s.storage.GetAsset(createEntry.Base)
 	if err != nil {
-		return err
+		return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", createEntry.Base)
 	}
 
 	quote, err := s.storage.GetAsset(createEntry.Quote)
+	if err != nil {
+		return errors.Wrapf(common.ErrBaseAssetInvalid, "quote id: %v", createEntry.Quote)
+	}
+
 	if !quote.IsQuote {
 		return errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset should have is_quote=true")
 	}

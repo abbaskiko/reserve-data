@@ -72,6 +72,12 @@ func getCreatePEAWithQuoteFalse() common.CreateCreateAsset {
 	createPEAWithQuoteFalse.AssetInputs[0].IsQuote = false
 	createPEAWithQuoteFalse.AssetInputs[0].Address = eth.HexToAddress("0x000005")
 	createPEAWithQuoteFalse.AssetInputs[0].Symbol = "QUOTE FALSE"
+	createPEAWithQuoteFalse.AssetInputs[0].Exchanges = []common.AssetExchange{
+		{
+			ExchangeID:   0, // pre-define exchange
+			TradingPairs: []common.TradingPair{},
+		},
+	}
 	return createPEAWithQuoteFalse
 }
 
@@ -115,10 +121,17 @@ func TestHTTPServerAsset(t *testing.T) {
 	server := NewServer(s, nil)
 
 	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
+	createPEAWithQuoteFalse.AssetInputs[0].Exchanges[0].TradingPairs = []common.TradingPair{
+		{
+			Quote: 1, Base: 0,
+		},
+	}
 	var createPEAWithQuoteFalse2 = getCreatePEAWithQuoteFalse()
-	createPEAWithQuoteFalse2.AssetInputs[0].Exchanges[0].TradingPairs[0].Quote = 0 //refer to asset itself
-	createPEAWithQuoteFalse2.AssetInputs[0].Exchanges[0].TradingPairs[0].Base = 1  //refer to asset itself
-	createPEAWithQuoteFalse2.AssetInputs[0].Address = eth.HexToAddress("0x000006")
+	createPEAWithQuoteFalse2.AssetInputs[0].Exchanges[0].TradingPairs = []common.TradingPair{
+		{
+			Quote: 0, Base: 1,
+		},
+	}
 
 	var tests = []testCase{
 		{
@@ -168,17 +181,17 @@ func TestHTTPServerAsset(t *testing.T) {
 		},
 		{
 			msg:      "create pending asset",
-			endpoint: assetBase,
-			method:   http.MethodPost,
-			assert:   httputil.ExpectSuccess,
-			data:     createPEAWithQuoteFalse,
-		},
-		{
-			msg:      "create pending asset",
-			endpoint: assetBase,
+			endpoint: createAssetBase,
 			method:   http.MethodPost,
 			assert:   httputil.ExpectFailure,
 			data:     createPEAWithQuoteFalse2,
+		},
+		{
+			msg:      "create pending asset",
+			endpoint: createAssetBase,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data:     createPEAWithQuoteFalse,
 		},
 	}
 
