@@ -29,6 +29,11 @@ var (
 	// ErrDepositAddressMissing is returned when asset is transferable but no deposit address is
 	// provided.
 	ErrDepositAddressMissing = errors.New("missing deposit address for transferable asset")
-	// ErrAssetExchangeAlreadyExist is return when create a asset_exchange existing in db
+	// ErrAssetExchangeAlreadyExist is returned when create a asset_exchange existing in db
 	ErrAssetExchangeAlreadyExist = errors.New("asset already on exchange")
+	// ErrQuoteAssetInvalid is returned when quote asset doesn't contain exchange id or
+	// contains field is_quote=false in the  create/update trading  request
+	ErrQuoteAssetInvalid = errors.New("quote asset is invalid")
+	// ErrBaseAssetInvalid is returned when base asset doesn't contain exchange id in the  create/update trading  request
+	ErrBaseAssetInvalid = errors.New("base asset is invalid")
 )
