@@ -15,7 +15,12 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
-const addressesUniqueConstraint = "addresses_address_key"
+const (
+	addressesUniqueConstraint     = "addresses_address_key"
+	exchangeForeignKeyConstraint  = "asset_exchanges_exchange_id_fkey"
+	assetForeignKeyConstraint     = "asset_exchanges_asset_id_fkey"
+	exchangeAssetUniqueConstraint = "asset_exchanges_exchange_id_asset_id_key"
+)
 
 type createAssetParams struct {
 	Symbol       string  `db:"symbol"`
@@ -166,6 +171,24 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 		TargetRecommended: targetRecommended,
 		TargetRatio:       targetRatio,
 	})
+
+	if err != nil {
+		pErr, ok := err.(*pq.Error)
+		if !ok {
+			return 0, fmt.Errorf("unknown returned err=%s", err.Error())
+		}
+		log.Printf("failed to create new asset exchange err=%s", pErr.Message)
+		switch pErr.Code {
+		case errForeignKeyViolation:
+			if pErr.Constraint == exchangeForeignKeyConstraint || pErr.Constraint == assetForeignKeyConstraint {
+				return 0, common.ErrForeignKeyNotExists
+			}
+		case errCodeUniqueViolation:
+			if pErr.Constraint == exchangeAssetUniqueConstraint {
+				return 0, common.ErrDuplicateKey
+			}
+		}
+	}
 	return assetExchangeID, err
 }
 

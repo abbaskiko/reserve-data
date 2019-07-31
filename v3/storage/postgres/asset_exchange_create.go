@@ -9,7 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-// CreatePendingAssetExchange create pending asset exchange
+// CreateCreateAssetExchange create CreateAssetExchange
 func (s *Storage) CreateCreateAssetExchange(req common.CreateCreateAssetExchange) (uint64, error) {
 	var (
 		id uint64
