@@ -7,6 +7,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/httpsign-utils/authenticator"
@@ -97,14 +98,14 @@ func run(c *cli.Context) error {
 		validation.Required,
 		is.URL)
 	if err != nil {
-		return fmt.Errorf("app names API URL: %s", c.String(v3EndpointFlag))
+		return errors.Wrapf(err, "app names API URL error: %s", c.String(v3EndpointFlag))
 	}
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
-		return fmt.Errorf("access key error: %s", err.Error())
+		return errors.Wrap(err, "write access key error")
 	}
 
 	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
-		return fmt.Errorf("secret key error: %s", err.Error())
+		return errors.Wrap(err, "secret key error")
 	}
 	keyPairs := []authenticator.KeyPair{
 		{
@@ -118,7 +119,7 @@ func run(c *cli.Context) error {
 	}
 	auth, err := authenticator.NewAuthenticator(keyPairs...)
 	if err != nil {
-		return fmt.Errorf("authentication object creation error: %s", err)
+		return errors.Wrap(err, "authentication object creation error")
 	}
 	perm, err := http.NewPermissioner(
 		c.String(readAccessKeyFlag),
@@ -126,7 +127,7 @@ func run(c *cli.Context) error {
 		c.String(confirmAccessKeyFlag),
 		c.String(rebalanceAccessKeyFlag))
 	if err != nil {
-		return fmt.Errorf("permission object creation error: %s", err)
+		return errors.Wrap(err, "permission object creation error")
 	}
 
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
@@ -135,7 +136,7 @@ func run(c *cli.Context) error {
 		http.WithV3Endpoint(c.String(v3EndpointFlag)),
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "create new server error")
 	}
 	return svr.Start()
 }
