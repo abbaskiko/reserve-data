@@ -50,16 +50,16 @@ func (s *Server) checkCreateTradingPairEntry(createEntry common.CreateTradingPai
 		return errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset should have is_quote=true")
 	}
 
-	if !IsAssetContainsExchangeID(base, createEntry.ExchangeID) {
+	if !isAssetConfigWithExchangeID(base, createEntry.ExchangeID) {
 		return errors.Wrap(common.ErrBaseAssetInvalid, "exchange id not found")
 	}
-	if !IsAssetContainsExchangeID(quote, createEntry.ExchangeID) {
+	if !isAssetConfigWithExchangeID(quote, createEntry.ExchangeID) {
 		return errors.Wrap(common.ErrQuoteAssetInvalid, "exchange id not found")
 	}
 	return nil
 }
 
-func IsAssetContainsExchangeID(asset common.Asset, exchangeID uint64) bool {
+func isAssetConfigWithExchangeID(asset common.Asset, exchangeID uint64) bool {
 	for _, exchange := range asset.Exchanges {
 		if exchange.ExchangeID == exchangeID {
 			return true
