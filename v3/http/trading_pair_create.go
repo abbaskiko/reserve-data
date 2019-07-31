@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/pkg/errors"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -19,12 +20,54 @@ func (s *Server) createCreateTradingPair(c *gin.Context) {
 		return
 	}
 
+	for index, entry := range createTradingPair.TradingPairs {
+		if err = s.checkCreateTradingPairEntry(entry); err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithField("index", index),
+				httputil.WithField("quote", entry.Quote), httputil.WithField("base", entry.Base))
+			return
+		}
+	}
+
 	id, err := s.storage.CreateCreateTradingPair(createTradingPair)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
+}
+
+func (s *Server) checkCreateTradingPairEntry(createEntry common.CreateTradingPairEntry) error {
+	base, err := s.storage.GetAsset(createEntry.Base)
+	if err != nil {
+		return err
+	}
+
+	quote, err := s.storage.GetAsset(createEntry.Quote)
+	if !quote.IsQuote {
+		return errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset should have is_quote=true")
+	}
+
+	containExchange := false
+	for _, exchange := range base.Exchanges {
+		if exchange.ExchangeID == createEntry.ExchangeID {
+			containExchange = true
+		}
+	}
+	if !containExchange {
+		return errors.Wrap(common.ErrBaseAssetInvalid, "exchange id not found")
+	}
+
+	containExchange = false
+	for _, exchange := range quote.Exchanges {
+		if exchange.ExchangeID == createEntry.ExchangeID {
+			containExchange = true
+		}
+	}
+	if !containExchange {
+		return errors.Wrap(common.ErrQuoteAssetInvalid, "exchange id not found")
+	}
+
+	return nil
 }
 
 func (s *Server) getCreateTradingPairs(c *gin.Context) {

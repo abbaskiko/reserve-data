@@ -66,6 +66,15 @@ var (
 	}}
 )
 
+func getCreatePEAWithQuoteFalse() common.CreateCreateAsset {
+	var createPEAWithQuoteFalse common.CreateCreateAsset
+	createPEAWithQuoteFalse.AssetInputs = append(createPEAWithQuoteFalse.AssetInputs, createPEA.AssetInputs[0])
+	createPEAWithQuoteFalse.AssetInputs[0].IsQuote = false
+	createPEAWithQuoteFalse.AssetInputs[0].Address = eth.HexToAddress("0x000005")
+	createPEAWithQuoteFalse.AssetInputs[0].Symbol = "QUOTE FALSE"
+	return createPEAWithQuoteFalse
+}
+
 func TestReCreateCreateAsset(t *testing.T) {
 
 	db, tearDown := testutil.MustNewDevelopmentDB()
@@ -104,6 +113,12 @@ func TestHTTPServerAsset(t *testing.T) {
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
 	server := NewServer(s, nil)
+
+	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
+	var createPEAWithQuoteFalse2 = getCreatePEAWithQuoteFalse()
+	createPEAWithQuoteFalse2.AssetInputs[0].Exchanges[0].TradingPairs[0].Quote = 0 //refer to asset itself
+	createPEAWithQuoteFalse2.AssetInputs[0].Exchanges[0].TradingPairs[0].Base = 1  //refer to asset itself
+	createPEAWithQuoteFalse2.AssetInputs[0].Address = eth.HexToAddress("0x000006")
 
 	var tests = []testCase{
 		{
@@ -150,6 +165,20 @@ func TestHTTPServerAsset(t *testing.T) {
 			endpoint: assetBase + "/1",
 			method:   http.MethodGet,
 			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "create pending asset",
+			endpoint: assetBase,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data:     createPEAWithQuoteFalse,
+		},
+		{
+			msg:      "create pending asset",
+			endpoint: assetBase,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectFailure,
+			data:     createPEAWithQuoteFalse2,
 		},
 	}
 

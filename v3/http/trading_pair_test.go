@@ -40,6 +40,9 @@ func TestHTTPServerTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	server := NewServer(s, nil)
 	huobiID := uint64(1)
+
+	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
+
 	var tests = []testCase{
 
 		{
@@ -57,8 +60,28 @@ func TestHTTPServerTradingPair(t *testing.T) {
 			assert:   httputil.ExpectSuccess,
 		},
 		{
+			msg:      "create pending asset",
+			endpoint: createAssetBase,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data:     createPEAWithQuoteFalse,
+		},
+		{
+			msg:      "confirm pending asset",
+			endpoint: createAssetBase + "/2",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
 			msg:      "receive asset",
 			endpoint: assetBase + "/2",
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "receive asset",
+			endpoint: assetBase + "/3",
 			method:   http.MethodGet,
 			assert:   httputil.ExpectSuccess,
 		},
@@ -80,6 +103,16 @@ func TestHTTPServerTradingPair(t *testing.T) {
 					},
 					{
 						AssetID:           2,
+						ExchangeID:        huobiID,
+						Symbol:            "ABC",
+						DepositAddress:    eth.HexToAddress("0x001"),
+						MinDeposit:        100.0,
+						WithdrawFee:       100.0,
+						TargetRecommended: 100.0,
+						TargetRatio:       100.0,
+					},
+					{
+						AssetID:           3,
 						ExchangeID:        huobiID,
 						Symbol:            "ABC",
 						DepositAddress:    eth.HexToAddress("0x001"),
@@ -175,6 +208,30 @@ func TestHTTPServerTradingPair(t *testing.T) {
 				assert.Equal(t, 15.0, res.PriceLimitMax)
 				assert.Equal(t, 16.0, res.MinNotional)
 			},
+		},
+		{
+			msg:      "create trading pair with invalid quote",
+			endpoint: createTradingPair,
+			method:   http.MethodPost,
+			data: common.CreateCreateTradingPair{
+				TradingPairs: []common.CreateTradingPairEntry{
+					{
+						TradingPair: common.TradingPair{
+							Base:            2,
+							Quote:           3,
+							PricePrecision:  1.0,
+							AmountPrecision: 1.0,
+							AmountLimitMin:  100.0,
+							AmountLimitMax:  1000.0,
+							PriceLimitMin:   100.0,
+							PriceLimitMax:   1000.0,
+							MinNotional:     100.0,
+						},
+						ExchangeID: huobiID,
+					},
+				},
+			},
+			assert: httputil.ExpectFailureWithReason("quote asset should have is_quote=true: quote asset is invalid"),
 		},
 	}
 
