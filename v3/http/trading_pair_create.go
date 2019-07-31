@@ -41,7 +41,6 @@ func (s *Server) checkCreateTradingPairEntry(createEntry common.CreateTradingPai
 	if err != nil {
 		return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", createEntry.Base)
 	}
-
 	quote, err := s.storage.GetAsset(createEntry.Quote)
 	if err != nil {
 		return errors.Wrapf(common.ErrBaseAssetInvalid, "quote id: %v", createEntry.Quote)
@@ -51,27 +50,22 @@ func (s *Server) checkCreateTradingPairEntry(createEntry common.CreateTradingPai
 		return errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset should have is_quote=true")
 	}
 
-	containExchange := false
-	for _, exchange := range base.Exchanges {
-		if exchange.ExchangeID == createEntry.ExchangeID {
-			containExchange = true
-		}
-	}
-	if !containExchange {
+	if !IsAssetContainsExchangeID(base, createEntry.ExchangeID) {
 		return errors.Wrap(common.ErrBaseAssetInvalid, "exchange id not found")
 	}
-
-	containExchange = false
-	for _, exchange := range quote.Exchanges {
-		if exchange.ExchangeID == createEntry.ExchangeID {
-			containExchange = true
-		}
-	}
-	if !containExchange {
+	if !IsAssetContainsExchangeID(quote, createEntry.ExchangeID) {
 		return errors.Wrap(common.ErrQuoteAssetInvalid, "exchange id not found")
 	}
-
 	return nil
+}
+
+func IsAssetContainsExchangeID(asset common.Asset, exchangeID uint64) bool {
+	for _, exchange := range asset.Exchanges {
+		if exchange.ExchangeID == exchangeID {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) getCreateTradingPairs(c *gin.Context) {

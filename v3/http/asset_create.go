@@ -44,7 +44,7 @@ func (s *Server) checkCreateAssetEntry(createEntry common.CreateAssetEntry) erro
 		return common.ErrAssetTargetMissing
 	}
 
-	if createEntry.SetRate == common.SetRateNotSet && createEntry.PWI != nil {
+	if createEntry.SetRate != common.SetRateNotSet && createEntry.PWI == nil {
 		return common.ErrPWIMissing
 	}
 
