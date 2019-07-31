@@ -119,7 +119,6 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			minNotional:     0.001,
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.NotNil(t, err)
-				// require.NotEqual(t, commonv3.ErrBadTradingPairConfiguration, err)
 				assert.Zero(t, id)
 			},
 		},
@@ -138,7 +137,6 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Zero(t, id)
 				require.NotNil(t, err)
-				// require.Equal(t, commonv3.ErrBadTradingPairConfiguration, err)
 			},
 		},
 		{
@@ -156,7 +154,6 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Zero(t, id)
 				require.NotNil(t, err)
-				// require.Equal(t, commonv3.ErrBadTradingPairConfiguration, err)
 			},
 		},
 		{
@@ -174,7 +171,6 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			assertFn: func(t *testing.T, id uint64, err error) {
 				require.Zero(t, id)
 				require.NotNil(t, err)
-				// require.Equal(t, commonv3.ErrBadTradingPairConfiguration, err)
 			},
 		},
 		{

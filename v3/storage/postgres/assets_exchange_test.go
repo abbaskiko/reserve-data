@@ -155,7 +155,9 @@ func TestStorage_UpdateAssetExchange(t *testing.T) {
 				Symbol: commonv3.StringPointer("KNC"),
 			},
 			assertFn: func(t *testing.T, err error) {
-				require.Equal(t, commonv3.ErrNotFound, err)
+				updatedAE, errG := s.GetAssetExchange(assetExchangeID)
+				require.NoError(t, errG)
+				require.Equal(t, updatedAE.Symbol, "KNC")
 			},
 		},
 		{
@@ -165,7 +167,9 @@ func TestStorage_UpdateAssetExchange(t *testing.T) {
 				DepositAddress: commonv3.AddressPointer(ethereum.HexToAddress("0xea674fdde714fd979de3edf0f56aa9716b898ec8")),
 			},
 			assertFn: func(t *testing.T, err error) {
-				require.Equal(t, commonv3.ErrNotFound, err)
+				updatedAE, errG := s.GetAssetExchange(assetExchangeID)
+				require.NoError(t, errG)
+				require.Equal(t, updatedAE.DepositAddress, ethereum.HexToAddress("0xea674fdde714fd979de3edf0f56aa9716b898ec8"))
 			},
 		},
 		{
@@ -175,7 +179,9 @@ func TestStorage_UpdateAssetExchange(t *testing.T) {
 				MinDeposit: commonv3.FloatPointer(0.0002),
 			},
 			assertFn: func(t *testing.T, err error) {
-				require.Equal(t, commonv3.ErrNotFound, err)
+				updatedAE, errG := s.GetAssetExchange(assetExchangeID)
+				require.NoError(t, errG)
+				require.Equal(t, updatedAE.MinDeposit, 0.0002)
 			},
 		},
 		{
@@ -185,7 +191,9 @@ func TestStorage_UpdateAssetExchange(t *testing.T) {
 				WithdrawFee: commonv3.FloatPointer(0.0002),
 			},
 			assertFn: func(t *testing.T, err error) {
-				require.Equal(t, commonv3.ErrNotFound, err)
+				updatedAE, errG := s.GetAssetExchange(assetExchangeID)
+				require.NoError(t, errG)
+				require.Equal(t, updatedAE.WithdrawFee, 0.0002)
 			},
 		},
 		{
@@ -195,7 +203,9 @@ func TestStorage_UpdateAssetExchange(t *testing.T) {
 				TargetRecommended: commonv3.FloatPointer(0.002),
 			},
 			assertFn: func(t *testing.T, err error) {
-				require.Equal(t, commonv3.ErrNotFound, err)
+				updatedAE, errG := s.GetAssetExchange(assetExchangeID)
+				require.NoError(t, errG)
+				require.Equal(t, updatedAE.TargetRecommended, 0.002)
 			},
 		},
 		{
@@ -205,7 +215,9 @@ func TestStorage_UpdateAssetExchange(t *testing.T) {
 				TargetRatio: commonv3.FloatPointer(0.002),
 			},
 			assertFn: func(t *testing.T, err error) {
-				require.Equal(t, commonv3.ErrNotFound, err)
+				updatedAE, errG := s.GetAssetExchange(assetExchangeID)
+				require.NoError(t, errG)
+				require.Equal(t, updatedAE.TargetRatio, 0.002)
 			},
 		},
 	}
