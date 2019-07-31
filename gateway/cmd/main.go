@@ -121,12 +121,24 @@ func run(c *cli.Context) error {
 	}
 
 	readKeys, err := getKeyList(c, readAccessKeyFlag, readSecretKeyFlag)
+	if err != nil {
+		return errors.Wrap(err, "failed to get read keys")
+	}
 	keyPairs = append(keyPairs, readKeys...)
 	writeKeys, err := getKeyList(c, writeAccessKeyFlag, writeSecretKeyFlag)
+	if err != nil {
+		return errors.Wrap(err, "failed to get write keys")
+	}
 	keyPairs = append(keyPairs, writeKeys...)
 	confirmKeys, err := getKeyList(c, confirmAccessKeyFlag, confirmSecretKeyFlag)
+	if err != nil {
+		return errors.Wrap(err, "failed to get confirm keys")
+	}
 	keyPairs = append(keyPairs, confirmKeys...)
 	rebalanceKeys, err := getKeyList(c, rebalanceAccessKeyFlag, rebalanceSecretKeyFlag)
+	if err != nil {
+		return errors.Wrap(err, "failed to get rebalance keys")
+	}
 	keyPairs = append(keyPairs, rebalanceKeys...)
 
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
