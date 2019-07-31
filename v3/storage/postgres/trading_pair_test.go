@@ -61,6 +61,7 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 		[]commonv3.AssetExchange{},
 		testAssetTarget,
 	)
+	require.NoError(t, err)
 
 	_, err = s.CreateAssetExchange(
 		uint64(common.Binance),
