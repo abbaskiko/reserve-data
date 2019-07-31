@@ -31,6 +31,7 @@ m = g(r.sub, p.sub)  && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
 `
 	)
 
+	//TODO: add rebalance action
 	pol := fmt.Sprintf(`
 p, %[1]s, /*, GET
 
