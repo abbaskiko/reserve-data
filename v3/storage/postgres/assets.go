@@ -677,7 +677,8 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 			if assetExchangeResult.AssetID == assetDBResult.ID {
 				exchange := assetExchangeResult.ToCommon()
 				for _, tradingPairResult := range allTradingPairs {
-					if assetExchangeResult.ExchangeID == tradingPairResult.ExchangeID {
+					if assetExchangeResult.ExchangeID == tradingPairResult.ExchangeID &&
+						(tradingPairResult.BaseID == assetDBResult.ID || tradingPairResult.QuoteID == assetDBResult.ID) {
 						exchange.TradingPairs = append(exchange.TradingPairs, tradingPairResult.ToCommon())
 					}
 				}
