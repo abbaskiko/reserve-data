@@ -140,7 +140,7 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			},
 		},
 		{
-			msg:             "create trading pair with inexistent exchange id",
+			msg:             "create trading pair with inexistent exchange",
 			exchangeID:      1234,
 			baseID:          baseAssetID,
 			quoteID:         1,
@@ -157,7 +157,7 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			},
 		},
 		{
-			msg:             "create trading pair with inexistent quote id",
+			msg:             "create trading pair with inexistent quote asset",
 			exchangeID:      uint64(common.Binance),
 			baseID:          baseAssetID,
 			quoteID:         1234,
@@ -174,7 +174,7 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			},
 		},
 		{
-			msg:             "create trading pair with inexistent base id",
+			msg:             "create trading pair with inexistent base asset",
 			exchangeID:      uint64(common.Binance),
 			baseID:          1234,
 			quoteID:         1,
@@ -191,7 +191,7 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			},
 		},
 		{
-			msg:             "create trading pair exist base id but without asset exchange",
+			msg:             "create trading pair exist base asset but without asset exchange",
 			exchangeID:      uint64(common.Binance),
 			baseID:          baseAssetID2,
 			quoteID:         1,
@@ -208,7 +208,7 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			},
 		},
 		{
-			msg:             "create trading pair with exist asset id but is not a quote",
+			msg:             "create trading pair with exist asset but is not a quote",
 			exchangeID:      uint64(common.Binance),
 			baseID:          baseAssetID2,
 			quoteID:         quoteAssetID,
