@@ -99,7 +99,7 @@ func (s *Storage) ConfirmUpdateAsset(id uint64) error {
 	err := s.stmts.getUpdateAssets.Get(&update, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("update asset not found in database id=%d", id)
+			log.Printf("update asset request not found in database id=%d", id)
 			return common.ErrNotFound
 		}
 		return err

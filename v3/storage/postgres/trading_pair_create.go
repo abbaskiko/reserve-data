@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"time"
@@ -93,6 +94,10 @@ func (s *Storage) ConfirmCreateTradingPair(id uint64) error {
 	var pending createTradingPair
 	err := s.stmts.getCreateTradingPairs.Get(&pending, id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("create trading pair request not found in database id=%d", id)
+			return common.ErrNotFound
+		}
 		return err
 	}
 	var createCreateTradingPair common.CreateCreateTradingPair
