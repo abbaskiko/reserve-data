@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"time"
@@ -93,6 +94,10 @@ func (s *Storage) ConfirmUpdateTradingPair(id uint64) error {
 	var pending updateTradingPair
 	err := s.stmts.getUpdateTradingPairs.Get(&pending, id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("update trading pair request not found in database id=%d", id)
+			return common.ErrNotFound
+		}
 		return err
 	}
 	var createUpdateTradingPair common.CreateUpdateTradingPair

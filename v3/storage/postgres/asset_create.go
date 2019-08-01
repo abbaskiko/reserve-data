@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"time"
@@ -93,6 +94,10 @@ func (s *Storage) ConfirmCreateAsset(id uint64) error {
 	var pending createAsset
 	err := s.stmts.getCreateAssets.Get(&pending, id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("create asset request not found in database id=%d", id)
+			return common.ErrNotFound
+		}
 		return err
 	}
 	var createCreateAsset common.CreateCreateAsset

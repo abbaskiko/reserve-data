@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"time"
@@ -82,6 +83,10 @@ func (s *Storage) ConfirmCreateAssetExchange(id uint64) error {
 	var createAssetExchange common.CreateAssetExchange
 	err := s.stmts.getCreateAssetExchanges.Get(&createAssetExchange, id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("create asset_exchange request not found in database id=%d", id)
+			return common.ErrNotFound
+		}
 		return err
 	}
 	var ccAssetExchange common.CreateCreateAssetExchange

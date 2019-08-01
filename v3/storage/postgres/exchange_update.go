@@ -100,7 +100,7 @@ func (s *Storage) ConfirmUpdateExchange(id uint64) error {
 	err := s.stmts.getUpdateExchanges.Get(&update, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("update exchange not found in database id=%d", id)
+			log.Printf("update exchange request not found in database id=%d", id)
 			return common.ErrNotFound
 		}
 		return err
