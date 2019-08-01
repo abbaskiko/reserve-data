@@ -182,13 +182,13 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 		case errForeignKeyViolation:
 			switch pErr.Constraint {
 			case exchangeForeignKeyConstraint:
-				return 0, common.ErrExchangeIDNotExists
+				return 0, common.ErrExchangeNotExists
 			case assetForeignKeyConstraint:
-				return 0, common.ErrAssetIDNotExists
+				return 0, common.ErrAssetNotExists
 			}
 		case errCodeUniqueViolation:
 			if pErr.Constraint == exchangeAssetUniqueConstraint {
-				return 0, common.ErrDuplicateExchangeIDAssetID
+				return 0, common.ErrAssetExchangeAlreadyExist
 			}
 		}
 	}

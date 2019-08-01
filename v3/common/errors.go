@@ -38,4 +38,8 @@ var (
 	ErrBaseAssetInvalid = errors.New("base asset is invalid")
 	// ErrTradingByAlreadyExists is returned when trading by already exist for asset<->tradingPair
 	ErrTradingByAlreadyExists = errors.New("trading by already exists")
+	// ErrExchangeNotExists is returned when exchange is not exist.
+	ErrExchangeNotExists = errors.New("exchange is not exist")
+	// ErrAssetNotExists is returned when foreign key is not exist.
+	ErrAssetNotExists = errors.New("asset is not exist")
 )
