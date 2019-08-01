@@ -276,6 +276,60 @@ func TestStorage_CreateAsset(t *testing.T) {
 				assert.Equal(t, commonv3.ErrDepositAddressMissing, err)
 			},
 		},
+		{
+			msg:          "creating asset with rebalance is true but no exchange",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: true,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges:    []commonv3.AssetExchange{},
+			target:       testAssetTarget,
+			assertFn: func(t *testing.T, id uint64, err error) {
+				assert.Equal(t, commonv3.ErrAssetExchangeMissing, err)
+			},
+		},
+		{
+			msg:          "creating asset with rebalance is true but no rebalance quadratic",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: true,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           nil,
+			exchanges:    testAssetExchanges,
+			target:       testAssetTarget,
+			assertFn: func(t *testing.T, id uint64, err error) {
+				assert.Equal(t, commonv3.ErrRebalanceQuadraticMissing, err)
+			},
+		},
+		{
+			msg:          "creating asset with rebalance is true but no target",
+			symbol:       "Dodge Coin",
+			name:         "Barf",
+			address:      ethereum.HexToAddress("0xa57E3c6A7A1A2f5834f41b6B9545d5591dBcE8E0"),
+			decimals:     9,
+			transferable: true,
+			setRate:      commonv3.ExchangeFeed,
+			rebalance:    true,
+			isQuote:      false,
+			pwi:          testPWI,
+			rb:           testRb,
+			exchanges:    testAssetExchanges,
+			target:       nil,
+			assertFn: func(t *testing.T, id uint64, err error) {
+				assert.Equal(t, commonv3.ErrAssetTargetMissing, err)
+			},
+		},
 	}
 
 	for _, tc := range tests {

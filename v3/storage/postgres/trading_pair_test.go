@@ -63,6 +63,22 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	quoteAssetID, err := s.CreateAsset(
+		"AAA",
+		"AAA Advanced Token",
+		ethereum.HexToAddress("0x3011cc35b972e9ab91e5a739c5871bef207a27b0"),
+		12,
+		false,
+		commonv3.SetRateNotSet,
+		false,
+		false, // is_quote = false
+		nil,
+		nil,
+		[]commonv3.AssetExchange{},
+		testAssetTarget,
+	)
+	require.NoError(t, err)
+
 	_, err = s.CreateAssetExchange(
 		uint64(common.Binance),
 		1, // ETH ID
@@ -179,6 +195,23 @@ func TestStorage_CreateTradingPair(t *testing.T) {
 			exchangeID:      uint64(common.Binance),
 			baseID:          baseAssetID2,
 			quoteID:         1,
+			pricePrecision:  6,
+			amountPrecision: 10,
+			amountLimitMin:  1000,
+			amountLimitMax:  10000,
+			priceLimitMin:   0.1,
+			priceLimitMax:   10.10,
+			minNotional:     0.001,
+			assertFn: func(t *testing.T, id uint64, err error) {
+				require.Zero(t, id)
+				require.NotNil(t, err)
+			},
+		},
+		{
+			msg:             "create trading pair with exist asset id but is not a quote",
+			exchangeID:      uint64(common.Binance),
+			baseID:          baseAssetID2,
+			quoteID:         quoteAssetID,
 			pricePrecision:  6,
 			amountPrecision: 10,
 			amountLimitMin:  1000,
