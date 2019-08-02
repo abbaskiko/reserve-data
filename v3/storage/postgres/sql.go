@@ -913,73 +913,10 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAsset")
 	}
 
-	const getAssetBySymbolQuery = `SELECT assets.id,
-								       assets.symbol,
-								       assets.name,
-								       a.address,
-								       array_agg(oa.address) FILTER ( WHERE oa.address IS NOT NULL ) AS old_addresses,
-								       assets.decimals,
-								       assets.transferable,
-								       assets.set_rate,
-								       assets.rebalance,
-								       assets.is_quote,
-								       assets.pwi_ask_a,
-								       assets.pwi_ask_b,
-								       assets.pwi_ask_c,
-								       assets.pwi_ask_min_min_spread,
-								       assets.pwi_ask_price_multiply_factor,
-								       assets.pwi_bid_a,
-								       assets.pwi_bid_b,
-								       assets.pwi_bid_c,
-								       assets.pwi_bid_min_min_spread,
-								       assets.pwi_bid_price_multiply_factor,
-								       assets.rebalance_quadratic_a,
-								       assets.rebalance_quadratic_b,
-								       assets.rebalance_quadratic_c,
-								       assets.target_total,
-								       assets.target_reserve,
-								       assets.target_rebalance_threshold,
-								       assets.target_transfer_threshold,
-								       assets.created,
-								       assets.updated
-								FROM assets
-								         LEFT JOIN addresses a on assets.address_id = a.id
-								         LEFT JOIN asset_old_addresses aoa on assets.id = aoa.asset_id
-								         LEFT JOIN addresses oa ON aoa.address_id = oa.id
-								WHERE assets.symbol= coalesce($1, assets.symbol)
-								  AND assets.transferable = coalesce($2, assets.transferable)
-								GROUP BY assets.id,
-								         assets.symbol,
-								         assets.name,
-								         a.address,
-								         assets.decimals,
-								         assets.transferable,
-								         assets.set_rate,
-								         assets.rebalance,
-								         assets.is_quote,
-								         assets.pwi_ask_a,
-								         assets.pwi_ask_b,
-								         assets.pwi_ask_c,
-								         assets.pwi_ask_min_min_spread,
-								         assets.pwi_ask_price_multiply_factor,
-								         assets.pwi_bid_a,
-								         assets.pwi_bid_b,
-								         assets.pwi_bid_c,
-								         assets.pwi_bid_min_min_spread,
-								         assets.pwi_bid_price_multiply_factor,
-								         assets.rebalance_quadratic_a,
-								         assets.rebalance_quadratic_b,
-								         assets.rebalance_quadratic_c,
-								         assets.target_total,
-								         assets.target_reserve,
-								         assets.target_rebalance_threshold,
-								         assets.target_transfer_threshold,
-								         assets.created,
-								         assets.updated
-								ORDER BY assets.id`
+	const getAssetBySymbolQuery = `SELECT assets.id, assets.decimals FROM assets WHERE assets.symbol= $1`
 	getAssetBySymbol, err := db.Preparex(getAssetBySymbolQuery)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetBySymbol")
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetIDBySymbol")
 	}
 
 	const updateAssetQuery = `WITH updated AS (

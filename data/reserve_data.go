@@ -169,11 +169,11 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, er
 	}
 
 	// get id from asset name
-	for tokenID, balance := range data.ReserveBalances {
-		token, uErr := rd.settingStorage.GetAssetBySymbol(tokenID)
+	for tokenSymbol, balance := range data.ReserveBalances {
+		token, uErr := rd.settingStorage.GetAssetBySymbol(tokenSymbol)
 		//If the token is invalid, this must Panic
 		if uErr != nil {
-			return result, fmt.Errorf("can't get asset id %s: (%s)", tokenID, uErr)
+			return result, fmt.Errorf("can't get asset id %d: (%s)", token.ID, uErr)
 		}
 		result.Data.ReserveBalances[token.ID] = balance.ToBalanceResponse(
 			int64(token.Decimals),
