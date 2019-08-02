@@ -76,6 +76,32 @@ func (s *Storage) GetExchange(id uint64) (common.Exchange, error) {
 	return result, nil
 }
 
+// GetExchangeByName return exchange by its name
+func (s *Storage) GetExchangeByName(name string) (common.Exchange, error) {
+	var (
+		qResult = exchangeDB{}
+		result  common.Exchange
+	)
+	log.Printf("querying exchange %s from database", name)
+	if err := s.stmts.getExchangeByName.Get(&qResult, name); err != nil {
+		if err == sql.ErrNoRows {
+			return result, common.ErrNotFound
+		}
+	}
+	result = common.Exchange{
+		ID:      uint64(qResult.ID),
+		Name:    qResult.Name,
+		Disable: qResult.Disable,
+	}
+	if qResult.TradingFeeMaker.Valid {
+		result.TradingFeeMaker = qResult.TradingFeeMaker.Float64
+	}
+	if qResult.TradingFeeTaker.Valid {
+		result.TradingFeeTaker = qResult.TradingFeeTaker.Float64
+	}
+	return result, nil
+}
+
 func (s *Storage) UpdateExchange(id uint64, updateOpts storage.UpdateExchangeOpts) error {
 	return s.updateExchange(nil, id, updateOpts)
 }

@@ -8,9 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/data/datapruner"
+	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 //ReserveData struct for reserve data
@@ -20,16 +23,20 @@ type ReserveData struct {
 	storageController datapruner.StorageController
 	globalStorage     GlobalStorage
 	exchanges         []common.Exchange
+	assetStorage      storage.Interface
 }
 
+// CurrentGoldInfoVersion get current godl info version
 func (rd ReserveData) CurrentGoldInfoVersion(timepoint uint64) (common.Version, error) {
 	return rd.globalStorage.CurrentGoldInfoVersion(timepoint)
 }
 
+// CurrentBTCInfoVersion return
 func (rd ReserveData) CurrentBTCInfoVersion(timepoint uint64) (common.Version, error) {
 	return rd.globalStorage.CurrentBTCInfoVersion(timepoint)
 }
 
+// GetGoldData return gold data
 func (rd ReserveData) GetGoldData(timestamp uint64) (common.GoldData, error) {
 	version, err := rd.CurrentGoldInfoVersion(timestamp)
 	if err != nil {
@@ -38,6 +45,7 @@ func (rd ReserveData) GetGoldData(timestamp uint64) (common.GoldData, error) {
 	return rd.globalStorage.GetGoldInfo(version)
 }
 
+// GetBTCData return BTC data
 func (rd ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
 	version, err := rd.CurrentBTCInfoVersion(timestamp)
 	if err != nil {
@@ -46,18 +54,22 @@ func (rd ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
 	return rd.globalStorage.GetBTCInfo(version)
 }
 
+// UpdateFeedConfiguration update feed configuration
 func (rd ReserveData) UpdateFeedConfiguration(name string, enabled bool) error {
 	return rd.globalStorage.UpdateFeedConfiguration(name, enabled)
 }
 
+// GetFeedConfiguration return configuration for feed (gold, btc)
 func (rd ReserveData) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
 	return rd.globalStorage.GetFeedConfiguration()
 }
 
+// CurrentPriceVersion return current price version
 func (rd ReserveData) CurrentPriceVersion(timepoint uint64) (common.Version, error) {
 	return rd.storage.CurrentPriceVersion(timepoint)
 }
 
+// GetAllPrices return all price
 func (rd ReserveData) GetAllPrices(timepoint uint64) (common.AllPriceResponse, error) {
 	timestamp := common.GetTimestamp()
 	version, err := rd.storage.CurrentPriceVersion(timepoint)
@@ -79,6 +91,7 @@ func (rd ReserveData) GetAllPrices(timepoint uint64) (common.AllPriceResponse, e
 	return result, err
 }
 
+// GetOnePrice return price of one pair tokens
 func (rd ReserveData) GetOnePrice(pairID uint64, timepoint uint64) (common.OnePriceResponse, error) {
 	timestamp := common.GetTimestamp()
 	version, err := rd.storage.CurrentPriceVersion(timepoint)
@@ -95,10 +108,12 @@ func (rd ReserveData) GetOnePrice(pairID uint64, timepoint uint64) (common.OnePr
 	return result, err
 }
 
+// CurrentAuthDataVersion return current version of auth data
 func (rd ReserveData) CurrentAuthDataVersion(timepoint uint64) (common.Version, error) {
 	return rd.storage.CurrentAuthDataVersion(timepoint)
 }
 
+// GetAuthData return current auth data
 func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, error) {
 	timestamp := common.GetTimestamp()
 	version, err := rd.storage.CurrentAuthDataVersion(timepoint)
@@ -119,21 +134,52 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, er
 	result.Data.Error = data.Error
 	result.Data.Timestamp = data.Timestamp
 	result.Data.ReturnTime = data.ReturnTime
-	result.Data.ExchangeBalances = data.ExchangeBalances
+	result.Data.ExchangeBalances = map[uint64]common.EBalanceResponse{}
 	result.Data.PendingActivities = data.PendingActivities
 	result.Data.Block = data.Block
-	result.Data.ReserveBalances = map[string]common.BalanceResponse{}
-	// TODO: reserve_balance should be stored by asset_id
-	//for tokenID, balance := range data.ReserveBalances {
-	//	token, uErr := rd.setting.GetInternalTokenByID(tokenID)
-	//	//If the token is invalid, this must Panic
-	//	if uErr != nil {
-	//		return result, fmt.Errorf("can't get Internal token %s: (%s)", tokenID, uErr)
-	//	}
-	//	result.Data.ReserveBalances[tokenID] = balance.ToBalanceResponse(
-	//		token.Decimals,
-	//	)
-	//}
+	result.Data.ReserveBalances = map[uint64]common.BalanceResponse{}
+	// get id from exchange balance asset name
+	for exchangeName, balances := range data.ExchangeBalances {
+		exchange, err := rd.assetStorage.GetExchangeByName(string(exchangeName))
+		if err != nil {
+			return result, errors.Wrapf(err, "failed to get exchange by name: %s", exchangeName)
+		}
+		availableBalance := map[uint64]float64{}
+		lockedBalance := map[uint64]float64{}
+		depositBalance := map[uint64]float64{}
+		for tokenName := range balances.AvailableBalance {
+			token, err := rd.assetStorage.GetAssetBySymbol(tokenName)
+			if err != nil {
+				return result, errors.Wrapf(err, "failed to get token by name: %s", tokenName)
+			}
+			availableBalance[token.ID] = balances.AvailableBalance[tokenName]
+			lockedBalance[token.ID] = balances.LockedBalance[tokenName]
+			depositBalance[token.ID] = balances.DepositBalance[tokenName]
+		}
+		result.Data.ExchangeBalances[exchange.ID] = common.EBalanceResponse{
+			Valid:            balances.Valid,
+			Error:            balances.Error,
+			Timestamp:        balances.Timestamp,
+			ReturnTime:       balances.ReturnTime,
+			AvailableBalance: availableBalance,
+			LockedBalance:    lockedBalance,
+			DepositBalance:   depositBalance,
+			Status:           balances.Status,
+		}
+	}
+
+	// get id from asset name
+	for tokenID, balance := range data.ReserveBalances {
+		token, uErr := rd.assetStorage.GetAssetBySymbol(tokenID)
+		//If the token is invalid, this must Panic
+		if uErr != nil {
+			return result, fmt.Errorf("can't get asset id %s: (%s)", tokenID, uErr)
+		}
+		result.Data.ReserveBalances[token.ID] = balance.ToBalanceResponse(
+			int64(token.Decimals),
+		)
+	}
+
 	return result, err
 }
 
@@ -179,6 +225,7 @@ func getOneRateData(rate common.AllRateEntry) map[string]common.RateResponse {
 	return data
 }
 
+// GetRates return all rates version
 func (rd ReserveData) GetRates(fromTime, toTime uint64) ([]common.AllRateResponse, error) {
 	result := []common.AllRateResponse{}
 	rates, err := rd.storage.GetRates(fromTime, toTime)
@@ -211,6 +258,8 @@ func (rd ReserveData) GetRates(fromTime, toTime uint64) ([]common.AllRateRespons
 
 	return result, nil
 }
+
+// GetRate return all rate
 func (rd ReserveData) GetRate(timepoint uint64) (common.AllRateResponse, error) {
 	timestamp := common.GetTimestamp()
 	version, err := rd.storage.CurrentRateVersion(timepoint)
@@ -243,10 +292,12 @@ func (rd ReserveData) GetRate(timepoint uint64) (common.AllRateResponse, error) 
 	return result, err
 }
 
+// GetRecords return all records
 func (rd ReserveData) GetRecords(fromTime, toTime uint64) ([]common.ActivityRecord, error) {
 	return rd.storage.GetAllRecords(fromTime, toTime)
 }
 
+// GetPendingActivities return all pending activities
 func (rd ReserveData) GetPendingActivities() ([]common.ActivityRecord, error) {
 	return rd.storage.GetPendingActivities()
 }
@@ -326,6 +377,7 @@ func (rd ReserveData) ControlAuthDataSize() error {
 	}
 }
 
+// GetTradeHistory return trade history
 func (rd ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTradeHistory, error) {
 	data := common.AllTradeHistory{}
 	data.Data = map[common.ExchangeID]common.ExchangeTradeHistory{}
@@ -340,6 +392,7 @@ func (rd ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTradeH
 	return data, nil
 }
 
+// RunStorageController run storage controller
 func (rd ReserveData) RunStorageController() error {
 	if err := rd.storageController.Runner.Start(); err != nil {
 		log.Fatalf("Storage controller runner error: %s", err.Error())
@@ -356,7 +409,8 @@ func (rd ReserveData) RunStorageController() error {
 func NewReserveData(storage Storage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,
-	exchanges []common.Exchange) *ReserveData {
+	exchanges []common.Exchange,
+	assetStorage storage.Interface) *ReserveData {
 	storageController, err := datapruner.NewStorageController(storageControllerRunner, arch)
 	if err != nil {
 		panic(err)
@@ -367,5 +421,6 @@ func NewReserveData(storage Storage,
 		storageController: storageController,
 		globalStorage:     globalStorage,
 		exchanges:         exchanges,
+		assetStorage:      assetStorage,
 	}
 }

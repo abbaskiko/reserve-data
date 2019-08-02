@@ -36,6 +36,7 @@ var (
 	errDataSizeExceed = errors.New("the data size must be less than 1 MB")
 )
 
+// Server struct for http package
 type Server struct {
 	app                 reserve.Data
 	core                reserve.Core
@@ -69,6 +70,7 @@ func getTimePoint(c *gin.Context, useDefault bool) uint64 {
 	return timepoint
 }
 
+// IsIntime is a part of authentication check if the request is new
 func IsIntime(nonce string) bool {
 	serverTime := common.GetTimepoint()
 	log.Printf("Server time: %d, None: %s", serverTime, nonce)
@@ -139,6 +141,7 @@ func (s *Server) Authenticated(c *gin.Context, requiredParams []string, perms []
 	return params, false
 }
 
+// AllPricesVersion return current version of all token
 func (s *Server) AllPricesVersion(c *gin.Context) {
 	log.Printf("Getting all prices version")
 	data, err := s.app.CurrentPriceVersion(getTimePoint(c, true))
@@ -198,6 +201,7 @@ func (s *Server) AllPrices(c *gin.Context) {
 
 }
 
+// Price return price of a token
 func (s *Server) Price(c *gin.Context) {
 	base := c.Param("base")
 	quote := c.Param("quote")
@@ -220,6 +224,7 @@ func (s *Server) Price(c *gin.Context) {
 	//}
 }
 
+// AuthDataVersion return current version of auth data
 func (s *Server) AuthDataVersion(c *gin.Context) {
 	log.Printf("Getting current auth data snapshot version")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -235,6 +240,7 @@ func (s *Server) AuthDataVersion(c *gin.Context) {
 	}
 }
 
+// AuthData return current auth data
 func (s *Server) AuthData(c *gin.Context) {
 	log.Printf("Getting current auth data snapshot \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -254,6 +260,7 @@ func (s *Server) AuthData(c *gin.Context) {
 	}
 }
 
+// GetRates return all rates
 func (s *Server) GetRates(c *gin.Context) {
 	log.Printf("Getting all rates \n")
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
@@ -269,6 +276,7 @@ func (s *Server) GetRates(c *gin.Context) {
 	}
 }
 
+// GetRate return rate of a token
 func (s *Server) GetRate(c *gin.Context) {
 	log.Printf("Getting all rates \n")
 	data, err := s.app.GetRate(getTimePoint(c, true))
@@ -283,6 +291,7 @@ func (s *Server) GetRate(c *gin.Context) {
 	}
 }
 
+// SetRate set rate
 func (s *Server) SetRate(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"tokens", "buys", "sells", "block", "afp_mid", "msgs"}, []Permission{RebalancePermission})
 	if !ok {
@@ -351,6 +360,7 @@ func (s *Server) SetRate(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+// Trade trade asset in cex
 func (s *Server) Trade(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"pair", "amount", "rate", "type"}, []Permission{RebalancePermission})
 	if !ok {
@@ -416,6 +426,7 @@ func (s *Server) Trade(c *gin.Context) {
 	}))
 }
 
+// CancelOrder cancel an order in a cex
 func (s *Server) CancelOrder(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"order_id"}, []Permission{RebalancePermission})
 	if !ok {
@@ -444,6 +455,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// Withdraw asset to reserve from cex
 func (s *Server) Withdraw(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"asset", "amount"}, []Permission{RebalancePermission})
 	if !ok {
@@ -484,6 +496,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+// Deposit asset into cex
 func (s *Server) Deposit(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"amount", "asset"}, []Permission{RebalancePermission})
 	if !ok {
@@ -524,6 +537,7 @@ func (s *Server) Deposit(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+// GetActivities return all activities record
 func (s *Server) GetActivities(c *gin.Context) {
 	log.Printf("Getting all activity records \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -544,6 +558,7 @@ func (s *Server) GetActivities(c *gin.Context) {
 	}
 }
 
+// StopFetcher stop fetcher from fetch data
 func (s *Server) StopFetcher(c *gin.Context) {
 	err := s.app.Stop()
 	if err != nil {
@@ -553,6 +568,7 @@ func (s *Server) StopFetcher(c *gin.Context) {
 	}
 }
 
+// ImmediatePendingActivities return activities which are pending
 func (s *Server) ImmediatePendingActivities(c *gin.Context) {
 	log.Printf("Getting all immediate pending activity records \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -568,6 +584,7 @@ func (s *Server) ImmediatePendingActivities(c *gin.Context) {
 	}
 }
 
+// Metrics return all metrics
 func (s *Server) Metrics(c *gin.Context) {
 	response := common.MetricResponse{
 		Timestamp: common.GetTimepoint(),
@@ -614,6 +631,7 @@ func (s *Server) Metrics(c *gin.Context) {
 	}))
 }
 
+// StoreMetrics store metrics into db
 func (s *Server) StoreMetrics(c *gin.Context) {
 	log.Printf("Storing metrics")
 	postForm, ok := s.Authenticated(c, []string{"timestamp", "data"}, []Permission{RebalancePermission})
@@ -693,6 +711,7 @@ func (s *Server) StoreMetrics(c *gin.Context) {
 // 	return nil
 // }
 
+// GetTradeHistory return trade history
 func (s *Server) GetTradeHistory(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
@@ -709,10 +728,12 @@ func (s *Server) GetTradeHistory(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// GetTimeServer return server time
 func (s *Server) GetTimeServer(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(common.GetTimestamp()))
 }
 
+// GetRebalanceStatus return rebalanceStatus (true or false)
 func (s *Server) GetRebalanceStatus(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
@@ -726,6 +747,7 @@ func (s *Server) GetRebalanceStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data.Status))
 }
 
+//HoldRebalance stop rebalance action
 func (s *Server) HoldRebalance(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -738,6 +760,7 @@ func (s *Server) HoldRebalance(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// EnableRebalance enable rebalance
 func (s *Server) EnableRebalance(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -749,6 +772,7 @@ func (s *Server) EnableRebalance(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetSetrateStatus return setRateStatus (true or false)
 func (s *Server) GetSetrateStatus(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
@@ -762,6 +786,7 @@ func (s *Server) GetSetrateStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data.Status))
 }
 
+// HoldSetrate stop set rate
 func (s *Server) HoldSetrate(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -773,6 +798,7 @@ func (s *Server) HoldSetrate(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// EnableSetrate allow analytics to call setrate
 func (s *Server) EnableSetrate(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -784,6 +810,7 @@ func (s *Server) EnableSetrate(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// ValidateTimeInput check if the params fromTime, toTime is valid or not
 func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	fromTime, ok := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	if ok != nil {
@@ -797,6 +824,7 @@ func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	return fromTime, toTime, true
 }
 
+// SetStableTokenParams set stable token params
 func (s *Server) SetStableTokenParams(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfigurePermission})
 	if !ok {
@@ -815,6 +843,7 @@ func (s *Server) SetStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// ConfirmStableTokenParams confirm stable token params
 func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -833,6 +862,7 @@ func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// RejectStableTokenParams reject stable token params
 func (s *Server) RejectStableTokenParams(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -846,6 +876,7 @@ func (s *Server) RejectStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetPendingStableTokenParams return pending stable token params
 func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
 	if !ok {
@@ -860,6 +891,7 @@ func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// GetStableTokenParams return all stable token params
 func (s *Server) GetStableTokenParams(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
 	if !ok {
@@ -872,72 +904,6 @@ func (s *Server) GetStableTokenParams(c *gin.Context) {
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-//EbalanceEntry is balance of exchange
-type EbalanceEntry struct {
-	Valid      bool
-	Error      string
-	Timestamp  common.Timestamp
-	ReturnTime common.Timestamp
-	// map asset id to its balance
-	AvailableBalance map[uint64]float64
-	LockedBalance    map[uint64]float64
-	DepositBalance   map[uint64]float64
-	Status           bool
-}
-
-// AuthdataFormat return authdata with v3 format
-type AuthdataFormat struct {
-	Data struct {
-		Valid      bool
-		Error      string
-		Timestamp  common.Timestamp
-		ReturnTime common.Timestamp
-		//map exchange id with its balance
-		ExchangeBalances map[uint64]EbalanceEntry
-		//map asset id with its balance
-		ReserveBalances   map[uint64]common.BalanceResponse
-		PendingActivities []common.ActivityRecord
-		Block             uint64
-	} `json:"data"`
-}
-
-func (s *Server) fromNameToID(exchangeName string) uint64 {
-	return 0
-}
-
-func (s *Server) fromSymbolToKey(data common.AuthDataResponse) (AuthdataFormat, error) {
-	var result AuthdataFormat
-	result.Data.Valid = data.Data.Valid
-	result.Data.Error = data.Data.Error
-	result.Data.Timestamp = data.Data.Timestamp
-	result.Data.ReturnTime = data.Data.ReturnTime
-	result.Data.ExchangeBalances = make(map[uint64]EbalanceEntry)
-	for exchangeName := range data.Data.ExchangeBalances {
-		exID := s.fromNameToID(string(exchangeName))
-		result.Data.ExchangeBalances[exID] = EbalanceEntry{}
-	}
-	return result, nil
-}
-
-// GetAuthdataV3 return authdata with v3 format
-func (s *Server) GetAuthdataV3(c *gin.Context) {
-	data, err := s.app.GetAuthData(getTimePoint(c, true))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	balance, err := s.fromSymbolToKey(data)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
-		"version":   data.Version,
-		"timestamp": data.Timestamp,
-		"data":      balance,
-	}))
 }
 
 func (s *Server) register() {
@@ -984,10 +950,10 @@ func (s *Server) register() {
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
 		_ = v3http.NewServer(s.assetStorage, s.r) // ignore server object because we just use the route part
-		s.r.GET("/v3/authdata", s.GetAuthdataV3)
 	}
 }
 
+// Run the server
 func (s *Server) Run() {
 	s.register()
 	if err := s.r.Run(s.host); err != nil {
@@ -995,6 +961,7 @@ func (s *Server) Run() {
 	}
 }
 
+// NewHTTPServer return new server
 func NewHTTPServer(
 	app reserve.Data,
 	core reserve.Core,

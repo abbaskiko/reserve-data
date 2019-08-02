@@ -537,6 +537,8 @@ type tradingPairDB struct {
 	PriceLimitMin   float64 `db:"price_limit_min"`
 	PriceLimitMax   float64 `db:"price_limit_max"`
 	MinNotional     float64 `db:"min_notional"`
+	BaseSymbol      string  `db:"base_symbol"`
+	QuoteSymbol     string  `db:"quote_symbol"`
 }
 
 func (tpd *tradingPairDB) ToCommon() common.TradingPair {
@@ -797,6 +799,59 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 		return result, nil
 	default:
 		return common.Asset{}, fmt.Errorf("failed to get asset from database id=%d err=%s", id, err.Error())
+	}
+}
+
+// GetAssetBySymbol return asset by its symbol
+func (s *Storage) GetAssetBySymbol(symbol string) (common.Asset, error) {
+	var (
+		assetDBResult        assetDB
+		assetExchangeResults []assetExchangeDB
+		tradingPairResults   []tradingPairDB
+		exchanges            []common.AssetExchange
+	)
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return common.Asset{}, err
+	}
+	defer rollbackUnlessCommitted(tx)
+
+	if err := tx.Stmtx(s.stmts.getAssetExchangeByAssetSymbol).Select(&assetExchangeResults, symbol, nil); err != nil {
+		return common.Asset{}, fmt.Errorf("failed to query asset exchanges err=%s", err.Error())
+	}
+
+	for _, ae := range assetExchangeResults {
+		exchanges = append(exchanges, ae.ToCommon())
+	}
+
+	if err := tx.Stmtx(s.stmts.getTradingPairByAssetSymbol).Select(&tradingPairResults, symbol); err != nil {
+		return common.Asset{}, fmt.Errorf("failed to query for trading pairs err=%s", err.Error())
+	}
+
+	for _, pair := range tradingPairResults {
+		for i := range exchanges {
+			if exchanges[i].ExchangeID == pair.ExchangeID {
+				exchanges[i].TradingPairs = append(exchanges[i].TradingPairs, pair.ToCommon())
+			}
+		}
+	}
+
+	log.Printf("getting asset symbol=%s", symbol)
+	err = tx.Stmtx(s.stmts.getAssetBySymbol).Get(&assetDBResult, symbol, nil)
+	switch err {
+	case sql.ErrNoRows:
+		log.Printf("asset not found symbol=%s", symbol)
+		return common.Asset{}, common.ErrNotFound
+	case nil:
+		result, err := assetDBResult.ToCommon()
+		if err != nil {
+			return common.Asset{}, fmt.Errorf("invalid database record for asset id=%d err=%s", assetDBResult.ID, err.Error())
+		}
+		result.Exchanges = exchanges
+		return result, nil
+	default:
+		return common.Asset{}, fmt.Errorf("failed to get asset from database symbol=%s err=%s", symbol, err.Error())
 	}
 }
 

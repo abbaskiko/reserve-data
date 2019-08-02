@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 const schema = `CREATE TABLE IF NOT EXISTS "exchanges"
@@ -488,6 +489,7 @@ $$ LANGUAGE PLPGSQL;
 type preparedStmts struct {
 	getExchanges               *sqlx.Stmt
 	getExchange                *sqlx.Stmt
+	getExchangeByName          *sqlx.Stmt
 	updateExchange             *sqlx.NamedStmt
 	newAsset                   *sqlx.NamedStmt
 	newAssetExchange           *sqlx.NamedStmt
@@ -505,13 +507,16 @@ type preparedStmts struct {
 
 	newTradingPair *sqlx.NamedStmt
 
-	getAsset             *sqlx.Stmt
-	getAssetExchange     *sqlx.Stmt
-	getTradingPair       *sqlx.Stmt
-	updateAsset          *sqlx.NamedStmt
-	changeAssetAddress   *sqlx.Stmt
-	updateDepositAddress *sqlx.Stmt
-	updateTradingPair    *sqlx.NamedStmt
+	getAsset                      *sqlx.Stmt
+	getAssetBySymbol              *sqlx.Stmt
+	getAssetExchange              *sqlx.Stmt
+	getAssetExchangeByAssetSymbol *sqlx.Stmt
+	getTradingPair                *sqlx.Stmt
+	getTradingPairByAssetSymbol   *sqlx.Stmt
+	updateAsset                   *sqlx.NamedStmt
+	changeAssetAddress            *sqlx.Stmt
+	updateDepositAddress          *sqlx.Stmt
+	updateTradingPair             *sqlx.NamedStmt
 
 	getTradingPairByID    *sqlx.Stmt
 	getTradingPairSymbols *sqlx.Stmt
@@ -539,17 +544,17 @@ type preparedStmts struct {
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
-	getExchanges, getExchange, updateExchange, err := exchangeStatements(db)
+	getExchanges, getExchange, getExchangeByName, updateExchange, err := exchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	newAsset, getAsset, updateAsset, err := assetStatements(db)
+	newAsset, getAsset, updateAsset, getAssetBySymbol, err := assetStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	newAssetExchange, updateAssetExchange, getAssetExchange, err := assetExchangeStatements(db)
+	newAssetExchange, updateAssetExchange, getAssetExchange, getAssetExchangeByAssetSymbol, err := assetExchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +584,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, err := tradingPairStatements(db)
+	newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, getTradingPairByAssetSymbol, err := tradingPairStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -628,6 +633,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 	return &preparedStmts{
 		getExchanges:        getExchanges,
 		getExchange:         getExchange,
+		getExchangeByName:   getExchangeByName,
 		updateExchange:      updateExchange,
 		newAsset:            newAsset,
 		newAssetExchange:    newAssetExchange,
@@ -645,13 +651,16 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newTradingBy:   newTradingBy,
 		getTradingBy:   getTradingBy,
 
-		getAsset:             getAsset,
-		getAssetExchange:     getAssetExchange,
-		getTradingPair:       getTradingPair,
-		updateAsset:          updateAsset,
-		changeAssetAddress:   changeAssetAddress,
-		updateDepositAddress: updateDepositAddress,
-		updateTradingPair:    updateTradingPair,
+		getAsset:                      getAsset,
+		getAssetBySymbol:              getAssetBySymbol,
+		getAssetExchange:              getAssetExchange,
+		getAssetExchangeByAssetSymbol: getAssetExchangeByAssetSymbol,
+		getTradingPair:                getTradingPair,
+		getTradingPairByAssetSymbol:   getTradingPairByAssetSymbol,
+		updateAsset:                   updateAsset,
+		changeAssetAddress:            changeAssetAddress,
+		updateDepositAddress:          updateDepositAddress,
+		updateTradingPair:             updateTradingPair,
 
 		getTradingPairByID:    getTradingPairByID,
 		getTradingPairSymbols: getTradingPairSymbols,
@@ -679,7 +688,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 	}, nil
 }
 
-func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
 	const newTradingPairQuery = `SELECT new_trading_pair
 									FROM new_trading_pair(:exchange_id,
 									                      :base_id,
@@ -693,7 +702,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									                      :min_notional);`
 	newTradingPair, err := db.PrepareNamed(newTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare newTradingPair")
 	}
 	const getTradingPairQuery = `SELECT DISTINCT tp.id,
 									                tp.exchange_id,
@@ -712,7 +721,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									`
 	getTradingPair, err := db.Preparex(getTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPair")
 	}
 	const updateTradingPairQuery = `UPDATE "trading_pairs"
 									SET price_precision  = coalesce(:price_precision, price_precision),
@@ -725,7 +734,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									WHERE id = :id RETURNING id; `
 	updateTradingPair, err := db.PrepareNamed(updateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to updateTradingPair")
 	}
 
 	const getTradingPairByIDQuery = `SELECT DISTINCT tp.id,
@@ -749,7 +758,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									WHERE tp.exchange_id = bae.exchange_id AND tp.exchange_id = qae.exchange_id AND tp.id = $1;`
 	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairByID")
 	}
 
 	const getTradingPairSymbolsQuery = `SELECT DISTINCT tp.id,
@@ -770,15 +779,39 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
 									         INNER JOIN assets AS qa ON tp.quote_id = qa.id
 									         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-									WHERE tp.exchange_id = $1;`
+									WHERE (bae.symbol = $1 OR qae.symbol = $1);`
 	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairSymbol")
 	}
-	return newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, nil
+
+	const getTradingPairBySymbolQuery = `SELECT DISTINCT tp.id,
+									                tp.exchange_id,
+									                tp.base_id,
+									                tp.quote_id,
+									                tp.price_precision,
+									                tp.amount_precision,
+									                tp.amount_limit_min,
+									                tp.amount_limit_max,
+									                tp.price_limit_min,
+									                tp.price_limit_max,
+									                tp.min_notional,
+									                bae.symbol AS base_symbol,
+									                qae.symbol AS quote_symbol
+									FROM trading_pairs AS tp
+									         INNER JOIN assets AS ba ON tp.base_id = ba.id
+									         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
+									         INNER JOIN assets AS qa ON tp.quote_id = qa.id
+									         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
+									WHERE tp.exchange_id = bae.exchange_id AND tp.exchange_id = qae.exchange_id AND (bae.symbol = $1 OR qae.symbol = $1);`
+	getTradingPairBySymbol, err := db.Preparex(getTradingPairBySymbolQuery)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairBySymbol")
+	}
+	return newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, getTradingPairBySymbol, nil
 }
 
-func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, error) {
+func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, error) {
 	const newAssetQuery = `SELECT new_asset
 		FROM new_asset(
 		             :symbol,
@@ -809,7 +842,7 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 		         );`
 	newAsset, err := db.PrepareNamed(newAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare newAsset")
 	}
 	const getAssetQuery = `SELECT assets.id,
 								       assets.symbol,
@@ -877,7 +910,76 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 								ORDER BY assets.id`
 	getAsset, err := db.Preparex(getAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAsset")
+	}
+
+	const getAssetBySymbolQuery = `SELECT assets.id,
+								       assets.symbol,
+								       assets.name,
+								       a.address,
+								       array_agg(oa.address) FILTER ( WHERE oa.address IS NOT NULL ) AS old_addresses,
+								       assets.decimals,
+								       assets.transferable,
+								       assets.set_rate,
+								       assets.rebalance,
+								       assets.is_quote,
+								       assets.pwi_ask_a,
+								       assets.pwi_ask_b,
+								       assets.pwi_ask_c,
+								       assets.pwi_ask_min_min_spread,
+								       assets.pwi_ask_price_multiply_factor,
+								       assets.pwi_bid_a,
+								       assets.pwi_bid_b,
+								       assets.pwi_bid_c,
+								       assets.pwi_bid_min_min_spread,
+								       assets.pwi_bid_price_multiply_factor,
+								       assets.rebalance_quadratic_a,
+								       assets.rebalance_quadratic_b,
+								       assets.rebalance_quadratic_c,
+								       assets.target_total,
+								       assets.target_reserve,
+								       assets.target_rebalance_threshold,
+								       assets.target_transfer_threshold,
+								       assets.created,
+								       assets.updated
+								FROM assets
+								         LEFT JOIN addresses a on assets.address_id = a.id
+								         LEFT JOIN asset_old_addresses aoa on assets.id = aoa.asset_id
+								         LEFT JOIN addresses oa ON aoa.address_id = oa.id
+								WHERE assets.symbol= coalesce($1, assets.symbol)
+								  AND assets.transferable = coalesce($2, assets.transferable)
+								GROUP BY assets.id,
+								         assets.symbol,
+								         assets.name,
+								         a.address,
+								         assets.decimals,
+								         assets.transferable,
+								         assets.set_rate,
+								         assets.rebalance,
+								         assets.is_quote,
+								         assets.pwi_ask_a,
+								         assets.pwi_ask_b,
+								         assets.pwi_ask_c,
+								         assets.pwi_ask_min_min_spread,
+								         assets.pwi_ask_price_multiply_factor,
+								         assets.pwi_bid_a,
+								         assets.pwi_bid_b,
+								         assets.pwi_bid_c,
+								         assets.pwi_bid_min_min_spread,
+								         assets.pwi_bid_price_multiply_factor,
+								         assets.rebalance_quadratic_a,
+								         assets.rebalance_quadratic_b,
+								         assets.rebalance_quadratic_c,
+								         assets.target_total,
+								         assets.target_reserve,
+								         assets.target_rebalance_threshold,
+								         assets.target_transfer_threshold,
+								         assets.created,
+								         assets.updated
+								ORDER BY assets.id`
+	getAssetBySymbol, err := db.Preparex(getAssetBySymbolQuery)
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetBySymbol")
 	}
 
 	const updateAssetQuery = `WITH updated AS (
@@ -916,12 +1018,12 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 								`
 	updateAsset, err := db.PrepareNamed(updateAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare updateAsset")
 	}
-	return newAsset, getAsset, updateAsset, nil
+	return newAsset, getAsset, updateAsset, getAssetBySymbol, nil
 }
 
-func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.Stmt, error) {
+func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, error) {
 	const newAssetExchangeQuery string = `INSERT INTO asset_exchanges(exchange_id,
 		                            asset_id,
 		                            symbol,
@@ -940,7 +1042,7 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 		        :target_ratio) RETURNING id`
 	newAssetExchange, err := db.PrepareNamed(newAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare newAssetExchange")
 	}
 	const updateAssetExchangeQuery string = `UPDATE "asset_exchanges"
 		SET symbol = COALESCE(:symbol, symbol),
@@ -952,7 +1054,7 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 		WHERE id = :id RETURNING id;`
 	updateAssetExchange, err := db.PrepareNamed(updateAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare updateAssetExchange")
 	}
 
 	const getAssetExchangeQuery = `SELECT id,
@@ -969,21 +1071,43 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 			AND id = coalesce($2, id)`
 	getAssetExchange, err := db.Preparex(getAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetExchange")
 	}
-	return newAssetExchange, updateAssetExchange, getAssetExchange, nil
+
+	const getAssetExchangeByAssetSymbolQuery = `SELECT id,
+			       exchange_id,
+			       asset_id,
+			       symbol,
+			       deposit_address,
+			       min_deposit,
+			       withdraw_fee,
+			       target_recommended,
+			       target_ratio
+			FROM asset_exchanges
+			WHERE symbol = coalesce($1, symbol)
+			AND id= coalesce($2, id)`
+	getAssetExchangeByAssetSymbol, err := db.Preparex(getAssetExchangeByAssetSymbolQuery)
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetExchangeByAssetSymbol")
+	}
+	return newAssetExchange, updateAssetExchange, getAssetExchange, getAssetExchangeByAssetSymbol, nil
 }
 
-func exchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.NamedStmt, error) {
+func exchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, *sqlx.NamedStmt, error) {
 	const getExchangesQuery = `SELECT * FROM "exchanges";`
 	getExchanges, err := db.Preparex(getExchangesQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare get exchanges")
 	}
 	const getExchangeQuery = `SELECT * FROM "exchanges" WHERE id = $1`
 	getExchange, err := db.Preparex(getExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare get exchange")
+	}
+	const getExchangeByNameQuery = `SELECT * FROM "exchanges" WHERE name = $1`
+	getExchangeByName, err := db.Preparex(getExchangeByNameQuery)
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare get exchange by name")
 	}
 	const updateExchangeQuery = `UPDATE "exchanges"
 	SET trading_fee_maker = COALESCE(:trading_fee_maker, trading_fee_maker),
@@ -993,26 +1117,26 @@ func exchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.NamedStmt, e
 	`
 	updateExchange, err := db.PrepareNamed(updateExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare update exchange")
 	}
-	return getExchanges, getExchange, updateExchange, nil
+	return getExchanges, getExchange, getExchangeByName, updateExchange, nil
 }
 
 func createAssetExchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
 	const newCreateAssetExchangesQuery = `SELECT new_create_asset_exchange FROM new_create_asset_exchange ($1);`
 	newCreateAssetExchanges, err := db.Preparex(newCreateAssetExchangesQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare newCreateAssetExchanges")
 	}
 	const getCreateAssetExchangeQuery = `SELECT id,created,data FROM create_asset_exchanges WHERE id=COALESCE($1, create_asset_exchanges.id)`
 	getPendingAssetExchanges, err := db.Preparex(getCreateAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare getPendingAssetExchanges")
 	}
 	const deleteCreateAssetExchangeQuery = `DELETE FROM create_asset_exchanges WHERE id=$1`
 	deleteCreateAssetExchange, err := db.Preparex(deleteCreateAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare deleteCreateAssetExchange")
 	}
 	return newCreateAssetExchanges, getPendingAssetExchanges, deleteCreateAssetExchange, nil
 }
@@ -1021,17 +1145,17 @@ func updateAssetExchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.S
 	const newUpdateAssetExchangesQuery = `SELECT new_update_asset_exchange FROM new_update_asset_exchange ($1);`
 	newUpdateAssetExchanges, err := db.Preparex(newUpdateAssetExchangesQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare newUpdateAssetExchange")
 	}
 	const listUpdateAssetExchangeQuery = `SELECT id,created,data FROM update_asset_exchanges WHERE id=COALESCE($1, update_asset_exchanges.id)`
 	getUpdateAssetExchanges, err := db.Preparex(listUpdateAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare getUpdateAssetExchanges")
 	}
 	const deleteUpdateAssetExchangeQuery = `DELETE FROM update_asset_exchanges WHERE id=$1`
 	deleteUpdateAssetExchange, err := db.Preparex(deleteUpdateAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepapre deletUpdateAssetExchange")
 	}
 	return newUpdateAssetExchanges, getUpdateAssetExchanges, deleteUpdateAssetExchange, nil
 }
@@ -1040,17 +1164,17 @@ func updateTradingPairStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stm
 	const newUpdateTradingPairQuery = `SELECT new_update_trading_pair FROM new_update_trading_pair($1)`
 	newUpdateTradingPair, err := db.Preparex(newUpdateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepapre newUpdateTradingPair")
 	}
 	const deleteUpdateTradingPairQuery = `DELETE FROM update_trading_pairs WHERE id=$1`
 	deleteUpdateTradingPair, err := db.Preparex(deleteUpdateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare deleteUpateTradingPair")
 	}
 	const listUpdateTradingPairQuery = `SELECT id,created,data FROM update_trading_pairs WHERE id=COALESCE($1, update_trading_pairs.id)`
 	listUpdateTradingPair, err := db.Preparex(listUpdateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to listUpdateTradingPair")
 	}
 	return newUpdateTradingPair, deleteUpdateTradingPair, listUpdateTradingPair, nil
 }
@@ -1059,17 +1183,17 @@ func createTradingPairStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stm
 	const newCreateTradingPairQuery = `SELECT new_create_trading_pair FROM new_create_trading_pair($1)`
 	newCreateTradingPair, err := db.Preparex(newCreateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare newCreateTradingPair")
 	}
 	const deleteCreateTradingPairQuery = `DELETE FROM create_trading_pairs WHERE id=$1`
 	deleteCreateTradingPair, err := db.Preparex(deleteCreateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepapre deleteCreateTradingPair")
 	}
 	const listCreateTradingPairQuery = `SELECT id,created,data FROM create_trading_pairs WHERE id=COALESCE($1, create_trading_pairs.id)`
 	listCreateTradingPair, err := db.Preparex(listCreateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare listCreateTradingPair")
 	}
 	return newCreateTradingPair, deleteCreateTradingPair, listCreateTradingPair, nil
 }
@@ -1078,17 +1202,17 @@ func updateExchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, 
 	const newUpdateExchangeQuery = `SELECT new_update_exchange FROM new_update_exchange($1)`
 	newUpdateExchange, err := db.Preparex(newUpdateExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare newUpdateExchange")
 	}
 	const deleteUpdateExchangeQuery = `DELETE FROM update_exchanges WHERE id=$1`
 	deleteUpdateExchange, err := db.Preparex(deleteUpdateExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare deleteUpdateExchange")
 	}
 	const listUpdateExchangeQuery = `SELECT id,created,data FROM update_exchanges WHERE id=COALESCE($1, update_exchanges.id)`
 	listUpdateExchange, err := db.Preparex(listUpdateExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare listUpdateExchange")
 	}
 	return newUpdateExchange, deleteUpdateExchange, listUpdateExchange, nil
 }
@@ -1097,17 +1221,17 @@ func updateAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, err
 	const newUpdateAssetQuery = `SELECT new_update_asset FROM new_update_asset($1)`
 	newUpdateAsset, err := db.Preparex(newUpdateAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare newUpdateAsset")
 	}
 	const deleteUpdateAssetQuery = `DELETE FROM update_assets WHERE id=$1`
 	deleteUpdateAsset, err := db.Preparex(deleteUpdateAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare deleteUpdateAsset")
 	}
 	const listUpdateAssetQuery = `SELECT id,created,data FROM update_assets WHERE id=COALESCE($1, update_assets.id)`
 	listUpdateAsset, err := db.Preparex(listUpdateAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare listUpdateAsset")
 	}
 	return newUpdateAsset, deleteUpdateAsset, listUpdateAsset, nil
 }
@@ -1117,17 +1241,17 @@ func createAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, err
 	const newCreateAssetQuery = `SELECT new_create_asset FROM new_create_asset ($1);`
 	newCreateAsset, err := db.Preparex(newCreateAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to create newCreateAsset")
 	}
 	const deleteCreateAssetQuery = `DELETE FROM create_assets WHERE id=$1`
 	deleteCreateAsset, err := db.Preparex(deleteCreateAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare deleteCreateAsset query")
 	}
 	const listCreateAssetQuery = `SELECT id,created,data FROM create_assets WHERE id=COALESCE($1, create_assets.id)`
 	getCreateAsset, err := db.Preparex(listCreateAssetQuery)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, errors.Wrap(err, "failed to prepare getCreateAsset")
 	}
 	return newCreateAsset, deleteCreateAsset, getCreateAsset, nil
 }
