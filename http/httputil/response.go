@@ -54,11 +54,14 @@ func ResponseSuccess(c *gin.Context, options ...ResponseOption) {
 	for _, option := range options {
 		option(h)
 	}
-
-	c.JSON(
-		http.StatusOK,
-		h,
-	)
+	if c.Request.URL.Query().Get("pretty") == "" {
+		c.JSON(http.StatusOK, h)
+	} else {
+		c.IndentedJSON(
+			http.StatusOK,
+			h,
+		)
+	}
 }
 
 // ResponseFailure responses the request with 200 status code and a
@@ -72,8 +75,12 @@ func ResponseFailure(c *gin.Context, options ...ResponseOption) {
 		option(h)
 	}
 
-	c.JSON(
-		http.StatusOK,
-		h,
-	)
+	if c.Request.URL.Query().Get("pretty") == "" {
+		c.JSON(http.StatusOK, h)
+	} else {
+		c.IndentedJSON(
+			http.StatusOK,
+			h,
+		)
+	}
 }

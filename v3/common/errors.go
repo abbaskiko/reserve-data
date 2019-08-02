@@ -36,4 +36,6 @@ var (
 	ErrQuoteAssetInvalid = errors.New("quote asset is invalid")
 	// ErrBaseAssetInvalid is returned when base asset doesn't contain exchange id in the  create/update trading  request
 	ErrBaseAssetInvalid = errors.New("base asset is invalid")
+	// ErrTradingByAlreadyExists
+	ErrTradingByAlreadyExists = errors.New("asset trading pair already exists")
 )
