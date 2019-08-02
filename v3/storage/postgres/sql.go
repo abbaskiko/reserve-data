@@ -782,7 +782,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									WHERE tp.exchange_id = $1;`
 	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairSymbol")
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairSymbols")
 	}
 
 	const getTradingPairBySymbolQuery = `SELECT DISTINCT tp.id,
