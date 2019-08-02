@@ -71,12 +71,26 @@ func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pr
 
 // UpdateTradingPair update a trading pair information
 func (s *Storage) UpdateTradingPair(id uint64, updateOpts storage.UpdateTradingPairOpts) error {
-	return s.updateTradingPair(nil, id, updateOpts)
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer rollbackUnlessCommitted(tx)
+
+	err = s.updateTradingPair(tx, id, updateOpts)
+	if err != nil {
+		return err
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	log.Printf("trading pair update successfully id=%d", id)
+	return nil
 }
 
 func (s *Storage) updateTradingPair(tx *sqlx.Tx, id uint64, opts storage.UpdateTradingPairOpts) error {
 	var updatedID uint64
-	err := s.stmts.updateTradingPair.Get(&updatedID, struct {
+	err := tx.NamedStmt(s.stmts.updateTradingPair).Get(&updatedID, struct {
 		ID              uint64   `db:"id"`
 		PricePrecision  *uint64  `db:"price_precision"`
 		AmountPrecision *uint64  `db:"amount_precision"`
