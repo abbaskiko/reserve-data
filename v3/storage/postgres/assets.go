@@ -446,6 +446,13 @@ func (s *Storage) createAsset(
 				)
 			}
 			log.Printf("trading pair created id=%d", tradingPairID)
+
+			atpID, err := s.createTradingBy(tx, assetID, tradingPairID)
+			if err != nil {
+				return 0, fmt.Errorf("failed to create asset trading pair for asset %d, tradingpair %d, err=%v",
+					assetID, tradingPairID, err)
+			}
+			log.Printf("asset trading pair created %d\n", atpID)
 		}
 	}
 
@@ -641,11 +648,26 @@ func (s *Storage) GetAssets() ([]common.Asset, error) {
 	return s.getAssets(nil)
 }
 
+type tradingByDB struct {
+	ID            uint64 `db:"id"`
+	AssetID       uint64 `db:"asset_id"`
+	TradingPairID uint64 `db:"trading_pair_id"`
+}
+
+func toTradingPairMap(tps []tradingPairDB) map[uint64]tradingPairDB {
+	res := make(map[uint64]tradingPairDB)
+	for _, tp := range tps {
+		res[tp.ID] = tp
+	}
+	return res
+}
+
 func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	var (
 		allAssetDBs       []assetDB
 		allAssetExchanges []assetExchangeDB
 		allTradingPairs   []tradingPairDB
+		allTradingBy      []tradingByDB
 		results           []common.Asset
 	)
 
@@ -667,6 +689,11 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 		return nil, err
 	}
 
+	if err = tx.Stmtx(s.stmts.getTradingBy).Select(&allTradingBy, nil); err != nil {
+		return nil, err
+	}
+	tradingPairMap := toTradingPairMap(allTradingPairs)
+
 	for _, assetDBResult := range allAssetDBs {
 		result, err := assetDBResult.ToCommon()
 		if err != nil {
@@ -676,10 +703,12 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 		for _, assetExchangeResult := range allAssetExchanges {
 			if assetExchangeResult.AssetID == assetDBResult.ID {
 				exchange := assetExchangeResult.ToCommon()
-				for _, tradingPairResult := range allTradingPairs {
-					if assetExchangeResult.ExchangeID == tradingPairResult.ExchangeID &&
-						(tradingPairResult.BaseID == assetDBResult.ID || tradingPairResult.QuoteID == assetDBResult.ID) {
-						exchange.TradingPairs = append(exchange.TradingPairs, tradingPairResult.ToCommon())
+				for _, tradingBy := range allTradingBy {
+					if assetDBResult.ID == tradingBy.AssetID {
+						if tradingPair, ok := tradingPairMap[tradingBy.TradingPairID]; ok &&
+							tradingPair.ExchangeID == exchange.ExchangeID {
+							exchange.TradingPairs = append(exchange.TradingPairs, tradingPair.ToCommon())
+						}
 					}
 				}
 				result.Exchanges = append(result.Exchanges, exchange)

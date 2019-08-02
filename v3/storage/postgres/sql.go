@@ -127,139 +127,154 @@ CREATE TABLE IF NOT EXISTS trading_pairs
     UNIQUE (exchange_id, base_id, quote_id),
     CONSTRAINT trading_pair_check CHECK ( base_id != quote_id)
 );
-
-CREATE TABLE IF NOT EXISTS create_assets (
-	id	SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL
+-- this table manage which asset will be use to buy/sell when trading.
+CREATE TABLE IF NOT EXISTS trading_by
+(
+    id              SERIAL PRIMARY KEY,
+    asset_id        INT REFERENCES assets (id)        NOT NULL,
+    trading_pair_id INT REFERENCES trading_pairs (id) NOT NULL,
+    UNIQUE (asset_id, trading_pair_id)
 );
 
-CREATE TABLE IF NOT EXISTS update_exchanges (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
+CREATE TABLE IF NOT EXISTS create_assets
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS create_asset_exchanges (
-	id	SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL
+CREATE TABLE IF NOT EXISTS update_exchanges
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS update_asset_exchanges (
-	id	SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL
+CREATE TABLE IF NOT EXISTS create_asset_exchanges
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS update_assets (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
+CREATE TABLE IF NOT EXISTS update_asset_exchanges
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS create_trading_pairs (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
+CREATE TABLE IF NOT EXISTS update_assets
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
 );
-CREATE TABLE IF NOT EXISTS update_trading_pairs (
-	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
-	data JSON NOT NULL 
+
+CREATE TABLE IF NOT EXISTS create_trading_pairs
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
+);
+CREATE TABLE IF NOT EXISTS update_trading_pairs
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
 );
 
 CREATE OR REPLACE FUNCTION new_create_asset(_data create_assets.data%TYPE)
-RETURNS int AS 
+    RETURNS int AS
 $$
 
 DECLARE
-	_id         create_assets.id%TYPE;
+    _id create_assets.id%TYPE;
 
 BEGIN
-	DELETE FROM create_assets;
-	INSERT INTO create_assets(created,data) VALUES(now(),_data) RETURNING id INTO _id;
-	RETURN _id;
+    DELETE FROM create_assets;
+    INSERT INTO create_assets(created, data) VALUES (now(), _data) RETURNING id INTO _id;
+    RETURN _id;
 END
 
 $$ LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE  FUNCTION  new_update_asset(_data update_assets.data%TYPE)
-RETURNS int AS 
-    $$
-DECLARE 
-	_id update_assets.id%TYPE;
+CREATE OR REPLACE FUNCTION new_update_asset(_data update_assets.data%TYPE)
+    RETURNS int AS
+$$
+DECLARE
+    _id update_assets.id%TYPE;
 BEGIN
-	DELETE FROM update_assets;
-	INSERT INTO update_assets(created,data) VALUES (now(),_data) RETURNING id into _id;
-	RETURN _id;
+    DELETE FROM update_assets;
+    INSERT INTO update_assets(created, data) VALUES (now(), _data) RETURNING id into _id;
+    RETURN _id;
 END;
 $$ LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE  FUNCTION  new_update_exchange(_data update_exchanges.data%TYPE)
-RETURNS int AS 
-    $$
-DECLARE 
-	_id update_exchanges.id%TYPE;
+CREATE OR REPLACE FUNCTION new_update_exchange(_data update_exchanges.data%TYPE)
+    RETURNS int AS
+$$
+DECLARE
+    _id update_exchanges.id%TYPE;
 BEGIN
-	DELETE FROM update_exchanges;
-	INSERT INTO update_exchanges(created,data) VALUES (now(),_data) RETURNING id into _id;
-	RETURN _id;
+    DELETE FROM update_exchanges;
+    INSERT INTO update_exchanges(created, data) VALUES (now(), _data) RETURNING id into _id;
+    RETURN _id;
 END;
-    
+
 $$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION new_create_asset_exchange(_data create_asset_exchanges.data%TYPE)
-RETURNS int AS 
+    RETURNS int AS
 $$
 
 DECLARE
-	_id         create_asset_exchanges.id%TYPE;
+    _id create_asset_exchanges.id%TYPE;
 
 BEGIN
-	DELETE FROM create_asset_exchanges;
-	INSERT INTO create_asset_exchanges(created,data) VALUES(now(),_data) RETURNING id INTO _id;
-	RETURN _id;
+    DELETE FROM create_asset_exchanges;
+    INSERT INTO create_asset_exchanges(created, data) VALUES (now(), _data) RETURNING id INTO _id;
+    RETURN _id;
 END
 
 $$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION new_update_asset_exchange(_data update_asset_exchanges.data%TYPE)
-RETURNS int AS 
+    RETURNS int AS
 $$
 
 DECLARE
-	_id         update_asset_exchanges.id%TYPE;
+    _id update_asset_exchanges.id%TYPE;
 
 BEGIN
-	DELETE FROM update_asset_exchanges;
-	INSERT INTO update_asset_exchanges(created,data) VALUES(now(),_data) RETURNING id INTO _id;
-	RETURN _id;
+    DELETE FROM update_asset_exchanges;
+    INSERT INTO update_asset_exchanges(created, data) VALUES (now(), _data) RETURNING id INTO _id;
+    RETURN _id;
 END
 
 $$ LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE  FUNCTION  new_create_trading_pair(_data create_trading_pairs.data%TYPE)
-RETURNS int AS 
-    $$
-DECLARE 
-	_id create_trading_pairs.id%TYPE;
+CREATE OR REPLACE FUNCTION new_create_trading_pair(_data create_trading_pairs.data%TYPE)
+    RETURNS int AS
+$$
+DECLARE
+    _id create_trading_pairs.id%TYPE;
 BEGIN
-	DELETE FROM create_trading_pairs;
-	INSERT INTO create_trading_pairs(created,data) VALUES (now(),_data) RETURNING id into _id;
-	RETURN _id;
+    DELETE FROM create_trading_pairs;
+    INSERT INTO create_trading_pairs(created, data) VALUES (now(), _data) RETURNING id into _id;
+    RETURN _id;
 END;
 $$ LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE  FUNCTION  new_update_trading_pair(_data update_trading_pairs.data%TYPE)
-RETURNS int AS 
-    $$
-DECLARE 
-	_id update_trading_pairs.id%TYPE;
+CREATE OR REPLACE FUNCTION new_update_trading_pair(_data update_trading_pairs.data%TYPE)
+    RETURNS int AS
+$$
+DECLARE
+    _id update_trading_pairs.id%TYPE;
 BEGIN
-	DELETE FROM update_trading_pairs;
-	INSERT INTO update_trading_pairs(created,data) VALUES (now(),_data) RETURNING id into _id;
-	RETURN _id;
+    DELETE FROM update_trading_pairs;
+    INSERT INTO update_trading_pairs(created, data) VALUES (now(), _data) RETURNING id into _id;
+    RETURN _id;
 END;
 $$ LANGUAGE PLPGSQL;
 
@@ -325,8 +340,7 @@ BEGIN
                 target_rebalance_threshold,
                 target_transfer_threshold,
                 created,
-                updated
-    )
+                updated)
     VALUES (_symbol,
             _name,
             _address_id,
@@ -450,6 +464,25 @@ BEGIN
     RETURN _id;
 END
 $$ LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION new_trading_by(_asset_id assets.id%TYPE,
+                                            _trading_pair_id trading_pairs.id%TYPE)
+    RETURNS INT AS
+$$
+DECLARE
+    _id                   trading_by.id%TYPE;
+BEGIN
+    PERFORM id FROM trading_pairs WHERE base_id = _asset_id OR quote_id = _asset_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'asset must be base or quote in trading pair, asset=%',
+            _asset_id USING ERRCODE = 'assert_failure';
+    END IF;
+
+    INSERT INTO trading_by (asset_id, trading_pair_id)
+    VALUES (_asset_id,_trading_pair_id) RETURNING id INTO _id;
+    RETURN _id;
+END
+$$ LANGUAGE PLPGSQL;
 `
 
 type preparedStmts struct {
@@ -462,6 +495,9 @@ type preparedStmts struct {
 	newCreateAssetExchange     *sqlx.Stmt
 	getCreateAssetExchanges    *sqlx.Stmt
 	deletePendingAssetExchange *sqlx.Stmt
+
+	newTradingBy *sqlx.Stmt
+	getTradingBy *sqlx.Stmt
 
 	newUpdateAssetExchange    *sqlx.Stmt
 	getUpdateAssetExchanges   *sqlx.Stmt
@@ -584,6 +620,11 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
+	newTradingBy, getTradingBy, err := tradingByStatements(db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &preparedStmts{
 		getExchanges:        getExchanges,
 		getExchange:         getExchange,
@@ -601,6 +642,8 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		deleteUpdateAssetExchange: deleteUpdateAssetExchange,
 
 		newTradingPair: newTradingPair,
+		newTradingBy:   newTradingBy,
+		getTradingBy:   getTradingBy,
 
 		getAsset:             getAsset,
 		getAssetExchange:     getAssetExchange,
@@ -1087,4 +1130,19 @@ func createAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, err
 		return nil, nil, nil, err
 	}
 	return newCreateAsset, deleteCreateAsset, getCreateAsset, nil
+}
+
+func tradingByStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
+	const createTradingByQuery = `SELECT new_trading_by FROM new_trading_by($1,$2);`
+	tradingBy, err := db.Preparex(createTradingByQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	const getTradingByQuery = `SELECT id,asset_id,trading_pair_id FROM trading_by WHERE id=COALESCE($1,trading_by.id)`
+	getTradingByPairs, err := db.Preparex(getTradingByQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	return tradingBy, getTradingByPairs, nil
 }
