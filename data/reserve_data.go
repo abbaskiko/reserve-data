@@ -23,7 +23,7 @@ type ReserveData struct {
 	storageController datapruner.StorageController
 	globalStorage     GlobalStorage
 	exchanges         []common.Exchange
-	assetStorage      storage.Interface
+	settingStorage    storage.Interface
 }
 
 // CurrentGoldInfoVersion get current godl info version
@@ -140,7 +140,7 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, er
 	result.Data.ReserveBalances = map[uint64]common.BalanceResponse{}
 	// get id from exchange balance asset name
 	for exchangeName, balances := range data.ExchangeBalances {
-		exchange, err := rd.assetStorage.GetExchangeByName(string(exchangeName))
+		exchange, err := rd.settingStorage.GetExchangeByName(string(exchangeName))
 		if err != nil {
 			return result, errors.Wrapf(err, "failed to get exchange by name: %s", exchangeName)
 		}
@@ -148,7 +148,7 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, er
 		lockedBalance := map[uint64]float64{}
 		depositBalance := map[uint64]float64{}
 		for tokenName := range balances.AvailableBalance {
-			token, err := rd.assetStorage.GetAssetBySymbol(tokenName)
+			token, err := rd.settingStorage.GetAssetBySymbol(tokenName)
 			if err != nil {
 				return result, errors.Wrapf(err, "failed to get token by name: %s", tokenName)
 			}
@@ -170,7 +170,7 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, er
 
 	// get id from asset name
 	for tokenID, balance := range data.ReserveBalances {
-		token, uErr := rd.assetStorage.GetAssetBySymbol(tokenID)
+		token, uErr := rd.settingStorage.GetAssetBySymbol(tokenID)
 		//If the token is invalid, this must Panic
 		if uErr != nil {
 			return result, fmt.Errorf("can't get asset id %s: (%s)", tokenID, uErr)
@@ -421,6 +421,6 @@ func NewReserveData(storage Storage,
 		storageController: storageController,
 		globalStorage:     globalStorage,
 		exchanges:         exchanges,
-		assetStorage:      assetStorage,
+		settingStorage:    assetStorage,
 	}
 }
