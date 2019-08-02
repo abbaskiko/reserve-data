@@ -12,7 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
-func TestExchangeStorage(t *testing.T) {
+func TestStorage_UpdateExchange(t *testing.T) {
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
