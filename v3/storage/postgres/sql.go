@@ -507,16 +507,14 @@ type preparedStmts struct {
 
 	newTradingPair *sqlx.NamedStmt
 
-	getAsset                      *sqlx.Stmt
-	getAssetBySymbol              *sqlx.Stmt
-	getAssetExchange              *sqlx.Stmt
-	getAssetExchangeByAssetSymbol *sqlx.Stmt
-	getTradingPair                *sqlx.Stmt
-	getTradingPairByAssetSymbol   *sqlx.Stmt
-	updateAsset                   *sqlx.NamedStmt
-	changeAssetAddress            *sqlx.Stmt
-	updateDepositAddress          *sqlx.Stmt
-	updateTradingPair             *sqlx.NamedStmt
+	getAsset             *sqlx.Stmt
+	getAssetBySymbol     *sqlx.Stmt
+	getAssetExchange     *sqlx.Stmt
+	getTradingPair       *sqlx.Stmt
+	updateAsset          *sqlx.NamedStmt
+	changeAssetAddress   *sqlx.Stmt
+	updateDepositAddress *sqlx.Stmt
+	updateTradingPair    *sqlx.NamedStmt
 
 	getTradingPairByID    *sqlx.Stmt
 	getTradingPairSymbols *sqlx.Stmt
