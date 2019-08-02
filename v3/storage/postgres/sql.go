@@ -779,7 +779,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
 									         INNER JOIN assets AS qa ON tp.quote_id = qa.id
 									         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-									WHERE (bae.symbol = $1 OR qae.symbol = $1);`
+									WHERE tp.exchange_id = $1;`
 	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairSymbol")
