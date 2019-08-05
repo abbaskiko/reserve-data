@@ -281,7 +281,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.HuobiOrder, 
 func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	var symbol string
 	for _, exchg := range asset.Exchanges {
-		if exchg.ExchangeID == uint64(common.Binance) {
+		if exchg.ExchangeID == uint64(common.Huobi) {
 			symbol = exchg.Symbol
 		}
 	}
