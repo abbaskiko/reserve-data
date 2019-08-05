@@ -11,6 +11,47 @@ func WithV3Endpoint(v3Endpoint string) Option {
 			return err
 		}
 
+		s.r.GET("/prices-version", v3ProxyMW)
+		s.r.GET("/prices", v3ProxyMW)
+		s.r.GET("/prices/:base/:quote", v3ProxyMW)
+		s.r.GET("/getrates", v3ProxyMW)
+		s.r.GET("/get-all-rates", v3ProxyMW)
+
+		s.r.GET("/authdata-version", v3ProxyMW)
+		s.r.GET("/authdata", v3ProxyMW)
+		s.r.GET("/activities", v3ProxyMW)
+		s.r.GET("/immediate-pending-activities", v3ProxyMW)
+		s.r.GET("/metrics", v3ProxyMW)
+		s.r.POST("/metrics", v3ProxyMW)
+
+		s.r.POST("/cancelorder/:exchangeid", v3ProxyMW)
+		s.r.POST("/deposit/:exchangeid", v3ProxyMW)
+		s.r.POST("/withdraw/:exchangeid", v3ProxyMW)
+		s.r.POST("/trade/:exchangeid", v3ProxyMW)
+		s.r.POST("/setrates", v3ProxyMW)
+		s.r.GET("/tradehistory", v3ProxyMW)
+
+		s.r.GET("/timeserver", v3ProxyMW)
+
+		s.r.GET("/rebalancestatus", v3ProxyMW)
+		s.r.POST("/holdrebalance", v3ProxyMW)
+		s.r.POST("/enablerebalance", v3ProxyMW)
+
+		s.r.GET("/setratestatus", v3ProxyMW)
+		s.r.POST("/holdsetrate", v3ProxyMW)
+		s.r.POST("/enablesetrate", v3ProxyMW)
+
+		s.r.POST("/set-stable-token-params", v3ProxyMW)
+		s.r.POST("/confirm-stable-token-params", v3ProxyMW)
+		s.r.POST("/reject-stable-token-params", v3ProxyMW)
+		s.r.GET("/pending-stable-token-params", v3ProxyMW)
+		s.r.GET("/stable-token-params", v3ProxyMW)
+
+		s.r.GET("/gold-feed", v3ProxyMW)
+		s.r.GET("/btc-feed", v3ProxyMW)
+		s.r.POST("/set-feed-configuration", v3ProxyMW)
+		s.r.GET("/get-feed-configuration", v3ProxyMW)
+
 		g := s.r.Group("/v3")
 
 		g.GET("/asset/:id", v3ProxyMW)

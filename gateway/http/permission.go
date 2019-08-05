@@ -19,29 +19,37 @@ p, %[1]s, /*, GET`, key)
 func addKeyWritePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
-p, %[1]s, /create-asset, POST
-p, %[1]s, /update-asset, POST 
-p, %[1]s, /create-asset-exchange, POST
-p, %[1]s, /update-exchange, POST
-p, %[1]s, /create-trading-pair, POST
-p, %[1]s, /update-trading-pair, POST`, key)
+p, %[1]s, /v3/create-asset, POST
+p, %[1]s, /v3/update-asset, POST 
+p, %[1]s, /v3/create-asset-exchange, POST
+p, %[1]s, /v3/update-exchange, POST
+p, %[1]s, /v3/create-trading-pair, POST
+p, %[1]s, /v3/update-trading-pair, POST`, key)
 }
 
 func addKeyConfirmPolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
-p, %[1]s, /create-asset/:id, (PUT)|(DELETE)
-p, %[1]s, /update-asset/:id, (PUT)|(DELETE)
-p, %[1]s, /create-asset-exchange/:id, (PUT)|(DELETE)
-p, %[1]s, /update-exchange/:id, (PUT)|(DELETE)
-p, %[1]s, /create-trading-pair/:id, (PUT)|(DELETE) 
-p, %[1]s, /update-trading-pair/:id, (PUT)|(DELETE) `, key)
+p, %[1]s, /v3/create-asset/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/update-asset/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/create-asset-exchange/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/update-exchange/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/create-trading-pair/:id, (PUT)|(DELETE) 
+p, %[1]s, /v3/update-trading-pair/:id, (PUT)|(DELETE) `, key)
 }
 
-//TODO: add endpoint rebalance
 func addKeyRebalancePolicy(key string) string {
 	return fmt.Sprintf(`
-p, %[1]s, /*, GET`, key)
+p, %[1]s, /*, GET
+p, %[1]s, /cancelorder/:exchangeid, POST
+p, %[1]s, /deposit/:exchangeid, POST
+p, %[1]s, /withdraw/:exchangeid, POST
+p, %[1]s, /trade, POST
+p, %[1]s, /setrates, POST
+p, %[1]s, /holdrebalance, POST
+p, %[1]s, /enablesetrate, POST
+p, %[1]s, /holdsetrate, POST
+p, %[1]s, /enablesetrate, POST`, key)
 }
 
 //NewPermissioner creates a gin Handle Func to controll permission
