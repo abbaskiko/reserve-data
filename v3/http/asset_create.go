@@ -43,7 +43,7 @@ func (s *Server) fillTradingPair(ccAsset *common.CreateCreateAsset) error {
 			var tradingPairID = uint64(1)
 			// a pseudo tradingPairID, because the requested trading pair has not created yet.
 			// and keep increase for each pair,
-			// we fetch info for all trading pair in AssetExchange, mean one exchange per round.
+			// we fetch info for all trading pair in AssetExchange, mean one centralExh per round.
 			for _, tp := range assetExchange.TradingPairs {
 				tradingPairSymbol := common.TradingPairSymbols{TradingPair: tp}
 				if tp.Quote == 0 { // current asset is quote in trading pair, so need to fill the Base
@@ -68,31 +68,30 @@ func (s *Server) fillTradingPair(ccAsset *common.CreateCreateAsset) error {
 				}
 				tps = append(tps, tradingPairSymbol)
 			}
-			for _, exchange := range s.exchanges {
-				// for all exchanges enabled, find the one match current AssetExchange
-				// and use it to fetch live info
-				if string(exchange.ID()) == v1common.ExchangeName(assetExchange.ExchangeID).String() {
-					exInfo, err := exchange.GetLiveExchangeInfos(tps)
-					if err != nil {
-						return err
-					}
-					// because we generate pseudo tradingPairID, like 1,2,3,4
-					// fill what we received into request trading pair.
-					tradingPairID = uint64(1)
-					for idx := range assetExchange.TradingPairs {
-						// TODO what if live info does not return all we asked?
-						if info, ok := exInfo[tradingPairID]; ok {
-							assetExchange.TradingPairs[idx].MinNotional = info.MinNotional
-							assetExchange.TradingPairs[idx].AmountLimitMax = info.AmountLimit.Max
-							assetExchange.TradingPairs[idx].AmountLimitMin = info.AmountLimit.Min
-							assetExchange.TradingPairs[idx].AmountPrecision = uint64(info.Precision.Amount)
-							assetExchange.TradingPairs[idx].PricePrecision = uint64(info.Precision.Price)
-							assetExchange.TradingPairs[idx].PriceLimitMax = info.PriceLimit.Max
-							assetExchange.TradingPairs[idx].PriceLimitMin = info.PriceLimit.Min
-							tradingPairID++
-						}
-					}
-					break
+			exhID := v1common.ExchangeID(v1common.ExchangeName(assetExchange.ExchangeID).String())
+			centralExh, ok := v1common.SupportedExchanges[exhID]
+			if !ok {
+				return fmt.Errorf("exchange %s not supported", exhID)
+			}
+
+			exInfo, err := centralExh.GetLiveExchangeInfos(tps)
+			if err != nil {
+				return err
+			}
+			// because we generate pseudo tradingPairID, like 1,2,3,4
+			// fill what we received into request trading pair.
+			tradingPairID = uint64(1)
+			for idx := range assetExchange.TradingPairs {
+				// TODO what if live info does not return all we asked?
+				if info, ok := exInfo[tradingPairID]; ok {
+					assetExchange.TradingPairs[idx].MinNotional = info.MinNotional
+					assetExchange.TradingPairs[idx].AmountLimitMax = info.AmountLimit.Max
+					assetExchange.TradingPairs[idx].AmountLimitMin = info.AmountLimit.Min
+					assetExchange.TradingPairs[idx].AmountPrecision = uint64(info.Precision.Amount)
+					assetExchange.TradingPairs[idx].PricePrecision = uint64(info.Precision.Price)
+					assetExchange.TradingPairs[idx].PriceLimitMax = info.PriceLimit.Max
+					assetExchange.TradingPairs[idx].PriceLimitMin = info.PriceLimit.Min
+					tradingPairID++
 				}
 			}
 		}

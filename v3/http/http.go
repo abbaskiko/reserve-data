@@ -15,14 +15,13 @@ type Server struct {
 }
 
 // NewServer creates new HTTP server for v3 APIs.
-func NewServer(storage storage.Interface, exchanges []common.Exchange, r *gin.Engine) *Server {
+func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	if r == nil {
 		r = gin.Default()
 	}
 	server := &Server{
-		storage:   storage,
-		exchanges: exchanges,
-		r:         r,
+		storage: storage,
+		r:       r,
 	}
 	g := r.Group("/v3")
 

@@ -884,7 +884,7 @@ func (s *Server) register() {
 		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
-		_ = v3http.NewServer(s.settingStorage, s.exchanges, s.r) // ignore server object because we just use the route part
+		_ = v3http.NewServer(s.settingStorage, s.r) // ignore server object because we just use the route part
 	}
 }
 
