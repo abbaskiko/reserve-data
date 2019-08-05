@@ -149,19 +149,53 @@ func (s *Server) AllPricesVersion(c *gin.Context) {
 	}
 }
 
+type price struct {
+	Base     uint64              `json:"base"`
+	Quote    uint64              `json:"quote"`
+	Exchange uint64              `json:"exchange"`
+	Bids     []common.PriceEntry `json:"bids"`
+	Asks     []common.PriceEntry `json:"asks"`
+}
+
 func (s *Server) AllPrices(c *gin.Context) {
 	log.Printf("Getting all prices \n")
 	data, err := s.app.GetAllPrices(getTimePoint(c, true))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
-			"version":   data.Version,
-			"timestamp": data.Timestamp,
-			"data":      data.Data,
-			"block":     data.Block,
-		}))
+		return
 	}
+
+	var responseData []price
+	for tp, onePrice := range data.Data {
+		pair, err := s.assetStorage.GetTradingPair(tp)
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+		for exchangeName, exchangePrice := range onePrice {
+			exchangeID, err := common.GetExchange(string(exchangeName))
+			if err != nil {
+				httputil.ResponseFailure(c, httputil.WithError(err))
+				return
+			}
+			// TODO should we check exchangeID.Name() match pair.ExchangeID?
+			responseData = append(responseData, price{
+				Base:     pair.Base,
+				Quote:    pair.Quote,
+				Exchange: uint64(exchangeID.Name()),
+				Bids:     exchangePrice.Bids,
+				Asks:     exchangePrice.Asks,
+			})
+		}
+	}
+
+	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
+		"version":   data.Version,
+		"timestamp": data.Timestamp,
+		"data":      responseData,
+		"block":     data.Block,
+	}))
+
 }
 
 func (s *Server) Price(c *gin.Context) {
