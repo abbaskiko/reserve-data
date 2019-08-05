@@ -210,7 +210,7 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.Archive,
 		config.DataGlobalStorage,
 		config.Exchanges,
-		config.AssetStorage,
+		config.SettingStorage,
 	)
 
 	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses)
