@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 
@@ -42,6 +43,40 @@ func (s *Storage) CreateTradingBy(assetID, tradingPairID uint64) (uint64, error)
 	if err = tx.Commit(); err != nil {
 		return 0, err
 	}
-	log.Printf("asset trading pair #%d has been create successfully\n", id)
+	log.Printf("asset trading by #%d has been created successfully\n", id)
 	return id, nil
+}
+
+func (s *Storage) DeleteTradingBy(tradingByID uint64) error {
+	var returningTradingByID uint64
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer rollbackUnlessCommitted(tx)
+
+	err = tx.Stmtx(s.stmts.deleteTradingBy).Get(&returningTradingByID, tradingByID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return common.ErrNotFound
+		}
+		return err
+	}
+	log.Printf("asset trading by #%d has been deleted successfully\n", tradingByID)
+	return nil
+}
+
+func (s *Storage) GetTradingBy(tradingByID uint64) (uint64, uint64, error) {
+	var (
+		result tradingByDB
+	)
+	err := s.stmts.getTradingBy.Get(&result, tradingByID)
+	switch err {
+	case sql.ErrNoRows:
+		return 0, 0, common.ErrNotFound
+	case nil:
+		return result.AssetID, result.TradingPairID, nil
+	default:
+		return 0, 0, err
+	}
 }

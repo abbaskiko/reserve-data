@@ -290,3 +290,14 @@ type UpdateTradingPairEntry struct {
 type CreateUpdateTradingPair struct {
 	TradingPairs []UpdateTradingPairEntry `json:"trading_pairs" binding:"required,dive"`
 }
+
+type CreateTradingBy pendingObject
+
+type CreateCreateTradingBy struct {
+	TradingBys []CreateTradingByEntry
+}
+
+type CreateTradingByEntry struct {
+	AssetID       uint64 `json:"asset_id"`
+	TradingPairID uint64 `json:"trading_pair_id"`
+}

@@ -184,6 +184,13 @@ CREATE TABLE IF NOT EXISTS update_trading_pairs
     data    JSON      NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS create_trading_by
+(
+	id		SERIAL PRIMARY KEY,
+	created	TIMESTAMP 	NOT NULL,
+	data 	JSON		NOT NULL
+);
+
 CREATE OR REPLACE FUNCTION new_create_asset(_data create_assets.data%TYPE)
     RETURNS int AS
 $$
@@ -274,6 +281,18 @@ DECLARE
 BEGIN
     DELETE FROM update_trading_pairs;
     INSERT INTO update_trading_pairs(created, data) VALUES (now(), _data) RETURNING id into _id;
+    RETURN _id;
+END;
+$$ LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION new_create_trading_by(_data create_trading_by.data%TYPE)
+    RETURNS int AS
+$$
+DECLARE
+    _id create_trading_by.id%TYPE;
+BEGIN
+    DELETE FROM create_trading_by;
+    INSERT INTO create_trading_by(created, data) VALUES (now(), _data) RETURNING id into _id;
     RETURN _id;
 END;
 $$ LANGUAGE PLPGSQL;
@@ -496,9 +515,6 @@ type preparedStmts struct {
 	getCreateAssetExchanges    *sqlx.Stmt
 	deletePendingAssetExchange *sqlx.Stmt
 
-	newTradingBy *sqlx.Stmt
-	getTradingBy *sqlx.Stmt
-
 	newUpdateAssetExchange    *sqlx.Stmt
 	getUpdateAssetExchanges   *sqlx.Stmt
 	deleteUpdateAssetExchange *sqlx.Stmt
@@ -536,6 +552,14 @@ type preparedStmts struct {
 	newUpdateTradingPair    *sqlx.Stmt
 	getUpdateTradingPairs   *sqlx.Stmt
 	deleteUpdateTradingPair *sqlx.Stmt
+
+	newTradingBy    *sqlx.Stmt
+	getTradingBy    *sqlx.Stmt
+	deleteTradingBy *sqlx.Stmt
+
+	newCreateTradingBy    *sqlx.Stmt
+	getCreateTradingBy    *sqlx.Stmt
+	deleteCreateTradingBy *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -620,7 +644,12 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newTradingBy, getTradingBy, err := tradingByStatements(db)
+	newTradingBy, getTradingBy, deleteTradingBy, err := tradingByStatements(db)
+	if err != nil {
+		return nil, err
+	}
+
+	newCreateTradingBy, getCreateTradingBy, deleteCreateTradingBy, err := createTradingByStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -641,9 +670,10 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		getUpdateAssetExchanges:   getUpdateAssetExchanges,
 		deleteUpdateAssetExchange: deleteUpdateAssetExchange,
 
-		newTradingPair: newTradingPair,
-		newTradingBy:   newTradingBy,
-		getTradingBy:   getTradingBy,
+		newTradingPair:  newTradingPair,
+		newTradingBy:    newTradingBy,
+		getTradingBy:    getTradingBy,
+		deleteTradingBy: deleteTradingBy,
 
 		getAsset:             getAsset,
 		getAssetExchange:     getAssetExchange,
@@ -676,6 +706,10 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newUpdateTradingPair:    newUpdateTradingPair,
 		getUpdateTradingPairs:   listUpdateTradingPair,
 		deleteUpdateTradingPair: deleteUpdateTradingPair,
+
+		newCreateTradingBy:    newCreateTradingBy,
+		getCreateTradingBy:    getCreateTradingBy,
+		deleteCreateTradingBy: deleteCreateTradingBy,
 	}, nil
 }
 
@@ -1132,17 +1166,42 @@ func createAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, err
 	return newCreateAsset, deleteCreateAsset, getCreateAsset, nil
 }
 
-func tradingByStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
+func tradingByStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
 	const createTradingByQuery = `SELECT new_trading_by FROM new_trading_by($1,$2);`
 	tradingBy, err := db.Preparex(createTradingByQuery)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	const getTradingByQuery = `SELECT id,asset_id,trading_pair_id FROM trading_by WHERE id=COALESCE($1,trading_by.id)`
 	getTradingByPairs, err := db.Preparex(getTradingByQuery)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return tradingBy, getTradingByPairs, nil
+
+	const deleteTradingByQuery = `DELETE FROM trading_by WHERE id = $1 RETURNING id`
+	deleteTradingByStmt, err := db.Preparex(deleteTradingByQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return tradingBy, getTradingByPairs, deleteTradingByStmt, nil
+}
+
+func createTradingByStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newCreateTradingByQuery = `SELECT new_create_trading_by FROM new_create_trading_by($1)`
+	newCreateTradingBy, err := db.Preparex(newCreateTradingByQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteCreateTradingByQuery = `DELETE FROM create_trading_by WHERE id=$1`
+	deleteCreateTradingBy, err := db.Preparex(deleteCreateTradingByQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const listCreateTradingByQuery = `SELECT id,created,data FROM create_trading_by WHERE id=COALESCE($1, create_trading_by.id)`
+	listCreateTradingBy, err := db.Preparex(listCreateTradingByQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newCreateTradingBy, deleteCreateTradingBy, listCreateTradingBy, nil
 }

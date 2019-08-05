@@ -1,0 +1,107 @@
+package http
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-data/common/testutil"
+	"github.com/KyberNetwork/reserve-data/http/httputil"
+	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
+)
+
+func TestServer_TradingBy(t *testing.T) {
+	const (
+		assetBase       = "/v3/asset"
+		createAssetBase = "/v3/create-asset"
+		getTradingPair  = "/v3/trading-pair"
+		// tradingByPrefix ="/v3/trading-by"
+		createTradingBy = "/v3/create-trading-by"
+	)
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := postgres.NewStorage(db)
+	// asset = 1 for ETH is pre-insert in DB.
+	_, err = s.CreateAssetExchange(0, 1, "ETH", ethereum.HexToAddress("0x00"), 10,
+		0.2, 5.0, 0.3)
+	require.NoError(t, err)
+	require.NoError(t, err)
+	server := NewServer(s, nil)
+
+	var tests = []testCase{
+		{
+			msg:      "create pending asset",
+			endpoint: createAssetBase,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data:     createPEA,
+		}, {
+			msg:      "confirm pending asset",
+			endpoint: createAssetBase + "/1",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		}, {
+			msg:      "receive asset",
+			endpoint: assetBase + "/2",
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
+		}, {
+			msg:      "trading pair is created in db",
+			endpoint: getTradingPair + "/1",
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, resp.Code, http.StatusOK)
+				var result struct {
+					Success bool                      `json:"success"`
+					Data    common.TradingPairSymbols `json:"data"`
+				}
+				err = json.NewDecoder(resp.Body).Decode(&result)
+				require.NoError(t, err)
+			},
+		}, {
+			msg:      "test create pending trading by fail by referring trading pair not found",
+			endpoint: createTradingBy,
+			method:   http.MethodPost,
+			data: common.CreateCreateTradingBy{
+				TradingBys: []common.CreateTradingByEntry{
+					{
+						TradingPairID: 2,
+						AssetID:       1,
+					},
+				},
+			},
+			//assert: httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
+			assert: httputil.ExpectFailure,
+		}, {
+			msg:      "test create pending trading by",
+			endpoint: createTradingBy,
+			method:   http.MethodPost,
+			data: common.CreateCreateTradingBy{
+				TradingBys: []common.CreateTradingByEntry{
+					{
+						TradingPairID: 1,
+						AssetID:       1,
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+
+}

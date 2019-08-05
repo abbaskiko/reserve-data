@@ -29,6 +29,9 @@ func (s *Storage) GetTradingPair(id uint64) (common.TradingPairSymbols, error) {
 	)
 
 	if err := s.stmts.getTradingPairByID.Get(&tradingPairDB, id); err != nil {
+		if err == sql.ErrNoRows {
+			return result, common.ErrNotFound
+		}
 		return result, err
 	}
 
