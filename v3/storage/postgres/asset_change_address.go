@@ -1,11 +1,20 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/lib/pq"
+
 	"github.com/KyberNetwork/reserve-data/v3/common"
+)
+
+const (
+	constraintUniqueAssetAddress = "addresses_address_key"
 )
 
 // CreateChangeAssetAddress create a new change asset address
@@ -113,9 +122,25 @@ func (s *Storage) ConfirmChangeAssetAddress(id uint64) error {
 	defer rollbackUnlessCommitted(tx)
 
 	for _, a := range changeAssetAddress.Assets {
-		_, err = tx.Stmtx(s.stmts.changeAssetAddress).Exec(a.ID, a.Address)
+		_, err = tx.Stmtx(s.stmts.changeAssetAddress).Exec(a.ID, ethereum.HexToAddress(a.Address).Hex())
 		if err != nil {
-			return err
+			pErr, ok := err.(*pq.Error)
+			if !ok {
+				return fmt.Errorf("unknown returned err=%s", err.Error())
+			}
+			log.Printf("failed to create new change asset address err=%s", pErr.Message)
+			switch pErr.Code {
+			case errAssertFailure:
+				if err == sql.ErrNoRows {
+					return common.ErrNotFound
+				}
+			case errCodeUniqueViolation:
+				if pErr.Constraint == constraintUniqueAssetAddress {
+					return common.ErrAddressExists
+				}
+			default:
+				return err
+			}
 		}
 	}
 	_, err = tx.Stmtx(s.stmts.deleteChangeAssetAddress).Exec(id)

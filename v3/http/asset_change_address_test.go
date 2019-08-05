@@ -4,19 +4,17 @@ import (
 	"net/http"
 	"testing"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
-
 	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
 )
 
 func TestHTTPServerChangeAssetAddress(t *testing.T) {
-
-	t.Skip()
 	const (
 		changeAssetAddress = "/v3/change-asset-address"
 	)
@@ -31,12 +29,6 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
-
-	asset, err := s.GetAsset(assetID)
-	require.NoError(t, err)
-
-	assetAddress := asset.Address.Hex()
-	t.Logf("address already create in change address %s", assetAddress)
 
 	server := NewServer(s, nil)
 
@@ -74,21 +66,21 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 			},
 			endpoint: changeAssetAddress,
 			method:   http.MethodPost,
-			assert:   httputil.ExpectFailureWithReason(common.ErrInvalidAddress.Error() + "fsdf"),
+			assert:   httputil.ExpectFailureWithReason(common.ErrInvalidAddress.Error()),
 		},
 		{
-			msg: "create invalid change asset address (with same current address)",
+			msg: "create invalid change asset address (with not exist asset)",
 			data: &common.ChangeAssetAddress{
 				Assets: []common.ChangeAssetAddressEntry{
 					{
-						ID:      assetID,
-						Address: assetAddress,
+						ID:      1234,
+						Address: "0x3f3150ea2b596f6bdb6c4af21b744019f29694c1",
 					},
 				},
 			},
 			endpoint: changeAssetAddress,
 			method:   http.MethodPost,
-			assert:   httputil.ExpectFailure,
+			assert:   httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
 		},
 		{
 			msg:      "create change other asset address",
@@ -117,4 +109,61 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
 	}
+}
+
+func TestChangeAssetAddress_Successfully(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	assetID, err := createSampleAsset(s)
+	require.NoError(t, err)
+
+	id, err := s.CreateChangeAssetAddress(common.ChangeAssetAddress{
+		Assets: []common.ChangeAssetAddressEntry{
+			{
+				ID:      assetID,
+				Address: "0x5dbcb95364cbc5604bacbb8c6eb9aa788f347a17",
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.NotZero(t, id)
+	err = s.ConfirmChangeAssetAddress(id)
+	require.NoError(t, err)
+
+	asset, err := s.GetAsset(assetID)
+	require.NoError(t, err)
+	require.Equal(t, ethereum.HexToAddress("0x5dbcb95364cbc5604bacbb8c6eb9aa788f347a17"), asset.Address)
+}
+
+func TestChangeAssetAddress_FailedWithDuplicateAddress(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	assetID, err := createSampleAsset(s)
+	require.NoError(t, err)
+
+	asset, err := s.GetAsset(assetID)
+	require.NoError(t, err)
+
+	id, err := s.CreateChangeAssetAddress(common.ChangeAssetAddress{
+		Assets: []common.ChangeAssetAddressEntry{
+			{
+				ID:      assetID,
+				Address: asset.Address.Hex(),
+			},
+		},
+	})
+	err = s.ConfirmChangeAssetAddress(id)
+	require.Equal(t, err, common.ErrAddressExists)
 }
