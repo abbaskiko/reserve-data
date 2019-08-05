@@ -47,6 +47,7 @@ func (s *Storage) CreateTradingBy(assetID, tradingPairID uint64) (uint64, error)
 	return id, nil
 }
 
+// TODO: create endpoint for this function later
 func (s *Storage) DeleteTradingBy(tradingByID uint64) error {
 	var returningTradingByID uint64
 	tx, err := s.db.Beginx()
