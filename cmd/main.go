@@ -72,8 +72,6 @@ func run(c *cli.Context) error {
 		rData, rCore,
 		conf.MetricStorage,
 		servPortStr,
-		conf.EnableAuthentication,
-		conf.AuthEngine,
 		dpl,
 		bc,
 		conf.ContractAddresses,

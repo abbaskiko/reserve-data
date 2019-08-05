@@ -12,7 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
@@ -59,8 +58,6 @@ func GetConfig(
 		return nil, err
 	}
 
-	hmac512auth := http.NewKNAuthenticationFromFile(secretConfigFile)
-
 	chainType := GetChainType(dpl)
 
 	//set client & endpoint
@@ -104,7 +101,6 @@ func GetConfig(
 		Blockchain:              bc,
 		EthereumEndpoint:        nodeConf.Main,
 		BackupEthereumEndpoints: nodeConf.Backup,
-		AuthEngine:              hmac512auth,
 		EnableAuthentication:    authEnbl,
 		Archive:                 s3archive,
 		World:                   theWorld,

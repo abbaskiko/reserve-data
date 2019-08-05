@@ -32,12 +32,7 @@ func (s *Server) GetBTCData(c *gin.Context) {
 
 func (s *Server) UpdateFeedConfiguration(c *gin.Context) {
 	const dataPostFormKey = "data"
-
-	postForm, ok := s.Authenticated(c, []string{dataPostFormKey}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
-
+	postForm := c.Request.Form
 	data := []byte(postForm.Get(dataPostFormKey))
 	if len(data) > maxDataSize {
 		httputil.ResponseFailure(c, httputil.WithError(errDataSizeExceed))
@@ -58,11 +53,6 @@ func (s *Server) UpdateFeedConfiguration(c *gin.Context) {
 }
 
 func (s *Server) GetFeedConfiguration(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
-
 	data, err := s.app.GetFeedConfiguration()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
