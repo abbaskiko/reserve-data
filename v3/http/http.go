@@ -3,15 +3,13 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 // Server is the HTTP server of token V3.
 type Server struct {
-	storage   storage.Interface
-	exchanges []common.Exchange
-	r         *gin.Engine
+	storage storage.Interface
+	r       *gin.Engine
 }
 
 // NewServer creates new HTTP server for v3 APIs.
