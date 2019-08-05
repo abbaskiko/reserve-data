@@ -47,7 +47,6 @@ type Server struct {
 	blockchain          Blockchain
 	contractAddressConf *common.ContractAddressConfiguration
 	settingStorage      storage.Interface
-	exchanges           []common.Exchange
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -906,7 +905,6 @@ func NewHTTPServer(
 	bc Blockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
 	settingStorage storage.Interface,
-	exchanges []common.Exchange,
 ) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
@@ -939,6 +937,5 @@ func NewHTTPServer(
 		blockchain:          bc,
 		contractAddressConf: contractAddressConf,
 		settingStorage:      settingStorage,
-		exchanges:           exchanges,
 	}
 }

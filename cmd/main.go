@@ -78,7 +78,6 @@ func run(c *cli.Context) error {
 		bc,
 		conf.ContractAddresses,
 		conf.SettingStorage,
-		conf.Exchanges,
 	)
 
 	if !dryRun {
