@@ -157,7 +157,7 @@ func TestCreateUpdateAsset(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, nil)
+	server := NewServer(s, nil, nil)
 	const updateAsset = "/v3/update-asset"
 	var updateAssetID uint64
 	var tests = []testCase{
@@ -381,7 +381,7 @@ func TestCheckUpdateAssetParams(t *testing.T) {
 	emptyAssetID, err := createEmptySampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, nil)
+	server := NewServer(s, nil, nil)
 
 	const updateAsset = "/v3/update-asset"
 	var tests = []testCase{

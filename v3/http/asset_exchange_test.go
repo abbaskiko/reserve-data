@@ -33,7 +33,7 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, nil)
+	server := NewServer(s, nil, nil)
 
 	var tests = []testCase{
 

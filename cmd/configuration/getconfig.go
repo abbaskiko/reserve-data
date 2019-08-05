@@ -51,7 +51,7 @@ func GetConfig(
 	dataFile string,
 	secretConfigFile string,
 	enabledExchanges []common.ExchangeName,
-	assetStorage storage.Interface,
+	settingStorage storage.Interface,
 ) (*Config, error) {
 	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
 	if err != nil {
@@ -109,11 +109,11 @@ func GetConfig(
 		Archive:                 s3archive,
 		World:                   theWorld,
 		ContractAddresses:       contractAddressConf,
-		AssetStorage:            assetStorage,
+		SettingStorage:          settingStorage,
 	}
 
 	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, enabledExchanges, assetStorage); err != nil {
+	if err = config.AddCoreConfig(secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, enabledExchanges, settingStorage); err != nil {
 		return nil, err
 	}
 	return config, nil

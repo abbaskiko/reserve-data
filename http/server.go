@@ -46,7 +46,8 @@ type Server struct {
 	r                   *gin.Engine
 	blockchain          Blockchain
 	contractAddressConf *common.ContractAddressConfiguration
-	assetStorage        storage.Interface
+	settingStorage      storage.Interface
+	exchanges           []common.Exchange
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -270,7 +271,7 @@ func (s *Server) SetRate(c *gin.Context) {
 				c,
 				httputil.WithError(fmt.Errorf("invalid asset id: err=%s", err.Error())))
 		}
-		asset, err := s.assetStorage.GetAsset(uint64(id))
+		asset, err := s.settingStorage.GetAsset(uint64(id))
 		if err != nil {
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
@@ -342,7 +343,7 @@ func (s *Server) Trade(c *gin.Context) {
 	}
 	//TODO: use GetTradingPair method
 	var pair v3common.TradingPairSymbols
-	pairs, err := s.assetStorage.GetTradingPairs(uint64(exchange.Name()))
+	pairs, err := s.settingStorage.GetTradingPairs(uint64(exchange.Name()))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -431,7 +432,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	asset, err := s.assetStorage.GetAsset(uint64(assetID))
+	asset, err := s.settingStorage.GetAsset(uint64(assetID))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -470,7 +471,7 @@ func (s *Server) Deposit(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	asset, err := s.assetStorage.GetAsset(uint64(assetID))
+	asset, err := s.settingStorage.GetAsset(uint64(assetID))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -552,7 +553,7 @@ func (s *Server) Metrics(c *gin.Context) {
 		if err != nil {
 			httputil.ResponseFailure(c, httputil.WithError(err))
 		}
-		asset, err := s.assetStorage.GetAsset(uint64(id))
+		asset, err := s.settingStorage.GetAsset(uint64(id))
 		if err != nil {
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
@@ -883,7 +884,7 @@ func (s *Server) register() {
 		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
-		_ = v3http.NewServer(s.assetStorage, s.r) // ignore server object because we just use the route part
+		_ = v3http.NewServer(s.settingStorage, s.exchanges, s.r) // ignore server object because we just use the route part
 	}
 }
 
@@ -904,7 +905,8 @@ func NewHTTPServer(
 	dpl deployment.Deployment,
 	bc Blockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
-	assetStorage storage.Interface,
+	settingStorage storage.Interface,
+	exchanges []common.Exchange,
 ) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
@@ -936,6 +938,7 @@ func NewHTTPServer(
 		r:                   r,
 		blockchain:          bc,
 		contractAddressConf: contractAddressConf,
-		assetStorage:        assetStorage,
+		settingStorage:      settingStorage,
+		exchanges:           exchanges,
 	}
 }
