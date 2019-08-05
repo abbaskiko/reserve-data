@@ -46,7 +46,7 @@ type Config struct {
 	BackupEthereumEndpoints []string
 	Blockchain              *blockchain.BaseBlockchain
 
-	AssetStorage      storagev3.Interface
+	SettingStorage    storagev3.Interface
 	ContractAddresses *common.ContractAddressConfiguration
 }
 
@@ -58,7 +58,7 @@ func (c *Config) AddCoreConfig(
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
 	enabledExchanges []common.ExchangeName,
-	assetStorage storagev3.Interface,
+	settingStore storagev3.Interface,
 ) error {
 	dataStorage, err := storage.NewBoltStorage(dataFile)
 	if err != nil {
@@ -114,7 +114,7 @@ func (c *Config) AddCoreConfig(
 		bi,
 		hi,
 		enabledExchanges,
-		assetStorage,
+		settingStore,
 	)
 	if err != nil {
 		log.Printf("Can not create exchangePool: %s", err.Error())

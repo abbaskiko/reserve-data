@@ -17,7 +17,10 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	if r == nil {
 		r = gin.Default()
 	}
-	server := &Server{storage: storage, r: r}
+	server := &Server{
+		storage: storage,
+		r:       r,
+	}
 	g := r.Group("/v3")
 
 	g.GET("/asset/:id", server.getAsset)

@@ -153,7 +153,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
 		config.ContractAddresses,
-		config.AssetStorage,
+		config.SettingStorage,
 	)
 	if err != nil {
 		log.Printf("failed to create block chain err=%s", err.Error())
@@ -162,7 +162,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	// old contract addresses are used for events fetcher
 
-	assets, err := config.AssetStorage.GetTransferableAssets()
+	assets, err := config.SettingStorage.GetTransferableAssets()
 	if err != nil {
 		log.Printf("Can't get the list of Internal Tokens for indices: %s", err.Error())
 		return nil, err
