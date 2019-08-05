@@ -184,6 +184,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 	return bc, nil
 }
 
+// CreateDataCore create reserve data component
 func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
@@ -209,6 +210,7 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.Archive,
 		config.DataGlobalStorage,
 		config.Exchanges,
+		config.AssetStorage,
 	)
 
 	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses)

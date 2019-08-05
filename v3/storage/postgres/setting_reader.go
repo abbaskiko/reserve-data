@@ -15,16 +15,10 @@ func (s *Storage) GetTransferableAssets() ([]common.Asset, error) {
 	return s.getAssets(&transferable)
 }
 
-type tradingPairSymbolsDB struct {
-	tradingPairDB
-	BaseSymbol  string `db:"base_symbol"`
-	QuoteSymbol string `db:"quote_symbol"`
-}
-
 // GetTradingPair return trading pair by trading pair id
 func (s *Storage) GetTradingPair(id uint64) (common.TradingPairSymbols, error) {
 	var (
-		tradingPairDB tradingPairSymbolsDB
+		tradingPairDB tradingPairDB
 		result        common.TradingPairSymbols
 	)
 
@@ -44,7 +38,7 @@ func (s *Storage) GetTradingPair(id uint64) (common.TradingPairSymbols, error) {
 // GetTradingPairs return list of trading pairs by exchangeID
 func (s *Storage) GetTradingPairs(id uint64) ([]common.TradingPairSymbols, error) {
 	var (
-		tradingPairs []tradingPairSymbolsDB
+		tradingPairs []tradingPairDB
 		result       []common.TradingPairSymbols
 	)
 	if err := s.stmts.getTradingPairSymbols.Select(&tradingPairs, id); err != nil {
@@ -52,7 +46,7 @@ func (s *Storage) GetTradingPairs(id uint64) ([]common.TradingPairSymbols, error
 	}
 	for _, pair := range tradingPairs {
 		result = append(result, common.TradingPairSymbols{
-			TradingPair: pair.tradingPairDB.ToCommon(),
+			TradingPair: pair.ToCommon(),
 			BaseSymbol:  pair.BaseSymbol,
 			QuoteSymbol: pair.QuoteSymbol,
 		})

@@ -395,12 +395,13 @@ func (be BalanceEntry) ToBalanceResponse(decimal int64) BalanceResponse {
 	}
 }
 
+// BalanceResponse represent response authdata for reserve balance
 type BalanceResponse struct {
-	Valid      bool
-	Error      string
-	Timestamp  Timestamp
-	ReturnTime Timestamp
-	Balance    float64
+	Valid      bool      `json:"valid"`
+	Error      string    `json:"error"`
+	Timestamp  Timestamp `json:"timestamp"`
+	ReturnTime Timestamp `json:"return_time"`
+	Balance    float64   `json:"balance"`
 }
 
 type AllBalanceResponse struct {
@@ -454,6 +455,18 @@ type EBalanceEntry struct {
 	Status           bool
 }
 
+//EBalanceResponse response for exchange balance
+type EBalanceResponse struct {
+	Valid            bool               `json:"valid"`
+	Error            string             `json:"error"`
+	Timestamp        Timestamp          `json:"timestamp"`
+	ReturnTime       Timestamp          `json:"return_time"`
+	AvailableBalance map[uint64]float64 `json:"available_balance"`
+	LockedBalance    map[uint64]float64 `json:"locked_balance"`
+	DepositBalance   map[uint64]float64 `json:"deposit_balance"`
+	Status           bool               `json:"status"`
+}
+
 type AllEBalanceResponse struct {
 	Version    Version
 	Timestamp  Timestamp
@@ -485,20 +498,21 @@ func NewAuthDataRecord(timestamp Timestamp, data AuthDataSnapshot) AuthDataRecor
 	}
 }
 
+// AuthDataResponse represent response for authdata
 type AuthDataResponse struct {
-	Version    Version
-	Timestamp  Timestamp
-	ReturnTime Timestamp
+	Version    Version   `json:"version"`
+	Timestamp  Timestamp `json:"timestamp"`
+	ReturnTime Timestamp `json:"return_time"`
 	Data       struct {
-		Valid             bool
-		Error             string
-		Timestamp         Timestamp
-		ReturnTime        Timestamp
-		ExchangeBalances  map[ExchangeID]EBalanceEntry
-		ReserveBalances   map[string]BalanceResponse
-		PendingActivities []ActivityRecord
-		Block             uint64
-	}
+		Valid             bool                        `json:"valid"`
+		Error             string                      `json:"error"`
+		Timestamp         Timestamp                   `json:"timestamp"`
+		ReturnTime        Timestamp                   `json:"return_time"`
+		ExchangeBalances  map[uint64]EBalanceResponse `json:"exchange_balances"`
+		ReserveBalances   map[uint64]BalanceResponse  `json:"reserve_balances"`
+		PendingActivities []ActivityRecord            `json:"pending_activities"`
+		Block             uint64                      `json:"block"`
+	} `json:"data"`
 }
 
 // RateEntry contains the buy/sell rates of a token and their compact forms.

@@ -537,6 +537,8 @@ type tradingPairDB struct {
 	PriceLimitMin   float64 `db:"price_limit_min"`
 	PriceLimitMax   float64 `db:"price_limit_max"`
 	MinNotional     float64 `db:"min_notional"`
+	BaseSymbol      string  `db:"base_symbol"`
+	QuoteSymbol     string  `db:"quote_symbol"`
 }
 
 func (tpd *tradingPairDB) ToCommon() common.TradingPair {
@@ -797,6 +799,31 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 		return result, nil
 	default:
 		return common.Asset{}, fmt.Errorf("failed to get asset from database id=%d err=%s", id, err.Error())
+	}
+}
+
+// GetAssetBySymbol return asset by its symbol
+func (s *Storage) GetAssetBySymbol(symbol string) (common.Asset, error) {
+	var (
+		result common.Asset
+	)
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return result, err
+	}
+	defer rollbackUnlessCommitted(tx)
+
+	log.Printf("getting asset symbol=%s", symbol)
+	err = tx.Stmtx(s.stmts.getAssetBySymbol).Get(&result, symbol)
+	switch err {
+	case sql.ErrNoRows:
+		log.Printf("asset not found symbol=%s", symbol)
+		return result, common.ErrNotFound
+	case nil:
+		return result, nil
+	default:
+		return result, fmt.Errorf("failed to get asset from database symbol=%s err=%s", symbol, err.Error())
 	}
 }
 
