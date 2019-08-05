@@ -21,7 +21,6 @@ func TestServer_TradingBy(t *testing.T) {
 		assetBase       = "/v3/asset"
 		createAssetBase = "/v3/create-asset"
 		getTradingPair  = "/v3/trading-pair"
-		// tradingByPrefix ="/v3/trading-by"
 		createTradingBy = "/v3/create-trading-by"
 	)
 
@@ -81,8 +80,21 @@ func TestServer_TradingBy(t *testing.T) {
 					},
 				},
 			},
-			//assert: httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
-			assert: httputil.ExpectFailure,
+			assert: httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
+		},
+		{
+			msg:      "test create pending trading by fail by referring asset id invalid",
+			endpoint: createTradingBy,
+			method:   http.MethodPost,
+			data: common.CreateCreateTradingBy{
+				TradingBys: []common.CreateTradingByEntry{
+					{
+						TradingPairID: 1,
+						AssetID:       123,
+					},
+				},
+			},
+			assert: httputil.ExpectFailureWithReason(common.ErrTradingByAssetIDInvalid.Error()),
 		}, {
 			msg:      "test create pending trading by",
 			endpoint: createTradingBy,
@@ -96,6 +108,41 @@ func TestServer_TradingBy(t *testing.T) {
 				},
 			},
 			assert: httputil.ExpectSuccess,
+		}, {
+			msg:      "confirm create trading by",
+			endpoint: createTradingBy + "/1",
+			method:   http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				// get data in db to make sure
+				assetID, tradingPairID, err := server.storage.GetTradingBy(2)
+				require.NoError(t, err)
+				require.Equal(t, uint64(1), assetID)
+				require.Equal(t, uint64(1), tradingPairID)
+			},
+		}, {
+			msg:      "failed to confirm create trading by (id invalid)",
+			endpoint: createTradingBy + "/2",
+			method:   http.MethodPut,
+			assert:   httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
+		}, {
+			msg:      "test create pending trading by",
+			endpoint: createTradingBy,
+			method:   http.MethodPost,
+			data: common.CreateCreateTradingBy{
+				TradingBys: []common.CreateTradingByEntry{
+					{
+						TradingPairID: 1,
+						AssetID:       2,
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		}, {
+			msg:      "test delete pending trading by",
+			endpoint: createTradingBy + "/2",
+			method:   http.MethodDelete,
+			assert:   httputil.ExpectSuccess,
 		},
 	}
 
@@ -103,5 +150,4 @@ func TestServer_TradingBy(t *testing.T) {
 		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
 	}
-
 }

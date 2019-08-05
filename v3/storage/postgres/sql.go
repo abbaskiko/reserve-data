@@ -649,7 +649,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newCreateTradingBy, getCreateTradingBy, deleteCreateTradingBy, err := createTradingByStatements(db)
+	newCreateTradingBy, deleteCreateTradingBy, getCreateTradingBy, err := createTradingByStatements(db)
 	if err != nil {
 		return nil, err
 	}

@@ -113,5 +113,31 @@ func TestStorage_CreateTradingBy(t *testing.T) {
 			test.assetFn(tradingByID, err)
 		}
 	}
+}
 
+func TestStorage_ConfirmCreateTradingBy(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	require.NoError(t, err)
+
+	baseID, _, tradingPairID := setUp(t, s)
+
+	id, err := s.CreateCreateTradingBy(common.CreateCreateTradingBy{
+		TradingBys: []common.CreateTradingByEntry{
+			{
+				AssetID:       baseID,
+				TradingPairID: tradingPairID,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = s.GetCreateTradingBy(id)
+	require.NoError(t, err)
+	err = s.ConfirmCreateTradingBy(id)
+	require.NoError(t, err)
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-// CreateCreateTradingPair create a new pending TradingPair, this will delete all old pending as we maintain 1 pending only.
+// CreateCreateTradingBy create a new pending TradingBy, this will delete all old pending as we maintain 1 pending only.
 func (s *Storage) CreateCreateTradingBy(c common.CreateCreateTradingBy) (uint64, error) {
 	var id uint64
 	jsonData, err := json.Marshal(c)
@@ -22,7 +22,7 @@ func (s *Storage) CreateCreateTradingBy(c common.CreateCreateTradingBy) (uint64,
 		return 0, err
 	}
 	defer rollbackUnlessCommitted(tx)
-	err = tx.Stmtx(s.stmts.newCreateTradingPair).Get(&id, jsonData)
+	err = tx.Stmtx(s.stmts.newCreateTradingBy).Get(&id, jsonData)
 	if err != nil {
 		return 0, err
 	}
@@ -30,7 +30,7 @@ func (s *Storage) CreateCreateTradingBy(c common.CreateCreateTradingBy) (uint64,
 	if err != nil {
 		return 0, err
 	}
-	log.Printf("create pending trading pair success with id=%d\n", id)
+	log.Printf("create pending trading by success with id=%d\n", id)
 	return id, nil
 }
 
@@ -51,7 +51,7 @@ func (p *createTradingBy) ToCommon() common.CreateTradingBy {
 // GetCreateTradingBy list all CreateTradingBy exist in database
 func (s *Storage) GetCreateTradingBys() ([]common.CreateTradingBy, error) {
 	var pendings []createTradingBy
-	err := s.stmts.getCreateTradingPairs.Select(&pendings, nil)
+	err := s.stmts.getCreateTradingBy.Select(&pendings, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +62,10 @@ func (s *Storage) GetCreateTradingBys() ([]common.CreateTradingBy, error) {
 	return result, nil
 }
 
-// GetCreateTradingPair get CreateTradingPair by id
+// GetCreateTradingBy get CreateTradingBy by id
 func (s *Storage) GetCreateTradingBy(id uint64) (common.CreateTradingBy, error) {
 	var result createTradingBy
-	err := s.stmts.getCreateTradingBy.Get(&result, nil)
+	err := s.stmts.getCreateTradingBy.Get(&result, id)
 	if err != nil {
 		return common.CreateTradingBy{}, err
 	}
@@ -91,11 +91,11 @@ func (s *Storage) RejectCreateTradingBy(id uint64) error {
 }
 
 func (s *Storage) ConfirmCreateTradingBy(id uint64) error {
-	var pending createTradingPair
+	var pending createTradingBy
 	err := s.stmts.getCreateTradingBy.Get(&pending, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("create trading pair request not found in database id=%d", id)
+			log.Printf("create trading by request not found in database id=%d", id)
 			return common.ErrNotFound
 		}
 		return err
