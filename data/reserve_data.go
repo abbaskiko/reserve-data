@@ -147,14 +147,14 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, er
 		availableBalance := map[uint64]float64{}
 		lockedBalance := map[uint64]float64{}
 		depositBalance := map[uint64]float64{}
-		for tokenName := range balances.AvailableBalance {
-			token, err := rd.settingStorage.GetAssetBySymbol(tokenName)
+		for tokenSymbol := range balances.AvailableBalance {
+			token, err := rd.settingStorage.GetAssetExchangeBySymbol(exchange.ID, tokenSymbol)
 			if err != nil {
-				return result, errors.Wrapf(err, "failed to get token by name: %s", tokenName)
+				return result, errors.Wrapf(err, "failed to get token by name: %s", tokenSymbol)
 			}
-			availableBalance[token.ID] = balances.AvailableBalance[tokenName]
-			lockedBalance[token.ID] = balances.LockedBalance[tokenName]
-			depositBalance[token.ID] = balances.DepositBalance[tokenName]
+			availableBalance[token.ID] = balances.AvailableBalance[tokenSymbol]
+			lockedBalance[token.ID] = balances.LockedBalance[tokenSymbol]
+			depositBalance[token.ID] = balances.DepositBalance[tokenSymbol]
 		}
 		result.Data.ExchangeBalances[exchange.ID] = common.EBalanceResponse{
 			Valid:            balances.Valid,

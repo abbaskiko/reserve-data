@@ -89,6 +89,7 @@ type Interface interface {
 type SettingReader interface {
 	GetAsset(id uint64) (v3.Asset, error)
 	GetAssetBySymbol(symbol string) (v3.Asset, error)
+	GetAssetExchangeBySymbol(exchangeID uint64, symbol string) (v3.Asset, error)
 	GetAssetExchange(id uint64) (v3.AssetExchange, error)
 	GetExchange(id uint64) (v3.Exchange, error)
 	GetExchangeByName(name string) (v3.Exchange, error)
