@@ -83,7 +83,7 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 			assert:   httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
 		},
 		{
-			msg:      "create change other asset address",
+			msg:      "create other valid change asset address",
 			endpoint: changeAssetAddress,
 			method:   http.MethodPost,
 			assert:   httputil.ExpectSuccess,

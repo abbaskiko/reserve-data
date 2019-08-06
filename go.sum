@@ -16,8 +16,8 @@ github.com/apilayer/freegeoip v3.5.0+incompatible/go.mod h1:CUfFqErhFhXneJendyQ/
 github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7/go.mod h1:D/tb0zPVXnP7fmsLZjtdUhSsumbK/ij54UXjjVgMGxQ=
 github.com/aristanetworks/goarista v0.0.0-20190625195245-f3b0eb5a88b2 h1:j6qQji0+fi+Tq0mccuuvGBZ9xxukks+ingV70iHsub4=
 github.com/aristanetworks/goarista v0.0.0-20190625195245-f3b0eb5a88b2/go.mod h1:D/tb0zPVXnP7fmsLZjtdUhSsumbK/ij54UXjjVgMGxQ=
-github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf h1:eg0MeVzsP1G42dRafH3vf+al2vQIJU0YHX+1Tw87oco=
-github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
+github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a h1:idn718Q4B6AGu/h5Sxe66HYVdqdGu2l9Iebqhi/AEoA=
+github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/aws/aws-sdk-go v1.20.10 h1:wrwdNYb9Xe1ahNEEXl0M/O/g/dmonWag1TFAKVNQulM=
 github.com/aws/aws-sdk-go v1.20.10/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=

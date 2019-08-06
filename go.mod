@@ -6,6 +6,7 @@ require (
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/apilayer/freegeoip v3.5.0+incompatible // indirect
 	github.com/aristanetworks/goarista v0.0.0-20190625195245-f3b0eb5a88b2 // indirect
+	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a // indirect
 	github.com/aws/aws-sdk-go v1.20.10
 	github.com/boltdb/bolt v1.3.1
 	github.com/btcsuite/btcd v0.0.0-20190614013741-962a206e94e9 // indirect

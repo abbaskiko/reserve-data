@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	_ "github.com/KyberNetwork/reserve-data/http/httputil/validators" // import for custom binding
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -317,10 +318,10 @@ type ChangeAssetAddressPending pendingObject
 // ChangeAssetAddressEntry present data to create a change asset address
 type ChangeAssetAddressEntry struct {
 	ID      uint64 `json:"id" binding:"required"`
-	Address string `json:"address" binding:"required"`
+	Address string `json:"address" binding:"required,isEthereumAddress"`
 }
 
 // ChangeAssetAddress present data to create a change asset address
 type ChangeAssetAddress struct {
-	Assets []ChangeAssetAddressEntry `json:"assets"`
+	Assets []ChangeAssetAddressEntry `json:"assets" binding:"dive"`
 }

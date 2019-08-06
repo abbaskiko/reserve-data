@@ -2,6 +2,7 @@ package http
 
 import (
 	"log"
+	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -13,19 +14,20 @@ import (
 func (s *Server) createChangeAssetAddress(c *gin.Context) {
 	var changeAssetAddress common.ChangeAssetAddress
 	if err := c.ShouldBindJSON(&changeAssetAddress); err != nil {
+		log.Printf("cannot bind data to create change_asset_addresses from request err=%s", err.Error())
+		if strings.Contains(err.Error(), "isEthereumAddress") {
+			err = common.ErrInvalidAddress
+		}
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
 	for _, changeAssetAddressEntry := range changeAssetAddress.Assets {
 		if err := s.checkChangeAssetAddressParams(changeAssetAddressEntry); err != nil {
-			log.Println("error", err)
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
 	}
-
-	log.Println("still run here")
 
 	id, err := s.storage.CreateChangeAssetAddress(changeAssetAddress)
 	if err != nil {
@@ -36,12 +38,12 @@ func (s *Server) createChangeAssetAddress(c *gin.Context) {
 }
 
 func (s *Server) checkChangeAssetAddressParams(changeAssetAddressEntry common.ChangeAssetAddressEntry) error {
-	if _, err := s.storage.GetAsset(changeAssetAddressEntry.ID); err != nil {
+	asset, err := s.storage.GetAsset(changeAssetAddressEntry.ID)
+	if err != nil {
 		return err
 	}
-	if !ethereum.IsHexAddress(changeAssetAddressEntry.Address) {
-		log.Printf("%s is not a valid ethereum address", changeAssetAddressEntry.Address)
-		return common.ErrInvalidAddress
+	if asset.Address == ethereum.HexToAddress(changeAssetAddressEntry.Address) {
+		return common.ErrAddressExists
 	}
 	return nil
 }
@@ -51,7 +53,7 @@ func (s *Server) getChangeAssetAddress(c *gin.Context) {
 		ID uint64 `uri:"id" binding:"required"`
 	}
 	if err := c.ShouldBindUri(&input); err != nil {
-		log.Println(err)
+		log.Printf("cannot bind id of change_asset_addresses from request err=%s", err.Error())
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -77,7 +79,7 @@ func (s *Server) confirmChangeAssetAddress(c *gin.Context) {
 		ID uint64 `uri:"id" binding:"required"`
 	}
 	if err := c.ShouldBindUri(&input); err != nil {
-		log.Println(err)
+		log.Printf("cannot bind id of change_asset_addresses from request err=%s", err.Error())
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -94,7 +96,7 @@ func (s *Server) rejectChangeAssetAddress(c *gin.Context) {
 		ID uint64 `uri:"id" binding:"required"`
 	}
 	if err := c.ShouldBindUri(&input); err != nil {
-		log.Println(err)
+		log.Printf("cannot bind id of change_asset_addresses from request err=%s", err.Error())
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
