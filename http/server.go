@@ -223,65 +223,64 @@ func (s *Server) GetRate(c *gin.Context) {
 	}
 }
 
+// RateRequest is request for a rate
+type RateRequest struct {
+	AssetID uint64 `json:"asset_id"`
+	Buy     string `json:"buy"`
+	Sell    string `json:"sell"`
+	Mid     string `json:"mid"`
+	Msg     string `json:"msg"`
+}
+
+// SetRateEntry is input for set rate request
+type SetRateEntry struct {
+	Block uint64        `json:"block"`
+	Rates []RateRequest `json:"rates"`
+}
+
 // SetRate is for setting token rate
 func (s *Server) SetRate(c *gin.Context) {
-	postForm := c.Request.Form
-	assetIDs := postForm.Get("assets")
-	buys := postForm.Get("buys")
-	sells := postForm.Get("sells")
-	block := postForm.Get("block")
-	afpMid := postForm.Get("afp_mid")
-	msgs := strings.Split(postForm.Get("msgs"), "-")
-	var assets []v3common.Asset
-	{
+	var (
+		input     SetRateEntry
+		assets    []v3common.Asset
+		bigBuys   = []*big.Int{}
+		bigSells  = []*big.Int{}
+		bigAfpMid = []*big.Int{}
+		msgs      []string
+	)
+	if err := c.ShouldBindJSON(&input); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
-	for _, assetID := range strings.Split(assetIDs, "-") {
-		id, err := strconv.Atoi(assetID)
-		if err != nil {
-			httputil.ResponseFailure(
-				c,
-				httputil.WithError(fmt.Errorf("invalid asset id: err=%s", err.Error())))
-		}
-		asset, err := s.settingStorage.GetAsset(uint64(id))
+	for _, rates := range input.Rates {
+		asset, err := s.settingStorage.GetAsset(rates.AssetID)
 		if err != nil {
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
 		assets = append(assets, asset)
 	}
-	bigBuys := []*big.Int{}
-	for _, rate := range strings.Split(buys, "-") {
-		r, err := hexutil.DecodeBig(rate)
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
+	for _, rate := range input.Rates {
+		rbuy, ok := big.NewInt(0).SetString(rate.Buy, 10)
+		if !ok {
+			httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("cannot parse rate number buy: %s", rate.Buy)))
 			return
 		}
-		bigBuys = append(bigBuys, r)
-	}
-	bigSells := []*big.Int{}
-	for _, rate := range strings.Split(sells, "-") {
-		r, err := hexutil.DecodeBig(rate)
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
+		bigBuys = append(bigBuys, rbuy)
+		rSell, ok := big.NewInt(0).SetString(rate.Sell, 10)
+		if !ok {
+			httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("cannot parse rate number sell: %s", rate.Sell)))
 			return
 		}
-		bigSells = append(bigSells, r)
-	}
-	intBlock, err := strconv.ParseInt(block, 10, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	bigAfpMid := []*big.Int{}
-	for _, rate := range strings.Split(afpMid, "-") {
-		var r *big.Int
-		if r, err = hexutil.DecodeBig(rate); err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
+		bigSells = append(bigSells, rSell)
+		rMid, ok := big.NewInt(0).SetString(rate.Mid, 10)
+		if !ok {
+			httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("cannot parse rate number mid: %s", rate.Mid)))
 			return
 		}
-		bigAfpMid = append(bigAfpMid, r)
+		bigAfpMid = append(bigAfpMid, rMid)
+		msgs = append(msgs, rate.Msg)
 	}
-	id, err := s.core.SetRates(assets, bigBuys, bigSells, big.NewInt(intBlock), bigAfpMid, msgs)
+	id, err := s.core.SetRates(assets, bigBuys, bigSells, big.NewInt(int64(input.Block)), bigAfpMid, msgs)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
