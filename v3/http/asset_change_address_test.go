@@ -164,6 +164,7 @@ func TestChangeAssetAddress_FailedWithDuplicateAddress(t *testing.T) {
 			},
 		},
 	})
+	require.NoError(t, err)
 	err = s.ConfirmChangeAssetAddress(id)
 	require.Equal(t, err, common.ErrAddressExists)
 }
