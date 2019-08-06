@@ -312,8 +312,8 @@ type CreateTradingByEntry struct {
 	TradingPairID uint64 `json:"trading_pair_id"`
 }
 
-// ChangeAssetAddressPending hold state of being changed address of asset and waiting for confirm to apply.
-type ChangeAssetAddressPending pendingObject
+// ChangeAssetAddress hold state of being changed address of asset and waiting for confirm to apply.
+type ChangeAssetAddress pendingObject
 
 // ChangeAssetAddressEntry present data to create a change asset address
 type ChangeAssetAddressEntry struct {
@@ -321,7 +321,7 @@ type ChangeAssetAddressEntry struct {
 	Address string `json:"address" binding:"required,isEthereumAddress"`
 }
 
-// ChangeAssetAddress present data to create a change asset address
-type ChangeAssetAddress struct {
+// CreateChangeAssetAddress present data to create a change asset address
+type CreateChangeAssetAddress struct {
 	Assets []ChangeAssetAddressEntry `json:"assets" binding:"dive"`
 }

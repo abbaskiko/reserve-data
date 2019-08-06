@@ -18,7 +18,7 @@ const (
 )
 
 // CreateChangeAssetAddress create a new change asset address
-func (s *Storage) CreateChangeAssetAddress(c common.ChangeAssetAddress) (uint64, error) {
+func (s *Storage) CreateChangeAssetAddress(c common.CreateChangeAssetAddress) (uint64, error) {
 	var id uint64
 	jsonData, err := json.Marshal(c)
 	if err != nil {
@@ -48,8 +48,8 @@ type changeAssetAddress struct {
 	Data    []byte    `db:"data"`
 }
 
-func (caa changeAssetAddress) toCommon() common.ChangeAssetAddressPending {
-	return common.ChangeAssetAddressPending{
+func (caa changeAssetAddress) toCommon() common.ChangeAssetAddress {
+	return common.ChangeAssetAddress{
 		ID:      caa.ID,
 		Created: caa.Created,
 		Data:    caa.Data,
@@ -57,23 +57,23 @@ func (caa changeAssetAddress) toCommon() common.ChangeAssetAddressPending {
 }
 
 // GetChangeAssetAddress get a pending change asset address by id
-func (s *Storage) GetChangeAssetAddress(id uint64) (common.ChangeAssetAddressPending, error) {
+func (s *Storage) GetChangeAssetAddress(id uint64) (common.ChangeAssetAddress, error) {
 	var (
 		res changeAssetAddress
 	)
 	err := s.stmts.getChangeAssetAddresses.Get(&res, id)
 	if err != nil {
-		return common.ChangeAssetAddressPending{}, err
+		return common.ChangeAssetAddress{}, err
 	}
 
 	return res.toCommon(), nil
 }
 
 // GetChangeAssetAddresses get all new pending change asset address
-func (s *Storage) GetChangeAssetAddresses() ([]common.ChangeAssetAddressPending, error) {
+func (s *Storage) GetChangeAssetAddresses() ([]common.ChangeAssetAddress, error) {
 	var (
 		pending []changeAssetAddress
-		res     []common.ChangeAssetAddressPending
+		res     []common.ChangeAssetAddress
 	)
 	err := s.stmts.getChangeAssetAddresses.Get(&res, nil)
 	if err != nil {
@@ -111,8 +111,8 @@ func (s *Storage) ConfirmChangeAssetAddress(id uint64) error {
 		log.Printf("update change_asset_addresses request not found in database id=%d", id)
 		return common.ErrNotFound
 	}
-	var changeAssetAddress common.ChangeAssetAddress
-	if err = json.Unmarshal(recordedData.Data, &changeAssetAddress); err != nil {
+	var createChangeAssetAddress common.CreateChangeAssetAddress
+	if err = json.Unmarshal(recordedData.Data, &createChangeAssetAddress); err != nil {
 		return err
 	}
 	tx, err := s.db.Beginx()
@@ -121,7 +121,7 @@ func (s *Storage) ConfirmChangeAssetAddress(id uint64) error {
 	}
 	defer rollbackUnlessCommitted(tx)
 
-	for _, a := range changeAssetAddress.Assets {
+	for _, a := range createChangeAssetAddress.Assets {
 		_, err = tx.Stmtx(s.stmts.changeAssetAddress).Exec(a.ID, ethereum.HexToAddress(a.Address).Hex())
 		if err != nil {
 			pErr, ok := err.(*pq.Error)

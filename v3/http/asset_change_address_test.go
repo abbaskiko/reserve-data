@@ -38,7 +38,7 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 			endpoint: changeAssetAddress,
 			method:   http.MethodPost,
 			assert:   httputil.ExpectSuccess,
-			data: &common.ChangeAssetAddress{
+			data: &common.CreateChangeAssetAddress{
 				Assets: []common.ChangeAssetAddressEntry{
 					{
 						ID:      assetID,
@@ -56,7 +56,7 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 		},
 		{
 			msg: "create invalid change asset address (with invalid address)",
-			data: &common.ChangeAssetAddress{
+			data: &common.CreateChangeAssetAddress{
 				Assets: []common.ChangeAssetAddressEntry{
 					{
 						ID:      assetID,
@@ -70,7 +70,7 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 		},
 		{
 			msg: "create invalid change asset address (with not exist asset)",
-			data: &common.ChangeAssetAddress{
+			data: &common.CreateChangeAssetAddress{
 				Assets: []common.ChangeAssetAddressEntry{
 					{
 						ID:      1234,
@@ -87,7 +87,7 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 			endpoint: changeAssetAddress,
 			method:   http.MethodPost,
 			assert:   httputil.ExpectSuccess,
-			data: &common.ChangeAssetAddress{
+			data: &common.CreateChangeAssetAddress{
 				Assets: []common.ChangeAssetAddressEntry{
 					{
 						ID:      assetID,
@@ -123,7 +123,7 @@ func TestChangeAssetAddress_Successfully(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	id, err := s.CreateChangeAssetAddress(common.ChangeAssetAddress{
+	id, err := s.CreateChangeAssetAddress(common.CreateChangeAssetAddress{
 		Assets: []common.ChangeAssetAddressEntry{
 			{
 				ID:      assetID,
@@ -156,7 +156,7 @@ func TestChangeAssetAddress_FailedWithDuplicateAddress(t *testing.T) {
 	asset, err := s.GetAsset(assetID)
 	require.NoError(t, err)
 
-	id, err := s.CreateChangeAssetAddress(common.ChangeAssetAddress{
+	id, err := s.CreateChangeAssetAddress(common.CreateChangeAssetAddress{
 		Assets: []common.ChangeAssetAddressEntry{
 			{
 				ID:      assetID,

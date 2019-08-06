@@ -12,8 +12,8 @@ import (
 )
 
 func (s *Server) createChangeAssetAddress(c *gin.Context) {
-	var changeAssetAddress common.ChangeAssetAddress
-	if err := c.ShouldBindJSON(&changeAssetAddress); err != nil {
+	var createChangeAssetAddress common.CreateChangeAssetAddress
+	if err := c.ShouldBindJSON(&createChangeAssetAddress); err != nil {
 		log.Printf("cannot bind data to create change_asset_addresses from request err=%s", err.Error())
 		if strings.Contains(err.Error(), "isEthereumAddress") {
 			err = common.ErrInvalidAddress
@@ -22,14 +22,14 @@ func (s *Server) createChangeAssetAddress(c *gin.Context) {
 		return
 	}
 
-	for _, changeAssetAddressEntry := range changeAssetAddress.Assets {
+	for _, changeAssetAddressEntry := range createChangeAssetAddress.Assets {
 		if err := s.checkChangeAssetAddressParams(changeAssetAddressEntry); err != nil {
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
 	}
 
-	id, err := s.storage.CreateChangeAssetAddress(changeAssetAddress)
+	id, err := s.storage.CreateChangeAssetAddress(createChangeAssetAddress)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
