@@ -38,8 +38,6 @@ type Config struct {
 	BlockchainSigner     blockchain.Signer
 	DepositSigner        blockchain.Signer
 
-	EnableAuthentication bool
-
 	EthereumEndpoint        string
 	BackupEthereumEndpoints []string
 	Blockchain              *blockchain.BaseBlockchain

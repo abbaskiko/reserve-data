@@ -42,7 +42,6 @@ func GetChainType(dpl deployment.Deployment) string {
 
 func GetConfig(
 	dpl deployment.Deployment,
-	authEnbl bool,
 	nodeConf *EthereumNodeConfiguration,
 	bi binance.Interface,
 	hi huobi.Interface,
@@ -88,9 +87,6 @@ func GetConfig(
 		blockchain.NewContractCaller(callClients, nodeConf.Backup),
 	)
 
-	if !authEnbl {
-		log.Printf("\nWARNING: No authentication mode\n")
-	}
 	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
 	if err != nil {
 		log.Printf("failed to load AWS config from file %s", secretConfigFile)
@@ -101,7 +97,6 @@ func GetConfig(
 		Blockchain:              bc,
 		EthereumEndpoint:        nodeConf.Main,
 		BackupEthereumEndpoints: nodeConf.Backup,
-		EnableAuthentication:    authEnbl,
 		Archive:                 s3archive,
 		World:                   theWorld,
 		ContractAddresses:       contractAddressConf,

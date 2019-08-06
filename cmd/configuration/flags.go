@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	noAuthFlag = "no-auth"
-
 	portFlag         = "port"
 	portDefaultValue = 8000
 
@@ -136,11 +134,6 @@ func NewCliFlags() []cli.Flag {
 	flags = append(flags, NewSecretConfigCliFlag())
 	flags = append(flags, NewExchangeCliFlag())
 	flags = append(flags, NewPostgreSQLFlags(defaultDB)...)
-	flags = append(flags, cli.BoolFlag{
-		Name:   noAuthFlag,
-		Usage:  "disable core authentication",
-		EnvVar: "NO_AUTH",
-	})
 
 	return flags
 }
@@ -219,10 +212,6 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 
 // NewConfigurationFromContext returns the Configuration object from cli context.
 func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
-	var (
-		noAuth = c.GlobalBool(noAuthFlag)
-	)
-
 	dpl, err := deployment.NewDeploymentFromContext(c)
 	if err != nil {
 		return nil, err
@@ -265,7 +254,6 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 
 	config, err := GetConfig(
 		dpl,
-		!noAuth,
 		ethereumNodeConf,
 		bi,
 		hi,
