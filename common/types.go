@@ -498,6 +498,29 @@ func NewAuthDataRecord(timestamp Timestamp, data AuthDataSnapshot) AuthDataRecor
 	}
 }
 
+// ExchangeBalance is balance of a token of an exchange
+type ExchangeBalance struct {
+	ExchangeID uint64  `json:"exchange_id"`
+	Available  float64 `json:"available"`
+	Locked     float64 `json:"locked"`
+	Name       string  `json:"name"`
+}
+
+// AuthdataBalance is balance for a token in v3 authata
+type AuthdataBalance struct {
+	AssetID   uint64            `json:"asset_id"`
+	Exchanges []ExchangeBalance `json:"exchanges"`
+	Reserve   float64           `json:"reserve"`
+	Symbol    string            `json:"symbol"`
+}
+
+// AuthDataResponseV3 is auth data format for v3
+type AuthDataResponseV3 struct {
+	Balances          []AuthdataBalance `json:"balances"`
+	PendingActivities []ActivityRecord  `json:"pending_activities"`
+	Version           Version           `json:"version"`
+}
+
 // AuthDataResponse represent response for authdata
 type AuthDataResponse struct {
 	Version    Version   `json:"version"`

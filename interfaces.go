@@ -15,7 +15,7 @@ type Data interface {
 	GetOnePrice(id uint64, timestamp uint64) (common.OnePriceResponse, error)
 
 	CurrentAuthDataVersion(timestamp uint64) (common.Version, error)
-	GetAuthData(timestamp uint64) (common.AuthDataResponse, error)
+	GetAuthData(timestamp uint64) (common.AuthDataResponseV3, error)
 
 	// GetRate returns latest valid rates for all tokens that is before timestamp.
 	GetRate(timestamp uint64) (common.AllRateResponse, error)

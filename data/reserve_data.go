@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/data/datapruner"
+	v3 "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
@@ -114,71 +115,61 @@ func (rd ReserveData) CurrentAuthDataVersion(timepoint uint64) (common.Version, 
 }
 
 // GetAuthData return current auth data
-func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponse, error) {
-	timestamp := common.GetTimestamp()
+// TODO: save AuthData using new format
+func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, error) {
 	version, err := rd.storage.CurrentAuthDataVersion(timepoint)
 	if err != nil {
-		return common.AuthDataResponse{}, err
+		return common.AuthDataResponseV3{}, err
 	}
-	result := common.AuthDataResponse{}
+	result := common.AuthDataResponseV3{}
 	data, err := rd.storage.GetAuthData(version)
 	if err != nil {
-		return common.AuthDataResponse{}, err
+		return common.AuthDataResponseV3{}, err
 	}
-
-	returnTime := common.GetTimestamp()
 	result.Version = version
-	result.Timestamp = timestamp
-	result.ReturnTime = returnTime
-	result.Data.Valid = data.Valid
-	result.Data.Error = data.Error
-	result.Data.Timestamp = data.Timestamp
-	result.Data.ReturnTime = data.ReturnTime
-	result.Data.ExchangeBalances = map[uint64]common.EBalanceResponse{}
-	result.Data.PendingActivities = data.PendingActivities
-	result.Data.Block = data.Block
-	result.Data.ReserveBalances = map[uint64]common.BalanceResponse{}
+	result.PendingActivities = data.PendingActivities
+	// map of token
+	tokens := make(map[string]v3.Asset)
+	exchanges := make(map[string]v3.Exchange)
 	// get id from exchange balance asset name
 	for exchangeName, balances := range data.ExchangeBalances {
 		exchange, err := rd.settingStorage.GetExchangeByName(string(exchangeName))
 		if err != nil {
 			return result, errors.Wrapf(err, "failed to get exchange by name: %s", exchangeName)
 		}
-		availableBalance := map[uint64]float64{}
-		lockedBalance := map[uint64]float64{}
-		depositBalance := map[uint64]float64{}
+		exchanges[string(exchangeName)] = exchange
 		for tokenSymbol := range balances.AvailableBalance {
 			token, err := rd.settingStorage.GetAssetExchangeBySymbol(exchange.ID, tokenSymbol)
 			if err != nil {
 				return result, errors.Wrapf(err, "failed to get token by name: %s", tokenSymbol)
 			}
-			availableBalance[token.ID] = balances.AvailableBalance[tokenSymbol]
-			lockedBalance[token.ID] = balances.LockedBalance[tokenSymbol]
-			depositBalance[token.ID] = balances.DepositBalance[tokenSymbol]
-		}
-		result.Data.ExchangeBalances[exchange.ID] = common.EBalanceResponse{
-			Valid:            balances.Valid,
-			Error:            balances.Error,
-			Timestamp:        balances.Timestamp,
-			ReturnTime:       balances.ReturnTime,
-			AvailableBalance: availableBalance,
-			LockedBalance:    lockedBalance,
-			DepositBalance:   depositBalance,
-			Status:           balances.Status,
+			tokens[tokenSymbol] = token
 		}
 	}
 
-	// get id from asset name
-	for tokenSymbol, balance := range data.ReserveBalances {
-		token, uErr := rd.settingStorage.GetAssetBySymbol(tokenSymbol)
-		//If the token is invalid, this must Panic
-		if uErr != nil {
-			return result, fmt.Errorf("can't get asset id %d: (%s)", token.ID, uErr)
+	balances := []common.AuthdataBalance{}
+	for tokenSymbol, token := range tokens {
+		tokenBalance := common.AuthdataBalance{}
+		tokenBalance.AssetID = token.ID
+		tokenBalance.Symbol = tokenSymbol
+		exchangeBalances := []common.ExchangeBalance{}
+		for exchangeName, balances := range data.ExchangeBalances {
+			exchangeBalance := common.ExchangeBalance{}
+			if _, exist := balances.AvailableBalance[tokenSymbol]; exist {
+				exchangeBalance.ExchangeID = exchanges[string(exchangeName)].ID
+				exchangeBalance.Available = balances.AvailableBalance[tokenSymbol]
+				exchangeBalance.Locked = balances.LockedBalance[tokenSymbol]
+				exchangeBalance.Name = string(exchangeName)
+				exchangeBalances = append(exchangeBalances, exchangeBalance)
+			}
 		}
-		result.Data.ReserveBalances[token.ID] = balance.ToBalanceResponse(
-			int64(token.Decimals),
-		)
+		tokenBalance.Exchanges = exchangeBalances
+		if balance, exist := data.ReserveBalances[tokenSymbol]; exist {
+			tokenBalance.Reserve = balance.Balance.ToFloat(int64(token.Decimals))
+		}
+		balances = append(balances, tokenBalance)
 	}
+	result.Balances = balances
 
 	return result, err
 }

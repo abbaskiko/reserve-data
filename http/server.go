@@ -186,9 +186,8 @@ func (s *Server) AuthData(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
 		httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
-			"version":   data.Version,
-			"timestamp": data.Timestamp,
-			"data":      data.Data,
+			"version": data.Version,
+			"data":    data,
 		}))
 	}
 }
