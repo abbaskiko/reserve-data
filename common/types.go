@@ -502,10 +502,17 @@ type AuthdataBalance struct {
 	Symbol    string            `json:"symbol"`
 }
 
+//PendingActivities is pending activities for authdata
+type PendingActivities struct {
+	SetRates []ActivityRecord `json:"set_rates"`
+	Withdraw []ActivityRecord `json:"withdraw"`
+	Deposit  []ActivityRecord `json:"deposit"`
+}
+
 // AuthDataResponseV3 is auth data format for v3
 type AuthDataResponseV3 struct {
 	Balances          []AuthdataBalance `json:"balances"`
-	PendingActivities []ActivityRecord  `json:"pending_activities"`
+	PendingActivities PendingActivities `json:"pending_activities"`
 	Version           Version           `json:"version"`
 }
 
