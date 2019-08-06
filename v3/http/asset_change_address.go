@@ -11,11 +11,15 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
+const (
+	validateAddressTag = "isAddress"
+)
+
 func (s *Server) createChangeAssetAddress(c *gin.Context) {
 	var createChangeAssetAddress common.CreateChangeAssetAddress
 	if err := c.ShouldBindJSON(&createChangeAssetAddress); err != nil {
 		log.Printf("cannot bind data to create change_asset_addresses from request err=%s", err.Error())
-		if strings.Contains(err.Error(), "isEthereumAddress") {
+		if strings.Contains(err.Error(), validateAddressTag) {
 			err = common.ErrInvalidAddress
 		}
 		httputil.ResponseFailure(c, httputil.WithError(err))
