@@ -115,10 +115,10 @@ func TestServer_TradingBy(t *testing.T) {
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				httputil.ExpectSuccess(t, resp)
 				// get data in db to make sure
-				assetID, tradingPairID, err := server.storage.GetTradingBy(2)
+				tradingBy, err := server.storage.GetTradingBy(2)
 				require.NoError(t, err)
-				require.Equal(t, uint64(1), assetID)
-				require.Equal(t, uint64(1), tradingPairID)
+				require.Equal(t, uint64(1), tradingBy.AssetID)
+				require.Equal(t, uint64(1), tradingBy.TradingPairID)
 			},
 		}, {
 			msg:      "failed to confirm create trading by (id invalid)",

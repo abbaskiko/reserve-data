@@ -75,10 +75,10 @@ func TestStorage_CreateTradingBy(t *testing.T) {
 			tradingPairID:  tradingPairID,
 			expectedResult: true,
 			assetFn: func(tradingByID uint64, _ error) {
-				returnedAssetID, returnedTradingByID, err := s.GetTradingBy(tradingByID)
+				tradingBy, err := s.GetTradingBy(tradingByID)
 				require.NoError(t, err)
-				require.Equal(t, baseID, returnedAssetID)
-				require.Equal(t, tradingPairID, returnedTradingByID)
+				require.Equal(t, baseID, tradingBy.AssetID)
+				require.Equal(t, tradingPairID, tradingBy.TradingPairID)
 			},
 		},
 		{
@@ -86,10 +86,10 @@ func TestStorage_CreateTradingBy(t *testing.T) {
 			tradingPairID:  tradingPairID,
 			expectedResult: true,
 			assetFn: func(tradingByID uint64, _ error) {
-				returnedAssetID, returnedTradingByID, err := s.GetTradingBy(tradingByID)
+				tradingBy, err := s.GetTradingBy(tradingByID)
 				require.NoError(t, err)
-				require.Equal(t, quoteID, returnedAssetID)
-				require.Equal(t, tradingPairID, returnedTradingByID)
+				require.Equal(t, quoteID, tradingBy.AssetID)
+				require.Equal(t, tradingPairID, tradingBy.TradingPairID)
 			},
 		},
 		{

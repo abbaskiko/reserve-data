@@ -48,6 +48,7 @@ func (s *Storage) CreateTradingBy(assetID, tradingPairID uint64) (uint64, error)
 }
 
 // TODO: create endpoint for this function later
+// DeleteTradingBy delete a trading by with a given ID
 func (s *Storage) DeleteTradingBy(tradingByID uint64) error {
 	var returningTradingByID uint64
 	tx, err := s.db.Beginx()
@@ -67,17 +68,18 @@ func (s *Storage) DeleteTradingBy(tradingByID uint64) error {
 	return nil
 }
 
-func (s *Storage) GetTradingBy(tradingByID uint64) (uint64, uint64, error) {
+// GetTradingBy get a trading by with a given ID
+func (s *Storage) GetTradingBy(tradingByID uint64) (common.TradingBy, error) {
 	var (
 		result tradingByDB
 	)
 	err := s.stmts.getTradingBy.Get(&result, tradingByID)
 	switch err {
 	case sql.ErrNoRows:
-		return 0, 0, common.ErrNotFound
+		return common.TradingBy{}, common.ErrNotFound
 	case nil:
-		return result.AssetID, result.TradingPairID, nil
+		return result.ToCommon(), nil
 	default:
-		return 0, 0, err
+		return common.TradingBy{}, err
 	}
 }

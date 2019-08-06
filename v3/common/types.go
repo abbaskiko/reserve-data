@@ -76,6 +76,12 @@ type TradingPair struct {
 	MinNotional     float64 `json:"min_notional"`
 }
 
+// TradingBy is a struct hold trading pair and its asset
+type TradingBy struct {
+	TradingPairID uint64 `json:"trading_pair_id"`
+	AssetID       uint64 `json:"asset_id"`
+}
+
 // TradingPairSymbols is a pair of token trading
 type TradingPairSymbols struct {
 	TradingPair
@@ -291,12 +297,15 @@ type CreateUpdateTradingPair struct {
 	TradingPairs []UpdateTradingPairEntry `json:"trading_pairs" binding:"required,dive"`
 }
 
+// CreateTradingBy hold state of being create trading by and waiting for confirm to apply, hold origin json content.
 type CreateTradingBy pendingObject
 
+// CreateCreateTradingBy present for a CreateTradingBy(pending) request
 type CreateCreateTradingBy struct {
 	TradingBys []CreateTradingByEntry
 }
 
+// CreateTradingByEntry present the information to create a trading by
 type CreateTradingByEntry struct {
 	AssetID       uint64 `json:"asset_id"`
 	TradingPairID uint64 `json:"trading_pair_id"`

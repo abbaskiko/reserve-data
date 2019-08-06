@@ -72,6 +72,7 @@ func (s *Storage) GetCreateTradingBy(id uint64) (common.CreateTradingBy, error) 
 	return result.ToCommon(), nil
 }
 
+// RejectCreateTradingBy to delete pending create trading by request
 func (s *Storage) RejectCreateTradingBy(id uint64) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -90,6 +91,7 @@ func (s *Storage) RejectCreateTradingBy(id uint64) error {
 	return nil
 }
 
+// ConfirmCreateTradingBy to execute the pending trading by request
 func (s *Storage) ConfirmCreateTradingBy(id uint64) error {
 	var pending createTradingBy
 	err := s.stmts.getCreateTradingBy.Get(&pending, id)
