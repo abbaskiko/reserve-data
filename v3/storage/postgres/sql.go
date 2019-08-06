@@ -172,6 +172,13 @@ CREATE TABLE IF NOT EXISTS update_assets
     data    JSON      NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS change_asset_addresses
+(
+    id      SERIAL PRIMARY KEY,
+    created TIMESTAMP NOT NULL,
+    data    JSON      NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS create_trading_pairs
 (
     id      SERIAL PRIMARY KEY,
@@ -215,6 +222,18 @@ DECLARE
 BEGIN
     DELETE FROM update_assets;
     INSERT INTO update_assets(created, data) VALUES (now(), _data) RETURNING id into _id;
+    RETURN _id;
+END;
+$$ LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION new_change_asset_address(_data change_asset_addresses.data%TYPE)
+    RETURNS int AS
+$$
+DECLARE
+    _id change_asset_addresses.id%TYPE;
+BEGIN
+    DELETE FROM change_asset_addresses;
+    INSERT INTO change_asset_addresses(created, data) VALUES (now(), _data) RETURNING id into _id;
     RETURN _id;
 END;
 $$ LANGUAGE PLPGSQL;
@@ -545,6 +564,10 @@ type preparedStmts struct {
 	getUpdateAssets   *sqlx.Stmt
 	deleteUpdateAsset *sqlx.Stmt
 
+	newChangeAssetAddress    *sqlx.Stmt
+	getChangeAssetAddresses  *sqlx.Stmt
+	deleteChangeAssetAddress *sqlx.Stmt
+
 	newUpdateExchange    *sqlx.Stmt
 	getUpdateExchanges   *sqlx.Stmt
 	deleteUpdateExchange *sqlx.Stmt
@@ -588,6 +611,11 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 	}
 
 	newUpdateAsset, deleteUpdateAsset, listUpdateAsset, err := updateAssetStatements(db)
+	if err != nil {
+		return nil, err
+	}
+
+	newChangeAssetAddress, deleteChangeAssetAddress, getChangeAssetAddresses, err := changeAssetAddressStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -701,6 +729,10 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newUpdateAsset:    newUpdateAsset,
 		getUpdateAssets:   listUpdateAsset,
 		deleteUpdateAsset: deleteUpdateAsset,
+
+		newChangeAssetAddress:    newChangeAssetAddress,
+		getChangeAssetAddresses:  getChangeAssetAddresses,
+		deleteChangeAssetAddress: deleteChangeAssetAddress,
 
 		newUpdateExchange:    newUpdateExchange,
 		getUpdateExchanges:   listUpdateExchange,
@@ -1177,6 +1209,25 @@ func updateAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, err
 		return nil, nil, nil, errors.Wrap(err, "failed to prepare listUpdateAsset")
 	}
 	return newUpdateAsset, deleteUpdateAsset, listUpdateAsset, nil
+}
+
+func changeAssetAddressStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+	const newChangeAssetAddressQuery = `SELECT new_change_asset_address FROM new_change_asset_address($1)`
+	newChangeAssetAddress, err := db.Preparex(newChangeAssetAddressQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const deleteChangeAssetAddressQuery = `DELETE FROM change_asset_addresses WHERE id=$1`
+	deleteChangeAssetAddress, err := db.Preparex(deleteChangeAssetAddressQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	const getChangeAssetAddressesQuery = `SELECT id,created,data FROM change_asset_addresses WHERE id=COALESCE($1, change_asset_addresses.id)`
+	getChangeAssetAddresses, err := db.Preparex(getChangeAssetAddressesQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return newChangeAssetAddress, deleteChangeAssetAddress, getChangeAssetAddresses, nil
 }
 
 func createAssetStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {

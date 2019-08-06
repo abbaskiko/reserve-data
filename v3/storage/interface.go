@@ -89,6 +89,12 @@ type Interface interface {
 	GetCreateTradingBy(uint64) (v3.CreateTradingBy, error)
 	RejectCreateTradingBy(uint64) error
 	ConfirmCreateTradingBy(uint64) error
+
+	CreateChangeAssetAddress(v3.CreateChangeAssetAddress) (uint64, error)
+	GetChangeAssetAddress(id uint64) (v3.ChangeAssetAddress, error)
+	GetChangeAssetAddresses() ([]v3.ChangeAssetAddress, error)
+	RejectChangeAssetAddress(id uint64) error
+	ConfirmChangeAssetAddress(id uint64) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
