@@ -90,9 +90,9 @@ type Interface interface {
 	RejectCreateTradingBy(uint64) error
 	ConfirmCreateTradingBy(uint64) error
 	
-	CreateChangeAssetAddress(v3.ChangeAssetAddress) (uint64, error)
-	GetChangeAssetAddress(id uint64) (v3.ChangeAssetAddressPending, error)
-	GetChangeAssetAddresses() ([]v3.ChangeAssetAddressPending, error)
+	CreateChangeAssetAddress(v3.CreateChangeAssetAddress) (uint64, error)
+	GetChangeAssetAddress(id uint64) (v3.ChangeAssetAddress, error)
+	GetChangeAssetAddresses() ([]v3.ChangeAssetAddress, error)
 	RejectChangeAssetAddress(id uint64) error
 	ConfirmChangeAssetAddress(id uint64) error
 }
