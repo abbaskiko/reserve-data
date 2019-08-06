@@ -77,5 +77,12 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	g.GET("/update-trading-pair/:id", server.getUpdateTradingPair)
 	g.POST("/update-trading-pair", server.createUpdateTradingPair)
 	g.DELETE("/update-trading-pair/:id", server.rejectUpdateTradingPair)
+
+	g.POST("/create-trading-by", server.createCreateTradingBy)
+	g.GET("/create-trading-by", server.getCreateTradingBy)
+	g.GET("/create-trading-by/:id", server.getCreateTradingBy)
+	g.PUT("/create-trading-by/:id", server.confirmCreateTradingBy)
+	g.DELETE("/create-trading-by/:id", server.rejectCreateTradingBy)
+
 	return server
 }

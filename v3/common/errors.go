@@ -42,4 +42,6 @@ var (
 	ErrExchangeNotExists = errors.New("exchange is not exist")
 	// ErrAssetNotExists is returned when foreign key is not exist.
 	ErrAssetNotExists = errors.New("asset is not exist")
+	// ErrTradingByAssetIDInvalid is returned when trading by asset id is invalid
+	ErrTradingByAssetIDInvalid = errors.New("asset_id is either base or quote of trading_pair")
 )

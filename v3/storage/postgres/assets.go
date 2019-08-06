@@ -682,6 +682,13 @@ type tradingByDB struct {
 	TradingPairID uint64 `db:"trading_pair_id"`
 }
 
+func (db *tradingByDB) ToCommon() common.TradingBy {
+	return common.TradingBy{
+		TradingPairID: db.TradingPairID,
+		AssetID:       db.AssetID,
+	}
+}
+
 func toTradingPairMap(tps []tradingPairDB) map[uint64]tradingPairDB {
 	res := make(map[uint64]tradingPairDB)
 	for _, tp := range tps {
