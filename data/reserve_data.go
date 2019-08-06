@@ -127,7 +127,23 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 		return common.AuthDataResponseV3{}, err
 	}
 	result.Version = version
-	result.PendingActivities = data.PendingActivities
+	// result.PendingActivities = data.Pendingctivities
+	pendingSetRate := []common.ActivityRecord{}
+	pendingWithdraw := []common.ActivityRecord{}
+	pendingDeposit := []common.ActivityRecord{}
+	for _, activity := range data.PendingActivities {
+		switch activity.Action {
+		case common.ActionSetRate:
+			pendingSetRate = append(pendingSetRate, activity)
+		case common.ActionDeposit:
+			pendingDeposit = append(pendingDeposit, activity)
+		case common.ActionWithdraw:
+			pendingWithdraw = append(pendingWithdraw, activity)
+		}
+	}
+	result.PendingActivities.SetRates = pendingSetRate
+	result.PendingActivities.Withdraw = pendingWithdraw
+	result.PendingActivities.Deposit = pendingDeposit
 	// map of token
 	tokens := make(map[string]v3.Asset)
 	exchanges := make(map[string]v3.Exchange)
