@@ -12,7 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
@@ -43,7 +42,6 @@ func GetChainType(dpl deployment.Deployment) string {
 
 func GetConfig(
 	dpl deployment.Deployment,
-	authEnbl bool,
 	nodeConf *EthereumNodeConfiguration,
 	bi binance.Interface,
 	hi huobi.Interface,
@@ -58,8 +56,6 @@ func GetConfig(
 		log.Printf("Can't init the world (which is used to get global data), err " + err.Error())
 		return nil, err
 	}
-
-	hmac512auth := http.NewKNAuthenticationFromFile(secretConfigFile)
 
 	chainType := GetChainType(dpl)
 
@@ -91,9 +87,6 @@ func GetConfig(
 		blockchain.NewContractCaller(callClients, nodeConf.Backup),
 	)
 
-	if !authEnbl {
-		log.Printf("\nWARNING: No authentication mode\n")
-	}
 	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
 	if err != nil {
 		log.Printf("failed to load AWS config from file %s", secretConfigFile)
@@ -104,8 +97,6 @@ func GetConfig(
 		Blockchain:              bc,
 		EthereumEndpoint:        nodeConf.Main,
 		BackupEthereumEndpoints: nodeConf.Backup,
-		AuthEngine:              hmac512auth,
-		EnableAuthentication:    authEnbl,
 		Archive:                 s3archive,
 		World:                   theWorld,
 		ContractAddresses:       contractAddressConf,

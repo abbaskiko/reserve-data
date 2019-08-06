@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -42,8 +41,6 @@ type Server struct {
 	core                reserve.Core
 	metric              metric.Storage
 	host                string
-	authEnabled         bool
-	auth                Authentication
 	r                   *gin.Engine
 	blockchain          Blockchain
 	contractAddressConf *common.ContractAddressConfiguration
@@ -85,60 +82,6 @@ func IsIntime(nonce string) bool {
 		return false
 	}
 	return true
-}
-
-func eligible(ups, allowedPerms []Permission) bool {
-	for _, up := range ups {
-		for _, ap := range allowedPerms {
-			if up == ap {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// Authenticated signed message (message = url encoded both query params and post params, keys are sorted) in "signed" header
-// using HMAC512
-// params must contain "nonce" which is the unixtime in millisecond. The nonce will be invalid
-// if it differs from server time more than 10s
-func (s *Server) Authenticated(c *gin.Context, requiredParams []string, perms []Permission) (url.Values, bool) {
-	err := c.Request.ParseForm()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Malformed request package: %s", err.Error())))
-		return c.Request.Form, false
-	}
-
-	if !s.authEnabled {
-		return c.Request.Form, true
-	}
-
-	params := c.Request.Form
-	log.Printf("Form params: %s\n", params)
-	if !IsIntime(params.Get("nonce")) {
-		httputil.ResponseFailure(c, httputil.WithReason("Your nonce is invalid"))
-		return c.Request.Form, false
-	}
-
-	for _, p := range requiredParams {
-		if params.Get(p) == "" {
-			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Required param (%s) is missing. Param name is case sensitive", p)))
-			return c.Request.Form, false
-		}
-	}
-
-	signed := c.GetHeader("signed")
-	message := c.Request.Form.Encode()
-	userPerms := s.auth.GetPermission(signed, message)
-	if eligible(userPerms, perms) {
-		return params, true
-	}
-	if len(userPerms) == 0 {
-		httputil.ResponseFailure(c, httputil.WithReason("Invalid signed token"))
-	} else {
-		httputil.ResponseFailure(c, httputil.WithReason("You don't have permission to proceed"))
-	}
-	return params, false
 }
 
 // AllPricesVersion return current version of all token
@@ -227,11 +170,6 @@ func (s *Server) Price(c *gin.Context) {
 // AuthDataVersion return current version of auth data
 func (s *Server) AuthDataVersion(c *gin.Context) {
 	log.Printf("Getting current auth data snapshot version")
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
-
 	data, err := s.app.CurrentAuthDataVersion(getTimePoint(c, true))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -243,11 +181,6 @@ func (s *Server) AuthDataVersion(c *gin.Context) {
 // AuthData return current auth data
 func (s *Server) AuthData(c *gin.Context) {
 	log.Printf("Getting current auth data snapshot \n")
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
-
 	data, err := s.app.GetAuthData(getTimePoint(c, true))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -291,12 +224,9 @@ func (s *Server) GetRate(c *gin.Context) {
 	}
 }
 
-// SetRate set rate
+// SetRate is for setting token rate
 func (s *Server) SetRate(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"tokens", "buys", "sells", "block", "afp_mid", "msgs"}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
+	postForm := c.Request.Form
 	assetIDs := postForm.Get("assets")
 	buys := postForm.Get("buys")
 	sells := postForm.Get("sells")
@@ -360,13 +290,9 @@ func (s *Server) SetRate(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
-// Trade trade asset in cex
+// Trade create an order in cexs
 func (s *Server) Trade(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"pair", "amount", "rate", "type"}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
-
+	postForm := c.Request.Form
 	exchangeParam := c.Param("exchangeid")
 	pairIDParam := c.Param("pair")
 	amountParam := postForm.Get("amount")
@@ -426,13 +352,9 @@ func (s *Server) Trade(c *gin.Context) {
 	}))
 }
 
-// CancelOrder cancel an order in a cex
+// CancelOrder cancel an order from cexs
 func (s *Server) CancelOrder(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"order_id"}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
-
+	postForm := c.Request.Form
 	exchangeParam := c.Param("exchangeid")
 	id := postForm.Get("order_id")
 
@@ -457,11 +379,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 
 // Withdraw asset to reserve from cex
 func (s *Server) Withdraw(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"asset", "amount"}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
-
+	postForm := c.Request.Form
 	exchangeParam := c.Param("exchangeid")
 	assetParam := postForm.Get("asset")
 	amountParam := postForm.Get("amount")
@@ -498,11 +416,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 
 // Deposit asset into cex
 func (s *Server) Deposit(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"amount", "asset"}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
-
+	postForm := c.Request.Form
 	exchangeParam := c.Param("exchangeid")
 	amountParam := postForm.Get("amount")
 	assetIDParam := postForm.Get("asset")
@@ -540,10 +454,6 @@ func (s *Server) Deposit(c *gin.Context) {
 // GetActivities return all activities record
 func (s *Server) GetActivities(c *gin.Context) {
 	log.Printf("Getting all activity records \n")
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
@@ -571,11 +481,6 @@ func (s *Server) StopFetcher(c *gin.Context) {
 // ImmediatePendingActivities return activities which are pending
 func (s *Server) ImmediatePendingActivities(c *gin.Context) {
 	log.Printf("Getting all immediate pending activity records \n")
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
-
 	data, err := s.app.GetPendingActivities()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -590,10 +495,7 @@ func (s *Server) Metrics(c *gin.Context) {
 		Timestamp: common.GetTimepoint(),
 	}
 	log.Printf("Getting metrics")
-	postForm, ok := s.Authenticated(c, []string{"assets", "from", "to"}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
+	postForm := c.Request.Form
 	assetIDsParam := postForm.Get("assets")
 	fromParam := postForm.Get("from")
 	toParam := postForm.Get("to")
@@ -634,10 +536,7 @@ func (s *Server) Metrics(c *gin.Context) {
 // StoreMetrics store metrics into db
 func (s *Server) StoreMetrics(c *gin.Context) {
 	log.Printf("Storing metrics")
-	postForm, ok := s.Authenticated(c, []string{"timestamp", "data"}, []Permission{RebalancePermission})
-	if !ok {
-		return
-	}
+	postForm := c.Request.Form
 	timestampParam := postForm.Get("timestamp")
 	dataParam := postForm.Get("data")
 
@@ -713,10 +612,6 @@ func (s *Server) StoreMetrics(c *gin.Context) {
 
 // GetTradeHistory return trade history
 func (s *Server) GetTradeHistory(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	fromTime, toTime, ok := s.ValidateTimeInput(c)
 	if !ok {
 		return
@@ -735,10 +630,6 @@ func (s *Server) GetTimeServer(c *gin.Context) {
 
 // GetRebalanceStatus return rebalanceStatus (true or false)
 func (s *Server) GetRebalanceStatus(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	data, err := s.metric.GetRebalanceControl()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -749,10 +640,6 @@ func (s *Server) GetRebalanceStatus(c *gin.Context) {
 
 //HoldRebalance stop rebalance action
 func (s *Server) HoldRebalance(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	if err := s.metric.StoreRebalanceControl(false); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 		return
@@ -762,10 +649,6 @@ func (s *Server) HoldRebalance(c *gin.Context) {
 
 // EnableRebalance enable rebalance
 func (s *Server) EnableRebalance(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	if err := s.metric.StoreRebalanceControl(true); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	}
@@ -774,10 +657,6 @@ func (s *Server) EnableRebalance(c *gin.Context) {
 
 // GetSetrateStatus return setRateStatus (true or false)
 func (s *Server) GetSetrateStatus(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	data, err := s.metric.GetSetrateControl()
 	if err != nil {
 		httputil.ResponseFailure(c)
@@ -788,10 +667,6 @@ func (s *Server) GetSetrateStatus(c *gin.Context) {
 
 // HoldSetrate stop set rate
 func (s *Server) HoldSetrate(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	if err := s.metric.StoreSetrateControl(false); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	}
@@ -800,10 +675,6 @@ func (s *Server) HoldSetrate(c *gin.Context) {
 
 // EnableSetrate allow analytics to call setrate
 func (s *Server) EnableSetrate(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	if err := s.metric.StoreSetrateControl(true); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	}
@@ -826,10 +697,7 @@ func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 
 // SetStableTokenParams set stable token params
 func (s *Server) SetStableTokenParams(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfigurePermission})
-	if !ok {
-		return
-	}
+	postForm := c.Request.Form
 	value := []byte(postForm.Get("value"))
 	if len(value) > maxDataSize {
 		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
@@ -845,10 +713,7 @@ func (s *Server) SetStableTokenParams(c *gin.Context) {
 
 // ConfirmStableTokenParams confirm stable token params
 func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
+	postForm := c.Request.Form
 	value := []byte(postForm.Get("value"))
 	if len(value) > maxDataSize {
 		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
@@ -864,10 +729,6 @@ func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
 
 // RejectStableTokenParams reject stable token params
 func (s *Server) RejectStableTokenParams(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
-	if !ok {
-		return
-	}
 	err := s.metric.RemovePendingStableTokenParams()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -878,11 +739,6 @@ func (s *Server) RejectStableTokenParams(c *gin.Context) {
 
 // GetPendingStableTokenParams return pending stable token params
 func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
-	if !ok {
-		return
-	}
-
 	data, err := s.metric.GetPendingStableTokenParams()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -893,11 +749,6 @@ func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
 
 // GetStableTokenParams return all stable token params
 func (s *Server) GetStableTokenParams(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
-	if !ok {
-		return
-	}
-
 	data, err := s.metric.GetStableTokenParams()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -967,8 +818,6 @@ func NewHTTPServer(
 	core reserve.Core,
 	metric metric.Storage,
 	host string,
-	enableAuth bool,
-	authEngine Authentication,
 	dpl deployment.Deployment,
 	bc Blockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
@@ -999,8 +848,6 @@ func NewHTTPServer(
 		core:                core,
 		metric:              metric,
 		host:                host,
-		authEnabled:         enableAuth,
-		auth:                authEngine,
 		r:                   r,
 		blockchain:          bc,
 		contractAddressConf: contractAddressConf,
