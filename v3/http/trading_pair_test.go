@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -31,6 +32,13 @@ func TestHTTPServerTradingPair(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeName{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exhID := v1common.ExchangeID(exchangeID.String())
+		exchange := v1common.TestExchange{}
+		v1common.SupportedExchanges[exhID] = exchange
+	}
 
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
