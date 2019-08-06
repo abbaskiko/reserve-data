@@ -100,7 +100,7 @@ type AssetExchange struct {
 	WithdrawFee       float64          `json:"withdraw_fee"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
-	TradingPairs      []TradingPair    `json:"trading_pairs" binding:"dive"`
+	TradingPairs      []TradingPair    `json:"trading_pairs,omitempty" binding:"dive"`
 }
 
 // AssetTarget is the target setting of an asset.
@@ -139,16 +139,16 @@ type Asset struct {
 	Symbol             string              `json:"symbol"`
 	Name               string              `json:"name"`
 	Address            ethereum.Address    `json:"address"`
-	OldAddresses       []ethereum.Address  `json:"old_addresses"`
+	OldAddresses       []ethereum.Address  `json:"old_addresses,omitempty"`
 	Decimals           uint64              `json:"decimals"`
 	Transferable       bool                `json:"transferable"`
 	SetRate            SetRate             `json:"set_rate"`
 	Rebalance          bool                `json:"rebalance"`
 	IsQuote            bool                `json:"is_quote"`
-	PWI                *AssetPWI           `json:"pwi"`
-	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
-	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
-	Target             *AssetTarget        `json:"target"`
+	PWI                *AssetPWI           `json:"pwi,omitempty"`
+	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic,omitempty"`
+	Exchanges          []AssetExchange     `json:"exchanges,omitempty" binding:"dive"`
+	Target             *AssetTarget        `json:"target,omitempty"`
 	Created            time.Time           `json:"created"`
 	Updated            time.Time           `json:"updated"`
 }
