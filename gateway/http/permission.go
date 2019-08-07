@@ -41,6 +41,7 @@ p, %[1]s, /v3/update-trading-pair/:id, (PUT)|(DELETE) `, key)
 func addKeyRebalancePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
+p, %[1]s, /price-factor, POST,
 p, %[1]s, /cancelorder/:exchangeid, POST
 p, %[1]s, /deposit/:exchangeid, POST
 p, %[1]s, /withdraw/:exchangeid, POST
