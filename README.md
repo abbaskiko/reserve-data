@@ -99,20 +99,6 @@ sample:
 
 ## APIs
 
-### Get prices for specific base-quote pair
-
-```shell
-<host>:8000/prices/<base>/<quote>
-```
-
-Where *<base>* is symbol of the base token and *<quote>* is symbol of the quote token
-
-eg:
-
-```shell
-curl -X GET "http://127.0.0.1:8000/prices/omg/eth"
-```
-
 ### Get token rates from blockchain
 
 ```shell
@@ -127,7 +113,49 @@ curl -X GET "http://127.0.0.1:8000/getrates"
 response:
 
 ```json
-  {"data":{"ADX":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":371.0142432353458,"CompactBuy":0,"BaseSell":0.002538305711940429,"CompactSell":0,"Rate":0,"Block":2420849},"BAT":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":1656.6398539506304,"CompactBuy":0,"BaseSell":0.0005684685,"CompactSell":0,"Rate":0,"Block":2420849},"CVC":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":1051.2127184124374,"CompactBuy":-1,"BaseSell":0.00089586775,"CompactSell":1,"Rate":0,"Block":2420849},"DGD":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":5.662106994812361,"CompactBuy":0,"BaseSell":0.16632458088099816,"CompactSell":0,"Rate":0,"Block":2420849},"EOS":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":121.11698932232625,"CompactBuy":-15,"BaseSell":0.007775519999999998,"CompactSell":15,"Rate":0,"Block":2420849},"ETH":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":0,"CompactBuy":30,"BaseSell":0,"CompactSell":-29,"Rate":0,"Block":2420849},"FUN":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":6805.131583093689,"CompactBuy":33,"BaseSell":0.000138387856475128,"CompactSell":-32,"Rate":0,"Block":2420849},"GNT":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":1055.0281030473377,"CompactBuy":-74,"BaseSell":0.0010113802,"CompactSell":-47,"Rate":0,"Block":2420849},"KNC":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":229.65128829779712,"CompactBuy":89,"BaseSell":0.004100772,"CompactSell":-82,"Rate":0,"Block":2420849},"LINK":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":844.2527577938458,"CompactBuy":101,"BaseSell":0.0011154806,"CompactSell":-91,"Rate":0,"Block":2420849},"MCO":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":63.99319226272073,"CompactBuy":21,"BaseSell":0.014716371218820246,"CompactSell":-20,"Rate":0,"Block":2420849},"OMG":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":44.45707162223901,"CompactBuy":30,"BaseSell":0.021183301968644246,"CompactSell":-29,"Rate":0,"Block":2420849},"PAY":{"Valid":true,"Error":"","Timestamp":"1515412582435","ReturnTime":"1515412582710","BaseBuy":295.08854913901575,"CompactBuy":-13,"BaseSell":0.003191406699999999,"CompactSell":13,"Rate":0,"Block":2420849}},"success":true,"timestamp":"1515412583215","version":1515412582435}
+{
+    "data": {
+        "MCO": {
+            "Valid": true,
+            "Error": "",
+            "Timestamp": "1515412582435",
+            "ReturnTime": "1515412582710",
+            "BaseBuy": 63.99319226272073,
+            "CompactBuy": 21,
+            "BaseSell": 0.014716371218820246,
+            "CompactSell": -20,
+            "Rate": 0,
+            "Block": 2420849
+        },
+        "OMG": {
+            "Valid": true,
+            "Error": "",
+            "Timestamp": "1515412582435",
+            "ReturnTime": "1515412582710",
+            "BaseBuy": 44.45707162223901,
+            "CompactBuy": 30,
+            "BaseSell": 0.021183301968644246,
+            "CompactSell": -29,
+            "Rate": 0,
+            "Block": 2420849
+        },
+        "PAY": {
+            "Valid": true,
+            "Error": "",
+            "Timestamp": "1515412582435",
+            "ReturnTime": "1515412582710",
+            "BaseBuy": 295.08854913901575,
+            "CompactBuy": -13,
+            "BaseSell": 0.003191406699999999,
+            "CompactSell": 13,
+            "Rate": 0,
+            "Block": 2420849
+        }
+    },
+    "success": true,
+    "timestamp": "1515412583215",
+    "version": 1515412582435
+}
 ```
 
 
@@ -150,7 +178,113 @@ curl -X GET "http://127.0.0.1:8000/get-all-rates"
 response
 
 ```json
-{"data":[{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280618739","ReturnTime":"1517280619071","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280618739","ReturnTime":"1517280619071","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280618739","ReturnTime":"1517280619071","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280618739","ReturnTime":"1517280619071","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280618739","ReturnTime":"1517280619071","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280618739","ReturnTime":"1517280619071","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280618739","ReturnTime":"1517280619071","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280621738","ReturnTime":"1517280622251","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280621738","ReturnTime":"1517280622251","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280621738","ReturnTime":"1517280622251","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280621738","ReturnTime":"1517280622251","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280621738","ReturnTime":"1517280622251","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280621738","ReturnTime":"1517280622251","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280621738","ReturnTime":"1517280622251","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280624739","ReturnTime":"1517280625052","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280624739","ReturnTime":"1517280625052","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280624739","ReturnTime":"1517280625052","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280624739","ReturnTime":"1517280625052","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280624739","ReturnTime":"1517280625052","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280624739","ReturnTime":"1517280625052","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280624739","ReturnTime":"1517280625052","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280627735","ReturnTime":"1517280628664","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280627735","ReturnTime":"1517280628664","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280627735","ReturnTime":"1517280628664","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280627735","ReturnTime":"1517280628664","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280627735","ReturnTime":"1517280628664","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280627735","ReturnTime":"1517280628664","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280627735","ReturnTime":"1517280628664","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280630737","ReturnTime":"1517280631266","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280630737","ReturnTime":"1517280631266","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280630737","ReturnTime":"1517280631266","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280630737","ReturnTime":"1517280631266","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280630737","ReturnTime":"1517280631266","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280630737","ReturnTime":"1517280631266","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280630737","ReturnTime":"1517280631266","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280633737","ReturnTime":"1517280634096","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280633737","ReturnTime":"1517280634096","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280633737","ReturnTime":"1517280634096","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280633737","ReturnTime":"1517280634096","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280633737","ReturnTime":"1517280634096","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280633737","ReturnTime":"1517280634096","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280633737","ReturnTime":"1517280634096","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280636736","ReturnTime":"1517280637187","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280636736","ReturnTime":"1517280637187","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280636736","ReturnTime":"1517280637187","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280636736","ReturnTime":"1517280637187","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280636736","ReturnTime":"1517280637187","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280636736","ReturnTime":"1517280637187","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280636736","ReturnTime":"1517280637187","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280639741","ReturnTime":"1517280640213","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280639741","ReturnTime":"1517280640213","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280639741","ReturnTime":"1517280640213","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280639741","ReturnTime":"1517280640213","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280639741","ReturnTime":"1517280640213","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280639741","ReturnTime":"1517280640213","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280639741","ReturnTime":"1517280640213","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280642741","ReturnTime":"1517280643093","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280642741","ReturnTime":"1517280643093","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280642741","ReturnTime":"1517280643093","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280642741","ReturnTime":"1517280643093","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280642741","ReturnTime":"1517280643093","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280642741","ReturnTime":"1517280643093","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280642741","ReturnTime":"1517280643093","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280645737","ReturnTime":"1517280646071","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280645737","ReturnTime":"1517280646071","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280645737","ReturnTime":"1517280646071","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280645737","ReturnTime":"1517280646071","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280645737","ReturnTime":"1517280646071","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280645737","ReturnTime":"1517280646071","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280645737","ReturnTime":"1517280646071","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280648738","ReturnTime":"1517280649073","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280648738","ReturnTime":"1517280649073","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280648738","ReturnTime":"1517280649073","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280648738","ReturnTime":"1517280649073","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280648738","ReturnTime":"1517280649073","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280648738","ReturnTime":"1517280649073","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280648738","ReturnTime":"1517280649073","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280651741","ReturnTime":"1517280652069","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280651741","ReturnTime":"1517280652069","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280651741","ReturnTime":"1517280652069","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280651741","ReturnTime":"1517280652069","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280651741","ReturnTime":"1517280652069","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280651741","ReturnTime":"1517280652069","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280651741","ReturnTime":"1517280652069","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280654737","ReturnTime":"1517280655067","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280654737","ReturnTime":"1517280655067","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280654737","ReturnTime":"1517280655067","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280654737","ReturnTime":"1517280655067","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280654737","ReturnTime":"1517280655067","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280654737","ReturnTime":"1517280655067","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280654737","ReturnTime":"1517280655067","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280657740","ReturnTime":"1517280658058","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280657740","ReturnTime":"1517280658058","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280657740","ReturnTime":"1517280658058","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280657740","ReturnTime":"1517280658058","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280657740","ReturnTime":"1517280658058","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280657740","ReturnTime":"1517280658058","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280657740","ReturnTime":"1517280658058","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280660736","ReturnTime":"1517280661076","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280660736","ReturnTime":"1517280661076","BaseBuy":87.21360760013062,"CompactBuy":0,"BaseSell":0.0128686459657361,"CompactSell":0,"Rate":0,"Block":5635245},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280660736","ReturnTime":"1517280661076","BaseBuy":0,"CompactBuy":32,"BaseSell":0,"CompactSell":-14,"Rate":0,"Block":5635245},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280660736","ReturnTime":"1517280661076","BaseBuy":307.05930436561505,"CompactBuy":-34,"BaseSell":0.003084981280661941,"CompactSell":81,"Rate":0,"Block":5635245},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280660736","ReturnTime":"1517280661076","BaseBuy":65.0580993582104,"CompactBuy":32,"BaseSell":0.014925950060437398,"CompactSell":-14,"Rate":0,"Block":5635245},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280660736","ReturnTime":"1517280661076","BaseBuy":152.3016783627643,"CompactBuy":9,"BaseSell":0.006196212698403499,"CompactSell":23,"Rate":0,"Block":5635245},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280660736","ReturnTime":"1517280661076","BaseBuy":4053.2170631085987,"CompactBuy":43,"BaseSell":0.000233599514875301,"CompactSell":-3,"Rate":0,"Block":5635245}}},{"Version":0,"Valid":true,"Error":"","Timestamp":"1517280663736","ReturnTime":"1517280664068","Data":{"EOS":{"Valid":true,"Error":"","Timestamp":"1517280663736","ReturnTime":"1517280664068","BaseBuy":87.21360760013062,"CompactBuy":2,"BaseSell":0.0128686459657361,"CompactSell":-119,"Rate":0,"Block":5635255},"ETH":{"Valid":true,"Error":"","Timestamp":"1517280663736","ReturnTime":"1517280664068","BaseBuy":0,"CompactBuy":0,"BaseSell":0,"CompactSell":0,"Rate":0,"Block":5635255},"KNC":{"Valid":true,"Error":"","Timestamp":"1517280663736","ReturnTime":"1517280664068","BaseBuy":307.05930436561505,"CompactBuy":-31,"BaseSell":0.003084981280661941,"CompactSell":77,"Rate":0,"Block":5635255},"OMG":{"Valid":true,"Error":"","Timestamp":"1517280663736","ReturnTime":"1517280664068","BaseBuy":65.0580993582104,"CompactBuy":0,"BaseSell":0.014925950060437398,"CompactSell":0,"Rate":0,"Block":5635255},"SALT":{"Valid":true,"Error":"","Timestamp":"1517280663736","ReturnTime":"1517280664068","BaseBuy":152.3016783627643,"CompactBuy":8,"BaseSell":0.006196212698403499,"CompactSell":21,"Rate":0,"Block":5635255},"SNT":{"Valid":true,"Error":"","Timestamp":"1517280663736","ReturnTime":"1517280664068","BaseBuy":4053.2170631085987,"CompactBuy":0,"BaseSell":0.000233599514875301,"CompactSell":0,"Rate":0,"Block":5635255}}}],"success":true}
+{
+    "data": [
+        {
+            "Version": 0,
+            "Valid": true,
+            "Error": "",
+            "Timestamp": "1517280618739",
+            "ReturnTime": "1517280619071",
+            "Data": {
+                "SNT": {
+                    "Valid": true,
+                    "Error": "",
+                    "Timestamp": "1517280618739",
+                    "ReturnTime": "1517280619071",
+                    "BaseBuy": 4053.2170631085987,
+                    "CompactBuy": 43,
+                    "BaseSell": 0.000233599514875301,
+                    "CompactSell": -3,
+                    "Rate": 0,
+                    "Block": 5635245
+                }
+            }
+        },
+        {
+            "Version": 0,
+            "Valid": true,
+            "Error": "",
+            "Timestamp": "1517280621738",
+            "ReturnTime": "1517280622251",
+            "Data": {
+                "EOS": {
+                    "Valid": true,
+                    "Error": "",
+                    "Timestamp": "1517280621738",
+                    "ReturnTime": "1517280622251",
+                    "BaseBuy": 87.21360760013062,
+                    "CompactBuy": 0,
+                    "BaseSell": 0.0128686459657361,
+                    "CompactSell": 0,
+                    "Rate": 0,
+                    "Block": 5635245
+                },
+                "ETH": {
+                    "Valid": true,
+                    "Error": "",
+                    "Timestamp": "1517280621738",
+                    "ReturnTime": "1517280622251",
+                    "BaseBuy": 0,
+                    "CompactBuy": 32,
+                    "BaseSell": 0,
+                    "CompactSell": -14,
+                    "Rate": 0,
+                    "Block": 5635245
+                },
+                "KNC": {
+                    "Valid": true,
+                    "Error": "",
+                    "Timestamp": "1517280621738",
+                    "ReturnTime": "1517280622251",
+                    "BaseBuy": 307.05930436561505,
+                    "CompactBuy": -34,
+                    "BaseSell": 0.003084981280661941,
+                    "CompactSell": 81,
+                    "Rate": 0,
+                    "Block": 5635245
+                },
+                "OMG": {
+                    "Valid": true,
+                    "Error": "",
+                    "Timestamp": "1517280621738",
+                    "ReturnTime": "1517280622251",
+                    "BaseBuy": 65.0580993582104,
+                    "CompactBuy": 32,
+                    "BaseSell": 0.014925950060437398,
+                    "CompactSell": -14,
+                    "Rate": 0,
+                    "Block": 5635245
+                },
+                "SALT": {
+                    "Valid": true,
+                    "Error": "",
+                    "Timestamp": "1517280621738",
+                    "ReturnTime": "1517280622251",
+                    "BaseBuy": 152.3016783627643,
+                    "CompactBuy": 9,
+                    "BaseSell": 0.006196212698403499,
+                    "CompactSell": 23,
+                    "Rate": 0,
+                    "Block": 5635245
+                },
+                "SNT": {
+                    "Valid": true,
+                    "Error": "",
+                    "Timestamp": "1517280621738",
+                    "ReturnTime": "1517280622251",
+                    "BaseBuy": 4053.2170631085987,
+                    "CompactBuy": 43,
+                    "BaseSell": 0.000233599514875301,
+                    "CompactSell": -3,
+                    "Rate": 0,
+                    "Block": 5635245
+                }
+            }
+        }
+    ],
+    "success": true
+}
 ```
 
 
@@ -231,7 +365,7 @@ url params:
 ```
 
 response:
-```
+```json
 {
     "data": {
         "DGD": [
@@ -256,217 +390,6 @@ response:
 ```
 Returned data will only include datas that have timestamp in range of `[from, to]`
 
-
-### Get pending token target quantity (signing required)
-
-```shell
-<host>:8000/pendingtargetqty
-GET request
-```
-
-response:
-
-```json
-  {
-    "success": true,
-    "data":{"ID":1517396850670,"Timestamp":0,"Data":"EOS_750_500_0.25_0.25|ETH_750_500_0.25_0.25|KNC_750_500_0.25_0.25|OMG_750_500_0.25_0.25|SALT_750_500_0.25_0.25","Status":"unconfirmed"}
-  }
-```
-
-### Get token target quantity (signing required)
-
-```shell
-<host>:8000/targetqty
-GET request
-```
-
-response:
-
-```json
-  {
-    "success": true,
-    "data":{"ID":1517396850670,"Timestamp":0,"Data":"EOS_750_500_0.25_0.25|ETH_750_500_0.25_0.25|KNC_750_500_0.25_0.25|OMG_750_500_0.25_0.25|SALT_750_500_0.25_0.25","Status":"confirmed"}
-  }
-```
-response if there no data yet:
-
-```
-  {
-    "success": false,
-    "reason": "Version doesn't exist: 1517481572058"
-  }
-```
-
-### Set token target quantity (signing required)
-```
-<host>:8000/settargetqty
-POST request
-form params:
-  - data: required, string, must sort by token id by ascending order
-  - action: required, string, set/confirm/cancel, action to set, confirm or cancel target quantity
-  - id: optional, required to confirm target quantity
-  - type: required, number, data type (now it should be 1)
-```
-eg:
-```
-curl -X POST \
-  http://localhost:8000/settargetqty \
-  -H 'content-type: multipart/form-data' \
-  -F data= EOS_750_500_0.25_0.25|ETH_750_500_0.25_0.25|KNC_750_500_0.25_0.25|OMG_750_500_0.25_0.25|SALT_750_500_0.25_0.25 \
-  -F action=set
-  -F id=1517396850670
-```
-response
-```
-  {
-    "success": true,
-    "data":{"ID":1517396850670,"Timestamp":0,"Data":"EOS_750_500_0.25_0.25|ETH_750_500_0.25_0.25|KNC_750_500_0.25_0.25|OMG_750_500_0.25_0.25|SALT_750_500_0.25_0.25","Status":"unconfirmed"}
-  }
-```
-
-### Confirm token target quantity (signing required)
-```
-<host>:8000/confirmtargetqty
-POST request
-form params:
-  - data: required, string, must sort by token id by ascending order
-  - id: optional, required to confirm target quantity
-```
-eg:
-```
-curl -X POST \
-  http://localhost:8000/confirmtargetqty \
-  -H 'content-type: multipart/form-data' \
-  -F data= EOS_750_500_0.25_0.25|ETH_750_500_0.25_0.25|KNC_750_500_0.25_0.25|OMG_750_500_0.25_0.25|SALT_750_500_0.25_0.25 \
-  -F id=1517396850670
-```
-response
-```
-  {
-    "success": true,
-    "data":{"ID":1517396850670,"Timestamp":0,"Data":"EOS_750_500_0.25_0.25|ETH_750_500_0.25_0.25|KNC_750_500_0.25_0.25|OMG_750_500_0.25_0.25|SALT_750_500_0.25_0.25","Status":"unconfirmed"}
-  }
-```
-
-### Cancel token target quantity (signing required)
-```
-<host>:8000/confirmtargetqty
-POST request
-```
-eg:
-```
-curl -X POST \
-  http://localhost:8000/confirmtargetqty \
-  -H 'content-type: multipart/form-data' \
-```
-response
-```
-  {
-    "success": true,
-  }
-```
-
-### Get rebalance status
-Get rebalance status, if reponse is *true* then rebalance is enable, the analytic can perform rebalance, else reponse is *false*, the analytic hold rebalance ability.
-```
-<host>:8000/rebalancestatus
-GET request
-```
-
-response
-```
-  {
-    "success": true,
-    "data": true
-  }
-```
-
-### Hold rebalance
-```
-<host>:8000/holdrebalance
-POST request
-```
-eg:
-```
-curl -X POST \
-  http://localhost:8000/holdrebalance \
-  -H 'content-type: multipart/form-data' \
-```
-response
-```
-  {
-    "success": true
-  }
-```
-
-### Enable rebalance
-```
-<host>:8000/enablerebalance
-POST request
-```
-eg:
-```
-curl -X POST \
-  http://localhost:8000/enablerebalance \
-  -H 'content-type: multipart/form-data' \
-```
-response
-```
-  {
-    "success": true
-  }
-```
-
-### Get setrate status
-Get setrate status, if reponse is *true* then setrate is enable, the analytic can perform setrate, else reponse is *false*, the analytic hold setrate ability.
-```
-<host>:8000/setratestatus
-GET request
-```
-
-response
-```
-  {
-    "success": true,
-    "data": true
-  }
-```
-
-### Hold setrate
-```
-<host>:8000/holdsetrate
-POST request
-```
-eg:
-```
-curl -X POST \
-  http://localhost:8000/holdsetrate \
-  -H 'content-type: multipart/form-data' \
-```
-response
-```
-  {
-    "success": true
-  }
-```
-
-### Enable setrate
-```
-<host>:8000/enablesetrate
-POST request
-```
-eg:
-```
-curl -X POST \
-  http://localhost:8000/enablesetrate \
-  -H 'content-type: multipart/form-data' \
-```
-response
-```
-  {
-    "success": true
-  }
-```
 
 ### Get pending pwis equation (signing required)
 ```
