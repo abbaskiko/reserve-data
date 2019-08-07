@@ -29,24 +29,24 @@ func (s *Server) getPriceFactor(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	data, err := s.metric.GetMetric(assets, params.From, params.To)
+	data, err := s.priceFactorStorage.GetPriceFactor(assets, params.From, params.To)
 	if err != nil {
-		log.Printf("failed to get metric, err=%s", err.Error())
+		log.Printf("failed to get price factor, err=%s", err.Error())
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	response := common.MetricResponse{
+	response := common.PriceFactorResponse{
 		Timestamp: common.GetTimepoint(),
 	}
-	var assetsMetric = make([]common.AssetMetric, 0, len(data))
+	var assetsPriceFactor = make([]common.AssetPriceFactor, 0, len(data))
 	for assetID, entry := range data {
-		assetsMetric = append(assetsMetric, common.AssetMetric{
-			AssetID: assetID,
+		assetsPriceFactor = append(assetsPriceFactor, common.AssetPriceFactor{
+			AssetID: uint64(assetID),
 			Data:    entry,
 		})
 	}
 	response.ReturnTime = common.GetTimepoint()
-	response.Data = assetsMetric
+	response.Data = assetsPriceFactor
 	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
 		"timestamp":  response.Timestamp,
 		"returnTime": response.ReturnTime,
@@ -63,7 +63,7 @@ type setPriceFactorParam struct {
 	} `json:"data"`
 }
 
-// setPriceFactor store metrics into db
+// setPriceFactor store price factor into db
 func (s *Server) setPriceFactor(c *gin.Context) {
 	log.Printf("storing price factor")
 	var params setPriceFactorParam
@@ -72,18 +72,18 @@ func (s *Server) setPriceFactor(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	tokenMetric := map[uint64]common.TokenMetric{}
+	assetsPriceFactor := map[uint64]common.AssetPriceFactorRequest{}
 	for _, e := range params.Data {
-		tokenMetric[e.AssetID] = common.TokenMetric{
+		assetsPriceFactor[e.AssetID] = common.AssetPriceFactorRequest{
 			AfpMid: e.AfpMid,
 			Spread: e.Spread,
 		}
 	}
-	metricEntry := common.MetricEntry{}
-	metricEntry.Timestamp = params.Timestamp
-	metricEntry.Data = map[uint64]common.TokenMetric{}
+	allPriceFactor := common.AllPriceFactor{}
+	allPriceFactor.Timestamp = params.Timestamp
+	allPriceFactor.Data = assetsPriceFactor
 
-	err := s.metric.StoreMetric(&metricEntry, common.GetTimepoint())
+	err := s.priceFactorStorage.StorePriceFactor(&allPriceFactor, common.GetTimepoint())
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {

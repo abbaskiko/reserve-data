@@ -17,7 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	"github.com/KyberNetwork/reserve-data/metric"
+	"github.com/KyberNetwork/reserve-data/pricefactor"
 	v3common "github.com/KyberNetwork/reserve-data/v3/common"
 	v3http "github.com/KyberNetwork/reserve-data/v3/http"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
@@ -35,13 +35,13 @@ var (
 
 // Server struct for http package
 type Server struct {
-	app            reserve.Data
-	core           reserve.Core
-	metric         metric.Storage
-	host           string
-	r              *gin.Engine
-	blockchain     Blockchain
-	settingStorage storage.Interface
+	app                reserve.Data
+	core               reserve.Core
+	priceFactorStorage pricefactor.Storage
+	host               string
+	r                  *gin.Engine
+	blockchain         Blockchain
+	settingStorage     storage.Interface
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -422,7 +422,7 @@ func (s *Server) GetTimeServer(c *gin.Context) {
 
 // GetRebalanceStatus return rebalanceStatus (true or false)
 func (s *Server) GetRebalanceStatus(c *gin.Context) {
-	data, err := s.metric.GetRebalanceControl()
+	data, err := s.priceFactorStorage.GetRebalanceControl()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -432,7 +432,7 @@ func (s *Server) GetRebalanceStatus(c *gin.Context) {
 
 //HoldRebalance stop rebalance action
 func (s *Server) HoldRebalance(c *gin.Context) {
-	if err := s.metric.StoreRebalanceControl(false); err != nil {
+	if err := s.priceFactorStorage.StoreRebalanceControl(false); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 		return
 	}
@@ -441,7 +441,7 @@ func (s *Server) HoldRebalance(c *gin.Context) {
 
 // EnableRebalance enable rebalance
 func (s *Server) EnableRebalance(c *gin.Context) {
-	if err := s.metric.StoreRebalanceControl(true); err != nil {
+	if err := s.priceFactorStorage.StoreRebalanceControl(true); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	}
 	httputil.ResponseSuccess(c)
@@ -449,7 +449,7 @@ func (s *Server) EnableRebalance(c *gin.Context) {
 
 // GetSetrateStatus return setRateStatus (true or false)
 func (s *Server) GetSetrateStatus(c *gin.Context) {
-	data, err := s.metric.GetSetrateControl()
+	data, err := s.priceFactorStorage.GetSetrateControl()
 	if err != nil {
 		httputil.ResponseFailure(c)
 		return
@@ -459,7 +459,7 @@ func (s *Server) GetSetrateStatus(c *gin.Context) {
 
 // HoldSetrate stop set rate
 func (s *Server) HoldSetrate(c *gin.Context) {
-	if err := s.metric.StoreSetrateControl(false); err != nil {
+	if err := s.priceFactorStorage.StoreSetrateControl(false); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	}
 	httputil.ResponseSuccess(c)
@@ -467,7 +467,7 @@ func (s *Server) HoldSetrate(c *gin.Context) {
 
 // EnableSetrate allow analytics to call setrate
 func (s *Server) EnableSetrate(c *gin.Context) {
-	if err := s.metric.StoreSetrateControl(true); err != nil {
+	if err := s.priceFactorStorage.StoreSetrateControl(true); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	}
 	httputil.ResponseSuccess(c)
@@ -495,7 +495,7 @@ func (s *Server) SetStableTokenParams(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
 		return
 	}
-	err := s.metric.SetStableTokenParams(value)
+	err := s.priceFactorStorage.SetStableTokenParams(value)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -511,7 +511,7 @@ func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
 		return
 	}
-	err := s.metric.ConfirmStableTokenParams(value)
+	err := s.priceFactorStorage.ConfirmStableTokenParams(value)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -521,7 +521,7 @@ func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
 
 // RejectStableTokenParams reject stable token params
 func (s *Server) RejectStableTokenParams(c *gin.Context) {
-	err := s.metric.RemovePendingStableTokenParams()
+	err := s.priceFactorStorage.RemovePendingStableTokenParams()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -531,7 +531,7 @@ func (s *Server) RejectStableTokenParams(c *gin.Context) {
 
 // GetPendingStableTokenParams return pending stable token params
 func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
-	data, err := s.metric.GetPendingStableTokenParams()
+	data, err := s.priceFactorStorage.GetPendingStableTokenParams()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -541,7 +541,7 @@ func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
 
 // GetStableTokenParams return all stable token params
 func (s *Server) GetStableTokenParams(c *gin.Context) {
-	data, err := s.metric.GetStableTokenParams()
+	data, err := s.priceFactorStorage.GetStableTokenParams()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -609,7 +609,7 @@ func (s *Server) Run() {
 func NewHTTPServer(
 	app reserve.Data,
 	core reserve.Core,
-	metric metric.Storage,
+	metric pricefactor.Storage,
 	host string,
 	dpl deployment.Deployment,
 	bc Blockchain,
@@ -636,12 +636,12 @@ func NewHTTPServer(
 	r.Use(cors.New(corsConfig))
 
 	return &Server{
-		app:            app,
-		core:           core,
-		metric:         metric,
-		host:           host,
-		r:              r,
-		blockchain:     bc,
-		settingStorage: settingStorage,
+		app:                app,
+		core:               core,
+		priceFactorStorage: metric,
+		host:               host,
+		r:                  r,
+		blockchain:         bc,
+		settingStorage:     settingStorage,
 	}
 }
