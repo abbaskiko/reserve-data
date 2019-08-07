@@ -105,6 +105,10 @@ func (s *Storage) ConfirmUpdateAssetExchange(id uint64) error {
 			return err
 		}
 	}
+	_, err = s.stmts.deleteUpdateAssetExchange.Exec(id)
+	if err != nil {
+		return err
+	}
 	err = tx.Commit()
 	if err != nil {
 		return err
@@ -115,7 +119,7 @@ func (s *Storage) ConfirmUpdateAssetExchange(id uint64) error {
 
 // RejectUpdateAssetExchange reject pending asset exchange
 func (s *Storage) RejectUpdateAssetExchange(id uint64) error {
-	_, err := s.stmts.deletePendingAssetExchange.Exec(id)
+	_, err := s.stmts.deleteUpdateAssetExchange.Exec(id)
 	if err != nil {
 		return err
 	}

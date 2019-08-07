@@ -525,16 +525,16 @@ $$ LANGUAGE PLPGSQL;
 `
 
 type preparedStmts struct {
-	getExchanges               *sqlx.Stmt
-	getExchange                *sqlx.Stmt
-	getExchangeByName          *sqlx.Stmt
-	updateExchange             *sqlx.NamedStmt
-	newAsset                   *sqlx.NamedStmt
-	newAssetExchange           *sqlx.NamedStmt
-	updateAssetExchange        *sqlx.NamedStmt
-	newCreateAssetExchange     *sqlx.Stmt
-	getCreateAssetExchanges    *sqlx.Stmt
-	deletePendingAssetExchange *sqlx.Stmt
+	getExchanges              *sqlx.Stmt
+	getExchange               *sqlx.Stmt
+	getExchangeByName         *sqlx.Stmt
+	updateExchange            *sqlx.NamedStmt
+	newAsset                  *sqlx.NamedStmt
+	newAssetExchange          *sqlx.NamedStmt
+	updateAssetExchange       *sqlx.NamedStmt
+	newCreateAssetExchange    *sqlx.Stmt
+	getCreateAssetExchanges   *sqlx.Stmt
+	deleteCreateAssetExchange *sqlx.Stmt
 
 	newUpdateAssetExchange    *sqlx.Stmt
 	getUpdateAssetExchanges   *sqlx.Stmt
@@ -695,9 +695,9 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newAssetExchange:    newAssetExchange,
 		updateAssetExchange: updateAssetExchange,
 
-		newCreateAssetExchange:     newCreateAssetExchanges,
-		getCreateAssetExchanges:    getPendingAssetExchanges,
-		deletePendingAssetExchange: deleteCreateAssetExchange,
+		newCreateAssetExchange:    newCreateAssetExchanges,
+		getCreateAssetExchanges:   getPendingAssetExchanges,
+		deleteCreateAssetExchange: deleteCreateAssetExchange,
 
 		newUpdateAssetExchange:    newUpdateAssetExchanges,
 		getUpdateAssetExchanges:   getUpdateAssetExchanges,
