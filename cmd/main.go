@@ -74,7 +74,6 @@ func run(c *cli.Context) error {
 		servPortStr,
 		dpl,
 		bc,
-		conf.ContractAddresses,
 		conf.SettingStorage,
 	)
 

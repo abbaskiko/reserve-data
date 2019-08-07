@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -37,14 +36,13 @@ var (
 
 // Server struct for http package
 type Server struct {
-	app                 reserve.Data
-	core                reserve.Core
-	metric              metric.Storage
-	host                string
-	r                   *gin.Engine
-	blockchain          Blockchain
-	contractAddressConf *common.ContractAddressConfiguration
-	settingStorage      storage.Interface
+	app            reserve.Data
+	core           reserve.Core
+	metric         metric.Storage
+	host           string
+	r              *gin.Engine
+	blockchain     Blockchain
+	settingStorage storage.Interface
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -65,23 +63,6 @@ func getTimePoint(c *gin.Context, useDefault bool) uint64 {
 	}
 	log.Printf("Interpreted timestamp(%s) to %d", timestamp, timepoint)
 	return timepoint
-}
-
-// IsIntime is a part of authentication check if the request is new
-func IsIntime(nonce string) bool {
-	serverTime := common.GetTimepoint()
-	log.Printf("Server time: %d, None: %s", serverTime, nonce)
-	nonceInt, err := strconv.ParseInt(nonce, 10, 64)
-	if err != nil {
-		log.Printf("IsIntime returns false, err: %v", err)
-		return false
-	}
-	difference := nonceInt - int64(serverTime)
-	if difference < -30000 || difference > 30000 {
-		log.Printf("IsIntime returns false, nonce: %d, serverTime: %d, difference: %d", nonceInt, int64(serverTime), difference)
-		return false
-	}
-	return true
 }
 
 // AllPricesVersion return current version of all token
@@ -124,7 +105,7 @@ func (s *Server) AllPrices(c *gin.Context) {
 				httputil.ResponseFailure(c, httputil.WithError(err))
 				return
 			}
-			// TODO should we check exchangeID.Name() match pair.ExchangeID?
+			// TODO: should we check exchangeID.Name() match pair.ExchangeID?
 			responseData = append(responseData, price{
 				Base:     pair.Base,
 				Quote:    pair.Quote,
@@ -221,71 +202,6 @@ func (s *Server) GetRate(c *gin.Context) {
 			"data":      data.Data,
 		}))
 	}
-}
-
-// RateRequest is request for a rate
-type RateRequest struct {
-	AssetID uint64 `json:"asset_id"`
-	Buy     string `json:"buy"`
-	Sell    string `json:"sell"`
-	Mid     string `json:"mid"`
-	Msg     string `json:"msg"`
-}
-
-// SetRateEntry is input for set rate request
-type SetRateEntry struct {
-	Block uint64        `json:"block"`
-	Rates []RateRequest `json:"rates"`
-}
-
-// SetRate is for setting token rate
-func (s *Server) SetRate(c *gin.Context) {
-	var (
-		input     SetRateEntry
-		assets    []v3common.Asset
-		bigBuys   = []*big.Int{}
-		bigSells  = []*big.Int{}
-		bigAfpMid = []*big.Int{}
-		msgs      []string
-	)
-	if err := c.ShouldBindJSON(&input); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	}
-	for _, rates := range input.Rates {
-		asset, err := s.settingStorage.GetAsset(rates.AssetID)
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-		assets = append(assets, asset)
-	}
-	for _, rate := range input.Rates {
-		rbuy, ok := big.NewInt(0).SetString(rate.Buy, 10)
-		if !ok {
-			httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("cannot parse rate number buy: %s", rate.Buy)))
-			return
-		}
-		bigBuys = append(bigBuys, rbuy)
-		rSell, ok := big.NewInt(0).SetString(rate.Sell, 10)
-		if !ok {
-			httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("cannot parse rate number sell: %s", rate.Sell)))
-			return
-		}
-		bigSells = append(bigSells, rSell)
-		rMid, ok := big.NewInt(0).SetString(rate.Mid, 10)
-		if !ok {
-			httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("cannot parse rate number mid: %s", rate.Mid)))
-			return
-		}
-		bigAfpMid = append(bigAfpMid, rMid)
-		msgs = append(msgs, rate.Msg)
-	}
-	id, err := s.core.SetRates(assets, bigBuys, bigSells, big.NewInt(int64(input.Block)), bigAfpMid, msgs)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
 // Trade create an order in cexs
@@ -590,24 +506,6 @@ func (s *Server) StoreMetrics(c *gin.Context) {
 	}
 }
 
-//ValidateExchangeInfo validate if data is complete exchange info with all token pairs supported
-// func ValidateExchangeInfo(exchange common.Exchange, data map[common.TokenPairID]common.ExchangePrecisionLimit) error {
-// 	exInfo, err :=self
-// 	pairs := exchange.Pairs()
-// 	for _, pair := range pairs {
-// 		// stable exchange is a simulated exchange which is not a real exchange
-// 		// we do not do rebalance on stable exchange then it also does not need to have exchange info (and it actully does not have one)
-// 		// therefore we skip checking it for supported tokens
-// 		if exchange.ID() == common.ExchangeID("stable_exchange") {
-// 			continue
-// 		}
-// 		if _, exist := data[pair.PairID()]; !exist {
-// 			return fmt.Errorf("exchange info of %s lack of token %s", exchange.ID(), string(pair.PairID()))
-// 		}
-// 	}
-// 	return nil
-// }
-
 // GetTradeHistory return trade history
 func (s *Server) GetTradeHistory(c *gin.Context) {
 	fromTime, toTime, ok := s.ValidateTimeInput(c)
@@ -757,46 +655,47 @@ func (s *Server) GetStableTokenParams(c *gin.Context) {
 
 func (s *Server) register() {
 	if s.core != nil && s.app != nil {
-		s.r.GET("/prices-version", s.AllPricesVersion)
-		s.r.GET("/prices", s.AllPrices)
-		s.r.GET("/prices/:base/:quote", s.Price)
-		s.r.GET("/getrates", s.GetRate)
-		s.r.GET("/get-all-rates", s.GetRates)
+		g := s.r.Group("/v3")
+		g.GET("/prices-version", s.AllPricesVersion)
+		g.GET("/prices", s.AllPrices)
+		g.GET("/prices/:base/:quote", s.Price)
+		g.GET("/getrates", s.GetRate)
+		g.GET("/get-all-rates", s.GetRates)
 
-		s.r.GET("/authdata-version", s.AuthDataVersion)
-		s.r.GET("/authdata", s.AuthData)
-		s.r.GET("/activities", s.GetActivities)
-		s.r.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
-		s.r.GET("/metrics", s.Metrics)
-		s.r.POST("/metrics", s.StoreMetrics)
+		g.GET("/authdata-version", s.AuthDataVersion)
+		g.GET("/authdata", s.AuthData)
+		g.GET("/activities", s.GetActivities)
+		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
+		g.GET("/metrics", s.Metrics)
+		g.POST("/metrics", s.StoreMetrics)
 
-		s.r.POST("/cancelorder/:exchangeid", s.CancelOrder)
-		s.r.POST("/deposit/:exchangeid", s.Deposit)
-		s.r.POST("/withdraw/:exchangeid", s.Withdraw)
-		s.r.POST("/trade/:exchangeid", s.Trade)
-		s.r.POST("/setrates", s.SetRate)
-		s.r.GET("/tradehistory", s.GetTradeHistory)
+		g.POST("/cancelorder/:exchangeid", s.CancelOrder)
+		g.POST("/deposit/:exchangeid", s.Deposit)
+		g.POST("/withdraw/:exchangeid", s.Withdraw)
+		g.POST("/trade/:exchangeid", s.Trade)
+		g.POST("/setrates", s.SetRate)
+		g.GET("/tradehistory", s.GetTradeHistory)
 
-		s.r.GET("/timeserver", s.GetTimeServer)
+		g.GET("/timeserver", s.GetTimeServer)
 
-		s.r.GET("/rebalancestatus", s.GetRebalanceStatus)
-		s.r.POST("/holdrebalance", s.HoldRebalance)
-		s.r.POST("/enablerebalance", s.EnableRebalance)
+		g.GET("/rebalancestatus", s.GetRebalanceStatus)
+		g.POST("/holdrebalance", s.HoldRebalance)
+		g.POST("/enablerebalance", s.EnableRebalance)
 
-		s.r.GET("/setratestatus", s.GetSetrateStatus)
-		s.r.POST("/holdsetrate", s.HoldSetrate)
-		s.r.POST("/enablesetrate", s.EnableSetrate)
+		g.GET("/setratestatus", s.GetSetrateStatus)
+		g.POST("/holdsetrate", s.HoldSetrate)
+		g.POST("/enablesetrate", s.EnableSetrate)
 
-		s.r.POST("/set-stable-token-params", s.SetStableTokenParams)
-		s.r.POST("/confirm-stable-token-params", s.ConfirmStableTokenParams)
-		s.r.POST("/reject-stable-token-params", s.RejectStableTokenParams)
-		s.r.GET("/pending-stable-token-params", s.GetPendingStableTokenParams)
-		s.r.GET("/stable-token-params", s.GetStableTokenParams)
+		g.POST("/set-stable-token-params", s.SetStableTokenParams)
+		g.POST("/confirm-stable-token-params", s.ConfirmStableTokenParams)
+		g.POST("/reject-stable-token-params", s.RejectStableTokenParams)
+		g.GET("/pending-stable-token-params", s.GetPendingStableTokenParams)
+		g.GET("/stable-token-params", s.GetStableTokenParams)
 
-		s.r.GET("/gold-feed", s.GetGoldData)
-		s.r.GET("/btc-feed", s.GetBTCData)
-		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
-		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
+		g.GET("/gold-feed", s.GetGoldData)
+		g.GET("/btc-feed", s.GetBTCData)
+		g.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
+		g.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
 		_ = v3http.NewServer(s.settingStorage, s.r) // ignore server object because we just use the route part
 	}
@@ -818,7 +717,6 @@ func NewHTTPServer(
 	host string,
 	dpl deployment.Deployment,
 	bc Blockchain,
-	contractAddressConf *common.ContractAddressConfiguration,
 	settingStorage storage.Interface,
 ) *Server {
 	r := gin.Default()
@@ -842,13 +740,12 @@ func NewHTTPServer(
 	r.Use(cors.New(corsConfig))
 
 	return &Server{
-		app:                 app,
-		core:                core,
-		metric:              metric,
-		host:                host,
-		r:                   r,
-		blockchain:          bc,
-		contractAddressConf: contractAddressConf,
-		settingStorage:      settingStorage,
+		app:            app,
+		core:           core,
+		metric:         metric,
+		host:           host,
+		r:              r,
+		blockchain:     bc,
+		settingStorage: settingStorage,
 	}
 }

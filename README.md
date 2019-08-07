@@ -422,7 +422,7 @@ Where `hash` is the transaction hash
 <host>:8000/setrates
 POST request
 Form params:
-  - tokens: string, not including "ETH", represent all base token IDs separated by "-", eg: "ETH-ETH"
+  - tokens: string, not including "ETH", represent all base token
   - buys: string, represent all the buy (end users to buy tokens by ether) prices in little endian hex string, rates are separated by "-", eg: "0x5-0x7"
   - sells: string, represent all the sell (end users to sell tokens to ether) prices in little endian hex string, rates are separated by "-", eg: "0x5-0x7"
   - afp_mid: string, represent all the afp mid (average filled price) in little endian hex string, rates are separated by "-", eg: "0x5-0x7" (this rate only stores in activities for tracking)
@@ -432,12 +432,8 @@ eg:
 ```
 curl -X POST \
   http://localhost:8000/setrates \
-  -H 'content-type: multipart/form-data' \
-  -F tokens=KNC-EOS \
-  -F buys=0x5-0x7 \
-  -F sells=0x5-0x7 \
-  -F afp_mid=0x5-0x7 \
-  -F block=2342353
+  -H 'content-type: application/json' \
+  -d 
 ```
 
 ### Trade (signing required)
