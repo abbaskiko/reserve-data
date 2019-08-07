@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -403,109 +402,6 @@ func (s *Server) ImmediatePendingActivities(c *gin.Context) {
 	}
 }
 
-// Metrics return all metrics
-func (s *Server) Metrics(c *gin.Context) {
-	response := common.MetricResponse{
-		Timestamp: common.GetTimepoint(),
-	}
-	log.Printf("Getting metrics")
-	postForm := c.Request.Form
-	assetIDsParam := postForm.Get("assets")
-	fromParam := postForm.Get("from")
-	toParam := postForm.Get("to")
-	var assets []v3common.Asset
-	for _, assetID := range strings.Split(assetIDsParam, "-") {
-		id, err := strconv.Atoi(assetID)
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-		}
-		asset, err := s.settingStorage.GetAsset(uint64(id))
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-		assets = append(assets, asset)
-	}
-	from, err := strconv.ParseUint(fromParam, 10, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	}
-	to, err := strconv.ParseUint(toParam, 10, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	}
-	data, err := s.metric.GetMetric(assets, from, to)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	}
-	response.ReturnTime = common.GetTimepoint()
-	response.Data = data
-	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
-		"timestamp":  response.Timestamp,
-		"returnTime": response.ReturnTime,
-		"data":       response.Data,
-	}))
-}
-
-// StoreMetrics store metrics into db
-func (s *Server) StoreMetrics(c *gin.Context) {
-	log.Printf("Storing metrics")
-	postForm := c.Request.Form
-	timestampParam := postForm.Get("timestamp")
-	dataParam := postForm.Get("data")
-
-	timestamp, err := strconv.ParseUint(timestampParam, 10, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	metricEntry := common.MetricEntry{}
-	metricEntry.Timestamp = timestamp
-	metricEntry.Data = map[uint64]common.TokenMetric{}
-	// data must be in form of <token>_afpmid_spread|<token>_afpmid_spread|...
-	for _, tokenData := range strings.Split(dataParam, "|") {
-		var (
-			afpmid float64
-			spread float64
-		)
-
-		parts := strings.Split(tokenData, "_")
-		if len(parts) != 3 {
-			httputil.ResponseFailure(c, httputil.WithReason("submitted data is not in correct format"))
-			return
-		}
-		assetIDStr := parts[0]
-		assetID, err := strconv.Atoi(assetIDStr)
-		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
-			return
-		}
-		afpmidStr := parts[1]
-		spreadStr := parts[2]
-
-		if afpmid, err = strconv.ParseFloat(afpmidStr, 64); err != nil {
-			httputil.ResponseFailure(c, httputil.WithReason("Afp mid "+afpmidStr+" is not float64"))
-			return
-		}
-
-		if spread, err = strconv.ParseFloat(spreadStr, 64); err != nil {
-			httputil.ResponseFailure(c, httputil.WithReason("Spread "+spreadStr+" is not float64"))
-			return
-		}
-		metricEntry.Data[uint64(assetID)] = common.TokenMetric{
-			AfpMid: afpmid,
-			Spread: spread,
-		}
-	}
-
-	err = s.metric.StoreMetric(&metricEntry, common.GetTimepoint())
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c)
-	}
-}
-
 // GetTradeHistory return trade history
 func (s *Server) GetTradeHistory(c *gin.Context) {
 	fromTime, toTime, ok := s.ValidateTimeInput(c)
@@ -666,8 +562,8 @@ func (s *Server) register() {
 		g.GET("/authdata", s.AuthData)
 		g.GET("/activities", s.GetActivities)
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
-		g.GET("/metrics", s.Metrics)
-		g.POST("/metrics", s.StoreMetrics)
+		g.GET("/price-factor", s.getPriceFactor)
+		g.POST("/price-factor", s.setPriceFactor)
 
 		g.POST("/cancelorder/:exchangeid", s.CancelOrder)
 		g.POST("/deposit/:exchangeid", s.Deposit)
