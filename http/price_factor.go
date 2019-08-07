@@ -24,10 +24,16 @@ func (s *Server) getPriceFactor(c *gin.Context) {
 		return
 	}
 	assets, err := s.settingStorage.GetAssets()
-
+	if err != nil {
+		log.Printf("failed to list assets, err=%s", err.Error())
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 	data, err := s.metric.GetMetric(assets, params.From, params.To)
 	if err != nil {
+		log.Printf("failed to get metric, err=%s", err.Error())
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	response := common.MetricResponse{
 		Timestamp: common.GetTimepoint(),
