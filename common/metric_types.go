@@ -16,18 +16,23 @@ type MetricEntry struct {
 }
 
 type TokenMetricResponse struct {
-	Timestamp uint64
-	AfpMid    float64
-	Spread    float64
+	Timestamp uint64  `json:"timestamp"`
+	AfpMid    float64 `json:"afp_mid"`
+	Spread    float64 `json:"spread"`
 }
 
 // MetricList list for one token
 type MetricList []TokenMetricResponse
 
+type AssetMetric struct {
+	AssetID uint64     `json:"id"`
+	Data    MetricList `json:"data"`
+}
+
 type MetricResponse struct {
 	Timestamp  uint64
 	ReturnTime uint64
-	Data       map[uint64]MetricList
+	Data       []AssetMetric
 }
 
 type TokenTargetQty struct {
