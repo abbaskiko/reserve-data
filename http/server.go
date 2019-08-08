@@ -81,6 +81,7 @@ type price struct {
 	Asks     []common.PriceEntry `json:"asks"`
 }
 
+// AllPrices return all prices
 func (s *Server) AllPrices(c *gin.Context) {
 	log.Printf("Getting all prices \n")
 	data, err := s.app.GetAllPrices(getTimePoint(c, true))
