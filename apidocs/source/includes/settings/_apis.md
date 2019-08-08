@@ -270,11 +270,94 @@ curl -X GET "https://gateway.local/v3/asset"
 ## Get exchange by id
 
 ```shell
-curl -X GET "https://gateway.local/v3/exchange/1"
+curl -X GET "https://gateway.local/v3/exchange/0"
 ```
 
 > sample response
 
 ```json
+{
+    "data": {
+        "id": 0,
+        "name": "binance",
+        "trading_fee_maker": 0,
+        "trading_fee_taker": 0,
+        "disable": true
+    },
+    "success": true
+}
+```
 
+### HTTP Request
+
+`GET https://gateway.local/v3/exchange/:exchange_id`
+
+
+## Get all exchanges
+
+```shell
+curl -X GET "https://gateway.local/v3/exchange"
+```
+
+> sample response
+
+```json
+{
+    "data": [
+        {
+            "id": 0,
+            "name": "binance",
+            "trading_fee_maker": 0,
+            "trading_fee_taker": 0,
+            "disable": true
+        },
+        {
+            "id": 1,
+            "name": "huobi",
+            "trading_fee_maker": 0,
+            "trading_fee_taker": 0,
+            "disable": true
+        },
+        {
+            "id": 2,
+            "name": "stable_exchange",
+            "trading_fee_maker": 1,
+            "trading_fee_taker": 1,
+            "disable": false
+        }
+    ],
+    "success": true
+}
+```
+
+### HTTP Request
+
+`GET https://gateway.local/v3/exchange`
+
+## Get trading pair by id
+
+```shell
+curl -X GET "https://gateway.local/v3/trading-pair/1"
+```
+
+> sample response
+
+```json
+{
+    "data": {
+        "id": 1,
+        "base": 1,
+        "quote": 2,
+        "price_precision": 6,
+        "amount_precision": 3,
+        "amount_limit_min": 0.001,
+        "amount_limit_max": 100000,
+        "price_limit_min": 0.000001,
+        "price_limit_max": 100000,
+        "min_notional": 0.0001,
+        "base_symbol": "ETH",
+        "quote_symbol": "BTC"
+    },
+    "success": true
+}
 ```
