@@ -37,11 +37,12 @@ func (s *Server) SetRate(c *gin.Context) {
 	)
 	if err := c.ShouldBindJSON(&input); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	for _, rates := range input.Rates {
 		asset, err := s.settingStorage.GetAsset(rates.AssetID)
 		if err != nil {
-			httputil.ResponseFailure(c, httputil.WithError(err))
+			httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("failed to get asset from storage: %s", err.Error())))
 			return
 		}
 		assets = append(assets, asset)
@@ -69,7 +70,7 @@ func (s *Server) SetRate(c *gin.Context) {
 	}
 	id, err := s.core.SetRates(assets, bigBuys, bigSells, big.NewInt(int64(input.Block)), bigAfpMid, msgs)
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("failed to set rates: %s", err.Error())))
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
