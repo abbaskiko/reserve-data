@@ -1,6 +1,6 @@
 # Settings APIs
 
-# Get asset by id
+## Get asset by id
 
 ```shell
 curl -X GET "https://gateway.local/v3/asset/1"
