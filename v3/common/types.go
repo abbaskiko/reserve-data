@@ -31,6 +31,32 @@ const (
 	BTCFeed // btc_feed
 )
 
+// PendingObjectType represent type of pending obj in database
+//go:generate stringer -type=PendingObjectType -linecomment
+type PendingObjectType int
+
+const (
+	PendingTypeUnknown PendingObjectType = iota // unknown
+	// PendingTypeCreateAsset is used when create an asset
+	PendingTypeCreateAsset //create_asset
+	// PendingTypeUpdateAsset is used when update an asset
+	PendingTypeUpdateAsset // update_asset
+	// PendingTypeCreateAssetExchange is used when create an asset exchange
+	PendingTypeCreateAssetExchange // create_asset_exchange
+	// PendingTypeUpdateAssetExchange is used when update an asset exchange
+	PendingTypeUpdateAssetExchange // update_asset_exchange
+	// PendingTypeCreateTradingPair is used when create a trading pair
+	PendingTypeCreateTradingPair // create_trading_pair
+	// PendingTypeUpdateTradingPair is used when update a trading pair
+	PendingTypeUpdateTradingPair // update_trading_pair
+	// PendingTypeCreateTradingBy is used when create a trading by
+	PendingTypeCreateTradingBy // create_trading_by
+	// PendingTypeUpdateExchange is used when update exchange
+	PendingTypeUpdateExchange // update_exchange
+	// PendingTypeChangeAssetAddr is used when update address of an asset
+	PendingTypeChangeAssetAddr // change_asset_addr
+)
+
 var validSetRateTypes = map[string]SetRate{
 	SetRateNotSet.String(): SetRateNotSet,
 	ExchangeFeed.String():  ExchangeFeed,
@@ -155,17 +181,12 @@ type Asset struct {
 
 // TODO: write custom marshal json for created/updated fields
 
-type pendingObject struct {
+// PendingObject holds data of pending obj waiting to be confirmed
+type PendingObject struct {
 	ID      uint64          `json:"id"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data"`
 }
-
-// CreateAsset hold state of being create Asset and waiting for confirm to be Asset.
-type CreateAsset pendingObject
-
-// CreateAssetExchange holds state of being create AssetExchange and waiting for confirm to be AssetExchange
-type CreateAssetExchange pendingObject
 
 // CreateAssetExchangeEntry is the configuration of an asset for a specific exchange.
 type CreateAssetExchangeEntry struct {
@@ -182,9 +203,6 @@ type CreateAssetExchangeEntry struct {
 type CreateCreateAssetExchange struct {
 	AssetExchanges []CreateAssetExchangeEntry `json:"asset_exchanges" binding:"required,dive"`
 }
-
-// UpdateAssetExchange holds state of being update AssetExchanges and waiting for confirm.
-type UpdateAssetExchange pendingObject
 
 // UpdateAssetExchangeEntry is the configuration of an asset for a specific exchange to be update
 type UpdateAssetExchangeEntry struct {
@@ -224,9 +242,6 @@ type CreateCreateAsset struct {
 	AssetInputs []CreateAssetEntry `json:"assets" binding:"required,dive"`
 }
 
-// UpdateAsset hold state of being update Asset and waiting for confirm to apply.
-type UpdateAsset pendingObject
-
 // CreateUpdateAsset present for an CreateUpdateAsset request
 type CreateUpdateAsset struct {
 	Assets []UpdateAssetEntry `json:"assets" binding:"required,dive"`
@@ -259,12 +274,6 @@ type CreateUpdateExchange struct {
 	Exchanges []UpdateExchangeEntry `json:"exchanges"`
 }
 
-// UpdateExchange hold state of being update Exchange and waiting for confirm to apply.
-type UpdateExchange pendingObject
-
-// CreateTradingPair hold state of being create trading pair and waiting for confirm to apply, hold origin json content.
-type CreateTradingPair pendingObject
-
 // CreateTradingPairEntry represents an trading pair in central exchange.
 // this is use when create new trading pair in separate step(not when define Asset), so ExchangeID is required.
 type CreateTradingPairEntry struct {
@@ -276,9 +285,6 @@ type CreateTradingPairEntry struct {
 type CreateCreateTradingPair struct {
 	TradingPairs []CreateTradingPairEntry `json:"trading_pairs" binding:"required"`
 }
-
-// CreateTradingPair hold state of being create trading pair and waiting for confirm to apply, hold origin json content.
-type UpdateTradingPair pendingObject
 
 // UpdateTradingPairOpts
 type UpdateTradingPairEntry struct {
@@ -297,9 +303,6 @@ type CreateUpdateTradingPair struct {
 	TradingPairs []UpdateTradingPairEntry `json:"trading_pairs" binding:"required,dive"`
 }
 
-// CreateTradingBy hold state of being create trading by and waiting for confirm to apply, hold origin json content.
-type CreateTradingBy pendingObject
-
 // CreateCreateTradingBy present for a CreateTradingBy(pending) request
 type CreateCreateTradingBy struct {
 	TradingBys []CreateTradingByEntry
@@ -310,9 +313,6 @@ type CreateTradingByEntry struct {
 	AssetID       uint64 `json:"asset_id"`
 	TradingPairID uint64 `json:"trading_pair_id"`
 }
-
-// ChangeAssetAddress hold state of being changed address of asset and waiting for confirm to apply.
-type ChangeAssetAddress pendingObject
 
 // ChangeAssetAddressEntry present data to create a change asset address
 type ChangeAssetAddressEntry struct {

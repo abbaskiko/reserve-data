@@ -20,7 +20,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
 )
 
-func createSampleAsset(store storage.Interface) (uint64, error) {
+func createSampleAsset(store *postgres.Storage) (uint64, error) {
 	_, err := store.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	if err != nil {
@@ -90,7 +90,7 @@ func createSampleAsset(store storage.Interface) (uint64, error) {
 	return id, err
 }
 
-func createEmptySampleAsset(store storage.Interface) (uint64, error) {
+func createEmptySampleAsset(store *postgres.Storage) (uint64, error) {
 	_, err := store.CreateAssetExchange(2, 1, "KNC", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	if err != nil {
@@ -324,8 +324,8 @@ func TestCreateUpdateAsset(t *testing.T) {
 			method:   http.MethodGet,
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
-					Data    []common.UpdateAsset `json:"data"`
-					Success bool                 `json:"success"`
+					Data    []common.PendingObject `json:"data"`
+					Success bool                   `json:"success"`
 				}
 				err = readResponse(resp, &idResponse)
 				require.NoError(t, err)
@@ -353,8 +353,8 @@ func TestCreateUpdateAsset(t *testing.T) {
 			method:   http.MethodGet,
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
-					Data    []common.UpdateAsset `json:"data"`
-					Success bool                 `json:"success"`
+					Data    []common.PendingObject `json:"data"`
+					Success bool                   `json:"success"`
 				}
 				err = readResponse(resp, &idResponse)
 				require.NoError(t, err)

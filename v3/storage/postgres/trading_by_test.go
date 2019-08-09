@@ -126,18 +126,19 @@ func TestStorage_ConfirmCreateTradingBy(t *testing.T) {
 
 	baseID, _, tradingPairID := setUp(t, s)
 
-	id, err := s.CreateCreateTradingBy(common.CreateCreateTradingBy{
+	id, err := s.CreatePendingObject(common.CreateCreateTradingBy{
 		TradingBys: []common.CreateTradingByEntry{
 			{
 				AssetID:       baseID,
 				TradingPairID: tradingPairID,
 			},
 		},
-	})
+	}, common.PendingTypeCreateTradingBy)
 	require.NoError(t, err)
 
-	_, err = s.GetCreateTradingBy(id)
+	_, err = s.GetPendingObject(id, common.PendingTypeCreateTradingBy)
 	require.NoError(t, err)
+
 	err = s.ConfirmCreateTradingBy(id)
 	require.NoError(t, err)
 }
