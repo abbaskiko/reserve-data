@@ -9,6 +9,15 @@ toc_footers:
 
 includes:
   - settings/apis
+  - settings/create_asset
+  - settings/update_asset
+  - settings/change_asset_address
+  - settings/create_asset_exchange
+  - settings/update_asset_exchange
+  - settings/update_exchange
+  - settings/create_trading_pair
+  - settings/update_trading_pair
+  - settings/create_trading_by
   - reserve/rates
   - exchanges/exchanges
   - exchanges/rebalance
