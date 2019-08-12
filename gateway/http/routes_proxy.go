@@ -70,6 +70,12 @@ func WithV3Endpoint(v3Endpoint string) Option {
 		g.PUT("/update-asset/:id", v3ProxyMW)
 		g.DELETE("/update-asset/:id", v3ProxyMW)
 
+		g.POST("/change-asset-address", v3ProxyMW)
+		g.GET("/change-asset-address", v3ProxyMW)
+		g.GET("/change-asset-address/:id", v3ProxyMW)
+		g.PUT("/change-asset-address/:id", v3ProxyMW)
+		g.DELETE("/change-asset-address/:id", v3ProxyMW)
+
 		g.GET("/create-asset-exchange", v3ProxyMW)
 		g.GET("/create-asset-exchange/:id", v3ProxyMW)
 		g.POST("/create-asset-exchange", v3ProxyMW)

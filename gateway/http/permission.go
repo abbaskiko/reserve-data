@@ -24,7 +24,8 @@ p, %[1]s, /v3/update-asset, POST
 p, %[1]s, /v3/create-asset-exchange, POST
 p, %[1]s, /v3/update-exchange, POST
 p, %[1]s, /v3/create-trading-pair, POST
-p, %[1]s, /v3/update-trading-pair, POST`, key)
+p, %[1]s, /v3/update-trading-pair, POST
+p, %[1]s, /v3/change-asset-address, POST`, key)
 }
 
 func addKeyConfirmPolicy(key string) string {
@@ -35,7 +36,8 @@ p, %[1]s, /v3/update-asset/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/create-asset-exchange/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/update-exchange/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/create-trading-pair/:id, (PUT)|(DELETE) 
-p, %[1]s, /v3/update-trading-pair/:id, (PUT)|(DELETE) `, key)
+p, %[1]s, /v3/update-trading-pair/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/change-asset-address, (PUT)|(DELETE)`, key)
 }
 
 func addKeyRebalancePolicy(key string) string {
