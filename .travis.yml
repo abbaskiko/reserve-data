@@ -34,8 +34,25 @@ after_success:
   - docker build -f dockerfiles/Dockerfile.gateway --label "commit=$TRAVIS_COMMIT" -t kybernetwork/reserve-data-gateway:$TRAVIS_COMMIT .
 
 deploy:
-  provider: script
-  script: bash .travis/docker_push
-  on:
-    all_branches: true
-    condition: $TRAVIS_BRANCH =~ ^v3-develop|develop|v3-staging|staging|master$
+  - provider: script
+    script: bash .travis/build_docs.sh
+    on:
+      all_branches: true
+
+  - provider: script
+    script: bash .travis/docker_push
+    on:
+      all_branches: true
+      condition: $TRAVIS_BRANCH =~ ^v3-develop|develop|v3-staging|staging|master$
+
+  - provider: gcs
+    access_key_id: $GCS_ACCESS_KEY_ID
+    secret_access_key: $GCS_SECRET_KEY_ID
+    bucket: dev-reserve-data-docs.knstats.com
+    skip_cleanup: true
+    local-dir: apidocs/build
+    skip_cleanup: true
+    on:
+      all_branches: true
+      condition: $TRAVIS_BRANCH =~ ^v3-develop$
+

@@ -123,16 +123,20 @@ func TestChangeAssetAddress_Successfully(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	id, err := s.CreateChangeAssetAddress(common.CreateChangeAssetAddress{
+	id, err := s.CreatePendingObject(common.CreateChangeAssetAddress{
 		Assets: []common.ChangeAssetAddressEntry{
 			{
 				ID:      assetID,
 				Address: "0x5dbcb95364cbc5604bacbb8c6eb9aa788f347a17",
 			},
 		},
-	})
+	}, common.PendingTypeChangeAssetAddr)
 	require.NoError(t, err)
 	require.NotZero(t, id)
+
+	_, err = s.GetPendingObject(id, common.PendingTypeChangeAssetAddr)
+	require.NoError(t, err)
+
 	err = s.ConfirmChangeAssetAddress(id)
 	require.NoError(t, err)
 
@@ -156,15 +160,19 @@ func TestChangeAssetAddress_FailedWithDuplicateAddress(t *testing.T) {
 	asset, err := s.GetAsset(assetID)
 	require.NoError(t, err)
 
-	id, err := s.CreateChangeAssetAddress(common.CreateChangeAssetAddress{
+	id, err := s.CreatePendingObject(common.CreateChangeAssetAddress{
 		Assets: []common.ChangeAssetAddressEntry{
 			{
 				ID:      assetID,
 				Address: asset.Address.Hex(),
 			},
 		},
-	})
+	}, common.PendingTypeChangeAssetAddr)
 	require.NoError(t, err)
+
+	_, err = s.GetPendingObject(id, common.PendingTypeChangeAssetAddr)
+	require.NoError(t, err)
+
 	err = s.ConfirmChangeAssetAddress(id)
 	require.Equal(t, err, common.ErrAddressExists)
 }

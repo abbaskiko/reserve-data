@@ -16,7 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/metric"
+	"github.com/KyberNetwork/reserve-data/pricefactor"
 	storagev3 "github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
@@ -27,7 +27,7 @@ type Config struct {
 	DataGlobalStorage    data.GlobalStorage
 	FetcherStorage       fetcher.Storage
 	FetcherGlobalStorage fetcher.GlobalStorage
-	MetricStorage        metric.Storage
+	MetricStorage        pricefactor.Storage
 	Archive              archive.Archive
 
 	World                *world.TheWorld

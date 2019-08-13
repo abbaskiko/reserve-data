@@ -317,8 +317,8 @@ func NewActivityStatus(exchangeStatus, tx string, blockNumber uint64, miningStat
 }
 
 type PriceEntry struct {
-	Quantity float64
-	Rate     float64
+	Quantity float64 `json:"quantity"`
+	Rate     float64 `json:"rate"`
 }
 
 // NewPriceEntry creates new instance of PriceEntry.

@@ -17,6 +17,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/pricefactor"
 	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/world"
 )
@@ -899,8 +900,8 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 	return result, err
 }
 
-//StoreMetric store metric info
-func (bs *BoltStorage) StoreMetric(data *common.MetricEntry, timepoint uint64) error {
+//StorePriceFactor store metric info
+func (bs *BoltStorage) StorePriceFactor(data *common.AllPriceFactor, timepoint uint64) error {
 	var err error
 	err = bs.db.Update(func(tx *bolt.Tx) error {
 		var dataJSON []byte
@@ -916,11 +917,11 @@ func (bs *BoltStorage) StoreMetric(data *common.MetricEntry, timepoint uint64) e
 	return err
 }
 
-//GetMetric return metric data
-func (bs *BoltStorage) GetMetric(tokens []commonv3.Asset, fromTime, toTime uint64) (map[uint64]common.MetricList, error) {
-	imResult := map[uint64]*common.MetricList{}
+// GetPriceFactor return price data
+func (bs *BoltStorage) GetPriceFactor(tokens []commonv3.Asset, fromTime, toTime uint64) (map[pricefactor.AssetID]common.PriceFactorList, error) {
+	imResult := map[pricefactor.AssetID]*common.PriceFactorList{}
 	for _, tok := range tokens {
-		imResult[tok.ID] = &common.MetricList{}
+		imResult[pricefactor.AssetID(tok.ID)] = &common.PriceFactorList{}
 	}
 
 	var err error
@@ -931,15 +932,15 @@ func (bs *BoltStorage) GetMetric(tokens []commonv3.Asset, fromTime, toTime uint6
 		max := boltutil.Uint64ToBytes(toTime)
 
 		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
-			data := common.MetricEntry{}
+			data := common.AllPriceFactor{}
 			err = json.Unmarshal(v, &data)
 			if err != nil {
 				return err
 			}
 			for tok, m := range data.Data {
-				metricList, found := imResult[tok]
+				metricList, found := imResult[pricefactor.AssetID(tok)]
 				if found {
-					*metricList = append(*metricList, common.TokenMetricResponse{
+					*metricList = append(*metricList, common.AssetPriceFactorResponse{
 						Timestamp: data.Timestamp,
 						AfpMid:    m.AfpMid,
 						Spread:    m.Spread,
@@ -949,7 +950,7 @@ func (bs *BoltStorage) GetMetric(tokens []commonv3.Asset, fromTime, toTime uint6
 		}
 		return nil
 	})
-	result := map[uint64]common.MetricList{}
+	result := map[pricefactor.AssetID]common.PriceFactorList{}
 	for k, v := range imResult {
 		result[k] = *v
 	}

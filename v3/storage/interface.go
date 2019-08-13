@@ -9,92 +9,19 @@ import (
 // Interface is the common persistent storage interface of V3 APIs.
 type Interface interface {
 	SettingReader
-
-	GetExchanges() ([]v3.Exchange, error)
-	UpdateExchange(id uint64, opts UpdateExchangeOpts) error
-
-	CreateAssetExchange(exchangeID, assetID uint64, symbol string, depositAddress ethereum.Address,
-		minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error)
-	UpdateAssetExchange(id uint64, opts UpdateAssetExchangeOpts) error
-
-	CreateCreateAssetExchange(v3.CreateCreateAssetExchange) (uint64, error)
-	GetCreateAssetExchanges() ([]v3.CreateAssetExchange, error)
-	GetCreateAssetExchange(id uint64) (v3.CreateAssetExchange, error)
-	RejectCreateAssetExchange(id uint64) error
-	ConfirmCreateAssetExchange(id uint64) error
-
-	CreateUpdateAssetExchange(v3.CreateUpdateAssetExchange) (uint64, error)
-	GetUpdateAssetExchanges() ([]v3.UpdateAssetExchange, error)
-	GetUpdateAssetExchange(id uint64) (v3.UpdateAssetExchange, error)
-	RejectUpdateAssetExchange(id uint64) error
-	ConfirmUpdateAssetExchange(id uint64) error
-
-	CreateAsset(
-		symbol, name string,
-		address ethereum.Address,
-		decimals uint64,
-		transferable bool,
-		setRate v3.SetRate,
-		rebalance bool,
-		isQuote bool,
-		pwi *v3.AssetPWI,
-		rb *v3.RebalanceQuadratic,
-		exchanges []v3.AssetExchange,
-		target *v3.AssetTarget,
-	) (uint64, error)
-	UpdateAsset(id uint64, opts UpdateAssetOpts) error
-	// ChangeAssetAddress make the current address address of asset old address and set new address as current.
-	ChangeAssetAddress(id uint64, address ethereum.Address) error
 	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
-
 	UpdateTradingPair(id uint64, opts UpdateTradingPairOpts) error
 
 	// TODO method for batch update PWI
 	// TODO method for batch update rebalance quadratic
 	// TODO method for batch update exchange configuration
 	// TODO meethod for batch update target
-	// TODO method for update address
-	CreateCreateAsset(v3.CreateCreateAsset) (uint64, error)
-	GetCreateAssets() ([]v3.CreateAsset, error)
-	GetCreateAsset(uint64) (v3.CreateAsset, error)
-	RejectCreateAsset(id uint64) error
-	ConfirmCreateAsset(id uint64) error
 
-	CreateUpdateAsset(asset v3.CreateUpdateAsset) (uint64, error)
-	GetUpdateAssets() ([]v3.UpdateAsset, error)
-	GetUpdateAsset(uint64) (v3.UpdateAsset, error)
-	RejectUpdateAsset(id uint64) error
-	ConfirmUpdateAsset(id uint64) error
-
-	CreateUpdateExchange(exchange v3.CreateUpdateExchange) (uint64, error)
-	GetUpdateExchanges() ([]v3.UpdateExchange, error)
-	GetUpdateExchange(id uint64) (v3.UpdateExchange, error)
-	RejectUpdateExchange(id uint64) error
-	ConfirmUpdateExchange(id uint64) error
-
-	CreateCreateTradingPair(v3.CreateCreateTradingPair) (uint64, error)
-	GetCreateTradingPairs() ([]v3.CreateTradingPair, error)
-	GetCreateTradingPair(id uint64) (v3.CreateTradingPair, error)
-	RejectCreateTradingPair(id uint64) error
-	ConfirmCreateTradingPair(id uint64) error
-
-	CreateUpdateTradingPair(v3.CreateUpdateTradingPair) (uint64, error)
-	GetUpdateTradingPairs() ([]v3.UpdateTradingPair, error)
-	GetUpdateTradingPair(id uint64) (v3.UpdateTradingPair, error)
-	RejectUpdateTradingPair(id uint64) error
-	ConfirmUpdateTradingPair(id uint64) error
-
-	CreateCreateTradingBy(by v3.CreateCreateTradingBy) (uint64, error)
-	GetCreateTradingBys() ([]v3.CreateTradingBy, error)
-	GetCreateTradingBy(uint64) (v3.CreateTradingBy, error)
-	RejectCreateTradingBy(uint64) error
-	ConfirmCreateTradingBy(uint64) error
-
-	CreateChangeAssetAddress(v3.CreateChangeAssetAddress) (uint64, error)
-	GetChangeAssetAddress(id uint64) (v3.ChangeAssetAddress, error)
-	GetChangeAssetAddresses() ([]v3.ChangeAssetAddress, error)
-	RejectChangeAssetAddress(id uint64) error
-	ConfirmChangeAssetAddress(id uint64) error
+	CreatePendingObject(interface{}, v3.PendingObjectType) (uint64, error)
+	GetPendingObject(uint64, v3.PendingObjectType) (v3.PendingObject, error)
+	GetPendingObjects(v3.PendingObjectType) ([]v3.PendingObject, error)
+	RejectPendingObject(uint64, v3.PendingObjectType) error
+	ConfirmPendingObject(uint64, v3.PendingObjectType) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
@@ -105,6 +32,7 @@ type SettingReader interface {
 	GetAssetExchange(id uint64) (v3.AssetExchange, error)
 	GetExchange(id uint64) (v3.Exchange, error)
 	GetExchangeByName(name string) (v3.Exchange, error)
+	GetExchanges() ([]v3.Exchange, error)
 	GetTradingPair(id uint64) (v3.TradingPairSymbols, error)
 	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
 	GetTradingBy(tradingByID uint64) (v3.TradingBy, error)

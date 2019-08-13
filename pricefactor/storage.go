@@ -1,17 +1,19 @@
-package metric
+package pricefactor
 
 import (
 	"github.com/KyberNetwork/reserve-data/common"
 	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
+type AssetID uint64
+
 // Storage is the interface that wraps all metrics database operations.
 type Storage interface {
-	StoreMetric(data *common.MetricEntry, timepoint uint64) error
+	StorePriceFactor(data *common.AllPriceFactor, timepoint uint64) error
 	StoreRebalanceControl(status bool) error
 	StoreSetrateControl(status bool) error
 
-	GetMetric(tokens []commonv3.Asset, fromTime, toTime uint64) (map[uint64]common.MetricList, error)
+	GetPriceFactor(tokens []commonv3.Asset, fromTime, toTime uint64) (map[AssetID]common.PriceFactorList, error)
 	GetRebalanceControl() (common.RebalanceControl, error)
 	GetSetrateControl() (common.SetrateControl, error)
 
