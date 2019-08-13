@@ -361,3 +361,7 @@ curl -X GET "https://gateway.local/v3/trading-pair/1"
     "success": true
 }
 ```
+
+### HTTP Request
+
+`GET https://gateway.local/v3/trading-pair/:trading_pair_id`

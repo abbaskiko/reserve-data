@@ -3,24 +3,31 @@
 ## Create trading by 
 
 ```shell
-curl -X POST "https://gateway.local/v3/create-trading-by"
--H 'Content-Type: application/json'
+curl -X POST "https://gateway.local/v3/create-trading-by" \
+-H 'Content-Type: application/json' \
 -d '{
-
+    "TradingBys": [
+        {
+            "asset_id": 3,
+            "trading_pair_id": 1
+        }
+    ]
 }'
 ```
 
 > sample response
 
 ```json
+{
+  "id": 7,
+  "success": true
+}
 ```
 
 ### HTTP Request
 
 `POST https://gateway.local/v3/create-trading-by`
 
-Params | Type | Required | Default | Description
------- | ---- | -------- | ------- | -----------
 
 ## Get pending trading by
 
@@ -32,6 +39,23 @@ curl -X GET "https://gateway.local/v3/create-trading-by"
 > sample response
 
 ```json
+{
+  "data": [
+    {
+      "id": 7,
+      "created": "2019-08-13T07:31:28.197771Z",
+      "data": {
+        "TradingBys": [
+          {
+            "asset_id": 1,
+            "trading_pair_id": 1
+          }
+        ]
+      }
+    }
+  ],
+  "success": true
+}
 ```
 
 ### HTTP Request
@@ -48,6 +72,9 @@ curl -X PUT "https://gateway.local/v3/create-trading-by/1"
 > sample response
 
 ```json
+{
+    "success": true
+}
 ```
 
 ### HTTP Request
@@ -64,6 +91,9 @@ curl -X DELETE "https://gateway.local/v3/create-trading-by/1"
 > sample response
 
 ```json
+{
+    "success": true
+}
 ```
 
 ### HTTP Request
