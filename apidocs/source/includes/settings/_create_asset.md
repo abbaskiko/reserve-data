@@ -4,31 +4,60 @@
 ## Create asset
 
 ```shell
-curl -X POST "https://gateway.local/v3/create-asset"
--H 'Content-Type: application/json'
+curl -X POST "https://gateway.local/v3/create-asset" \
+-H 'Content-Type: application/json' \
 -d '{
-    assets: [
+    "assets": [
         {
             "symbol": "OMG",
             "name": "Omisego",
-            "address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07",
-            "old_addresses": [],
+            "address": "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
             "decimals": 18,
-            "tranferable": true,
+            "transferable": true,
             "set_rate": "exchange_feed",
-            "rebalance": false,
-            "is_quote": false,
+            "rebalance": true,
+            "is_quote": true,
             "pwi": {
-                "ask": 121,
-                "bid": 12
+                "ask": {
+                    "a": 13.88888,
+                    "b": -0.11111,
+                    "c": 0,
+                    "min_min_spread": 0.005,
+                    "price_multiply_factor": 0.45
+                },
+                "bid": {
+                    "a": 13.88888,
+                    "b": -0.11111,
+                    "c": 0,
+                    "min_min_spread": 0.005,
+                    "price_multiply_factor": 0.45
+                }
             },
             "rebalance_quadratic": {
-                "a": 1,
-                "b": 2,
-                "c": 3
+                "a": 0.000001754386,
+                "b": 0.0004894737,
+                "c": 0.9995088
             },
-            "exchange": [],
-            target: 
+            "exchanges": [
+                {
+                    "id": 5,
+                    "asset_id": 3,
+                    "exchange_id": 0,
+                    "symbol": "OMG",
+                    "deposit_address": "0x023ab1f7acaad1f7a01d3bfa4afd2ab575780090",
+                    "min_deposit": 0,
+                    "withdraw_fee": 18,
+                    "target_recommended": 0,
+                    "target_ratio": 0,
+                    "trading_pairs": []
+                }
+            ],
+            "target": {
+                "total": 70000,
+                "reserve": 48000,
+                "rebalance_threshold": 0.33,
+                "transfer_threshold": 0.25
+            }
         }
     ]
 }'
@@ -38,83 +67,205 @@ curl -X POST "https://gateway.local/v3/create-asset"
 
 ```json
 {
-
+  "id": 8,
+  "success": true
 }
 ```
 
 ### HTTP Request
 
-`POST https://gateway.local/create-asset`
-
-Param | Type | Required | Default | Description
------ | ---- | -------- | ------- | -----------
+`POST https://gateway.local/v3/create-asset`
 
 ## Get pending create asset
 
 ```shell
-curl -X -GET "https://gateway.local/create-asset"
+curl -X -GET "https://gateway.local/v3/create-asset"
 ```
 
 > sample response
 
 ```json
-{}
+{
+  "data": [
+    {
+      "id": 8,
+      "created": "2019-08-13T07:47:22.680541Z",
+      "data": {
+        "assets": [
+          {
+            "symbol": "OMG",
+            "name": "Omisego",
+            "address": "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+            "old_addresses": null,
+            "decimals": 18,
+            "transferable": true,
+            "set_rate": "exchange_feed",
+            "rebalance": true,
+            "is_quote": true,
+            "pwi": {
+              "ask": {
+                "a": 13.88888,
+                "b": -0.11111,
+                "c": 0,
+                "min_min_spread": 0.005,
+                "price_multiply_factor": 0.45
+              },
+              "bid": {
+                "a": 13.88888,
+                "b": -0.11111,
+                "c": 0,
+                "min_min_spread": 0.005,
+                "price_multiply_factor": 0.45
+              }
+            },
+            "rebalance_quadratic": {
+              "a": 0.000001754386,
+              "b": 0.0004894737,
+              "c": 0.9995088
+            },
+            "exchanges": [
+              {
+                "id": 5,
+                "asset_id": 3,
+                "exchange_id": 0,
+                "symbol": "OMG",
+                "deposit_address": "0x023ab1f7acaad1f7a01d3bfa4afd2ab575780090",
+                "min_deposit": 0,
+                "withdraw_fee": 18,
+                "target_recommended": 0,
+                "target_ratio": 0
+              }
+            ],
+            "target": {
+              "total": 70000,
+              "reserve": 48000,
+              "rebalance_threshold": 0.33,
+              "transfer_threshold": 0.25
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "success": true
+}
 ```
 
 ### HTTP Request
 
-`GET https://gateway.local/`
+`GET https://gateway.local/v3/create-asset`
 
-Param | Type | Required | Default | Description
------ | ---- | -------- | ------- | -----------
 
 ## Get pending create asset by id
 
 ```shell
+curl -X GET "https://gateway.local/v3/create-asset/8"
 ```
 
 > sample response
 
 ```json
+{
+  "data": {
+    "id": 8,
+    "created": "2019-08-13T07:47:22.680541Z",
+    "data": {
+      "assets": [
+        {
+          "symbol": "OMG",
+          "name": "Omisego",
+          "address": "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "old_addresses": null,
+          "decimals": 18,
+          "transferable": true,
+          "set_rate": "exchange_feed",
+          "rebalance": true,
+          "is_quote": true,
+          "pwi": {
+            "ask": {
+              "a": 13.88888,
+              "b": -0.11111,
+              "c": 0,
+              "min_min_spread": 0.005,
+              "price_multiply_factor": 0.45
+            },
+            "bid": {
+              "a": 13.88888,
+              "b": -0.11111,
+              "c": 0,
+              "min_min_spread": 0.005,
+              "price_multiply_factor": 0.45
+            }
+          },
+          "rebalance_quadratic": {
+            "a": 0.000001754386,
+            "b": 0.0004894737,
+            "c": 0.9995088
+          },
+          "exchanges": [
+            {
+              "id": 5,
+              "asset_id": 3,
+              "exchange_id": 0,
+              "symbol": "OMG",
+              "deposit_address": "0x023ab1f7acaad1f7a01d3bfa4afd2ab575780090",
+              "min_deposit": 0,
+              "withdraw_fee": 18,
+              "target_recommended": 0,
+              "target_ratio": 0
+            }
+          ],
+          "target": {
+            "total": 70000,
+            "reserve": 48000,
+            "rebalance_threshold": 0.33,
+            "transfer_threshold": 0.25
+          }
+        }
+      ]
+    }
+  },
+  "success": true
+}
 ```
 
 ### HTTP Request
 
-``
+`GET https://gateway.local/v3/create-asset/:asset_id`
 
-Param | Type | Required | Default | Description
------ | ---- | -------- | ------- | -----------
 
 ## Confirm create asset
 
 ```shell
+curl -X PUT "https://gateway.local/v3/create-asset/1"
 ```
 
 > sample response
 
 ```json
+{
+    "success": true
+}
 ```
 
 ### HTTP Request
 
-``
-
-Param | Type | Required | Default | Description
------ | ---- | -------- | ------- | -----------
+`PUT https://gateway.local/v3/create-asset/:asset_id`
 
 ## Reject create asset
 
 ```shell
+curl -X DELETE "https://gateway.local/v3/create-asset/1"
 ```
 
 > sample response
 
 ```json
+{
+    "success": true
+}
 ```
 
 ### HTTP Request
 
-``
-
-Param | Type | Required | Default | Description
------ | ---- | -------- | ------- | -----------
+`DELETE https://gateway.local/v3/create-asset/1`
