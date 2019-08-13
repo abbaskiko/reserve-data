@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sentry"
@@ -17,6 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/pricefactor"
+	v3common "github.com/KyberNetwork/reserve-data/v3/common"
 	v3http "github.com/KyberNetwork/reserve-data/v3/http"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
@@ -81,7 +83,6 @@ type price struct {
 	Asks     []common.PriceEntry `json:"asks"`
 }
 
-// AllPrices return all prices
 func (s *Server) AllPrices(c *gin.Context) {
 	log.Printf("Getting all prices \n")
 	data, err := s.app.GetAllPrices(getTimePoint(c, true))
@@ -200,6 +201,167 @@ func (s *Server) GetRate(c *gin.Context) {
 			"data":      data.Data,
 		}))
 	}
+}
+
+// Trade create an order in cexs
+func (s *Server) Trade(c *gin.Context) {
+	postForm := c.Request.Form
+	exchangeParam := c.Param("exchangeid")
+	pairIDParam := c.Param("pair")
+	amountParam := postForm.Get("amount")
+	rateParam := postForm.Get("rate")
+	typeParam := postForm.Get("type")
+
+	pairID, err := strconv.Atoi(pairIDParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("invalid pair id %s err=%s", pairIDParam, err.Error())))
+		return
+	}
+
+	exchange, err := common.GetExchange(exchangeParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	//TODO: use GetTradingPair method
+	var pair v3common.TradingPairSymbols
+	pairs, err := s.settingStorage.GetTradingPairs(uint64(exchange.Name()))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	for _, p := range pairs {
+		if p.ID == uint64(pairID) {
+			pair = p
+		}
+	}
+	amount, err := strconv.ParseFloat(amountParam, 64)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	rate, err := strconv.ParseFloat(rateParam, 64)
+	log.Printf("http server: Trade: rate: %f, raw rate: %s", rate, rateParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	if typeParam != "sell" && typeParam != "buy" {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Trade type of %s is not supported.", typeParam)))
+		return
+	}
+
+	id, done, remaining, finished, err := s.core.Trade(
+		exchange, typeParam, pair, rate, amount, getTimePoint(c, false))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
+		"id":        id,
+		"done":      done,
+		"remaining": remaining,
+		"finished":  finished,
+	}))
+}
+
+// CancelOrder cancel an order from cexs
+func (s *Server) CancelOrder(c *gin.Context) {
+	postForm := c.Request.Form
+	exchangeParam := c.Param("exchangeid")
+	id := postForm.Get("order_id")
+
+	exchange, err := common.GetExchange(exchangeParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	log.Printf("Cancel order id: %s from %s\n", id, exchange.ID())
+	activityID, err := common.StringToActivityID(id)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	err = s.core.CancelOrder(activityID, exchange)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c)
+}
+
+// Withdraw asset to reserve from cex
+func (s *Server) Withdraw(c *gin.Context) {
+	postForm := c.Request.Form
+	exchangeParam := c.Param("exchangeid")
+	assetParam := postForm.Get("asset")
+	amountParam := postForm.Get("amount")
+
+	exchange, err := common.GetExchange(exchangeParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	assetID, err := strconv.Atoi(assetParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	asset, err := s.settingStorage.GetAsset(uint64(assetID))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	amount, err := hexutil.DecodeBig(amountParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	log.Printf("Withdraw %s %d from %s\n", amount.Text(10), asset.ID, exchange.ID())
+	id, err := s.core.Withdraw(exchange, asset, amount, getTimePoint(c, false))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithField("id", id))
+}
+
+// Deposit asset into cex
+func (s *Server) Deposit(c *gin.Context) {
+	postForm := c.Request.Form
+	exchangeParam := c.Param("exchangeid")
+	amountParam := postForm.Get("amount")
+	assetIDParam := postForm.Get("asset")
+	assetID, err := strconv.Atoi(assetIDParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	exchange, err := common.GetExchange(exchangeParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	asset, err := s.settingStorage.GetAsset(uint64(assetID))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	amount, err := hexutil.DecodeBig(amountParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	log.Printf("Depositing %s %d to %s\n", amount.Text(10), asset.ID, exchange.ID())
+	id, err := s.core.Deposit(exchange, asset, amount, getTimePoint(c, false))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
 // GetActivities return all activities record
@@ -323,6 +485,68 @@ func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 		toTime = common.GetTimepoint()
 	}
 	return fromTime, toTime, true
+}
+
+// SetStableTokenParams set stable token params
+func (s *Server) SetStableTokenParams(c *gin.Context) {
+	postForm := c.Request.Form
+	value := []byte(postForm.Get("value"))
+	if len(value) > maxDataSize {
+		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
+		return
+	}
+	err := s.priceFactorStorage.SetStableTokenParams(value)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c)
+}
+
+// ConfirmStableTokenParams confirm stable token params
+func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
+	postForm := c.Request.Form
+	value := []byte(postForm.Get("value"))
+	if len(value) > maxDataSize {
+		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
+		return
+	}
+	err := s.priceFactorStorage.ConfirmStableTokenParams(value)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c)
+}
+
+// RejectStableTokenParams reject stable token params
+func (s *Server) RejectStableTokenParams(c *gin.Context) {
+	err := s.priceFactorStorage.RemovePendingStableTokenParams()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c)
+}
+
+// GetPendingStableTokenParams return pending stable token params
+func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
+	data, err := s.priceFactorStorage.GetPendingStableTokenParams()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(data))
+}
+
+// GetStableTokenParams return all stable token params
+func (s *Server) GetStableTokenParams(c *gin.Context) {
+	data, err := s.priceFactorStorage.GetStableTokenParams()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
 func (s *Server) register() {
