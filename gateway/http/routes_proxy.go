@@ -56,7 +56,7 @@ func WithV3Endpoint(v3Endpoint string) Option {
 		g.GET("/asset/:id", v3ProxyMW)
 		g.GET("/asset", v3ProxyMW)
 		g.GET("/exchange/:id", v3ProxyMW)
-		g.GET("/exchange")
+		g.GET("/exchange", v3ProxyMW)
 
 		g.GET("/create-asset", v3ProxyMW)
 		g.GET("/create-asset/:id", v3ProxyMW)
