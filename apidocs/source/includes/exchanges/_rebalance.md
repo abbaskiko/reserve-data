@@ -8,6 +8,7 @@ curl -X GET "http://gateway.local/rebalancestatus"
 ```
 
 > sample response
+
 ```json
   {
     "success": true,
@@ -25,6 +26,7 @@ curl -X POST "https://gateway.local/holdrebalance"
 ```
 
 > sample response
+
 ```json
   {
     "success": true
@@ -38,6 +40,7 @@ curl -X POST "https://gateway.local/enablerebalance"
 ```
 
 > sample response
+
 ```json
   {
     "success": true
@@ -56,6 +59,7 @@ curl -X -GET "https://gateway.local/setratestatus"
 ```
 
 > sammple response
+
 ```json
   {
     "success": true,
@@ -70,6 +74,7 @@ curl -X POST "https://gateway.local/holdsetrate"
 ```
 
 > sample response
+
 ```json
 {
     "success": true
@@ -83,6 +88,7 @@ curl -X POST "https://gateway.local/enablesetrate"
 ```
 
 > sample response
+
 ```json
 {
     "success": true

@@ -83,8 +83,10 @@ curl -X POST "https://gateway.local/withdraw/binance"
 > sample response
 
 ```json
+{
     "success": true,
     "id": 1432423
+}
 ```
 
 ### HTTP Request
