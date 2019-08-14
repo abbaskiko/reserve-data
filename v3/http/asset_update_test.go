@@ -140,7 +140,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 }
 
 func createEmptySampleAsset(store *postgres.Storage) (uint64, error) {
-	_, err := store.CreateAssetExchange(huobi, 1, "KNC", eth.HexToAddress("0x00"), 10,
+	_, err := store.CreateAssetExchange(stable, 1, "KNC", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	if err != nil {
 		return 0, err
@@ -159,7 +159,7 @@ func createEmptySampleAsset(store *postgres.Storage) (uint64, error) {
 			{
 				Symbol:            "KNC",
 				DepositAddress:    eth.HexToAddress("0x00002"),
-				ExchangeID:        huobi,
+				ExchangeID:        stable,
 				TargetRatio:       0.1,
 				TargetRecommended: 1000.0,
 				WithdrawFee:       0.5,
