@@ -13,7 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-// CreateSettingChange creates an object change in database and return id
+// CreateSettingChange creates an setting change in database and return id
 func (s *Storage) CreateSettingChange(obj common.SettingChange) (uint64, error) {
 	var id uint64
 	jsonData, err := json.Marshal(obj)
@@ -32,7 +32,7 @@ func (s *Storage) CreateSettingChange(obj common.SettingChange) (uint64, error) 
 	if err = tx.Commit(); err != nil {
 		return 0, err
 	}
-	log.Printf("create obj change success with id=%d\n", id)
+	log.Printf("create setting change success with id=%d\n", id)
 	return id, nil
 }
 
@@ -83,7 +83,7 @@ func (s *Storage) GetSettingChange(id uint64) (common.SettingChangeResponse, err
 	err := s.stmts.getSettingChange.Get(&dbResult, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("object change not found in database id=%d\n", id)
+			log.Printf("setting change not found in database id=%d\n", id)
 			return common.SettingChangeResponse{}, common.ErrNotFound
 		}
 		return common.SettingChangeResponse{}, err
@@ -95,7 +95,7 @@ func (s *Storage) GetSettingChange(id uint64) (common.SettingChangeResponse, err
 	return res, nil
 }
 
-// GetSettingChanges return list object change.
+// GetSettingChanges return list setting change.
 func (s *Storage) GetSettingChanges() ([]common.SettingChangeResponse, error) {
 	var dbResult []settingChangeDB
 	err := s.stmts.getSettingChange.Select(&dbResult, nil)
@@ -116,7 +116,7 @@ func (s *Storage) GetSettingChanges() ([]common.SettingChangeResponse, error) {
 	return result, nil
 }
 
-// RejectSettingChange delete object change with a given id
+// RejectSettingChange delete setting change with a given id
 func (s *Storage) RejectSettingChange(id uint64) error {
 	var returnedID uint64
 	tx, err := s.db.Beginx()
@@ -135,7 +135,7 @@ func (s *Storage) RejectSettingChange(id uint64) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("reject object change success with id=%d\n", id)
+	log.Printf("reject setting change success with id=%d\n", id)
 	return nil
 }
 func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChangeResponse, error) {
@@ -143,14 +143,14 @@ func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChange
 	err := tx.Stmtx(s.stmts.getSettingChange).Get(&dbResult, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("object change not found in database id=%d\n", id)
+			log.Printf("setting change not found in database id=%d\n", id)
 			return common.SettingChangeResponse{}, common.ErrNotFound
 		}
 		return common.SettingChangeResponse{}, err
 	}
 	res, err := dbResult.ToCommon()
 	if err != nil {
-		log.Printf("failed to unmarshal object, err=%v\n", err)
+		log.Printf("failed to convert to common setting change, err=%v\n", err)
 		return common.SettingChangeResponse{}, err
 	}
 	return res, nil
@@ -167,7 +167,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 		}
 		err = s.changeAssetAddress(tx, u.ID, u.Address)
 		if err != nil {
-			msg := fmt.Sprintf("entry asset address %d, err=%v\n", i, err)
+			msg := fmt.Sprintf("change asset address %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
@@ -275,7 +275,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 	return nil
 }
 
-// ConfirmSettingChange apply object change with a given id
+// ConfirmSettingChange apply setting change with a given id
 func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -284,7 +284,7 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 	defer rollbackUnlessCommitted(tx)
 	changeObj, err := s.getSettingChange(tx, id)
 	if err != nil {
-		return errors.Wrap(err, "get object change error")
+		return errors.Wrap(err, "get setting change error")
 	}
 
 	for i, change := range changeObj.ChangeList {
@@ -298,10 +298,10 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 	}
 	if commit {
 		if err := tx.Commit(); err != nil {
-			log.Printf("object change id=%d has been failed to confirm, err=%v\n", id, err)
+			log.Printf("setting change id=%d has been failed to confirm, err=%v\n", id, err)
 			return err
 		}
-		log.Printf("object change has been confirmed successfully, id=%d\n", id)
+		log.Printf("setting change has been confirmed successfully, id=%d\n", id)
 		return nil
 	}
 	return nil

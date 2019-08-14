@@ -376,15 +376,18 @@ func (s settingChangeMarker) nope() {
 }
 
 // TODO: write a custom unmarshalJSON
+// SettingChangeEntry present a an entry of change
 type SettingChangeEntry struct {
 	Type ChangeType        `json:"type"`
 	Data SettingChangeType `json:"data"`
 }
 
+// SettingChange present for setting change request
 type SettingChange struct {
 	ChangeList []SettingChangeEntry `json:"change_list"`
 }
 
+// SettingChangeResponse setting change response
 type SettingChangeResponse struct {
 	ID         uint64               `json:"id"`
 	Created    time.Time            `json:"created"`
