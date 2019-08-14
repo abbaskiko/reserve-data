@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
 
@@ -629,11 +627,6 @@ func NewHTTPServer(
 		sentryCli,
 		false,
 	))
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AddAllowHeaders("signed")
-	corsConfig.AllowAllOrigins = true
-	corsConfig.MaxAge = 5 * time.Minute
-	r.Use(cors.New(corsConfig))
 
 	return &Server{
 		app:                app,
