@@ -2,6 +2,7 @@ package permission
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"regexp"
 
@@ -37,7 +38,8 @@ func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 	p := &Permissioner{enforcer: e}
 	return func(c *gin.Context) {
 		if !p.checkPermission(c.Request) {
-			c.AbortWithError(http.StatusUnauthorized, ErrNotPermit)
+			err := c.AbortWithError(http.StatusUnauthorized, ErrNotPermit)
+			log.Printf("Abort with error get error: %s", err.Error())
 			return
 		}
 	}
