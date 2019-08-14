@@ -989,10 +989,16 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 			}
 		}
 		if pErr.Code == errCodeCheckViolation {
+			log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
 			switch pErr.Constraint {
 			case "address_id_check":
-				log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
 				return common.ErrDepositAddressMissing
+			case "pwi_check":
+				return common.ErrPWIMissing
+			case "rebalance_quadratic_check":
+				return common.ErrRebalanceQuadraticMissing
+			case "target_check":
+				return common.ErrAssetTargetMissing
 			}
 		}
 
