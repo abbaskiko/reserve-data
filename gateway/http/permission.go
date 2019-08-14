@@ -25,6 +25,7 @@ p, %[1]s, /v3/create-asset-exchange, POST
 p, %[1]s, /v3/update-exchange, POST
 p, %[1]s, /v3/create-trading-pair, POST
 p, %[1]s, /v3/update-trading-pair, POST
+p, %[1]s, /v3/setting-change, POST
 p, %[1]s, /v3/change-asset-address, POST`, key)
 }
 
@@ -37,6 +38,7 @@ p, %[1]s, /v3/create-asset-exchange/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/update-exchange/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/create-trading-pair/:id, (PUT)|(DELETE) 
 p, %[1]s, /v3/update-trading-pair/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/setting-change/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/change-asset-address, (PUT)|(DELETE)`, key)
 }
 

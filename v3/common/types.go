@@ -190,6 +190,7 @@ type PendingObject struct {
 
 // CreateAssetExchangeEntry is the configuration of an asset for a specific exchange.
 type CreateAssetExchangeEntry struct {
+	settingChangeMarker
 	AssetID           uint64           `json:"asset_id"`
 	ExchangeID        uint64           `json:"exchange_id"`
 	Symbol            string           `json:"symbol"`
@@ -206,6 +207,7 @@ type CreateCreateAssetExchange struct {
 
 // UpdateAssetExchangeEntry is the configuration of an asset for a specific exchange to be update
 type UpdateAssetExchangeEntry struct {
+	settingChangeMarker
 	ID                uint64            `json:"id"`
 	Symbol            *string           `json:"symbol"`
 	DepositAddress    *ethereum.Address `json:"deposit_address"`
@@ -222,6 +224,7 @@ type CreateUpdateAssetExchange struct {
 
 // CreateAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
 type CreateAssetEntry struct {
+	settingChangeMarker
 	Symbol             string              `json:"symbol" binding:"required"`
 	Name               string              `json:"name" binding:"required"`
 	Address            ethereum.Address    `json:"address"`
@@ -249,6 +252,7 @@ type CreateUpdateAsset struct {
 
 // UpdateAssetEntry
 type UpdateAssetEntry struct {
+	settingChangeMarker
 	AssetID            uint64              `json:"asset_id" binding:"required"`
 	Symbol             *string             `json:"symbol"`
 	Name               *string             `json:"name"`
@@ -264,6 +268,7 @@ type UpdateAssetEntry struct {
 }
 
 type UpdateExchangeEntry struct {
+	settingChangeMarker
 	ExchangeID      uint64   `json:"exchange_id"`
 	TradingFeeMaker *float64 `json:"trading_fee_maker"`
 	TradingFeeTaker *float64 `json:"trading_fee_taker"`
@@ -277,6 +282,7 @@ type CreateUpdateExchange struct {
 // CreateTradingPairEntry represents an trading pair in central exchange.
 // this is use when create new trading pair in separate step(not when define Asset), so ExchangeID is required.
 type CreateTradingPairEntry struct {
+	settingChangeMarker
 	TradingPair
 	ExchangeID uint64 `json:"exchange_id"`
 }
@@ -288,6 +294,7 @@ type CreateCreateTradingPair struct {
 
 // UpdateTradingPairOpts
 type UpdateTradingPairEntry struct {
+	settingChangeMarker
 	ID              uint64   `json:"id"`
 	PricePrecision  *uint64  `json:"price_precision"`
 	AmountPrecision *uint64  `json:"amount_precision"`
@@ -310,17 +317,79 @@ type CreateCreateTradingBy struct {
 
 // CreateTradingByEntry present the information to create a trading by
 type CreateTradingByEntry struct {
+	settingChangeMarker
 	AssetID       uint64 `json:"asset_id"`
 	TradingPairID uint64 `json:"trading_pair_id"`
 }
 
 // ChangeAssetAddressEntry present data to create a change asset address
 type ChangeAssetAddressEntry struct {
-	ID      uint64 `json:"id" binding:"required"`
-	Address string `json:"address" binding:"required,isAddress"`
+	settingChangeMarker
+	ID      uint64           `json:"id" binding:"required"`
+	Address ethereum.Address `json:"address" binding:"required"`
 }
 
 // CreateChangeAssetAddress present data to create a change asset address
 type CreateChangeAssetAddress struct {
 	Assets []ChangeAssetAddressEntry `json:"assets" binding:"dive"`
+}
+
+// ChangeType represent type of change type entry in list change
+//go:generate enumer -type=ChangeType -linecomment -json=true
+type ChangeType int
+
+const (
+	ChangeTypeUnknown ChangeType = iota // unknown
+	// ChangeTypeCreateAsset is used when create an asset
+	ChangeTypeCreateAsset // create_asset
+	// ChangeTypeUpdateAsset is used when update an asset
+	ChangeTypeUpdateAsset // update_asset
+	// ChangeTypeCreateAssetExchange is used when create an asset exchange
+	ChangeTypeCreateAssetExchange // create_asset_exchange
+	// ChangeTypeUpdateAssetExchange is used when update an asset exchange
+	ChangeTypeUpdateAssetExchange // update_asset_exchange
+	// ChangeTypeCreateTradingPair is used when create a trading pair
+	ChangeTypeCreateTradingPair // create_trading_pair
+	// ChangeTypeCreateTradingBy is used when create a trading by
+	ChangeTypeCreateTradingBy // create_trading_by
+	// ChangeTypeUpdateExchange is used when update exchange
+	ChangeTypeUpdateExchange // update_exchange
+	// ChangeTypeChangeAssetAddr is used when update address of an asset
+	ChangeTypeChangeAssetAddr // change_asset_addr
+	// ChangeTypeDeleteTradingPair is used to present delete trading pair
+	ChangeTypeDeleteTradingPair
+	// ChangeTypeDeleteAssetExchange is used in present delete asset exchange object.
+	ChangeTypeDeleteAssetExchange
+	// ChangeTypeDeleteTradingBy is used in present delete trading_by object.
+	ChangeTypeDeleteTradingBy
+)
+
+// SettingChangeType interface just make sure that only some of selected type can be put into SettingChange list
+type SettingChangeType interface {
+	nope()
+}
+type settingChangeMarker struct {
+}
+
+func (s settingChangeMarker) nope() {
+
+}
+
+// TODO: write a custom unmarshalJSON
+// SettingChangeEntry present a an entry of change
+type SettingChangeEntry struct {
+	Type ChangeType        `json:"type"`
+	Data SettingChangeType `json:"data"`
+}
+
+// SettingChange present for setting change request
+type SettingChange struct {
+	ChangeList []SettingChangeEntry `json:"change_list"`
+}
+
+// SettingChangeResponse setting change response
+type SettingChangeResponse struct {
+	ID         uint64               `json:"id"`
+	Created    time.Time            `json:"created"`
+	ChangeList []SettingChangeEntry `json:"change_list"`
 }

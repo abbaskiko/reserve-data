@@ -106,6 +106,12 @@ func WithV3Endpoint(v3Endpoint string) Option {
 		g.PUT("/update-trading-pair/:id", v3ProxyMW)
 		g.DELETE("/update-trading-pair/:id", v3ProxyMW)
 
+		g.GET("/setting-change", v3ProxyMW)
+		g.GET("setting-change/:id", v3ProxyMW)
+		g.POST("/setting-change", v3ProxyMW)
+		g.PUT("/setting-change/:id", v3ProxyMW)
+		g.DELETE("/setting-change/:id", v3ProxyMW)
+
 		return nil
 	}
 }

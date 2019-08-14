@@ -457,12 +457,24 @@ func (s *Storage) createAsset(
 				}
 
 				switch pErr.Code {
-				case errAssertFailure, errForeignKeyViolation:
+				case errForeignKeyViolation:
 					log.Printf("failed to create trading pair as assertion failed symbol=%s exchange_id=%d err=%s",
 						symbol,
 						exchange.ExchangeID,
 						pErr.Message)
 					return 0, common.ErrBadTradingPairConfiguration
+				case errBaseInvalid:
+					log.Printf("failed to create trading pair as check base failed symbol=%s exchange_id=%d err=%s",
+						symbol,
+						exchange.ExchangeID,
+						pErr.Message)
+					return 0, common.ErrBaseAssetInvalid
+				case errQuoteInvalid:
+					log.Printf("failed to create trading pair as check quote failed symbol=%s exchange_id=%d err=%s",
+						symbol,
+						exchange.ExchangeID,
+						pErr.Message)
+					return 0, common.ErrQuoteAssetInvalid
 				}
 
 				return 0, fmt.Errorf("failed to create trading pair symbol=%s exchange_id=%d err=%s",
@@ -973,6 +985,20 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 			case addressesUniqueConstraint:
 				log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
 				return common.ErrAddressExists
+
+			}
+		}
+		if pErr.Code == errCodeCheckViolation {
+			log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
+			switch pErr.Constraint {
+			case "address_id_check":
+				return common.ErrDepositAddressMissing
+			case "pwi_check":
+				return common.ErrPWIMissing
+			case "rebalance_quadratic_check":
+				return common.ErrRebalanceQuadraticMissing
+			case "target_check":
+				return common.ErrAssetTargetMissing
 			}
 		}
 
@@ -983,9 +1009,23 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 
 // ChangeAssetAddress change address of an asset
 func (s *Storage) ChangeAssetAddress(id uint64, address ethereum.Address) error {
-	log.Printf("changing address of asset id=%d new_address=%s", id, address.String())
 
-	_, err := s.stmts.changeAssetAddress.Exec(id, address.String())
+	err := s.changeAssetAddress(nil, id, address)
+	if err != nil {
+		log.Printf("change address error, err=%v\n", err)
+		return err
+	}
+	log.Printf("change asset address successfully id=%d\n", id)
+	return nil
+}
+
+func (s *Storage) changeAssetAddress(tx *sqlx.Tx, id uint64, address ethereum.Address) error {
+	log.Printf("changing address of asset id=%d new_address=%s", id, address.String())
+	sts := s.stmts.changeAssetAddress
+	if tx != nil {
+		sts = tx.Stmtx(sts)
+	}
+	_, err := sts.Exec(id, address.String())
 	if err != nil {
 		pErr, ok := err.(*pq.Error)
 		if !ok {
