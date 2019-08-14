@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/pkg/errors"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
@@ -60,7 +61,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 	for _, o := range settingChange.ChangeList {
 		switch o.Type {
 		case common.ChangeTypeCreateAsset:
-			asset := o.Data.(common.CreateAssetEntry)
+			asset := o.Data.(*common.CreateAssetEntry)
 			for _, assetExchange := range asset.Exchanges {
 				exhID := v1common.ExchangeID(v1common.ExchangeName(assetExchange.ExchangeID).String())
 				centralExh, ok := v1common.SupportedExchanges[exhID]
@@ -110,8 +111,8 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 				}
 			}
 		case common.ChangeTypeCreateTradingPair:
-			entry := o.Data.(common.CreateTradingPairEntry)
-			baseSymbol, quoteSymbol, err := s.checkCreateTradingPairParams(entry)
+			entry := o.Data.(*common.CreateTradingPairEntry)
+			baseSymbol, quoteSymbol, err := s.checkCreateTradingPairParams(*entry)
 			if err != nil {
 				return err
 			}
@@ -165,10 +166,18 @@ func (s *Server) createSettingChange(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
 			return
 		}
+
+		if err = binding.Validator.ValidateStruct(obj); err != nil {
+			msg := fmt.Sprintf("validate obj error at %d, err=%s", i, err)
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+			return
+		}
+
 		if err = s.validateChangeEntry(obj, o.Type); err != nil {
 			msg := fmt.Sprintf("validate error at %d, err=%s", i, err)
 			log.Println(msg)
 			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+			return
 		}
 		settingChangeRequest.ChangeList = append(settingChangeRequest.ChangeList, common.SettingChangeEntry{
 			Type: o.Type,

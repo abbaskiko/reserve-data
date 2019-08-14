@@ -111,6 +111,115 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 	}
 }
 
+func TestHTTPServerChangeAssetAddressBySettingChange(t *testing.T) {
+	const (
+		settingChangeEndpoint = "/v3/setting-change"
+	)
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	assetID, err := createSampleAsset(s)
+	require.NoError(t, err)
+
+	server := NewServer(s, nil)
+
+	var tests = []testCase{
+		{
+			msg:      "create change asset address",
+			endpoint: settingChangeEndpoint,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeChangeAssetAddr,
+						Data: common.ChangeAssetAddressEntry{
+							ID:      assetID,
+							Address: ethereum.HexToAddress("0x4DDBdA50ddbeC0289A80De667a72d158819e381D"),
+						},
+					},
+				},
+			},
+		},
+		{
+			msg:      "confirm pending change asset address",
+			endpoint: settingChangeEndpoint + "/1",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg: "create invalid change asset address (with invalid address)",
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeChangeAssetAddr,
+						Data: common.ChangeAssetAddressEntry{
+							ID:      assetID,
+							Address: ethereum.HexToAddress("invalid address"),
+						},
+					},
+				},
+			},
+			endpoint: settingChangeEndpoint,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectFailure,
+		},
+		{
+			msg: "create invalid change asset address (with not exist asset)",
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeChangeAssetAddr,
+						Data: common.ChangeAssetAddressEntry{
+							ID:      1234,
+							Address: ethereum.HexToAddress("0x3f3150ea2b596f6bdb6c4af21b744019f29694c1"),
+						},
+					},
+				},
+			},
+			endpoint: settingChangeEndpoint,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectFailure,
+		},
+		{
+			msg:      "create other valid change asset address",
+			endpoint: settingChangeEndpoint,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeChangeAssetAddr,
+						Data: common.ChangeAssetAddressEntry{
+							ID:      assetID,
+							Address: ethereum.HexToAddress("0x5dbcb95364cbc5604bacbb8c6eb9aa788f347a17"),
+						},
+					},
+				},
+			},
+		},
+		{
+			msg:      "reject pending change asset address",
+			endpoint: settingChangeEndpoint + "/2",
+			method:   http.MethodDelete,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
 func TestChangeAssetAddress_Successfully(t *testing.T) {
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
