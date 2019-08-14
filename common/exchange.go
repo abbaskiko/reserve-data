@@ -15,7 +15,7 @@ type ExchangeName int
 
 const (
 	//Binance is the enumerated key for binance
-	Binance ExchangeName = iota //binance
+	Binance ExchangeName = iota + 1 //binance
 	//Huobi is the enumerated key for huobi
 	Huobi //huobi
 	//StableExchange is the enumerated key for stable_exchange

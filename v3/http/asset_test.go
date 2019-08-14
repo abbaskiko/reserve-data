@@ -54,7 +54,7 @@ var (
 			},
 			Exchanges: []common.AssetExchange{
 				{
-					ExchangeID: 0, // pre-define exchange
+					ExchangeID: binance, // pre-define exchange
 					TradingPairs: []common.TradingPair{
 						{
 							Base:  0,
@@ -75,7 +75,7 @@ func getCreatePEAWithQuoteFalse() common.CreateCreateAsset {
 	createPEAWithQuoteFalse.AssetInputs[0].Symbol = "QUOTE FALSE"
 	createPEAWithQuoteFalse.AssetInputs[0].Exchanges = []common.AssetExchange{
 		{
-			ExchangeID:   0, // pre-define exchange
+			ExchangeID:   binance, // pre-define exchange
 			TradingPairs: []common.TradingPair{},
 		},
 	}
@@ -90,7 +90,7 @@ func TestCreateAssetBySettingChange(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	// asset = 1 for ETH is pre-insert in DB.
-	_, err = s.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
+	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
 	server := NewServer(s, nil)
@@ -187,7 +187,7 @@ func TestHTTPServerAsset(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	// asset = 1 for ETH is pre-insert in DB.
-	_, err = s.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
+	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
 	server := NewServer(s, nil)

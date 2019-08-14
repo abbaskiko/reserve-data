@@ -30,8 +30,9 @@ func TestServer_TradingBy(t *testing.T) {
 	}()
 
 	s, err := postgres.NewStorage(db)
+	assert.NoError(t, err)
 	// asset = 1 for ETH is pre-insert in DB.
-	_, err = s.CreateAssetExchange(0, 1, "ETH", ethereum.HexToAddress("0x00"), 10,
+	_, err = s.CreateAssetExchange(binance, 1, "ETH", ethereum.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
 	require.NoError(t, err)
