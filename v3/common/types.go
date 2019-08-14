@@ -190,6 +190,7 @@ type PendingObject struct {
 
 // CreateAssetExchangeEntry is the configuration of an asset for a specific exchange.
 type CreateAssetExchangeEntry struct {
+	settingChangeMarker
 	AssetID           uint64           `json:"asset_id"`
 	ExchangeID        uint64           `json:"exchange_id"`
 	Symbol            string           `json:"symbol"`
@@ -200,16 +201,13 @@ type CreateAssetExchangeEntry struct {
 	TargetRatio       float64          `json:"target_ratio"`
 }
 
-func (o CreateAssetExchangeEntry) Data() []byte {
-	return nil
-}
-
 type CreateCreateAssetExchange struct {
 	AssetExchanges []CreateAssetExchangeEntry `json:"asset_exchanges" binding:"required,dive"`
 }
 
 // UpdateAssetExchangeEntry is the configuration of an asset for a specific exchange to be update
 type UpdateAssetExchangeEntry struct {
+	settingChangeMarker
 	ID                uint64            `json:"id"`
 	Symbol            *string           `json:"symbol"`
 	DepositAddress    *ethereum.Address `json:"deposit_address"`
@@ -219,10 +217,6 @@ type UpdateAssetExchangeEntry struct {
 	TargetRatio       *float64          `json:"target_ratio"`
 }
 
-func (o UpdateAssetExchangeEntry) Data() []byte {
-	return nil
-}
-
 // CreateUpdateAssetExchange present for a UpdateAssetExchange(pending) request
 type CreateUpdateAssetExchange struct {
 	AssetExchanges []UpdateAssetExchangeEntry `json:"asset_exchanges" binding:"required,dive"`
@@ -230,6 +224,7 @@ type CreateUpdateAssetExchange struct {
 
 // CreateAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
 type CreateAssetEntry struct {
+	settingChangeMarker
 	Symbol             string              `json:"symbol" binding:"required"`
 	Name               string              `json:"name" binding:"required"`
 	Address            ethereum.Address    `json:"address"`
@@ -245,10 +240,6 @@ type CreateAssetEntry struct {
 	Target             *AssetTarget        `json:"target"`
 }
 
-func (o CreateAssetEntry) Data() []byte {
-	return nil
-}
-
 // CreateCreateAsset present for a CreateAsset(pending) request
 type CreateCreateAsset struct {
 	AssetInputs []CreateAssetEntry `json:"assets" binding:"required,dive"`
@@ -261,6 +252,7 @@ type CreateUpdateAsset struct {
 
 // UpdateAssetEntry
 type UpdateAssetEntry struct {
+	settingChangeMarker
 	AssetID            uint64              `json:"asset_id" binding:"required"`
 	Symbol             *string             `json:"symbol"`
 	Name               *string             `json:"name"`
@@ -275,19 +267,12 @@ type UpdateAssetEntry struct {
 	Target             *AssetTarget        `json:"target"`
 }
 
-func (o UpdateAssetEntry) Data() []byte {
-	return nil
-}
-
 type UpdateExchangeEntry struct {
+	settingChangeMarker
 	ExchangeID      uint64   `json:"exchange_id"`
 	TradingFeeMaker *float64 `json:"trading_fee_maker"`
 	TradingFeeTaker *float64 `json:"trading_fee_taker"`
 	Disable         *bool    `json:"disable"`
-}
-
-func (o UpdateExchangeEntry) Data() []byte {
-	return nil
 }
 
 type CreateUpdateExchange struct {
@@ -297,12 +282,9 @@ type CreateUpdateExchange struct {
 // CreateTradingPairEntry represents an trading pair in central exchange.
 // this is use when create new trading pair in separate step(not when define Asset), so ExchangeID is required.
 type CreateTradingPairEntry struct {
+	settingChangeMarker
 	TradingPair
 	ExchangeID uint64 `json:"exchange_id"`
-}
-
-func (o CreateTradingPairEntry) Data() []byte {
-	return nil
 }
 
 // CreateCreateTradingPair present for a CreateTradingPair(pending) request
@@ -312,6 +294,7 @@ type CreateCreateTradingPair struct {
 
 // UpdateTradingPairOpts
 type UpdateTradingPairEntry struct {
+	settingChangeMarker
 	ID              uint64   `json:"id"`
 	PricePrecision  *uint64  `json:"price_precision"`
 	AmountPrecision *uint64  `json:"amount_precision"`
@@ -320,10 +303,6 @@ type UpdateTradingPairEntry struct {
 	PriceLimitMin   *float64 `json:"price_limit_min"`
 	PriceLimitMax   *float64 `json:"price_limit_max"`
 	MinNotional     *float64 `json:"min_notional"`
-}
-
-func (o UpdateTradingPairEntry) Data() []byte {
-	return nil
 }
 
 // CreateUpdateTradingPair present for a UpdateTradingPair(pending) request
@@ -338,22 +317,16 @@ type CreateCreateTradingBy struct {
 
 // CreateTradingByEntry present the information to create a trading by
 type CreateTradingByEntry struct {
+	settingChangeMarker
 	AssetID       uint64 `json:"asset_id"`
 	TradingPairID uint64 `json:"trading_pair_id"`
 }
 
-func (o CreateTradingByEntry) Data() []byte {
-	return nil
-}
-
 // ChangeAssetAddressEntry present data to create a change asset address
 type ChangeAssetAddressEntry struct {
+	settingChangeMarker
 	ID      uint64           `json:"id" binding:"required"`
 	Address ethereum.Address `json:"address" binding:"required"`
-}
-
-func (o ChangeAssetAddressEntry) Data() []byte {
-	return nil
 }
 
 // CreateChangeAssetAddress present data to create a change asset address
@@ -393,7 +366,13 @@ const (
 
 // SettingChangeType interface just make sure that only some of selected type can be put into SettingChange list
 type SettingChangeType interface {
-	Data() []byte
+	nope()
+}
+type settingChangeMarker struct {
+}
+
+func (s settingChangeMarker) nope() {
+
 }
 
 // TODO: write a custom unmarshalJSON

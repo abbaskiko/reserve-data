@@ -18,7 +18,6 @@ import (
 
 // TODO write more test cases
 func TestServer_SettingChangeBasic(t *testing.T) {
-	t.Skip()
 	const (
 		settingChangePath = "/v3/setting-change"
 	)
