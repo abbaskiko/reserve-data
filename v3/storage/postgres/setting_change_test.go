@@ -468,6 +468,33 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 				assert.Equal(t, common.ErrQuoteAssetInvalid, e)
 			},
 		},
+		{
+			msg: "test update asset, transferable",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:            2,
+							Symbol:             nil,
+							Name:               nil,
+							Address:            nil,
+							Decimals:           nil,
+							Transferable:       common.BoolPointer(true),
+							SetRate:            nil,
+							Rebalance:          nil,
+							IsQuote:            nil,
+							PWI:                nil,
+							RebalanceQuadratic: nil,
+							Target:             nil,
+						},
+					},
+				},
+			},
+			assertFn: func(t *testing.T, u uint64, e error) {
+				assert.Equal(t, common.ErrDepositAddressMissing, e)
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Logf("running test case for: %s", tc.msg)

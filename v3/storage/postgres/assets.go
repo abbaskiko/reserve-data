@@ -985,6 +985,14 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 			case addressesUniqueConstraint:
 				log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
 				return common.ErrAddressExists
+
+			}
+		}
+		if pErr.Code == errCodeCheckViolation {
+			switch pErr.Constraint {
+			case "address_id_check":
+				log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
+				return common.ErrDepositAddressMissing
 			}
 		}
 
