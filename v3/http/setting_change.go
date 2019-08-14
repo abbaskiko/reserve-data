@@ -189,6 +189,7 @@ func (s *Server) createSettingChange(c *gin.Context) {
 		msg := fmt.Sprintf("fill live info error=%s", err)
 		log.Println(msg)
 		httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+		return
 	}
 
 	id, err := s.storage.CreateSettingChange(settingChangeRequest)
