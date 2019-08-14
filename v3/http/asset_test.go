@@ -54,6 +54,7 @@ var (
 			},
 			Exchanges: []common.AssetExchange{
 				{
+					Symbol:     "USD",
 					ExchangeID: binance, // pre-define exchange
 					TradingPairs: []common.TradingPair{
 						{
@@ -77,6 +78,7 @@ func getCreatePEAWithQuoteFalse() common.CreateCreateAsset {
 		{
 			ExchangeID:   binance, // pre-define exchange
 			TradingPairs: []common.TradingPair{},
+			Symbol:       "DAI",
 		},
 	}
 	return createPEAWithQuoteFalse

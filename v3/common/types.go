@@ -120,7 +120,7 @@ type AssetExchange struct {
 	ID                uint64           `json:"id"`
 	AssetID           uint64           `json:"asset_id"`
 	ExchangeID        uint64           `json:"exchange_id"`
-	Symbol            string           `json:"symbol"`
+	Symbol            string           `json:"symbol" binding:"required"`
 	DepositAddress    ethereum.Address `json:"deposit_address"`
 	MinDeposit        float64          `json:"min_deposit"`
 	WithdrawFee       float64          `json:"withdraw_fee"`
@@ -162,7 +162,7 @@ type RebalanceQuadratic struct {
 // Asset represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
 type Asset struct {
 	ID                 uint64              `json:"id"`
-	Symbol             string              `json:"symbol"`
+	Symbol             string              `json:"symbol" binding:"required"`
 	Name               string              `json:"name"`
 	Address            ethereum.Address    `json:"address"`
 	OldAddresses       []ethereum.Address  `json:"old_addresses,omitempty"`
@@ -193,7 +193,7 @@ type CreateAssetExchangeEntry struct {
 	settingChangeMarker
 	AssetID           uint64           `json:"asset_id"`
 	ExchangeID        uint64           `json:"exchange_id"`
-	Symbol            string           `json:"symbol"`
+	Symbol            string           `json:"symbol" binding:"required"`
 	DepositAddress    ethereum.Address `json:"deposit_address"`
 	MinDeposit        float64          `json:"min_deposit"`
 	WithdrawFee       float64          `json:"withdraw_fee"`
