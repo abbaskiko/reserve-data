@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	testHTTPutil "github.com/KyberNetwork/reserve-data/http/httputil"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-data/common/testutil"
+	testHTTPutil "github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
