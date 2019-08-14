@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/v3/common"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 // CreateSettingChange creates an object change in database and return id
@@ -234,19 +233,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return errors.Wrap(err, msg)
 		}
-		err = s.updateAsset(tx, a.AssetID, storage.UpdateAssetOpts{
-			Symbol:             a.Symbol,
-			Transferable:       a.Transferable,
-			Address:            a.Address,
-			IsQuote:            a.IsQuote,
-			Rebalance:          a.Rebalance,
-			SetRate:            a.SetRate,
-			Decimals:           a.Decimals,
-			Name:               a.Name,
-			Target:             a.Target,
-			PWI:                a.PWI,
-			RebalanceQuadratic: a.RebalanceQuadratic,
-		})
+		err = s.updateAsset(tx, a.AssetID, *a)
 		if err != nil {
 			msg := fmt.Sprintf("update asset %d, err=%v\n", i, err)
 			log.Println(msg)
@@ -259,14 +246,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return errors.Wrap(err, msg)
 		}
-		err = s.updateAssetExchange(tx, a.ID, storage.UpdateAssetExchangeOpts{
-			Symbol:            a.Symbol,
-			DepositAddress:    a.DepositAddress,
-			MinDeposit:        a.MinDeposit,
-			WithdrawFee:       a.WithdrawFee,
-			TargetRecommended: a.TargetRecommended,
-			TargetRatio:       a.TargetRatio,
-		})
+		err = s.updateAssetExchange(tx, a.ID, *a)
 		if err != nil {
 			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateAssetExchange)
 			log.Println(msg)
@@ -279,11 +259,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return errors.Wrap(err, msg)
 		}
-		err = s.updateExchange(tx, a.ExchangeID, storage.UpdateExchangeOpts{
-			TradingFeeMaker: a.TradingFeeMaker,
-			TradingFeeTaker: a.TradingFeeTaker,
-			Disable:         a.Disable,
-		})
+		err = s.updateExchange(tx, a.ExchangeID, *a)
 		if err != nil {
 			msg := fmt.Sprintf("update exchange %d, err=%v\n", i, err)
 			log.Println(msg)
@@ -315,6 +291,10 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 		if err = s.applyChange(tx, i, change); err != nil {
 			return err
 		}
+	}
+	_, err = tx.Stmtx(s.stmts.deleteSettingChange).Exec(id)
+	if err != nil {
+		return err
 	}
 	if commit {
 		if err := tx.Commit(); err != nil {
