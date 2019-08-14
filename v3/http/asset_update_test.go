@@ -14,11 +14,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	common2 "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	testHTTPutil "github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
+)
+
+const (
+	binance = uint64(common2.Binance)
+	huobi   = uint64(common2.Huobi)
+	stable  = uint64(common2.StableExchange)
 )
 
 var (
@@ -63,12 +70,12 @@ var (
 )
 
 func createSampleAsset(store *postgres.Storage) (uint64, error) {
-	_, err := store.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
+	_, err := store.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	if err != nil {
 		return 0, err
 	}
-	err = store.UpdateExchange(0, storage.UpdateExchangeOpts{
+	err = store.UpdateExchange(binance, storage.UpdateExchangeOpts{
 		Disable:         common.BoolPointer(false),
 		TradingFeeTaker: common.FloatPointer(0.1),
 		TradingFeeMaker: common.FloatPointer(0.2),
@@ -101,7 +108,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 			{
 				Symbol:            "ABC",
 				DepositAddress:    eth.HexToAddress("0x00001"),
-				ExchangeID:        0,
+				ExchangeID:        binance,
 				TargetRatio:       0.1,
 				TargetRecommended: 1000.0,
 				WithdrawFee:       0.5,
@@ -133,12 +140,12 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 }
 
 func createEmptySampleAsset(store *postgres.Storage) (uint64, error) {
-	_, err := store.CreateAssetExchange(2, 1, "KNC", eth.HexToAddress("0x00"), 10,
+	_, err := store.CreateAssetExchange(stable, 1, "KNC", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	if err != nil {
 		return 0, err
 	}
-	err = store.UpdateExchange(0, storage.UpdateExchangeOpts{
+	err = store.UpdateExchange(binance, storage.UpdateExchangeOpts{
 		Disable:         common.BoolPointer(false),
 		TradingFeeTaker: common.FloatPointer(0.1),
 		TradingFeeMaker: common.FloatPointer(0.2),
@@ -152,7 +159,7 @@ func createEmptySampleAsset(store *postgres.Storage) (uint64, error) {
 			{
 				Symbol:            "KNC",
 				DepositAddress:    eth.HexToAddress("0x00002"),
-				ExchangeID:        2,
+				ExchangeID:        stable,
 				TargetRatio:       0.1,
 				TargetRecommended: 1000.0,
 				WithdrawFee:       0.5,

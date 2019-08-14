@@ -46,7 +46,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						Type: common.ChangeTypeCreateAssetExchange,
 						Data: common.CreateAssetExchangeEntry{
 							AssetID:           assetID,
-							ExchangeID:        1,
+							ExchangeID:        huobi,
 							Symbol:            "ETH",
 							DepositAddress:    eth.HexToAddress("0x007"),
 							MinDeposit:        10.0,
@@ -83,7 +83,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				assetExchange, err = s.GetAssetExchange(4)
 				require.NoError(t, err)
 				require.Equal(t, "ETH", assetExchange.Symbol)
-				require.Equal(t, uint64(1), assetExchange.ExchangeID)
+				require.Equal(t, huobi, assetExchange.ExchangeID)
 			},
 		},
 	}

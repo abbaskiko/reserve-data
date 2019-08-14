@@ -22,7 +22,7 @@ func TestUpdateExchange(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
-	exchangeID := uint64(1)
+	exchangeID := huobi
 	// pre-insert exchange
 
 	server := NewServer(s, nil)
