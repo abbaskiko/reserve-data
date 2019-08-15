@@ -375,7 +375,6 @@ func (s settingChangeMarker) nope() {
 
 }
 
-// TODO: write a custom unmarshalJSON
 // SettingChangeEntry present a an entry of change
 type SettingChangeEntry struct {
 	Type ChangeType        `json:"type"`

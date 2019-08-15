@@ -36,14 +36,6 @@ func (s *Storage) CreateSettingChange(obj common.SettingChange) (uint64, error) 
 	return id, nil
 }
 
-type dbSettingChangeEntry struct {
-	Type common.ChangeType `json:"type"`
-	Data json.RawMessage   `json:"data"`
-}
-
-type changeListDB struct {
-	ChangeList []dbSettingChangeEntry `json:"change_list"`
-}
 type settingChangeDB struct {
 	ID      uint64    `db:"id"`
 	Created time.Time `db:"created"`
@@ -51,27 +43,13 @@ type settingChangeDB struct {
 }
 
 func (objDB settingChangeDB) ToCommon() (common.SettingChangeResponse, error) {
-	var dbResult changeListDB
-	err := json.Unmarshal(objDB.Data, &dbResult)
+	var settingChange common.SettingChange
+	err := json.Unmarshal(objDB.Data, &settingChange)
 	if err != nil {
 		return common.SettingChangeResponse{}, err
 	}
-	res := make([]common.SettingChangeEntry, 0, len(dbResult.ChangeList))
-	for _, o := range dbResult.ChangeList {
-		i, err := common.SettingChangeFromType(o.Type)
-		if err != nil {
-			return common.SettingChangeResponse{}, err
-		}
-		if err = json.Unmarshal(o.Data, i); err != nil {
-			return common.SettingChangeResponse{}, errors.Wrap(err, fmt.Sprintf("decode error for %+v", i))
-		}
-		res = append(res, common.SettingChangeEntry{
-			Type: o.Type,
-			Data: i,
-		})
-	}
 	return common.SettingChangeResponse{
-		ChangeList: res,
+		ChangeList: settingChange.ChangeList,
 		ID:         objDB.ID,
 		Created:    objDB.Created,
 	}, nil
