@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
+	libhttputil "github.com/KyberNetwork/reserve-data/lib/httputil"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/httpsign"
 	"github.com/gin-gonic/gin"
@@ -43,8 +43,8 @@ func NewServer(addr string,
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
-	r.Use(perm)
 	r.Use(auth.Authenticated())
+	r.Use(perm)
 
 	server := Server{
 		addr: addr,

@@ -3,7 +3,7 @@ package http
 import (
 	"fmt"
 
-	"github.com/KyberNetwork/reserve-stats/gateway/permission"
+	"github.com/KyberNetwork/reserve-data/gateway/permission"
 	"github.com/casbin/casbin"
 	"github.com/gin-gonic/gin"
 	scas "github.com/qiangmzsx/string-adapter"

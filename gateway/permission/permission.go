@@ -2,6 +2,7 @@ package permission
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"regexp"
 
@@ -18,6 +19,8 @@ const (
 var (
 	//ErrCouldNotGetKeyID error when could not get key id in header
 	ErrCouldNotGetKeyID = errors.New("could not get key id in header")
+	//ErrNotPermit not having permission
+	ErrNotPermit = errors.New("you don't have permission for the request")
 	//kvRegex is the regex to find key-value in a string
 	kvRegex = regexp.MustCompile(`(\w+)="([^"]*)"`)
 )
@@ -35,7 +38,8 @@ func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 	p := &Permissioner{enforcer: e}
 	return func(c *gin.Context) {
 		if !p.checkPermission(c.Request) {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			err := c.AbortWithError(http.StatusUnauthorized, ErrNotPermit)
+			log.Printf("Abort with error get error: %s", err.Error())
 			return
 		}
 	}
