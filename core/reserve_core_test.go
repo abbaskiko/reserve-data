@@ -15,7 +15,7 @@ import (
 type testExchange struct {
 }
 
-func (te testExchange) ID() common.ExchangeID{
+func (te testExchange) ID() common.ExchangeID {
 	return common.Binance
 }
 

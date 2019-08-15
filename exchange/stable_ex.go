@@ -118,7 +118,7 @@ func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 }
 
 // Name return exchangeID
-func (se *StableEx) ID() common.ExchangeID{
+func (se *StableEx) ID() common.ExchangeID {
 	return common.StableExchange
 }
 
