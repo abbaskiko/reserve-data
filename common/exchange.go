@@ -31,7 +31,7 @@ var ValidExchangeNames = map[string]ExchangeID{
 
 // Exchange represents a centralized exchange like Binance, Huobi...
 type Exchange interface {
-	Name() ExchangeID
+	ID() ExchangeID
 	// Address return the deposit address of an asset and return true
 	// if token is supported in the exchange, otherwise return false.
 	// This function will prioritize live address from exchange above the current stored address.

@@ -393,7 +393,7 @@ func (rd ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTradeH
 		if err != nil {
 			return data, err
 		}
-		data.Data[ex.Name()] = history
+		data.Data[ex.ID()] = history
 	}
 	data.Timestamp = common.GetTimestamp()
 	return data, nil

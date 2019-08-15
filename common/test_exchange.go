@@ -12,8 +12,8 @@ import (
 type TestExchange struct {
 }
 
-// Name return exchange id
-func (te TestExchange) Name() ExchangeID {
+// ID return exchange id
+func (te TestExchange) ID() ExchangeID {
 	return Binance
 }
 

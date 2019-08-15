@@ -160,7 +160,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange stable_exchange: (%s)", err.Error())
 			}
-			exchanges[stableEx.Name()] = stableEx
+			exchanges[stableEx.ID()] = stableEx
 		case common.Binance:
 			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
 			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
@@ -175,7 +175,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Binance: (%s)", err.Error())
 			}
-			exchanges[bin.Name()] = bin
+			exchanges[bin.ID()] = bin
 		case common.Huobi:
 			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
 			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
@@ -200,7 +200,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Huobi: (%s)", err.Error())
 			}
-			exchanges[hb.Name()] = hb
+			exchanges[hb.ID()] = hb
 		}
 	}
 

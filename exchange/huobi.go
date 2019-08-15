@@ -41,7 +41,7 @@ func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
 }
 
 func (h *Huobi) MarshalText() (text []byte, err error) {
-	return []byte(h.Name().String()), nil
+	return []byte(h.ID().String()), nil
 }
 
 // RealDepositAddress return the actual Huobi deposit address of a token
@@ -525,7 +525,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 		if deposit.TxHash == tx2Entry.Hash {
 			if deposit.State == "safe" || deposit.State == "confirmed" {
 				data := common.NewTXEntry(tx2Entry.Hash,
-					h.Name().String(),
+					h.ID().String(),
 					assetID,
 					"mined",
 					exchangeStatusDone,
@@ -582,7 +582,7 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID uint6
 		//store tx2 to pendingIntermediateTx
 		data := common.NewTXEntry(
 			tx2.Hash().Hex(),
-			h.Name().String(),
+			h.ID().String(),
 			assetID,
 			common.MiningStatusSubmitted,
 			"",
@@ -615,7 +615,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint
 		log.Println("Huobi 2nd Transaction is mined. Processed to store it and check the Huobi Deposit history")
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
-			h.Name().String(),
+			h.ID().String(),
 			assetID,
 			common.MiningStatusMined,
 			"",
@@ -629,7 +629,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint
 	case common.MiningStatusFailed:
 		data = common.NewTXEntry(
 			tx2Entry.Hash,
-			h.Name().String(),
+			h.ID().String(),
 			assetID,
 			common.MiningStatusFailed,
 			common.ExchangeStatusFailed,
@@ -646,7 +646,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint
 		if elapsed > uint64(15*time.Minute/time.Millisecond) {
 			data = common.NewTXEntry(
 				tx2Entry.Hash,
-				h.Name().String(),
+				h.ID().String(),
 				assetID,
 				common.MiningStatusLost,
 				common.ExchangeStatusLost,
@@ -709,8 +709,8 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 	return common.ExchangeStatusDone, nil
 }
 
-// Name return exchange ID
-func (h *Huobi) Name() common.ExchangeID {
+// ID return exchange ID
+func (h *Huobi) ID() common.ExchangeID {
 	return common.Huobi
 }
 

@@ -80,7 +80,7 @@ func (rc ReserveCore) Trade(
 		uid := timebasedID(id)
 		log.Printf(
 			"Core ----------> %s on %s: base: %s, quote: %s, rate: %s, amount: %s, timestamp: %d ==> Result: id: %s, done: %s, remaining: %s, finished: %t, error: %s",
-			tradeType, exchange.Name(), pair.BaseSymbol, pair.QuoteSymbol,
+			tradeType, exchange.ID().String(), pair.BaseSymbol, pair.QuoteSymbol,
 			strconv.FormatFloat(rate, 'f', -1, 64),
 			strconv.FormatFloat(amount, 'f', -1, 64), timepoint,
 			uid,
@@ -92,7 +92,7 @@ func (rc ReserveCore) Trade(
 		return rc.activityStorage.Record(
 			common.ActionTrade,
 			uid,
-			exchange.Name().String(),
+			exchange.ID().String(),
 			map[string]interface{}{
 				"exchange":  exchange,
 				"type":      tradeType,
@@ -168,13 +168,13 @@ func (rc ReserveCore) Deposit(
 		uid := uidGenerator(txhex)
 		log.Printf(
 			"Core ----------> Deposit to %s: token: %s, amount: %s, timestamp: %d ==> Result: tx: %s, error: %s",
-			exchange.Name().String(), asset.Symbol, amount.Text(10), timepoint, txhex, common.ErrorToString(err),
+			exchange.ID().String(), asset.Symbol, amount.Text(10), timepoint, txhex, common.ErrorToString(err),
 		)
 
 		return rc.activityStorage.Record(
 			common.ActionDeposit,
 			uid,
-			exchange.Name().String(),
+			exchange.ID().String(),
 			map[string]interface{}{
 				"exchange":  exchange,
 				"asset":     asset,
@@ -193,7 +193,7 @@ func (rc ReserveCore) Deposit(
 	}
 
 	if !supported {
-		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.Name(), asset.Symbol)
+		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID().String(), asset.Symbol)
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -209,7 +209,7 @@ func (rc ReserveCore) Deposit(
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 	if ok {
-		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", asset.Symbol, exchange.Name())
+		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", asset.Symbol, exchange.ID().String())
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
@@ -251,12 +251,12 @@ func (rc ReserveCore) Withdraw(
 		uid := timebasedID(id)
 		log.Printf(
 			"Core ----------> Withdraw from %s: asset: %d, amount: %s, timestamp: %d ==> Result: id: %s, error: %s",
-			exchange.Name(), asset.ID, amount.Text(10), timepoint, id, err,
+			exchange.ID().String(), asset.ID, amount.Text(10), timepoint, id, err,
 		)
 		return rc.activityStorage.Record(
 			common.ActionWithdraw,
 			uid,
-			exchange.Name().String(),
+			exchange.ID().String(),
 			map[string]interface{}{
 				"exchange":  exchange,
 				"asset":     asset,
@@ -277,7 +277,7 @@ func (rc ReserveCore) Withdraw(
 
 	_, supported := exchange.Address(asset)
 	if !supported {
-		err = fmt.Errorf("exchange %s doesn't support asset %d", exchange.Name(), asset.ID)
+		err = fmt.Errorf("exchange %s doesn't support asset %d", exchange.ID().String(), asset.ID)
 		sErr := activityRecord("", statusFailed, err)
 		if sErr != nil {
 			log.Printf("failed to store activiry record: %s", sErr.Error())
@@ -528,7 +528,7 @@ func sanityCheckTrading(pair commonv3.TradingPairSymbols, rate, amount float64) 
 func sanityCheckAmount(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) error {
 	var feeWithdrawing float64
 	for _, exchg := range asset.Exchanges {
-		if common.ExchangeID(exchg.ExchangeID).String() == exchange.Name().String() {
+		if common.ExchangeID(exchg.ExchangeID).String() == exchange.ID().String() {
 			feeWithdrawing = exchg.WithdrawFee
 		}
 	}

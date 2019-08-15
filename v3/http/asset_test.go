@@ -97,10 +97,9 @@ func TestCreateAssetBySettingChange(t *testing.T) {
 	require.NoError(t, err)
 	server := NewServer(s, nil)
 
-	for _, exchangeID := range []v1common.ExchangeName{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
-		exhID := v1common.ExchangeID(exchangeID.String())
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
 		exchange := v1common.TestExchange{}
-		v1common.SupportedExchanges[exhID] = exchange
+		v1common.SupportedExchanges[exchangeID] = exchange
 	}
 
 	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()

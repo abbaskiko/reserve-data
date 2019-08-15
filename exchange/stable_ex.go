@@ -25,7 +25,7 @@ func (se *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
 }
 
 func (se *StableEx) MarshalText() (text []byte, err error) {
-	return []byte(se.Name().String()), nil
+	return []byte(se.ID().String()), nil
 }
 
 func (se *StableEx) Address(asset commonv3.Asset) (ethereum.Address, bool) {
@@ -118,7 +118,7 @@ func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 }
 
 // Name return exchangeID
-func (se *StableEx) Name() common.ExchangeID{
+func (se *StableEx) ID() common.ExchangeID{
 	return common.StableExchange
 }
 

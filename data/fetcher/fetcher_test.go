@@ -118,7 +118,7 @@ func TestExchangeDown(t *testing.T) {
 		Status:         true,
 	}
 	ebalance := sync.Map{}
-	ebalance.Store(common.ExchangeID("binance"), ebalanceValue)
+	ebalance.Store(common.Binance, ebalanceValue)
 
 	rawBalance := common.RawBalance{}
 	tokenBalance := common.BalanceEntry{
@@ -156,7 +156,7 @@ func TestExchangeDown(t *testing.T) {
 		DepositBalance:   map[string]float64{},
 		Status:           false, // exchange status false - down, true - up
 	}
-	ebalance.Store(common.ExchangeID("binance"), ebalanceValue)
+	ebalance.Store(common.Binance, ebalanceValue)
 	err = fetcher.PersistSnapshot(&ebalance, bbalance, &estatuses, &bstatuses, pendings, &snapshot, timepoint)
 	if err != nil {
 		t.Fatalf("Cannot persist snapshot: %s", err.Error())
@@ -170,7 +170,7 @@ func TestExchangeDown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Cannot get snapshot: %s", err.Error())
 	}
-	exchangeBalance := authData.ExchangeBalances[common.ExchangeID("binance")]
+	exchangeBalance := authData.ExchangeBalances[common.Binance]
 	if exchangeBalance.AvailableBalance["KNC"] != 500 {
 		t.Fatalf("Snapshot did not get the latest auth data instead")
 	}

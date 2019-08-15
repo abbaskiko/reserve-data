@@ -890,7 +890,7 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 					log.Printf("stored assset id is not an int64 number stored=%v err=%s", assetIDStr, err.Error())
 				}
 
-				if uint64(assetID) == asset.ID && record.Destination == exchange.Name().String() {
+				if uint64(assetID) == asset.ID && record.Destination == exchange.ID().String() {
 					result = true
 				}
 			}
