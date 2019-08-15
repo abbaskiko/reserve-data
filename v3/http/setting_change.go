@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
@@ -14,15 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
-
-type settingChangeEntry struct {
-	Type common.ChangeType `json:"type"`
-	Data json.RawMessage   `json:"data"`
-}
-
-type settingChange struct {
-	ChangeList []settingChangeEntry `json:"change_list" binding:"required"`
-}
 
 func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType common.ChangeType) error {
 	var (
@@ -143,56 +133,35 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 }
 
 func (s *Server) createSettingChange(c *gin.Context) {
-	var createSettingChange settingChange
-	if err := c.ShouldBindJSON(&createSettingChange); err != nil {
+	var settingChange common.SettingChange
+	if err := c.ShouldBindJSON(&settingChange); err != nil {
 		log.Printf("cannot bind data to create setting_change from request err=%s", err.Error())
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	var settingChangeRequest = common.SettingChange{
-		ChangeList: []common.SettingChangeEntry{},
-	}
-	for i, o := range createSettingChange.ChangeList {
-		obj, err := common.SettingChangeFromType(o.Type)
-		if err != nil {
-			msg := fmt.Sprintf("change type must set at %d\n", i)
-			log.Println(msg)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
-			return
-		}
-		if err = json.Unmarshal(o.Data, obj); err != nil {
-			msg := fmt.Sprintf("decode error at %d, err=%s", i, err)
-			log.Println(msg)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
-			return
-		}
-
-		if err = binding.Validator.ValidateStruct(obj); err != nil {
+	for i, o := range settingChange.ChangeList {
+		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
 			msg := fmt.Sprintf("validate obj error at %d, err=%s", i, err)
 			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
 			return
 		}
 
-		if err = s.validateChangeEntry(obj, o.Type); err != nil {
+		if err := s.validateChangeEntry(o.Data, o.Type); err != nil {
 			msg := fmt.Sprintf("validate error at %d, err=%s", i, err)
 			log.Println(msg)
 			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
 			return
 		}
-		settingChangeRequest.ChangeList = append(settingChangeRequest.ChangeList, common.SettingChangeEntry{
-			Type: o.Type,
-			Data: obj,
-		})
 	}
 
-	if err := s.fillLiveInfoSettingChange(&settingChangeRequest); err != nil {
+	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
 		msg := fmt.Sprintf("fill live info error=%s", err)
 		log.Println(msg)
 		httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
 		return
 	}
 
-	id, err := s.storage.CreateSettingChange(settingChangeRequest)
+	id, err := s.storage.CreateSettingChange(settingChange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
