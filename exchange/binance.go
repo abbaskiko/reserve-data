@@ -37,7 +37,7 @@ func (bn *Binance) TokenAddresses() (map[string]ethereum.Address, error) {
 }
 
 func (bn *Binance) MarshalText() (text []byte, err error) {
-	return []byte(bn.ID()), nil
+	return []byte(bn.Name().String()), nil
 }
 
 // Address returns the deposit address of given token.
@@ -142,9 +142,9 @@ func (bn *Binance) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSymbols
 	return result, false
 }
 
-// ID must return the exact string or else simulation will fail
-func (bn *Binance) ID() common.ExchangeID {
-	return common.ExchangeID(common.Binance.String())
+// Name must return the exact string or else simulation will fail
+func (bn *Binance) Name() common.ExchangeID {
+	return common.Binance
 }
 
 func (bn *Binance) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
@@ -474,10 +474,6 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 		return "", nil
 	}
 	return common.ExchangeStatusDone, nil
-}
-
-func (bn *Binance) Name() common.ExchangeName {
-	return common.Binance
 }
 
 func NewBinance(

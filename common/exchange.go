@@ -9,13 +9,13 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-// ExchangeName is the name of exchanges of which core will use to rebalance.
-//go:generate stringer -type=ExchangeName -linecomment
-type ExchangeName int
+// ExchangeID is the name of exchanges of which core will use to rebalance.
+//go:generate stringer -type=ExchangeID -linecomment
+type ExchangeID int
 
 const (
 	//Binance is the enumerated key for binance
-	Binance ExchangeName = iota + 1 //binance
+	Binance ExchangeID = iota + 1 //binance
 	//Huobi is the enumerated key for huobi
 	Huobi //huobi
 	//StableExchange is the enumerated key for stable_exchange
@@ -23,7 +23,7 @@ const (
 )
 
 // ValidExchangeNames returns all valid exchange names.
-var ValidExchangeNames = map[string]ExchangeName{
+var ValidExchangeNames = map[string]ExchangeID{
 	Binance.String():        Binance,
 	Huobi.String():          Huobi,
 	StableExchange.String(): StableExchange,
@@ -31,9 +31,7 @@ var ValidExchangeNames = map[string]ExchangeName{
 
 // Exchange represents a centralized exchange like Binance, Huobi...
 type Exchange interface {
-	// TODO ExchangeName should be called ExchangeID, and ExchangeID should be removed
-	ID() ExchangeID
-	Name() ExchangeName
+	Name() ExchangeID
 	// Address return the deposit address of an asset and return true
 	// if token is supported in the exchange, otherwise return false.
 	// This function will prioritize live address from exchange above the current stored address.
@@ -49,12 +47,21 @@ type Exchange interface {
 	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)
 }
 
+// SupportedExchanges map exchange id to its exchange
 var SupportedExchanges = map[ExchangeID]Exchange{}
 
-func GetExchange(id string) (Exchange, error) {
-	ex := SupportedExchanges[ExchangeID(id)]
+// GetExchange return exchange by its name
+func GetExchange(name string) (Exchange, error) {
+	var (
+		ex Exchange
+	)
+	exchangeID, exist := ValidExchangeNames[name]
+	if !exist {
+		return ex, fmt.Errorf("exchange %s does not exist", name)
+	}
+	ex = SupportedExchanges[exchangeID]
 	if ex == nil {
-		return ex, fmt.Errorf("exchange %s is not supported", id)
+		return ex, fmt.Errorf("exchange %s is not supported", name)
 	}
 	return ex, nil
 }

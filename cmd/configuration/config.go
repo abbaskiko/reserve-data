@@ -53,7 +53,7 @@ func (c *Config) AddCoreConfig(
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
-	enabledExchanges []common.ExchangeName,
+	enabledExchanges []common.ExchangeID,
 	settingStore storagev3.Interface,
 ) error {
 	dataStorage, err := storage.NewBoltStorage(dataFile)

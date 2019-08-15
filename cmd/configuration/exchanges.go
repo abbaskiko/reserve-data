@@ -20,8 +20,8 @@ func NewExchangeCliFlag() cli.Flag {
 }
 
 // NewExchangesFromContext returns configured exchanges from cli context.
-func NewExchangesFromContext(c *cli.Context) ([]common.ExchangeName, error) {
-	var exchanges []common.ExchangeName
+func NewExchangesFromContext(c *cli.Context) ([]common.ExchangeID, error) {
+	var exchanges []common.ExchangeID
 
 	for _, exchangeName := range c.GlobalStringSlice(exchangesFlag) {
 		exchange, ok := common.ValidExchangeNames[exchangeName]

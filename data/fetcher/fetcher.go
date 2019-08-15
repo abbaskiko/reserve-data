@@ -620,7 +620,7 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 		}
 	}
 	if err == nil {
-		allBalances.Store(exchange.ID(), balances)
+		allBalances.Store(exchange.Name(), balances)
 		for id, activityStatus := range statuses {
 			allStatuses.Store(id, activityStatus)
 		}
@@ -630,7 +630,7 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.ActivityRecord, timepoint uint64) map[common.ActivityID]common.ActivityStatus {
 	result := map[common.ActivityID]common.ActivityStatus{}
 	for _, activity := range pendings {
-		if activity.IsExchangePending() && activity.Destination == string(exchange.ID()) {
+		if activity.IsExchangePending() && activity.Destination == string(exchange.Name()) {
 			var err error
 			var status string
 			var tx string
@@ -734,7 +734,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
 				log.Printf("Activity %v has invalid timestamp. Just ignore it.", activity)
-			} else if activity.Destination == string(exchange.ID()) &&
+			} else if activity.Destination == exchange.Name().String() &&
 				activity.ExchangeStatus == common.ExchangeStatusDone &&
 				common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 				// the activity is still pending but its exchange status is done and it is stuck there for more than
@@ -779,6 +779,6 @@ func (f *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, 
 		log.Printf("Fetching data from %s failed: %v\n", exchange.Name(), err)
 	}
 	for pair, exchangeData := range exdata {
-		data.SetOnePrice(exchange.ID(), pair, exchangeData)
+		data.SetOnePrice(exchange.Name(), pair, exchangeData)
 	}
 }

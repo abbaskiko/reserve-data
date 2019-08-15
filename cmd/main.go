@@ -62,7 +62,7 @@ func run(c *cli.Context) error {
 	}
 
 	for _, ex := range conf.Exchanges {
-		common.SupportedExchanges[ex.ID()] = ex
+		common.SupportedExchanges[ex.Name()] = ex
 	}
 
 	host := configuration.NewHTTPAddressFromContext(c)

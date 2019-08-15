@@ -53,7 +53,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 		case common.ChangeTypeCreateAsset:
 			asset := o.Data.(*common.CreateAssetEntry)
 			for _, assetExchange := range asset.Exchanges {
-				exhID := v1common.ExchangeID(v1common.ExchangeName(assetExchange.ExchangeID).String())
+				exhID := v1common.ExchangeID(assetExchange.ExchangeID)
 				centralExh, ok := v1common.SupportedExchanges[exhID]
 				if !ok {
 					return errors.Errorf("exchange %s not supported", exhID)
@@ -110,7 +110,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			tradingPairSymbol.BaseSymbol = baseSymbol
 			tradingPairSymbol.QuoteSymbol = quoteSymbol
 			tradingPairSymbol.ID = uint64(1)
-			exhID := v1common.ExchangeID(v1common.ExchangeName(entry.ExchangeID).String())
+			exhID := v1common.ExchangeID(entry.ExchangeID)
 			centralExh, ok := v1common.SupportedExchanges[exhID]
 			if !ok {
 				return errors.Errorf("exchange %s not supported", exhID)

@@ -144,7 +144,7 @@ func NewExchangePool(
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
-	enabledExchanges []common.ExchangeName,
+	enabledExchanges []common.ExchangeID,
 	assetStorage storage.Interface,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
@@ -160,7 +160,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange stable_exchange: (%s)", err.Error())
 			}
-			exchanges[stableEx.ID()] = stableEx
+			exchanges[stableEx.Name()] = stableEx
 		case common.Binance:
 			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
 			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
@@ -175,7 +175,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Binance: (%s)", err.Error())
 			}
-			exchanges[bin.ID()] = bin
+			exchanges[bin.Name()] = bin
 		case common.Huobi:
 			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
 			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
@@ -200,7 +200,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Huobi: (%s)", err.Error())
 			}
-			exchanges[hb.ID()] = hb
+			exchanges[hb.Name()] = hb
 		}
 	}
 

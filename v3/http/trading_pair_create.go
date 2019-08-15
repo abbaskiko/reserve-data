@@ -14,7 +14,7 @@ func fillLiveInfoToTradingPair(
 	exchangeTpsMap map[uint64][]common.TradingPairSymbols) error {
 
 	for exchangeID, tps := range exchangeTpsMap {
-		exhID := v1common.ExchangeID(v1common.ExchangeName(exchangeID).String())
+		exhID := v1common.ExchangeID(exchangeID)
 		centralExh, ok := v1common.SupportedExchanges[exhID]
 		if !ok {
 			return errors.Errorf("exchange %s not supported", exhID)

@@ -25,7 +25,7 @@ func (se *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
 }
 
 func (se *StableEx) MarshalText() (text []byte, err error) {
-	return []byte(se.ID()), nil
+	return []byte(se.Name().String()), nil
 }
 
 func (se *StableEx) Address(asset commonv3.Asset) (ethereum.Address, bool) {
@@ -49,11 +49,6 @@ func (se *StableEx) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (c
 		}
 	}
 	return result, nil
-}
-
-// ID must return the exact string or else simulation will fail
-func (se *StableEx) ID() common.ExchangeID {
-	return common.ExchangeID(common.StableExchange.String())
 }
 
 func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
@@ -122,7 +117,8 @@ func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 	return "", errors.New("not supported")
 }
 
-func (se *StableEx) Name() common.ExchangeName {
+// Name return exchangeID
+func (se *StableEx) Name() common.ExchangeID{
 	return common.StableExchange
 }
 

@@ -41,7 +41,7 @@ func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
 }
 
 func (h *Huobi) MarshalText() (text []byte, err error) {
-	return []byte(h.ID()), nil
+	return []byte(h.Name().String()), nil
 }
 
 // RealDepositAddress return the actual Huobi deposit address of a token
@@ -115,11 +115,6 @@ func (h *Huobi) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSymbols, s
 		}
 	}
 	return result, false
-}
-
-// ID must return the exact string or else simulation will fail
-func (h *Huobi) ID() common.ExchangeID {
-	return common.ExchangeID(common.Huobi.String())
 }
 
 func (h *Huobi) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
@@ -714,7 +709,8 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 	return common.ExchangeStatusDone, nil
 }
 
-func (h *Huobi) Name() common.ExchangeName {
+// Name return exchange ID
+func (h *Huobi) Name() common.ExchangeID {
 	return common.Huobi
 }
 
