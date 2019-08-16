@@ -77,7 +77,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 						if err != nil {
 							return err
 						}
-						tradingPairSymbol.BaseSymbol = quote.Symbol
+						tradingPairSymbol.QuoteSymbol = quote.Symbol
 					}
 					tps = append(tps, tradingPairSymbol)
 					index++
