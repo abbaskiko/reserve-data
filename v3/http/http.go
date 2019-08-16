@@ -1,6 +1,8 @@
 package http
 
 import (
+	"log"
+
 	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/gin-gonic/gin"
 
@@ -11,16 +13,18 @@ import (
 type Server struct {
 	storage storage.Interface
 	r       *gin.Engine
+	host    string
 }
 
 // NewServer creates new HTTP server for v3 APIs.
-func NewServer(storage storage.Interface, r *gin.Engine) *Server {
+func NewServer(storage storage.Interface, r *gin.Engine, host string) *Server {
 	if r == nil {
 		r = gin.Default()
 	}
 	server := &Server{
 		storage: storage,
 		r:       r,
+		host:    host,
 	}
 	g := r.Group("/v3")
 
@@ -99,4 +103,11 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	g.DELETE("/setting-change/:id", server.rejectSettingChange)
 
 	return server
+}
+
+// Run the server
+func (s *Server) Run() {
+	if err := s.r.Run(s.host); err != nil {
+		log.Panic(err)
+	}
 }
