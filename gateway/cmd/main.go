@@ -81,14 +81,14 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   coreEndpointFlag,
-			Usage:  "v1 endpoint url",
-			EnvVar: "V1_ENDPOINT",
+			Usage:  "core endpoint url",
+			EnvVar: "CORE_ENDPOINT",
 			Value:  coreEndpointDefaultValue,
 		},
 		cli.StringFlag{
 			Name:   settingEndpointFlag,
-			Usage:  "v3 endpoint url",
-			EnvVar: "V3_ENDPOINT",
+			Usage:  "setting endpoint url",
+			EnvVar: "SETTING_ENDPOINT",
 			Value:  settingEndpointDefaultValue,
 		},
 	)
