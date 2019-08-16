@@ -46,7 +46,7 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 				AssetExchanges: []common.CreateAssetExchangeEntry{
 					{
 						AssetID:           assetID,
-						ExchangeID:        1,
+						ExchangeID:        huobi,
 						Symbol:            "ETH",
 						DepositAddress:    eth.HexToAddress("0x001"),
 						MinDeposit:        10.0,

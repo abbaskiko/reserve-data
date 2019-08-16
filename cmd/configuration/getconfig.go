@@ -48,7 +48,7 @@ func GetConfig(
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
 	secretConfigFile string,
-	enabledExchanges []common.ExchangeName,
+	enabledExchanges []common.ExchangeID,
 	settingStorage storage.Interface,
 ) (*Config, error) {
 	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)

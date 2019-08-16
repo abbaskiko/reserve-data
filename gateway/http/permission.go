@@ -3,7 +3,7 @@ package http
 import (
 	"fmt"
 
-	"github.com/KyberNetwork/reserve-stats/gateway/permission"
+	"github.com/KyberNetwork/reserve-data/gateway/permission"
 	"github.com/casbin/casbin"
 	"github.com/gin-gonic/gin"
 	scas "github.com/qiangmzsx/string-adapter"
@@ -19,25 +19,13 @@ p, %[1]s, /*, GET`, key)
 func addKeyWritePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
-p, %[1]s, /v3/create-asset, POST
-p, %[1]s, /v3/update-asset, POST 
-p, %[1]s, /v3/create-asset-exchange, POST
-p, %[1]s, /v3/update-exchange, POST
-p, %[1]s, /v3/create-trading-pair, POST
-p, %[1]s, /v3/update-trading-pair, POST
-p, %[1]s, /v3/change-asset-address, POST`, key)
+p, %[1]s, /v3/setting-change, POST`, key)
 }
 
 func addKeyConfirmPolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
-p, %[1]s, /v3/create-asset/:id, (PUT)|(DELETE)
-p, %[1]s, /v3/update-asset/:id, (PUT)|(DELETE)
-p, %[1]s, /v3/create-asset-exchange/:id, (PUT)|(DELETE)
-p, %[1]s, /v3/update-exchange/:id, (PUT)|(DELETE)
-p, %[1]s, /v3/create-trading-pair/:id, (PUT)|(DELETE) 
-p, %[1]s, /v3/update-trading-pair/:id, (PUT)|(DELETE)
-p, %[1]s, /v3/change-asset-address, (PUT)|(DELETE)`, key)
+p, %[1]s, /v3/setting-change/:id, (PUT)|(DELETE)`, key)
 }
 
 func addKeyRebalancePolicy(key string) string {
@@ -73,7 +61,7 @@ g = _ , _
 e = some(where (p.eft == allow))
 
 [matchers]
-m = g(r.sub, p.sub)  && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
+m = g(r.sub, p.sub)  && keyMatch2(r.obj, p.obj) && regexMatch(r.act, p.act)
 `
 	)
 	var pol string

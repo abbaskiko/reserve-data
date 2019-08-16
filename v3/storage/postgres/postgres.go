@@ -51,7 +51,7 @@ VALUES (unnest($1::INT[]),
 }
 
 func (s *Storage) initAssets() error {
-	ethAddr := "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	ethAddr := "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 	_, err := s.stmts.newAsset.Exec(&createAssetParams{
 		Symbol:       "ETH",
 		Name:         "Ethereum",

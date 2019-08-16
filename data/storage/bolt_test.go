@@ -54,7 +54,7 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 	err = storage.Record(
 		"deposit",
 		common.NewActivityID(1, "1"),
-		string(exchange.ID()),
+		exchange.ID().String(),
 		map[string]interface{}{
 			"exchange":  exchange,
 			"asset":     asset,

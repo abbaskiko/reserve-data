@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
 
@@ -99,7 +97,7 @@ func (s *Server) AllPrices(c *gin.Context) {
 			return
 		}
 		for exchangeName, exchangePrice := range onePrice {
-			exchangeID, err := common.GetExchange(string(exchangeName))
+			exchange, err := common.GetExchange(string(exchangeName))
 			if err != nil {
 				httputil.ResponseFailure(c, httputil.WithError(err))
 				return
@@ -108,7 +106,7 @@ func (s *Server) AllPrices(c *gin.Context) {
 			responseData = append(responseData, price{
 				Base:     pair.Base,
 				Quote:    pair.Quote,
-				Exchange: uint64(exchangeID.Name()),
+				Exchange: uint64(exchange.ID()),
 				Bids:     exchangePrice.Bids,
 				Asks:     exchangePrice.Asks,
 			})
@@ -223,18 +221,13 @@ func (s *Server) Trade(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	//TODO: use GetTradingPair method
 	var pair v3common.TradingPairSymbols
-	pairs, err := s.settingStorage.GetTradingPairs(uint64(exchange.Name()))
+	pair, err = s.settingStorage.GetTradingPair(uint64(pairID))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	for _, p := range pairs {
-		if p.ID == uint64(pairID) {
-			pair = p
-		}
-	}
+
 	amount, err := strconv.ParseFloat(amountParam, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -276,7 +269,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Cancel order id: %s from %s\n", id, exchange.ID())
+	log.Printf("Cancel order id: %s from %s\n", id, exchange.ID().String())
 	activityID, err := common.StringToActivityID(id)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -318,7 +311,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Withdraw %s %d from %s\n", amount.Text(10), asset.ID, exchange.ID())
+	log.Printf("Withdraw %s %d from %s\n", amount.Text(10), asset.ID, exchange.ID().String())
 	id, err := s.core.Withdraw(exchange, asset, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -355,7 +348,7 @@ func (s *Server) Deposit(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Depositing %s %d to %s\n", amount.Text(10), asset.ID, exchange.ID())
+	log.Printf("Depositing %s %d to %s\n", amount.Text(10), asset.ID, exchange.ID().String())
 	id, err := s.core.Deposit(exchange, asset, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -629,11 +622,6 @@ func NewHTTPServer(
 		sentryCli,
 		false,
 	))
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AddAllowHeaders("signed")
-	corsConfig.AllowAllOrigins = true
-	corsConfig.MaxAge = 5 * time.Minute
-	r.Use(cors.New(corsConfig))
 
 	return &Server{
 		app:                app,

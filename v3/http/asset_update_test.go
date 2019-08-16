@@ -14,19 +14,68 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	common2 "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
+	testHTTPutil "github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
 )
 
+const (
+	binance = uint64(common2.Binance)
+	huobi   = uint64(common2.Huobi)
+	stable  = uint64(common2.StableExchange)
+)
+
+var (
+	updateAssetEntry1 = common.UpdateAssetEntry{
+		AssetID:      0,
+		Symbol:       common.StringPointer("XYZ"),
+		Name:         common.StringPointer("ZXC"),
+		Address:      common.AddressPointer(eth.HexToAddress("0x02")),
+		Decimals:     common.Uint64Pointer(19),
+		Transferable: common.BoolPointer(false),
+		SetRate:      common.SetRatePointer(common.BTCFeed),
+		Rebalance:    common.BoolPointer(true),
+		IsQuote:      common.BoolPointer(false),
+		Target: &common.AssetTarget{
+			Total:              5.0,
+			Reserve:            5.0,
+			RebalanceThreshold: 5.0,
+			TransferThreshold:  5.0,
+		},
+		RebalanceQuadratic: &common.RebalanceQuadratic{
+			A: 5.0,
+			B: 5.0,
+			C: 5.0,
+		},
+		PWI: &common.AssetPWI{
+			Ask: common.PWIEquation{
+				A:                   5.0,
+				B:                   5.0,
+				C:                   5.0,
+				MinMinSpread:        5.0,
+				PriceMultiplyFactor: 5.0,
+			},
+			Bid: common.PWIEquation{
+				A:                   5.0,
+				B:                   5.0,
+				C:                   5.0,
+				MinMinSpread:        5.0,
+				PriceMultiplyFactor: 5.0,
+			},
+		},
+	}
+)
+
 func createSampleAsset(store *postgres.Storage) (uint64, error) {
-	_, err := store.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
+	_, err := store.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	if err != nil {
 		return 0, err
 	}
-	err = store.UpdateExchange(0, storage.UpdateExchangeOpts{
+	err = store.UpdateExchange(binance, storage.UpdateExchangeOpts{
 		Disable:         common.BoolPointer(false),
 		TradingFeeTaker: common.FloatPointer(0.1),
 		TradingFeeMaker: common.FloatPointer(0.2),
@@ -59,7 +108,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 			{
 				Symbol:            "ABC",
 				DepositAddress:    eth.HexToAddress("0x00001"),
-				ExchangeID:        0,
+				ExchangeID:        binance,
 				TargetRatio:       0.1,
 				TargetRecommended: 1000.0,
 				WithdrawFee:       0.5,
@@ -91,12 +140,12 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 }
 
 func createEmptySampleAsset(store *postgres.Storage) (uint64, error) {
-	_, err := store.CreateAssetExchange(2, 1, "KNC", eth.HexToAddress("0x00"), 10,
+	_, err := store.CreateAssetExchange(stable, 1, "KNC", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	if err != nil {
 		return 0, err
 	}
-	err = store.UpdateExchange(0, storage.UpdateExchangeOpts{
+	err = store.UpdateExchange(binance, storage.UpdateExchangeOpts{
 		Disable:         common.BoolPointer(false),
 		TradingFeeTaker: common.FloatPointer(0.1),
 		TradingFeeMaker: common.FloatPointer(0.2),
@@ -110,7 +159,7 @@ func createEmptySampleAsset(store *postgres.Storage) (uint64, error) {
 			{
 				Symbol:            "KNC",
 				DepositAddress:    eth.HexToAddress("0x00002"),
-				ExchangeID:        2,
+				ExchangeID:        stable,
 				TargetRatio:       0.1,
 				TargetRecommended: 1000.0,
 				WithdrawFee:       0.5,
@@ -460,6 +509,182 @@ func TestCheckUpdateAssetParams(t *testing.T) {
 			},
 			endpoint: updateAsset,
 			method:   http.MethodPost,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestUpdateAssetBySettingChange(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	assetID, err := createSampleAsset(s)
+	require.NoError(t, err)
+
+	server := NewServer(s, nil)
+	const settingChangePath = "/v3/setting-change"
+	var settingChangeID uint64
+
+	entry1 := updateAssetEntry1
+	entry1.AssetID = assetID
+
+	var tests = []testCase{
+		{
+			msg:      "create setting change",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: entry1,
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					ID      uint64 `json:"id"`
+					Success bool   `json:"success"`
+				}
+				err = readResponse(resp, &idResponse)
+				require.NoError(t, err)
+				settingChangeID = idResponse.ID
+			},
+		},
+		{
+			msg: "confirm update asset",
+			endpointExp: func() string {
+				return settingChangePath + fmt.Sprintf("/%d", settingChangeID)
+			},
+			method: http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					Success bool `json:"success"`
+				}
+				err = readResponse(resp, &idResponse)
+				require.NoError(t, err)
+				assert.True(t, idResponse.Success)
+			},
+		},
+		{
+			msg:      "get asset",
+			endpoint: fmt.Sprintf("/v3/asset/%d", assetID),
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var response struct {
+					Success bool         `json:"success"`
+					Data    common.Asset `json:"data"`
+				}
+				err = readResponse(resp, &response)
+				require.NoError(t, err)
+				assert.True(t, response.Success)
+				assert.Equal(t, "XYZ", response.Data.Symbol)
+				assert.Equal(t, "ZXC", response.Data.Name)
+				assert.Equal(t, eth.HexToAddress("0x02"), response.Data.Address)
+				assert.Equal(t, uint64(19), response.Data.Decimals)
+				assert.Equal(t, false, response.Data.Transferable)
+				assert.Equal(t, common.BTCFeed, response.Data.SetRate)
+				assert.Equal(t, true, response.Data.Rebalance)
+				assert.Equal(t, false, response.Data.IsQuote)
+				assert.Equal(t, &common.AssetTarget{
+					Total:              5.0,
+					Reserve:            5.0,
+					RebalanceThreshold: 5.0,
+					TransferThreshold:  5.0,
+				}, response.Data.Target)
+				assert.Equal(t, &common.RebalanceQuadratic{
+					A: 5.0,
+					B: 5.0,
+					C: 5.0,
+				}, response.Data.RebalanceQuadratic)
+				assert.Equal(t, &common.AssetPWI{
+					Ask: common.PWIEquation{
+						A:                   5.0,
+						B:                   5.0,
+						C:                   5.0,
+						MinMinSpread:        5.0,
+						PriceMultiplyFactor: 5.0,
+					},
+					Bid: common.PWIEquation{
+						A:                   5.0,
+						B:                   5.0,
+						C:                   5.0,
+						MinMinSpread:        5.0,
+						PriceMultiplyFactor: 5.0,
+					},
+				}, response.Data.PWI)
+			},
+		},
+		{
+			msg: "confirm a not exists update_asset",
+			endpointExp: func() string {
+				return settingChangePath + fmt.Sprintf("/%d", settingChangeID)
+			},
+			method: http.MethodPut,
+			assert: testHTTPutil.ExpectFailure,
+		},
+		{
+			msg:      "create update asset",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID: assetID,
+							Symbol:  common.StringPointer("ETC"),
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					ID      uint64 `json:"id"`
+					Success bool   `json:"success"`
+				}
+				err = readResponse(resp, &idResponse)
+				require.NoError(t, err)
+				settingChangeID = idResponse.ID
+			},
+		},
+		{
+			msg: "verify update asset created",
+			endpointExp: func() string {
+				return settingChangePath + fmt.Sprintf("/%d", settingChangeID)
+			},
+			method: http.MethodGet,
+			assert: testHTTPutil.ExpectSuccess,
+		},
+		{
+			msg: "reject update asset",
+			endpointExp: func() string {
+				return settingChangePath + fmt.Sprintf("/%d", settingChangeID)
+			},
+			method: http.MethodPut,
+			assert: testHTTPutil.ExpectSuccess,
+		},
+		{
+			msg:      "verify all update asset removed",
+			endpoint: settingChangePath,
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					Data    []common.PendingObject `json:"data"`
+					Success bool                   `json:"success"`
+				}
+				err = readResponse(resp, &idResponse)
+				require.NoError(t, err)
+				assert.Len(t, idResponse.Data, 0)
+			},
 		},
 	}
 

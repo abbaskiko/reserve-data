@@ -34,20 +34,18 @@ func TestHTTPServerTradingPair(t *testing.T) {
 	}()
 
 	//create map of test exchange
-	for _, exchangeID := range []v1common.ExchangeName{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
-		exhID := v1common.ExchangeID(exchangeID.String())
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
 		exchange := v1common.TestExchange{}
-		v1common.SupportedExchanges[exhID] = exchange
+		v1common.SupportedExchanges[exchangeID] = exchange
 	}
 
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	// asset = 1 for ETH is pre-insert in DB.
-	_, err = s.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
+	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
 	server := NewServer(s, nil)
-	huobiID := uint64(1)
 
 	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
 
@@ -101,7 +99,7 @@ func TestHTTPServerTradingPair(t *testing.T) {
 				AssetExchanges: []common.CreateAssetExchangeEntry{
 					{
 						AssetID:           1,
-						ExchangeID:        huobiID,
+						ExchangeID:        huobi,
 						Symbol:            "ETH",
 						DepositAddress:    eth.HexToAddress("0x001"),
 						MinDeposit:        100.0,
@@ -111,7 +109,7 @@ func TestHTTPServerTradingPair(t *testing.T) {
 					},
 					{
 						AssetID:           2,
-						ExchangeID:        huobiID,
+						ExchangeID:        huobi,
 						Symbol:            "ABC",
 						DepositAddress:    eth.HexToAddress("0x001"),
 						MinDeposit:        100.0,
@@ -121,7 +119,7 @@ func TestHTTPServerTradingPair(t *testing.T) {
 					},
 					{
 						AssetID:           3,
-						ExchangeID:        huobiID,
+						ExchangeID:        huobi,
 						Symbol:            "ABC",
 						DepositAddress:    eth.HexToAddress("0x001"),
 						MinDeposit:        100.0,
@@ -157,7 +155,7 @@ func TestHTTPServerTradingPair(t *testing.T) {
 							PriceLimitMax:   1000.0,
 							MinNotional:     100.0,
 						},
-						ExchangeID: huobiID,
+						ExchangeID: huobi,
 					},
 				},
 			},
@@ -235,7 +233,7 @@ func TestHTTPServerTradingPair(t *testing.T) {
 							PriceLimitMax:   1000.0,
 							MinNotional:     100.0,
 						},
-						ExchangeID: huobiID,
+						ExchangeID: huobi,
 					},
 				},
 			},

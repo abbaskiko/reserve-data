@@ -16,10 +16,6 @@ type testExchange struct {
 }
 
 func (te testExchange) ID() common.ExchangeID {
-	return "bittrex"
-}
-
-func (te testExchange) Name() common.ExchangeName {
 	return common.Binance
 }
 
@@ -114,7 +110,7 @@ func (tas testActivityStorage) PendingSetRate(minedNonce uint64) (*common.Activi
 }
 
 func (tas testActivityStorage) HasPendingDeposit(token commonv3.Asset, exchange common.Exchange) (bool, error) {
-	if token.Symbol == "OMG" && exchange.ID() == "bittrex" {
+	if token.Symbol == "OMG" && exchange.ID().String() == "binance" {
 		return tas.PendingDeposit, nil
 	}
 	return false, nil

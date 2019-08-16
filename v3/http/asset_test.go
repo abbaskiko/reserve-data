@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -53,7 +54,8 @@ var (
 			},
 			Exchanges: []common.AssetExchange{
 				{
-					ExchangeID: 0, // pre-define exchange
+					Symbol:     "USD",
+					ExchangeID: binance, // pre-define exchange
 					TradingPairs: []common.TradingPair{
 						{
 							Base:  0,
@@ -74,11 +76,82 @@ func getCreatePEAWithQuoteFalse() common.CreateCreateAsset {
 	createPEAWithQuoteFalse.AssetInputs[0].Symbol = "QUOTE FALSE"
 	createPEAWithQuoteFalse.AssetInputs[0].Exchanges = []common.AssetExchange{
 		{
-			ExchangeID:   0, // pre-define exchange
+			ExchangeID:   binance, // pre-define exchange
 			TradingPairs: []common.TradingPair{},
+			Symbol:       "DAI",
 		},
 	}
 	return createPEAWithQuoteFalse
+}
+
+func TestCreateAssetBySettingChange(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	// asset = 1 for ETH is pre-insert in DB.
+	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
+		0.2, 5.0, 0.3)
+	require.NoError(t, err)
+	server := NewServer(s, nil)
+
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		v1common.SupportedExchanges[exchangeID] = exchange
+	}
+
+	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
+	createPEAWithQuoteFalse.AssetInputs[0].Exchanges[0].TradingPairs = []common.TradingPair{
+		{
+			Quote: 1, Base: 0,
+		},
+	}
+
+	var settingChangeEndpoint = "/v3/setting-change"
+
+	var tests = []testCase{
+		{
+			msg:      "create pending asset",
+			endpoint: settingChangeEndpoint,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAsset,
+						Data: createPEA.AssetInputs[0],
+					},
+				},
+			},
+		},
+		{
+			msg:      "list all pending setting change",
+			endpoint: settingChangeEndpoint,
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm invalid pending setting change",
+			endpoint: settingChangeEndpoint + "/-1",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectFailure,
+		},
+		{
+			msg:      "confirm pending asset",
+			endpoint: settingChangeEndpoint + "/1",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
 }
 
 func TestReCreateCreateAsset(t *testing.T) {
@@ -115,7 +188,7 @@ func TestHTTPServerAsset(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	// asset = 1 for ETH is pre-insert in DB.
-	_, err = s.CreateAssetExchange(0, 1, "ETH", eth.HexToAddress("0x00"), 10,
+	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
 	server := NewServer(s, nil)
