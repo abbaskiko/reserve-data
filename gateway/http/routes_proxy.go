@@ -3,79 +3,79 @@ package http
 //Option define initialize behavior for server
 type Option func(*Server) error
 
-// WithV1Endpoint set endpoint gateway for V3
-func WithV1Endpoint(v1Endpoint string) Option {
+// WithCoreEndpoint set endpoint gateway for V3
+func WithCoreEndpoint(coreEndpoint string) Option {
 	return func(s *Server) error {
-		v1ProxyMW, err := newReverseProxyMW(v1Endpoint)
+		coreProxyMW, err := newReverseProxyMW(coreEndpoint)
 		if err != nil {
 			return err
 		}
 		g := s.r.Group("/v3")
 
-		g.GET("/prices-version", v1ProxyMW)
-		g.GET("/prices", v1ProxyMW)
-		g.GET("/prices/:base/:quote", v1ProxyMW)
-		g.GET("/getrates", v1ProxyMW)
-		g.GET("/get-all-rates", v1ProxyMW)
+		g.GET("/prices-version", coreProxyMW)
+		g.GET("/prices", coreProxyMW)
+		g.GET("/prices/:base/:quote", coreProxyMW)
+		g.GET("/getrates", coreProxyMW)
+		g.GET("/get-all-rates", coreProxyMW)
 
-		g.GET("/authdata-version", v1ProxyMW)
-		g.GET("/authdata", v1ProxyMW)
-		g.GET("/activities", v1ProxyMW)
-		g.GET("/immediate-pending-activities", v1ProxyMW)
-		g.GET("/price-factor", v1ProxyMW)
-		g.POST("/price-factor", v1ProxyMW)
+		g.GET("/authdata-version", coreProxyMW)
+		g.GET("/authdata", coreProxyMW)
+		g.GET("/activities", coreProxyMW)
+		g.GET("/immediate-pending-activities", coreProxyMW)
+		g.GET("/price-factor", coreProxyMW)
+		g.POST("/price-factor", coreProxyMW)
 
-		g.POST("/cancelorder/:exchangeid", v1ProxyMW)
-		g.POST("/deposit/:exchangeid", v1ProxyMW)
-		g.POST("/withdraw/:exchangeid", v1ProxyMW)
-		g.POST("/trade/:exchangeid", v1ProxyMW)
-		g.POST("/setrates", v1ProxyMW)
-		g.GET("/tradehistory", v1ProxyMW)
+		g.POST("/cancelorder/:exchangeid", coreProxyMW)
+		g.POST("/deposit/:exchangeid", coreProxyMW)
+		g.POST("/withdraw/:exchangeid", coreProxyMW)
+		g.POST("/trade/:exchangeid", coreProxyMW)
+		g.POST("/setrates", coreProxyMW)
+		g.GET("/tradehistory", coreProxyMW)
 
-		g.GET("/timeserver", v1ProxyMW)
+		g.GET("/timeserver", coreProxyMW)
 
-		g.GET("/rebalancestatus", v1ProxyMW)
-		g.POST("/holdrebalance", v1ProxyMW)
-		g.POST("/enablerebalance", v1ProxyMW)
+		g.GET("/rebalancestatus", coreProxyMW)
+		g.POST("/holdrebalance", coreProxyMW)
+		g.POST("/enablerebalance", coreProxyMW)
 
-		g.GET("/setratestatus", v1ProxyMW)
-		g.POST("/holdsetrate", v1ProxyMW)
-		g.POST("/enablesetrate", v1ProxyMW)
+		g.GET("/setratestatus", coreProxyMW)
+		g.POST("/holdsetrate", coreProxyMW)
+		g.POST("/enablesetrate", coreProxyMW)
 
-		g.POST("/set-stable-token-params", v1ProxyMW)
-		g.POST("/confirm-stable-token-params", v1ProxyMW)
-		g.POST("/reject-stable-token-params", v1ProxyMW)
-		g.GET("/pending-stable-token-params", v1ProxyMW)
-		g.GET("/stable-token-params", v1ProxyMW)
+		g.POST("/set-stable-token-params", coreProxyMW)
+		g.POST("/confirm-stable-token-params", coreProxyMW)
+		g.POST("/reject-stable-token-params", coreProxyMW)
+		g.GET("/pending-stable-token-params", coreProxyMW)
+		g.GET("/stable-token-params", coreProxyMW)
 
-		g.GET("/gold-feed", v1ProxyMW)
-		g.GET("/btc-feed", v1ProxyMW)
-		g.POST("/set-feed-configuration", v1ProxyMW)
-		g.GET("/get-feed-configuration", v1ProxyMW)
+		g.GET("/gold-feed", coreProxyMW)
+		g.GET("/btc-feed", coreProxyMW)
+		g.POST("/set-feed-configuration", coreProxyMW)
+		g.GET("/get-feed-configuration", coreProxyMW)
 
 		return nil
 	}
 }
 
-// WithV3Endpoint set endpoint gateway for V3
-func WithV3Endpoint(v3Endpoint string) Option {
+//WithSettingEndpoint set endpoint gateway for V3
+func WithSettingEndpoint(settingEndpoint string) Option {
 	return func(s *Server) error {
-		v3ProxyMW, err := newReverseProxyMW(v3Endpoint)
+		settingProxyMW, err := newReverseProxyMW(settingEndpoint)
 		if err != nil {
 			return err
 		}
 		g := s.r.Group("/v3")
 
-		g.GET("/asset/:id", v3ProxyMW)
-		g.GET("/asset", v3ProxyMW)
-		g.GET("/exchange/:id", v3ProxyMW)
-		g.GET("/exchange", v3ProxyMW)
+		g.GET("/asset/:id", settingProxyMW)
+		g.GET("/asset", settingProxyMW)
+		g.GET("/exchange/:id", settingProxyMW)
+		g.GET("/exchange", settingProxyMW)
 
-		g.GET("/setting-change", v3ProxyMW)
-		g.GET("setting-change/:id", v3ProxyMW)
-		g.POST("/setting-change", v3ProxyMW)
-		g.PUT("/setting-change/:id", v3ProxyMW)
-		g.DELETE("/setting-change/:id", v3ProxyMW)
+		g.GET("/setting-change", settingProxyMW)
+		g.GET("setting-change/:id", settingProxyMW)
+		g.POST("/setting-change", settingProxyMW)
+		g.PUT("/setting-change/:id", settingProxyMW)
+		g.DELETE("/setting-change/:id", settingProxyMW)
 
 		return nil
 	}

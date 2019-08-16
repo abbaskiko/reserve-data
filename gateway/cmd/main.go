@@ -25,13 +25,13 @@ const (
 	rebalanceAccessKeyFlag = "rebalance-access-key"
 	rebalanceSecretKeyFlag = "rebalance-secret-key"
 
-	v1EndpointFlag = "v1-endpoint"
-	v3EndpointFlag = "v3-endpoint"
+	coreEndpointFlag    = "core-endpoint"
+	settingEndpointFlag = "setting-endpoint"
 )
 
 var (
-	v1EndpointDefaultValue = fmt.Sprint("http://127.0.0.1:8000")
-	v3EndpointDefaultValue = fmt.Sprint("http://127.0.0.1:8002")
+	coreEndpointDefaultValue    = fmt.Sprint("http://127.0.0.1:8000")
+	settingEndpointDefaultValue = fmt.Sprint("http://127.0.0.1:8002")
 )
 
 func main() {
@@ -80,16 +80,16 @@ func main() {
 			EnvVar: "REBALANCE_SECRET_KEY",
 		},
 		cli.StringFlag{
-			Name:   v1EndpointFlag,
+			Name:   coreEndpointFlag,
 			Usage:  "v1 endpoint url",
 			EnvVar: "V1_ENDPOINT",
-			Value:  v1EndpointDefaultValue,
+			Value:  coreEndpointDefaultValue,
 		},
 		cli.StringFlag{
-			Name:   v3EndpointFlag,
+			Name:   settingEndpointFlag,
 			Usage:  "v3 endpoint url",
 			EnvVar: "V3_ENDPOINT",
-			Value:  v3EndpointDefaultValue,
+			Value:  settingEndpointDefaultValue,
 		},
 	)
 
@@ -121,16 +121,16 @@ func run(c *cli.Context) error {
 	var (
 		keyPairs []authenticator.KeyPair
 	)
-	if err := validation.Validate(c.String(v3EndpointFlag),
+	if err := validation.Validate(c.String(coreEndpointFlag),
 		validation.Required,
 		is.URL); err != nil {
-		return errors.Wrapf(err, "app names API URL error: %s", c.String(v3EndpointFlag))
+		return errors.Wrapf(err, "app names API URL error: %s", c.String(coreEndpointFlag))
 	}
 
-	if err := validation.Validate(c.String(v3EndpointFlag),
+	if err := validation.Validate(c.String(settingEndpointFlag),
 		validation.Required,
 		is.URL); err != nil {
-		return errors.Wrapf(err, "app names API URL error: %s", c.String(v3EndpointFlag))
+		return errors.Wrapf(err, "app names API URL error: %s", c.String(settingEndpointFlag))
 	}
 
 	readKeys, err := getKeyList(c, readAccessKeyFlag, readSecretKeyFlag)
@@ -174,8 +174,8 @@ func run(c *cli.Context) error {
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		auth,
 		perm,
-		http.WithV1Endpoint(c.String(v1EndpointFlag)),
-		http.WithV3Endpoint(c.String(v3EndpointFlag)),
+		http.WithCoreEndpoint(c.String(coreEndpointFlag)),
+		http.WithSettingEndpoint(c.String(settingEndpointFlag)),
 	)
 	if err != nil {
 		return errors.Wrap(err, "create new server error")
