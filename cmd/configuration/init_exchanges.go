@@ -144,7 +144,7 @@ func NewExchangePool(
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
-	enabledExchanges []common.ExchangeName,
+	enabledExchanges []common.ExchangeID,
 	assetStorage storage.Interface,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}

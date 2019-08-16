@@ -587,13 +587,13 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 		preStatuses := f.FetchStatusFromExchange(exchange, pendings, timepoint)
 		balances, err = exchange.FetchEBalanceData(timepoint)
 		if err != nil {
-			log.Printf("Fetching exchange balances from %s failed: %v\n", exchange.Name(), err)
+			log.Printf("Fetching exchange balances from %s failed: %v\n", exchange.ID().String(), err)
 			break
 		}
 		//Remove all token which is not in this exchange's token addresses
 		tokenAddress, err = exchange.TokenAddresses()
 		if err != nil {
-			log.Printf("getting token address from %s failed: %v\n", exchange.Name(), err)
+			log.Printf("getting token address from %s failed: %v\n", exchange.ID().String(), err)
 			break
 		}
 		for tokenID := range balances.AvailableBalance {
@@ -630,7 +630,7 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.ActivityRecord, timepoint uint64) map[common.ActivityID]common.ActivityStatus {
 	result := map[common.ActivityID]common.ActivityStatus{}
 	for _, activity := range pendings {
-		if activity.IsExchangePending() && activity.Destination == string(exchange.ID()) {
+		if activity.IsExchangePending() && activity.Destination == exchange.ID().String() {
 			var err error
 			var status string
 			var tx string
@@ -734,7 +734,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
 				log.Printf("Activity %v has invalid timestamp. Just ignore it.", activity)
-			} else if activity.Destination == string(exchange.ID()) &&
+			} else if activity.Destination == exchange.ID().String() &&
 				activity.ExchangeStatus == common.ExchangeStatusDone &&
 				common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 				// the activity is still pending but its exchange status is done and it is stuck there for more than
@@ -776,7 +776,7 @@ func (f *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, 
 	defer wg.Done()
 	exdata, err := exchange.FetchPriceData(timepoint)
 	if err != nil {
-		log.Printf("Fetching data from %s failed: %v\n", exchange.Name(), err)
+		log.Printf("Fetching data from %s failed: %v\n", exchange.ID().String(), err)
 	}
 	for pair, exchangeData := range exdata {
 		data.SetOnePrice(exchange.ID(), pair, exchangeData)

@@ -66,7 +66,7 @@ func (s *Server) fillTradingPair(ccAsset *common.CreateCreateAsset) error {
 				}
 				tps = append(tps, tradingPairSymbol)
 			}
-			exhID := v1common.ExchangeID(v1common.ExchangeName(assetExchange.ExchangeID).String())
+			exhID := v1common.ExchangeID(assetExchange.ExchangeID)
 			centralExh, ok := v1common.SupportedExchanges[exhID]
 			if !ok {
 				return fmt.Errorf("exchange %s not supported", exhID)

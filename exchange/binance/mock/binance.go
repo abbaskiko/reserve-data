@@ -10,18 +10,13 @@ import (
 	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-const binanceTestExchangeID = "binance"
-
 func init() {
-	common.SupportedExchanges[binanceTestExchangeID] = &BinanceTestExchange{}
+	common.SupportedExchanges[common.Binance] = &BinanceTestExchange{}
 }
 
 // BinanceTestExchange is the mock implementation of binance exchange, for testing purpose.
 type BinanceTestExchange struct{}
 
-func (bte *BinanceTestExchange) ID() common.ExchangeID {
-	return "binance"
-}
 func (bte *BinanceTestExchange) Address(_ commonv3.Asset) (address ethereum.Address, supported bool) {
 	return ethereum.Address{}, true
 }
@@ -43,7 +38,8 @@ func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (bte *BinanceTestExchange) Name() common.ExchangeName {
+// ID return binance exchange id
+func (bte *BinanceTestExchange) ID() common.ExchangeID {
 	return common.Binance
 }
 

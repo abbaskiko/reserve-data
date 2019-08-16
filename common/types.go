@@ -156,8 +156,6 @@ func NewFundingFee(widthraw, deposit map[string]float64) FundingFee {
 	}
 }
 
-type ExchangeID string
-
 type ActivityID struct {
 	Timepoint uint64
 	EID       string

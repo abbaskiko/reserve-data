@@ -9,7 +9,6 @@ import (
 // Exchange is the common interface of centralized exchanges.
 type Exchange interface {
 	ID() common.ExchangeID
-	Name() common.ExchangeName
 	FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error)
 	FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error)
 	OrderStatus(id string, base, quote string) (string, error)
