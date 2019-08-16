@@ -199,6 +199,7 @@ type CreateAssetExchangeEntry struct {
 	WithdrawFee       float64          `json:"withdraw_fee"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
+	TradingPairs      []TradingPair    `json:"trading_pairs"`
 }
 
 type CreateCreateAssetExchange struct {

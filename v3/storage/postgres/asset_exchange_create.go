@@ -33,6 +33,22 @@ func (s *Storage) ConfirmCreateAssetExchange(id uint64) error {
 		if err != nil {
 			return err
 		}
+		for _, tradingPair := range r.TradingPairs {
+			_, errTP := s.createTradingPair(tx, r.ExchangeID,
+				tradingPair.Base,
+				tradingPair.Quote,
+				tradingPair.PricePrecision,
+				tradingPair.AmountPrecision,
+				tradingPair.AmountLimitMin,
+				tradingPair.AmountLimitMax,
+				tradingPair.PriceLimitMin,
+				tradingPair.PriceLimitMax,
+				tradingPair.MinNotional,
+			)
+			if errTP != nil {
+				return errTP
+			}
+		}
 	}
 	_, err = s.stmts.deletePendingObject.Exec(id, common.PendingTypeCreateAssetExchange.String())
 	if err != nil {
