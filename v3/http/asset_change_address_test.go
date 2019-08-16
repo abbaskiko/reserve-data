@@ -30,7 +30,7 @@ func TestHTTPServerChangeAssetAddress(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, nil, "")
+	server := NewServer(s, "")
 
 	var tests = []testCase{
 		{
@@ -127,7 +127,7 @@ func TestHTTPServerChangeAssetAddressBySettingChange(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, nil, "")
+	server := NewServer(s, "")
 
 	var tests = []testCase{
 		{

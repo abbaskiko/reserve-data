@@ -40,7 +40,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	server := http.NewServer(sr, nil, host)
+	server := http.NewServer(sr, host)
 	server.Run()
 	return nil
 }

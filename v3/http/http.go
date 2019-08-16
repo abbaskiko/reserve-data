@@ -17,10 +17,8 @@ type Server struct {
 }
 
 // NewServer creates new HTTP server for v3 APIs.
-func NewServer(storage storage.Interface, r *gin.Engine, host string) *Server {
-	if r == nil {
-		r = gin.Default()
-	}
+func NewServer(storage storage.Interface, host string) *Server {
+	r := gin.Default()
 	server := &Server{
 		storage: storage,
 		r:       r,
