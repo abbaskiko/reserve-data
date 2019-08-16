@@ -392,3 +392,9 @@ type SettingChangeResponse struct {
 	Created    time.Time            `json:"created"`
 	ChangeList []SettingChangeEntry `json:"change_list"`
 }
+
+// DeleteTradingPairEntry hold data to delete a trading pair entry
+type DeleteTradingPairEntry struct {
+	settingChangeMarker
+	TradingPairID uint64 `json:"id"`
+}

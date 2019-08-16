@@ -246,3 +246,233 @@ func TestHTTPServerTradingPair(t *testing.T) {
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
 	}
 }
+
+func TestHTTPServerTradingPairBySettingChange(t *testing.T) {
+
+	const (
+		assetBase         = "/v3/asset"
+		settingChangePath = "/v3/setting-change"
+	)
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeName{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exhID := v1common.ExchangeID(exchangeID.String())
+		exchange := v1common.TestExchange{}
+		v1common.SupportedExchanges[exhID] = exchange
+	}
+
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	// asset = 1 for ETH is pre-insert in DB.
+	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
+		0.2, 5.0, 0.3)
+	require.NoError(t, err)
+	server := NewServer(s, nil)
+
+	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
+
+	var tests = []testCase{
+
+		{
+			msg:      "create pending asset",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAsset,
+						Data: createPEA.AssetInputs[0],
+					},
+				},
+			},
+		},
+		{
+			msg:      "confirm pending asset",
+			endpoint: settingChangePath + "/1",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "receive asset",
+			endpoint: assetBase + "/3",
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "create pending asset",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAsset,
+						Data: createPEAWithQuoteFalse.AssetInputs[0],
+					},
+				},
+			},
+		},
+		{
+			msg:      "confirm pending asset",
+			endpoint: settingChangePath + "/2",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "receive asset",
+			endpoint: assetBase + "/5",
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "create asset exchange",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAssetExchange,
+						Data: common.CreateAssetExchangeEntry{
+							AssetID:           1,
+							ExchangeID:        huobi,
+							Symbol:            "ETH",
+							DepositAddress:    eth.HexToAddress("0x001"),
+							MinDeposit:        100.0,
+							WithdrawFee:       100.0,
+							TargetRecommended: 100.0,
+							TargetRatio:       100.0,
+						},
+					},
+					{
+						Type: common.ChangeTypeCreateAssetExchange,
+						Data: common.CreateAssetExchangeEntry{
+							AssetID:           3,
+							ExchangeID:        huobi,
+							Symbol:            "ABC",
+							DepositAddress:    eth.HexToAddress("0x001"),
+							MinDeposit:        100.0,
+							WithdrawFee:       100.0,
+							TargetRecommended: 100.0,
+							TargetRatio:       100.0,
+						},
+					},
+					{
+						Type: common.ChangeTypeCreateAssetExchange,
+						Data: common.CreateAssetExchangeEntry{
+							AssetID:           5,
+							ExchangeID:        huobi,
+							Symbol:            "ABC",
+							DepositAddress:    eth.HexToAddress("0x001"),
+							MinDeposit:        100.0,
+							WithdrawFee:       100.0,
+							TargetRecommended: 100.0,
+							TargetRatio:       100.0,
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm asset exchange",
+			endpoint: settingChangePath + "/3",
+			method:   http.MethodPut,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "create trading pair",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateTradingPair,
+						Data: common.CreateTradingPairEntry{
+							TradingPair: common.TradingPair{
+								Base:            3,
+								Quote:           1,
+								PricePrecision:  1.0,
+								AmountPrecision: 1.0,
+								AmountLimitMin:  100.0,
+								AmountLimitMax:  1000.0,
+								PriceLimitMin:   100.0,
+								PriceLimitMax:   1000.0,
+								MinNotional:     100.0,
+							},
+							ExchangeID: huobi,
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm create trading pair",
+			endpoint: settingChangePath + "/4",
+			method:   http.MethodPut,
+			assert:   httputil.ExpectSuccess, // will fail because we did not config assets on exchange id=1
+		},
+		{
+			msg:      "create trading pair with invalid quote",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateTradingPair,
+						Data: common.CreateTradingPairEntry{
+							TradingPair: common.TradingPair{
+								Base:            3,
+								Quote:           5,
+								PricePrecision:  1.0,
+								AmountPrecision: 1.0,
+								AmountLimitMin:  100.0,
+								AmountLimitMax:  1000.0,
+								PriceLimitMin:   100.0,
+								PriceLimitMax:   1000.0,
+								MinNotional:     100.0,
+							},
+							ExchangeID: huobi,
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectFailure,
+		},
+		{
+			msg:      "delete trading pair",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeDeleteTradingPair,
+						Data: common.DeleteTradingPairEntry{
+							TradingPairID: 4,
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm delete trading pair",
+			endpoint: settingChangePath + "/5",
+			method:   http.MethodPut,
+			assert:   httputil.ExpectSuccess,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
