@@ -221,18 +221,13 @@ func (s *Server) Trade(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	//TODO: use GetTradingPair method
 	var pair v3common.TradingPairSymbols
-	pairs, err := s.settingStorage.GetTradingPairs(uint64(exchange.Name()))
+	pair, err = s.settingStorage.GetTradingPair(uint64(pairID))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	for _, p := range pairs {
-		if p.ID == uint64(pairID) {
-			pair = p
-		}
-	}
+
 	amount, err := strconv.ParseFloat(amountParam, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
