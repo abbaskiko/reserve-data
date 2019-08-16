@@ -33,7 +33,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, nil)
+	server := NewServer(s, nil, "")
 
 	var tests = []testCase{
 		{

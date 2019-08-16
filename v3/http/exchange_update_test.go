@@ -25,7 +25,7 @@ func TestUpdateExchange(t *testing.T) {
 	exchangeID := huobi
 	// pre-insert exchange
 
-	server := NewServer(s, nil)
+	server := NewServer(s, nil, "")
 	const updateExchange = "/v3/update-exchange"
 	var updateExchID uint64
 	var tests = []testCase{

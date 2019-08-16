@@ -45,7 +45,7 @@ func TestHTTPServerTradingPair(t *testing.T) {
 	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
-	server := NewServer(s, nil)
+	server := NewServer(s, nil, "")
 
 	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
 
