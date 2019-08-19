@@ -1,7 +1,9 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	eth "github.com/ethereum/go-ethereum/common"
@@ -100,6 +102,161 @@ func TestHTTPServerAssetExchange(t *testing.T) {
 			endpoint: updateAssetExchange + "/2",
 			method:   http.MethodPut,
 			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
+	const (
+		settingChangePath = "/v3/setting-change"
+	)
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	assetID, err := createSampleAsset(s)
+	require.NoError(t, err)
+
+	server := NewServer(s, "")
+
+	var tests = []testCase{
+
+		{
+			msg:      "create asset exchange",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAssetExchange,
+						Data: common.CreateAssetExchangeEntry{
+							AssetID:           assetID,
+							ExchangeID:        huobi,
+							Symbol:            "ETH",
+							DepositAddress:    eth.HexToAddress("0x001"),
+							MinDeposit:        10.0,
+							WithdrawFee:       11.0,
+							TargetRecommended: 12.0,
+							TargetRatio:       13.0,
+						},
+					},
+				},
+			},
+		},
+		{
+			msg:      "confirm pending asset exchange",
+			endpoint: settingChangePath + "/1",
+			method:   http.MethodPut,
+			data:     nil,
+			assert:   httputil.ExpectSuccess,
+		},
+		{ // test deposit addr = 0
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAssetExchange,
+						Data: common.UpdateAssetExchangeEntry{
+							ID:             1,
+							DepositAddress: common.AddressPointer(eth.HexToAddress("0x0000000000000")),
+							MinDeposit:     common.FloatPointer(6.0),
+							WithdrawFee:    common.FloatPointer(9.0),
+						},
+					},
+				},
+			},
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			msg:      "create invalid update asset exchange",
+			assert:   httputil.ExpectFailure,
+		},
+		{ // test create update asset exchange
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAssetExchange,
+						Data: common.UpdateAssetExchangeEntry{
+							ID:             2,
+							DepositAddress: common.AddressPointer(eth.HexToAddress("0x0000000000001")),
+							MinDeposit:     common.FloatPointer(6.0),
+							WithdrawFee:    common.FloatPointer(9.0),
+						},
+					},
+				},
+			},
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			msg:      "create update asset exchange",
+			assert:   httputil.ExpectSuccess,
+		},
+		{ // test confirm update asset exchange
+			msg:      "confirm pending update asset exchange",
+			endpoint: settingChangePath + "/2",
+			method:   http.MethodPut,
+			data:     nil,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				ae, err := s.GetAssetExchange(2)
+				assert.NoError(t, err)
+				assert.Equal(t, float64(6.0), ae.MinDeposit)
+				fmt.Printf("len(trading pairs)=%d\n", len(ae.TradingPairs))
+			},
+		},
+		{
+			msg:      "create invalid delete asset exchange request",
+			endpoint: settingChangePath,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeDeleteAssetExchange,
+						Data: common.DeleteAssetExchangeEntry{
+							AssetExchangeID: 2,
+						},
+					},
+				},
+			},
+			method: http.MethodPost,
+			assert: httputil.ExpectFailure,
+		},
+		{
+			msg:      "confirm invalid delete asset exchange request",
+			endpoint: settingChangePath + "/3",
+			data:     nil,
+			method:   http.MethodPut,
+			assert:   httputil.ExpectFailure,
+		},
+		{
+			msg:      "create valid delete asset exchange request",
+			endpoint: settingChangePath,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeDeleteAssetExchange,
+						Data: common.DeleteAssetExchangeEntry{
+							AssetExchangeID: 4,
+						},
+					},
+				},
+			},
+			method: http.MethodPost,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm valid delete asset exchange request",
+			endpoint: settingChangePath + "/3",
+			data:     nil,
+			method:   http.MethodPut,
 			assert:   httputil.ExpectSuccess,
 		},
 	}

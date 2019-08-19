@@ -228,3 +228,52 @@ func TestStorage_UpdateAssetExchange(t *testing.T) {
 		tc.assertFn(t, err)
 	}
 }
+
+func TestStorage_DeleteAssetExchange(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	require.NoError(t, err)
+
+	assetExchangeID, err := s.CreateAssetExchange(1, 1, "ETH", ethereum.Address{}, 0.0001, 0.0001, 0.001, 0.001)
+	require.NoError(t, err)
+	require.NotZero(t, assetExchangeID)
+
+	testAssetID2, err := s.CreateAsset(
+		"DEF",
+		"DEF Super Token",
+		ethereum.HexToAddress("0xffe97fe10290715ba416a7c1Fd265F28dc574dd9"),
+		12,
+		false,
+		commonv3.GoldFeed,
+		true,
+		true,
+		testPWI,
+		testRb,
+		testAssetExchanges,
+		testAssetTarget,
+	)
+	require.NoError(t, err)
+
+	// test delete an asset exchange with a trading pair exists
+	tx, err := s.db.Beginx()
+	require.NoError(t, err)
+	defer rollbackUnlessCommitted(tx)
+	_, err = s.createTradingPair(tx, 1, 1, testAssetID2, 0, 0, 0,
+		0, 0, 0, 0)
+	require.NoError(t, err)
+	require.Equal(t, commonv3.ErrAssetExchangeDeleteViolation, s.deleteAssetExchange(tx, assetExchangeID))
+
+	// test delete an asset exchange is validated
+	tx2, err := s.db.Beginx()
+	require.NoError(t, err)
+	defer rollbackUnlessCommitted(tx2)
+
+	require.NoError(t, s.deleteAssetExchange(tx2, assetExchangeID))
+	require.NoError(t, tx2.Commit())
+	_, err = s.GetAssetExchange(assetExchangeID)
+	require.Error(t, err)
+}

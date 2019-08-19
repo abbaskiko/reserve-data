@@ -398,3 +398,9 @@ type DeleteTradingPairEntry struct {
 	settingChangeMarker
 	TradingPairID uint64 `json:"id"`
 }
+
+// DeleteAssetExchangeEntry presents data to delete an asset exchange
+type DeleteAssetExchangeEntry struct {
+	settingChangeMarker
+	AssetExchangeID uint64 `json:"id"`
+}
