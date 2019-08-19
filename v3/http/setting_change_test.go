@@ -98,7 +98,6 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 }
 
 func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
-
 	const (
 		settingChangePath = "/v3/setting-change"
 	)
@@ -134,7 +133,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 			msg:      "create asset exchange with invalid trading pair",
 			endpoint: settingChangePath,
 			method:   http.MethodPost,
-			assert:   httputil.ExpectFailureWithReason("validate error at 0, err=base id:1 quote id:1: bad trading pair configuration"),
+			assert:   httputil.ExpectFailure,
 			data: &common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -169,7 +168,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 			msg:      "create asset exchange with invalid trading pair - both base and quote are zero",
 			endpoint: settingChangePath,
 			method:   http.MethodPost,
-			assert:   httputil.ExpectFailureWithReason("validate error at 0, err=base id:0 quote id:0: bad trading pair configuration"),
+			assert:   httputil.ExpectFailure,
 			data: &common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -204,7 +203,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 			msg:      "create asset exchange with invalid trading pair - invalid quote token",
 			endpoint: settingChangePath,
 			method:   http.MethodPost,
-			assert:   httputil.ExpectFailureWithReason("validate error at 0, err=quote id: 1234: quote asset is invalid"),
+			assert:   httputil.ExpectFailure,
 			data: &common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -239,7 +238,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 			msg:      "create asset exchange with invalid trading pair - invalid base token",
 			endpoint: settingChangePath,
 			method:   http.MethodPost,
-			assert:   httputil.ExpectFailureWithReason("validate error at 0, err=base id: 1234: base asset is invalid"),
+			assert:   httputil.ExpectFailure,
 			data: &common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -317,7 +316,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 		},
 		{
 			msg:      "confirm asset exchange with duplicate trading pair",
-			endpoint: settingChangePath + "/1",
+			endpoint: settingChangePath + "/2",
 			method:   http.MethodPut,
 			assert:   httputil.ExpectFailureWithReason(`failed to create trading pair base=2 quote=1 exchange_id=2 err=duplicate key value violates unique constraint "trading_pairs_exchange_id_base_id_quote_id_key"`),
 			data:     nil,
@@ -359,7 +358,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 		},
 		{
 			msg:      "confirm asset exchange with trading pair successfully",
-			endpoint: settingChangePath + "/2",
+			endpoint: settingChangePath + "/3",
 			method:   http.MethodPut,
 			assert:   httputil.ExpectSuccess,
 			data:     nil,
