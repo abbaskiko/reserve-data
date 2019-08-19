@@ -29,7 +29,7 @@ func (s *Storage) GetAssetExchange(id uint64) (common.AssetExchange, error) {
 	}
 
 	var tradingPairResults []tradingPairDB
-	if err := s.stmts.getTradingPair.Select(&tradingPairResults, id); err != nil {
+	if err := s.stmts.getTradingPair.Select(&tradingPairResults, result.AssetID); err != nil {
 		return common.AssetExchange{}, fmt.Errorf("failed to query for trading pairs err=%s", err.Error())
 	}
 	assetExchange := result.ToCommon()
