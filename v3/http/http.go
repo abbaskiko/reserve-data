@@ -103,6 +103,14 @@ func NewServer(storage storage.Interface, host string) *Server {
 	g.GET("/price-factor", server.getPriceFactor)
 	g.POST("/price-factor", server.setPriceFactor)
 
+	g.GET("/set-rate-status", server.getSetRateStatus)
+	g.POST("/hold-set-rate", server.holdSetRate)
+	g.POST("/enable-set-rate", server.enableSetRate)
+
+	g.GET("/rebalance-status", server.getRebalanceStatus)
+	g.POST("/hold-rebalance", server.holdRebalance)
+	g.POST("/enable-rebalance", server.enableRebalance)
+
 	return server
 }
 

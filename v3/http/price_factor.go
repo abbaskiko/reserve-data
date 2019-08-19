@@ -77,3 +77,53 @@ func (s *Server) getPriceFactor(c *gin.Context) {
 		"data":       data,
 	}))
 }
+
+func (s *Server) getSetRateStatus(c *gin.Context) {
+	status, err := s.storage.GetSetRateStatus()
+	if err != nil {
+		log.Printf("failed to get set rate control, err:%v\n", err.Error())
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(status))
+}
+
+func (s *Server) holdSetRate(c *gin.Context) {
+	if err := s.storage.SetSetRateStatus(false); err != nil {
+		log.Printf("failed to set set rate control, err:%v\n", err.Error())
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c)
+}
+
+func (s *Server) enableSetRate(c *gin.Context) {
+	if err := s.storage.SetSetRateStatus(true); err != nil {
+		log.Printf("failed to set set rate control, err:%v\n", err.Error())
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c)
+}
+
+func (s *Server) getRebalanceStatus(c *gin.Context) {
+	status, err := s.storage.GetRebalanceStatus()
+	if err != nil {
+		log.Printf("failed to get rebalance control, err:%v\n", err.Error())
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(status))
+}
+
+func (s *Server) holdRebalance(c *gin.Context) {
+	if err := s.storage.SetRebalanceStatus(false); err != nil {
+		log.Printf("failed to set rebalance control, err:%v\n", err.Error())
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c)
+}
+
+func (s *Server) enableRebalance(c *gin.Context) {
+	if err := s.storage.SetRebalanceStatus(true); err != nil {
+		log.Printf("failed to set rebalance control, err:%v\n", err.Error())
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c)
+}

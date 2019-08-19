@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -97,4 +98,42 @@ func TestPriceFactor(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, res, 2, "expect 2 asset in result")
 	assert.Len(t, res[0].Data, 2, "expect 2 result for each asset")
+}
+
+func TestStorage_SetRebalanceControl(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	require.NoError(t, err)
+
+	rebalance, err := s.GetRebalanceStatus()
+	require.NoError(t, err)
+	require.Equal(t, false, rebalance) // default value is false
+
+	require.NoError(t, s.SetRebalanceStatus(true))
+	rebalance, err = s.GetRebalanceStatus()
+	require.NoError(t, err)
+	require.Equal(t, true, rebalance)
+}
+
+func TestStorage_SetSetRateControl(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	require.NoError(t, err)
+
+	setRateStatus, err := s.GetSetRateStatus()
+	require.NoError(t, err)
+	require.Equal(t, false, setRateStatus) // default value is false
+
+	require.NoError(t, s.SetSetRateStatus(true))
+	setRateStatus, err = s.GetSetRateStatus()
+	require.NoError(t, err)
+	require.Equal(t, true, setRateStatus)
 }
