@@ -258,6 +258,10 @@ func TestHTTPServerTradingPairBySettingChange(t *testing.T) {
 		settingChangePath = "/v3/setting-change"
 	)
 
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -266,7 +270,7 @@ func TestHTTPServerTradingPairBySettingChange(t *testing.T) {
 	//create map of test exchange
 	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
 		exchange := v1common.TestExchange{}
-		v1common.SupportedExchanges[exchangeID] = exchange
+		supportedExchanges[exchangeID] = exchange
 	}
 
 	s, err := postgres.NewStorage(db)
@@ -275,7 +279,7 @@ func TestHTTPServerTradingPairBySettingChange(t *testing.T) {
 	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
-	server := NewServer(s, "")
+	server := NewServer(s, "", supportedExchanges)
 
 	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
 

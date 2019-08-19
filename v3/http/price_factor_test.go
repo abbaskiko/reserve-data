@@ -23,7 +23,7 @@ func TestPriceFactor(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
-	server := NewServer(s, "")
+	server := NewServer(s, "", nil)
 	const priceFactor = "/v3/price-factor"
 	var tests = []testCase{
 		{

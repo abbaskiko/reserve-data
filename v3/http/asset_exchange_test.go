@@ -129,7 +129,7 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, "")
+	server := NewServer(s, "", nil)
 
 	//create map of test exchange
 	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
