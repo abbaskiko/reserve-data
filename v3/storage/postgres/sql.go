@@ -143,6 +143,12 @@ CREATE TABLE IF NOT EXISTS setting_change (
     data JSON NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS price_factor (
+    id serial primary key,
+  	timepoint bigint NOT NULL,
+  	data json NOT NULL  
+);
+
 CREATE OR REPLACE FUNCTION new_setting_change(_data setting_change.data%TYPE)
     RETURNS int AS
 $$
@@ -457,6 +463,9 @@ type preparedStmts struct {
 	newSettingChange    *sqlx.Stmt
 	deleteSettingChange *sqlx.Stmt
 	getSettingChange    *sqlx.Stmt
+
+	newPriceFactor *sqlx.Stmt
+	getPriceFactor *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -521,6 +530,11 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
+	newPriceFactor, getPriceFactor, err := priceFactorStatements(db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &preparedStmts{
 		getExchanges:        getExchanges,
 		getExchange:         getExchange,
@@ -558,6 +572,9 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newSettingChange:    newSettingChange,
 		deleteSettingChange: deleteSettingChange,
 		getSettingChange:    getSettingChange,
+
+		newPriceFactor: newPriceFactor,
+		getPriceFactor: getPriceFactor,
 	}, nil
 }
 
@@ -993,4 +1010,18 @@ func settingChangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, e
 		return nil, nil, nil, err
 	}
 	return newSettingChangeStmt, deleteSettingChangeStmt, listSettingChangeStmt, nil
+}
+
+func priceFactorStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
+	const newPriceFactorQuery = `INSERT INTO price_factor(timepoint,data) VALUES ($1,$2) RETURNING id;`
+	newPriceFactorStmt, err := db.Preparex(newPriceFactorQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	const listSettingChangeQuery = `SELECT id,timepoint,data FROM price_factor WHERE $1 <= timepoint AND timepoint <= $2`
+	listSettingChangeStmt, err := db.Preparex(listSettingChangeQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	return newPriceFactorStmt, listSettingChangeStmt, nil
 }
