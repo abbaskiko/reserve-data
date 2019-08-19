@@ -127,7 +127,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(asset)
 
-	server := NewServer(s, nil)
+	server := NewServer(s, "")
 
 	var tests = []testCase{
 		{
