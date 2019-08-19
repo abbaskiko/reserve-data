@@ -244,7 +244,18 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			return err
 		}
 	case common.ChangeTypeDeleteAssetExchange:
-		// TODO: implement delete
+		a, ok := entry.Data.(*common.DeleteAssetExchangeEntry)
+		if !ok {
+			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeDeleteAssetExchange)
+			log.Println(msg)
+			return errors.Wrap(err, msg)
+		}
+		err = s.deleteAssetExchange(tx, a.AssetExchangeID)
+		if err != nil {
+			msg := fmt.Sprintf("update exchange %d, err=%v\n", i, err)
+			log.Println(msg)
+			return err
+		}
 	case common.ChangeTypeDeleteTradingBy:
 	case common.ChangeTypeDeleteTradingPair:
 		a, ok := entry.Data.(*common.DeleteTradingPairEntry)

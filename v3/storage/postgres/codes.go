@@ -6,6 +6,7 @@ const (
 	errCodeCheckViolation  = "23514"
 	errForeignKeyViolation = "23503"
 	errAssertFailure       = "P0004"
+	errRestrictViolation   = "23001"
 	// custom error
 	errQuoteInvalid = "KEQUO"
 	errBaseInvalid  = "KEBAS"

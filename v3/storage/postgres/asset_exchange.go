@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -21,10 +23,22 @@ func (s *Storage) GetAssetExchange(id uint64) (common.AssetExchange, error) {
 		log.Printf("asset exchange not found id=%d", id)
 		return common.AssetExchange{}, common.ErrNotFound
 	case nil:
-		return result.ToCommon(), nil
+
 	default:
 		return common.AssetExchange{}, errors.Errorf("failed to get asset exchange from database id=%d err=%s", id, err.Error())
 	}
+
+	var tradingPairResults []tradingPairDB
+	if err := s.stmts.getTradingPair.Select(&tradingPairResults, id); err != nil {
+		return common.AssetExchange{}, fmt.Errorf("failed to query for trading pairs err=%s", err.Error())
+	}
+	assetExchange := result.ToCommon()
+	for _, tpResult := range tradingPairResults {
+		if tpResult.ExchangeID == result.ExchangeID {
+			assetExchange.TradingPairs = append(assetExchange.TradingPairs, tpResult.ToCommon())
+		}
+	}
+	return assetExchange, nil
 }
 
 // GetAssetExchangeBySymbol return asset by its symbol
@@ -49,5 +63,27 @@ func (s *Storage) GetAssetExchangeBySymbol(exchangeID uint64, symbol string) (co
 		return result, nil
 	default:
 		return result, fmt.Errorf("failed to get asset from database symbol=%s err=%s", symbol, err.Error())
+	}
+}
+
+func (s *Storage) deleteAssetExchange(tx *sqlx.Tx, assetExchangeID uint64) error {
+	var returnedID uint64
+
+	row := tx.Stmt(s.stmts.deleteAssetExchange.Stmt).QueryRow(assetExchangeID)
+	err := row.Scan(&returnedID)
+	switch err {
+	case nil:
+		return nil
+	case sql.ErrNoRows:
+		return common.ErrNotFound
+	default:
+		pErr, ok := err.(*pq.Error)
+		if !ok {
+			return errors.Errorf("unknown returned err=%s", err.Error())
+		}
+		if pErr.Code == errRestrictViolation {
+			return common.ErrAssetExchangeDeleteViolation
+		}
+		return err
 	}
 }
