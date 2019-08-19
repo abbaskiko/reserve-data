@@ -47,5 +47,5 @@ var (
 	// ErrInvalidAddress is when an address is not an ethereum address.
 	ErrInvalidAddress = errors.New("address is not an ethereum address")
 	// ErrAssetExchangeDeleteViolation is returned when there are trading pair relating to deleted asset exchange
-	ErrAssetExchangeDeleteViolation = errors.New("all trading pair relating to asset exchange should be deleted")
+	ErrAssetExchangeDeleteViolation = errors.New("asset exchange can be deleted only when no trading pair use the correspond asset")
 )
