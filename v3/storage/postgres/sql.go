@@ -594,7 +594,7 @@ func tradingPairStatements(db *sqlx.DB) (*tradingPairStmts, error) {
 									WHERE id = :id RETURNING id; `
 	updateTradingPair, err := db.PrepareNamed(updateTradingPairQuery)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to updateTradingPair")
+		return nil, errors.Wrap(err, "failed to prepare updateTradingPair")
 	}
 
 	const getTradingPairByIDQuery = `SELECT DISTINCT tp.id,

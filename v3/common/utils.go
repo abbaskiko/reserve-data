@@ -66,7 +66,6 @@ func SettingChangeFromType(t ChangeType) (SettingChangeType, error) {
 		i = &ChangeAssetAddressEntry{}
 	case ChangeTypeDeleteTradingPair:
 		i = &DeleteTradingPairEntry{}
-		// TODO: process delete entry
 	case ChangeTypeDeleteAssetExchange:
 
 	case ChangeTypeDeleteTradingBy:
