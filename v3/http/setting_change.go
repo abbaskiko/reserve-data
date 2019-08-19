@@ -36,6 +36,8 @@ func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType comm
 		err = s.checkChangeAssetAddressParams(*e.(*common.ChangeAssetAddressEntry))
 	case common.ChangeTypeUpdateExchange:
 		return nil
+	case common.ChangeTypeDeleteTradingPair:
+		err = s.checkDeleteTradingPairParams(*e.(*common.DeleteTradingPairEntry))
 	default:
 		return errors.Errorf("unknown type of setting change: %v", reflect.TypeOf(e))
 	}

@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS trading_by
 (
     id              SERIAL PRIMARY KEY,
     asset_id        INT REFERENCES assets (id)        NOT NULL,
-    trading_pair_id INT REFERENCES trading_pairs (id) NOT NULL,
+    trading_pair_id INT REFERENCES trading_pairs (id) ON DELETE CASCADE NOT NULL,
     UNIQUE (asset_id, trading_pair_id)
 );
 
@@ -420,6 +420,7 @@ type preparedStmts struct {
 	updateDepositAddress     *sqlx.Stmt
 	updateTradingPair        *sqlx.NamedStmt
 
+	deleteTradingPair     *sqlx.Stmt
 	getTradingPairByID    *sqlx.Stmt
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
@@ -453,7 +454,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, err := tradingPairStatements(db)
+	tradingPairStmts, err := tradingPairStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -508,7 +509,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newAssetExchange:    newAssetExchange,
 		updateAssetExchange: updateAssetExchange,
 
-		newTradingPair:  newTradingPair,
+		newTradingPair:  tradingPairStmts.newStmt,
 		newTradingBy:    newTradingBy,
 		getTradingBy:    getTradingBy,
 		deleteTradingBy: deleteTradingBy,
@@ -517,14 +518,15 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		getAssetBySymbol:         getAssetBySymbol,
 		getAssetExchange:         getAssetExchange,
 		getAssetExchangeBySymbol: getAssetExchangeBySymbol,
-		getTradingPair:           getTradingPair,
+		getTradingPair:           tradingPairStmts.getStmt,
 		updateAsset:              updateAsset,
 		changeAssetAddress:       changeAssetAddress,
 		updateDepositAddress:     updateDepositAddress,
-		updateTradingPair:        updateTradingPair,
+		updateTradingPair:        tradingPairStmts.updateStmt,
 
-		getTradingPairByID:    getTradingPairByID,
-		getTradingPairSymbols: getTradingPairSymbols,
+		deleteTradingPair:     tradingPairStmts.deleteStmt,
+		getTradingPairByID:    tradingPairStmts.getByIDStmt,
+		getTradingPairSymbols: tradingPairStmts.getBySymbolStmt,
 		getMinNotional:        getMinNotional,
 
 		newPendingObject:    newPendingObj,
@@ -537,7 +539,16 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 	}, nil
 }
 
-func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+type tradingPairStmts struct {
+	newStmt         *sqlx.NamedStmt
+	getStmt         *sqlx.Stmt
+	updateStmt      *sqlx.NamedStmt
+	getByIDStmt     *sqlx.Stmt
+	getBySymbolStmt *sqlx.Stmt
+	deleteStmt      *sqlx.Stmt
+}
+
+func tradingPairStatements(db *sqlx.DB) (*tradingPairStmts, error) {
 	const newTradingPairQuery = `SELECT new_trading_pair
 									FROM new_trading_pair(:exchange_id,
 									                      :base_id,
@@ -551,7 +562,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									                      :min_notional);`
 	newTradingPair, err := db.PrepareNamed(newTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare newTradingPair")
+		return nil, errors.Wrap(err, "failed to prepare newTradingPair")
 	}
 	const getTradingPairQuery = `SELECT DISTINCT tp.id,
 									                tp.exchange_id,
@@ -570,7 +581,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									`
 	getTradingPair, err := db.Preparex(getTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPair")
+		return nil, errors.Wrap(err, "failed to prepare getTradingPair")
 	}
 	const updateTradingPairQuery = `UPDATE "trading_pairs"
 									SET price_precision  = coalesce(:price_precision, price_precision),
@@ -583,7 +594,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									WHERE id = :id RETURNING id; `
 	updateTradingPair, err := db.PrepareNamed(updateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to updateTradingPair")
+		return nil, errors.Wrap(err, "failed to prepare updateTradingPair")
 	}
 
 	const getTradingPairByIDQuery = `SELECT DISTINCT tp.id,
@@ -607,7 +618,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									WHERE tp.exchange_id = bae.exchange_id AND tp.exchange_id = qae.exchange_id AND tp.id = $1;`
 	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairByID")
+		return nil, errors.Wrap(err, "failed to prepare getTradingPairByID")
 	}
 
 	const getTradingPairSymbolsQuery = `SELECT DISTINCT tp.id,
@@ -628,13 +639,27 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
 									         INNER JOIN assets AS qa ON tp.quote_id = qa.id
 									         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-									WHERE tp.exchange_id = $1;`
+									WHERE tp.exchange_id = $1 AND bae.exchange_id=tp.exchange_id and qae.exchange_id=tp.exchange_id;`
 	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairSymbols")
+		return nil, errors.Wrap(err, "failed to prepare getTradingPairSymbols")
 	}
 
-	return newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, nil
+	const deleteTradingPairQuery = `DELETE FROM trading_pairs
+									WHERE id=$1 RETURNING id;`
+	deleteStmt, err := db.Preparex(deleteTradingPairQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to prepare deleteTradingPairQuery")
+	}
+
+	return &tradingPairStmts{
+		newStmt:         newTradingPair,
+		getStmt:         getTradingPair,
+		updateStmt:      updateTradingPair,
+		getByIDStmt:     getTradingPairByID,
+		getBySymbolStmt: getTradingPairSymbols,
+		deleteStmt:      deleteStmt,
+	}, nil
 }
 
 func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, error) {

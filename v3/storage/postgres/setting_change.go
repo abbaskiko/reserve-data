@@ -247,6 +247,18 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 		// TODO: implement delete
 	case common.ChangeTypeDeleteTradingBy:
 	case common.ChangeTypeDeleteTradingPair:
+		a, ok := entry.Data.(*common.DeleteTradingPairEntry)
+		if !ok {
+			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateExchange)
+			log.Println(msg)
+			return errors.Wrap(err, msg)
+		}
+		err = s.deleteTradingPair(tx, a.TradingPairID)
+		if err != nil {
+			msg := fmt.Sprintf("delete trading pair %d, err=%v\n", i, err)
+			log.Println(msg)
+			return err
+		}
 	case common.ChangeTypeUnknown:
 		return fmt.Errorf("change type not set at %d", i)
 	}
