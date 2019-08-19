@@ -182,7 +182,7 @@ func TestServer_SetRateStatus(t *testing.T) {
 
 func TestServer_RebalanceStatus(t *testing.T) {
 	const (
-		getRebalanceStatusPath = "/v3/set-rebalance"
+		getRebalanceStatusPath = "/v3/rebalance-status"
 		holdRebalancePath      = "/v3/hold-rebalance"
 		enableRebalancePath    = "/v3/enable-rebalance"
 	)
