@@ -41,10 +41,16 @@ type Exchange interface {
 	CancelOrder(id, base, quote string) error
 	MarshalText() (text []byte, err error)
 
+	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)
+
+	LiveExchange
+}
+
+// LiveExchange interface
+type LiveExchange interface {
 	// GetLiveExchangeInfo querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
 	// It return error if occurs.
 	GetLiveExchangeInfos([]common.TradingPairSymbols) (ExchangeInfo, error)
-	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)
 }
 
 // SupportedExchanges map exchange id to its exchange

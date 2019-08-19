@@ -57,7 +57,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 		case common.ChangeTypeCreateAsset:
 			asset := o.Data.(*common.CreateAssetEntry)
 			for _, assetExchange := range asset.Exchanges {
-				err = fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
+				err = s.fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
 				if err != nil {
 					return err
 				}
@@ -73,7 +73,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			tradingPairSymbol.QuoteSymbol = quoteSymbol
 			tradingPairSymbol.ID = uint64(1)
 			exhID := v1common.ExchangeID(entry.ExchangeID)
-			centralExh, ok := v1common.SupportedExchanges[exhID]
+			centralExh, ok := s.supportedExchanges[exhID]
 			if !ok {
 				return errors.Errorf("exchange %s not supported", exhID)
 			}
@@ -91,7 +91,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			entry.PriceLimitMin = info.PriceLimit.Min
 		case common.ChangeTypeCreateAssetExchange:
 			assetExchange := o.Data.(*common.CreateAssetExchangeEntry)
-			err = fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
+			err = s.fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
 			if err != nil {
 				return err
 			}
@@ -100,9 +100,9 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 	return nil
 }
 
-func fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uint64, tradingPairs []common.TradingPair, assetSymbol string, assetID uint64) error {
+func (s *Server) fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uint64, tradingPairs []common.TradingPair, assetSymbol string, assetID uint64) error {
 	exhID := v1common.ExchangeID(exchangeID)
-	centralExh, ok := v1common.SupportedExchanges[exhID]
+	centralExh, ok := s.supportedExchanges[exhID]
 	if !ok {
 		return errors.Errorf("exchange %s not supported", exhID)
 	}
