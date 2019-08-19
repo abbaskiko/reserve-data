@@ -68,9 +68,7 @@ func (s *Storage) GetAssetExchangeBySymbol(exchangeID uint64, symbol string) (co
 
 func (s *Storage) deleteAssetExchange(tx *sqlx.Tx, assetExchangeID uint64) error {
 	var returnedID uint64
-
-	row := tx.Stmt(s.stmts.deleteAssetExchange.Stmt).QueryRow(assetExchangeID)
-	err := row.Scan(&returnedID)
+	err := tx.Stmtx(s.stmts.deleteAssetExchange.Stmt).Get(&returnedID, assetExchangeID)
 	switch err {
 	case nil:
 		return nil

@@ -252,7 +252,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 		}
 		err = s.deleteAssetExchange(tx, a.AssetExchangeID)
 		if err != nil {
-			msg := fmt.Sprintf("update exchange %d, err=%v\n", i, err)
+			msg := fmt.Sprintf("delete asset exchange id=%d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
