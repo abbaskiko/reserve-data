@@ -44,6 +44,7 @@ func convertToPriceFactorResponse(in []common.PriceFactorAtTime) []*common.Asset
 					AssetID: asset.AssetID,
 					Data:    nil,
 				}
+				assetToPriceList[asset.AssetID] = e
 				res = append(res, e)
 			}
 			e.Data = append(e.Data, common.AssetPriceFactorResponse{

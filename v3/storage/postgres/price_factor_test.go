@@ -93,7 +93,7 @@ func TestPriceFactor(t *testing.T) {
 		i.assert(t, err)
 	}
 
-	res, err := s.GetPriceFactors(3, 5)
+	res, err := s.GetPriceFactors(3, 4)
 	assert.NoError(t, err)
 	assert.Len(t, res, 2, "expect 2 asset in result")
 	assert.Len(t, res[0].Data, 2, "expect 2 result for each asset")

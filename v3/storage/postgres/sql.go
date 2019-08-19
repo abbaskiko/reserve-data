@@ -1018,7 +1018,7 @@ func priceFactorStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	const listSettingChangeQuery = `SELECT id,timepoint,data FROM price_factor WHERE $1 <= timepoint AND timepoint < $2`
+	const listSettingChangeQuery = `SELECT id,timepoint,data FROM price_factor WHERE $1 <= timepoint AND timepoint <= $2`
 	listSettingChangeStmt, err := db.Preparex(listSettingChangeQuery)
 	if err != nil {
 		return nil, nil, err
