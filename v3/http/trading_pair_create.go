@@ -9,13 +9,13 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-func fillLiveInfoToTradingPair(
+func (s *Server) fillLiveInfoToTradingPair(
 	ccTradingPair *common.CreateCreateTradingPair,
 	exchangeTpsMap map[uint64][]common.TradingPairSymbols) error {
 
 	for exchangeID, tps := range exchangeTpsMap {
 		exhID := v1common.ExchangeID(exchangeID)
-		centralExh, ok := v1common.SupportedExchanges[exhID]
+		centralExh, ok := s.supportedExchanges[exhID]
 		if !ok {
 			return errors.Errorf("exchange %s not supported", exhID)
 		}
@@ -69,7 +69,7 @@ func (s *Server) createCreateTradingPair(c *gin.Context) {
 		exchangeTpsMap[entry.ExchangeID] = append(exchangeTpsMap[entry.ExchangeID], tradingPairSymbol)
 	}
 
-	err = fillLiveInfoToTradingPair(&createTradingPair, exchangeTpsMap)
+	err = s.fillLiveInfoToTradingPair(&createTradingPair, exchangeTpsMap)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
