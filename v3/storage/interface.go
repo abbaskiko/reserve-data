@@ -28,6 +28,9 @@ type Interface interface {
 	GetSettingChanges() ([]v3.SettingChangeResponse, error)
 	RejectSettingChange(uint64) error
 	ConfirmSettingChange(uint64, bool) error
+
+	CreatePriceFactor(v3.PriceFactorAtTime) (uint64, error)
+	GetPriceFactors(uint64, uint64) ([]v3.PriceFactorAtTime, error)
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.

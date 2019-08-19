@@ -554,8 +554,6 @@ func (s *Server) register() {
 		g.GET("/authdata", s.AuthData)
 		g.GET("/activities", s.GetActivities)
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
-		g.GET("/price-factor", s.getPriceFactor)
-		g.POST("/price-factor", s.setPriceFactor)
 
 		g.POST("/cancelorder/:exchangeid", s.CancelOrder)
 		g.POST("/deposit/:exchangeid", s.Deposit)

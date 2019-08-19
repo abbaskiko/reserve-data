@@ -100,6 +100,9 @@ func NewServer(storage storage.Interface, host string) *Server {
 	g.PUT("/setting-change/:id", server.confirmSettingChange)
 	g.DELETE("/setting-change/:id", server.rejectSettingChange)
 
+	g.GET("/price-factor", server.getPriceFactor)
+	g.POST("/price-factor", server.setPriceFactor)
+
 	return server
 }
 
