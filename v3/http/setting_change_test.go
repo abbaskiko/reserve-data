@@ -86,6 +86,71 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				require.Equal(t, huobi, assetExchange.ExchangeID)
 			},
 		},
+		{
+			msg:      "create asset",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAsset,
+						Data: common.CreateAssetEntry{
+							Symbol:    "KNC",
+							Name:      "Kyber",
+							Address:   eth.HexToAddress("0x3f105f78359ad80562b4c34296a87b8e66c584c5"),
+							Decimals:  18,
+							SetRate:   common.SetRateNotSet,
+							IsQuote:   true,
+							Rebalance: true,
+							PWI: &common.AssetPWI{
+								Ask: common.PWIEquation{
+									A:                   234,
+									B:                   23,
+									C:                   12,
+									MinMinSpread:        234,
+									PriceMultiplyFactor: 123,
+								},
+								Bid: common.PWIEquation{
+									A:                   23,
+									B:                   234,
+									C:                   234,
+									MinMinSpread:        234,
+									PriceMultiplyFactor: 234,
+								},
+							},
+							Target: &common.AssetTarget{
+								Total:              12,
+								Reserve:            24,
+								TransferThreshold:  34,
+								RebalanceThreshold: 1,
+							},
+							Exchanges: []common.AssetExchange{
+								{
+									Symbol:      "KNC",
+									ExchangeID:  binance,
+									MinDeposit:  34,
+									WithdrawFee: 34,
+									TargetRatio: 34,
+									TradingPairs: []common.TradingPair{
+										{
+											Quote: 1,
+										},
+									},
+									DepositAddress:    eth.HexToAddress("0x3f105f78359ad80562b4c34296a87b8e66c584c5"),
+									TargetRecommended: 234,
+								},
+							},
+							RebalanceQuadratic: &common.RebalanceQuadratic{
+								A: 12,
+								B: 34,
+								C: 24,
+							},
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
 	}
 
 	for _, tc := range tests {
