@@ -412,6 +412,9 @@ func NewBinance(
 		interf:  interf,
 		storage: storage,
 		sr:      sr,
+		BinanceLive: BinanceLive{
+			interf: interf,
+		},
 	}
 	binance.FetchTradeHistory()
 	return binance, nil
