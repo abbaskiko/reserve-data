@@ -381,7 +381,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 		},
 		{
 			msg:      "confirm asset exchange with duplicate trading pair",
-			endpoint: settingChangePath + "/5",
+			endpoint: settingChangePath + "/1",
 			method:   http.MethodPut,
 			assert:   httputil.ExpectFailureWithReason(`failed to create trading pair base=2 quote=1 exchange_id=2 err=duplicate key value violates unique constraint "trading_pairs_exchange_id_base_id_quote_id_key"`),
 			data:     nil,
@@ -423,7 +423,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 		},
 		{
 			msg:      "confirm asset exchange with trading pair successfully",
-			endpoint: settingChangePath + "/6",
+			endpoint: settingChangePath + "/2",
 			method:   http.MethodPut,
 			assert:   httputil.ExpectSuccess,
 			data:     nil,
