@@ -9,7 +9,7 @@ import (
 // Interface is the common persistent storage interface of V3 APIs.
 type Interface interface {
 	SettingReader
-	PriceFactorInterface
+	ControlInfoInterface
 	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
 	UpdateTradingPair(id uint64, opts UpdateTradingPairOpts) error
 
@@ -29,6 +29,9 @@ type Interface interface {
 	GetSettingChanges() ([]v3.SettingChangeResponse, error)
 	RejectSettingChange(uint64) error
 	ConfirmSettingChange(uint64, bool) error
+
+	CreatePriceFactor(v3.PriceFactorAtTime) (uint64, error)
+	GetPriceFactors(uint64, uint64) ([]v3.PriceFactorAtTime, error)
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
@@ -51,15 +54,12 @@ type SettingReader interface {
 	GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error)
 }
 
-type PriceFactorInterface interface {
+type ControlInfoInterface interface {
 	GetSetRateStatus() (bool, error)
 	SetSetRateStatus(status bool) error
 
 	GetRebalanceStatus() (bool, error)
 	SetRebalanceStatus(status bool) error
-
-	CreatePriceFactor(v3.PriceFactorAtTime) (uint64, error)
-	GetPriceFactors(uint64, uint64) ([]v3.PriceFactorAtTime, error)
 }
 
 // UpdateAssetExchangeOpts these type match user type define in common package so we just need to make an alias here
