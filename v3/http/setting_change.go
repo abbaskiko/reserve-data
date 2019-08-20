@@ -177,12 +177,11 @@ func (s *Server) createSettingChange(c *gin.Context) {
 			return
 		}
 	}
-	// TODO: temporary disable fill live info until we move SupportedExchanges into v3
 	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
 		msg := fmt.Sprintf("fill live info error=%s", err)
 		log.Println(msg)
-		//httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
-		//return
+		httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+		return
 	}
 
 	id, err := s.storage.CreateSettingChange(settingChange)
