@@ -534,6 +534,11 @@ func (s *Server) Run() {
 	}
 }
 
+// EnableProfiler enable profiler
+func (s *Server) EnableProfiler() {
+	pprof.Register(s.r)
+}
+
 // NewHTTPServer return new server
 func NewHTTPServer(
 	app reserve.Data,
@@ -545,7 +550,6 @@ func NewHTTPServer(
 	settingStorage storage.Interface,
 ) *Server {
 	r := gin.Default()
-	pprof.Register(r)
 	sentryCli, err := raven.NewWithTags(
 		"https://bf15053001464a5195a81bc41b644751:eff41ac715114b20b940010208271b13@sentry.io/228067",
 		map[string]string{

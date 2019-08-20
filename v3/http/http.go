@@ -22,8 +22,6 @@ type Server struct {
 // NewServer creates new HTTP server for v3 APIs.
 func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange) *Server {
 	r := gin.Default()
-	pprof.Register(r)
-
 	server := &Server{
 		storage:            storage,
 		r:                  r,
@@ -118,6 +116,11 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 	g.POST("/enable-rebalance", server.enableRebalance)
 
 	return server
+}
+
+// EnableProfiler enable profiler on path "/debug/pprof"
+func (s *Server) EnableProfiler() {
+	pprof.Register(s.r)
 }
 
 // Run the server
