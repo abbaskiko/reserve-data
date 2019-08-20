@@ -101,6 +101,7 @@ func TestPriceFactor(t *testing.T) {
 }
 
 func TestStorage_SetRebalanceControl(t *testing.T) {
+	t.Skip()
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -120,6 +121,7 @@ func TestStorage_SetRebalanceControl(t *testing.T) {
 }
 
 func TestStorage_SetSetRateControl(t *testing.T) {
+	t.Skip()
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
