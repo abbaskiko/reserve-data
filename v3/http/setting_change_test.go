@@ -23,6 +23,16 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 		settingChangePath = "/v3/setting-change"
 	)
 
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
+
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -34,7 +44,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, "", nil)
+	server := NewServer(s, "", supportedExchanges)
 
 	var tests = []testCase{
 		{
