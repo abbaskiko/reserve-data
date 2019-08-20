@@ -47,6 +47,8 @@ type Exchange interface {
 }
 
 // LiveExchange interface
+// TODO: choose a better name as this interface for activity which does not affect
+//
 type LiveExchange interface {
 	// GetLiveExchangeInfo querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
 	// It return error if occurs.

@@ -29,9 +29,7 @@ func main() {
 
 	app.Flags = append(app.Flags, deployment.NewCliFlag())
 	app.Flags = append(app.Flags, configuration.NewBinanceCliFlags()...)
-	app.Flags = append(app.Flags, configuration.NewBinanceKeysFlag()...)
 	app.Flags = append(app.Flags, configuration.NewHuobiCliFlags()...)
-	app.Flags = append(app.Flags, configuration.NewHuobiKeysFlag()...)
 	app.Flags = append(app.Flags, configuration.NewPostgreSQLFlags(defaultDB)...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.V3ServicePort)...)
 	app.Flags = append(app.Flags, configuration.NewExchangeCliFlag())
@@ -59,10 +57,12 @@ func run(c *cli.Context) error {
 	}
 
 	bi := configuration.NewBinanceInterfaceFromContext(c)
-	binanceSigner := configuration.NewBinanceSignerFromContext(c)
+	// dummy signer as live infos does not need to sign
+	binanceSigner := binance.NewSigner("", "")
 	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
 	hi := configuration.NewhuobiInterfaceFromContext(c)
-	huobiSigner := configuration.NewHuobiSignerFromContext(c)
+	// dummy signer as live infos does not need to sign
+	huobiSigner := huobi.NewSigner("", "")
 	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi)
 
 	liveExchanges, err := getLiveExchanges(enableExchanges, binanceEndpoint, huobiEndpoint)
@@ -90,7 +90,8 @@ func getLiveExchanges(enabledExchanges []v1common.ExchangeID, bi exchange.Binanc
 			binanceLive := exchange.NewBinanceLive(bi)
 			liveExchanges[v1common.Binance] = binanceLive
 		case v1common.Huobi:
-			//TODO: implement new huobi and add to map liveExchanges
+			huobiLive := exchange.NewHuobiLive(hi)
+			liveExchanges[v1common.Huobi] = huobiLive
 		}
 	}
 	return liveExchanges, nil

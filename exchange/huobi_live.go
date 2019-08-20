@@ -14,8 +14,8 @@ type HuobiLive struct {
 }
 
 // NewHuobiLive return new HuobiLive instance
-func NewHuobiLive(interf HuobiInterface) HuobiLive {
-	return HuobiLive{
+func NewHuobiLive(interf HuobiInterface) *HuobiLive {
+	return &HuobiLive{
 		interf: interf,
 	}
 }
