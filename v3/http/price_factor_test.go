@@ -131,7 +131,7 @@ func TestServer_SetRateStatus(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
-	server := NewServer(s, "")
+	server := NewServer(s, "", nil)
 
 	var tests = []testCase{
 		{
@@ -194,7 +194,7 @@ func TestServer_RebalanceStatus(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
-	server := NewServer(s, "")
+	server := NewServer(s, "", nil)
 
 	var tests = []testCase{
 		{
