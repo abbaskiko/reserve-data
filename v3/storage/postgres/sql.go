@@ -151,15 +151,41 @@ CREATE TABLE IF NOT EXISTS price_factor (
 
 CREATE TABLE IF NOT EXISTS set_rate_control (
 	id 			SERIAL	PRIMARY	KEY,
-	timepoint 	BIGINT 	NOT NULL,
+	timepoint 	TIMESTAMP 	NOT NULL,
 	status		BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS rebalance_control (
 	id 			SERIAL	PRIMARY	KEY,
-	timepoint 	BIGINT 	NOT NULL,
+	timepoint 	TIMESTAMP 	NOT NULL,
 	status		BOOLEAN 	NOT NULL
 );
+
+CREATE OR REPLACE FUNCTION new_rebalance_control(_status rebalance_control.status%TYPE)
+	RETURNS int AS
+$$
+DECLARE
+    _id rebalance_control.id%TYPE;
+BEGIN
+	DELETE FROM rebalance_control;
+	INSERT INTO rebalance_control(timepoint, status) VALUES(now(), _status) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION new_set_rate_control(_status set_rate_control.status%TYPE)
+	RETURNS int AS
+$$
+DECLARE
+    _id set_rate_control.id%TYPE;
+BEGIN
+	DELETE FROM set_rate_control;
+	INSERT INTO set_rate_control(timepoint, status) VALUES(now(), _status) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION new_setting_change(_data setting_change.data%TYPE)
     RETURNS int AS
@@ -1057,12 +1083,12 @@ func priceFactorStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
 }
 
 func setRateControlStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
-	const newSetRateQuery = `INSERT INTO set_rate_control(timepoint,status) VALUES ($1,$2) RETURNING id;`
+	const newSetRateQuery = `SELECT FROM new_set_rate_control($1);`
 	newSetRateStmt, err := db.Preparex(newSetRateQuery)
 	if err != nil {
 		return nil, nil, err
 	}
-	const getSetRateQuery = `SELECT id,timepoint,status FROM set_rate_control ORDER BY timepoint DESC`
+	const getSetRateQuery = `SELECT id,timepoint,status FROM set_rate_control`
 	getSetRateStmt, err := db.Preparex(getSetRateQuery)
 	if err != nil {
 		return nil, nil, err
@@ -1071,7 +1097,7 @@ func setRateControlStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
 }
 
 func rebalanceControlStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
-	const newRebalanceQuery = `INSERT INTO rebalance_control(timepoint,status) VALUES ($1,$2) RETURNING id;`
+	const newRebalanceQuery = `SELECT FROM new_rebalance_control($1);`
 	newRebalanceStmt, err := db.Preparex(newRebalanceQuery)
 	if err != nil {
 		return nil, nil, err

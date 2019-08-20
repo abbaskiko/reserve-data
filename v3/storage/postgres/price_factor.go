@@ -2,10 +2,10 @@ package postgres
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/pkg/errors"
 
-	common2 "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
@@ -47,9 +47,9 @@ func (s *Storage) GetPriceFactors(from, to uint64) ([]common.PriceFactorAtTime, 
 }
 
 type setRateDB struct {
-	ID        uint64 `db:"id"`
-	Timepoint uint64 `db:"timepoint"`
-	Status    bool   `db:"status"`
+	ID        uint64    `db:"id"`
+	Timepoint time.Time `db:"timepoint"`
+	Status    bool      `db:"status"`
 }
 
 func (s *Storage) GetSetRateStatus() (bool, error) {
@@ -70,14 +70,14 @@ func (s *Storage) GetSetRateStatus() (bool, error) {
 }
 
 func (s *Storage) SetSetRateStatus(status bool) error {
-	_, err := s.stmts.newSetRate.Exec(common2.GetTimepoint(), status)
+	_, err := s.stmts.newSetRate.Exec(status)
 	return err
 }
 
 type rebalanceDB struct {
-	ID        uint64 `db:"id"`
-	Timepoint uint64 `db:"timepoint"`
-	Status    bool   `db:"status"`
+	ID        uint64    `db:"id"`
+	Timepoint time.Time `db:"timepoint"`
+	Status    bool      `db:"status"`
 }
 
 func (s *Storage) GetRebalanceStatus() (bool, error) {
@@ -98,6 +98,6 @@ func (s *Storage) GetRebalanceStatus() (bool, error) {
 }
 
 func (s *Storage) SetRebalanceStatus(status bool) error {
-	_, err := s.stmts.newRebalance.Exec(common2.GetTimepoint(), status)
+	_, err := s.stmts.newRebalance.Exec(status)
 	return err
 }
