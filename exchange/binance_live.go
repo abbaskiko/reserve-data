@@ -34,7 +34,7 @@ func (bl *BinanceLive) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols)
 	for _, pair := range pairs {
 		exchangePrecisionLimit, ok := bl.getPrecisionLimitFromSymbols(pair, symbols)
 		if !ok {
-			return result, fmt.Errorf("binance Exchange Info reply doesn't contain token pair %d", pair.ID)
+			return result, fmt.Errorf("binance Exchange Info reply doesn't contain token pair %d, base %s, quote: %s", pair.ID, pair.BaseSymbol, pair.QuoteSymbol)
 		}
 		result[pair.ID] = exchangePrecisionLimit
 	}
