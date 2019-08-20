@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
@@ -33,6 +34,7 @@ func main() {
 	app.Flags = append(app.Flags, configuration.NewPostgreSQLFlags(defaultDB)...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.V3ServicePort)...)
 	app.Flags = append(app.Flags, configuration.NewExchangeCliFlag())
+	app.Flags = append(app.Flags, profiler.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -76,6 +78,9 @@ func run(c *cli.Context) error {
 	}
 
 	server := http.NewServer(sr, host, liveExchanges)
+	if profiler.IsEnableProfilerFromContext(c) {
+		server.EnableProfiler()
+	}
 	server.Run()
 	return nil
 }

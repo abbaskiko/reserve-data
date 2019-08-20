@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
@@ -115,6 +116,11 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 	g.POST("/enable-rebalance", server.enableRebalance)
 
 	return server
+}
+
+// EnableProfiler enable profiler on path "/debug/pprof"
+func (s *Server) EnableProfiler() {
+	pprof.Register(s.r)
 }
 
 // Run the server

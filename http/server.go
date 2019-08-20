@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
 
@@ -531,6 +532,11 @@ func (s *Server) Run() {
 	if err := s.r.Run(s.host); err != nil {
 		log.Panic(err)
 	}
+}
+
+// EnableProfiler enable profiler
+func (s *Server) EnableProfiler() {
+	pprof.Register(s.r)
 }
 
 // NewHTTPServer return new server
