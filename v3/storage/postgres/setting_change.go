@@ -177,6 +177,25 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return err
 		}
+		for _, tradingPair := range a.TradingPairs {
+			_, errTP := s.createTradingPair(tx, a.ExchangeID,
+				tradingPair.Base,
+				tradingPair.Quote,
+				tradingPair.PricePrecision,
+				tradingPair.AmountPrecision,
+				tradingPair.AmountLimitMin,
+				tradingPair.AmountLimitMax,
+				tradingPair.PriceLimitMin,
+				tradingPair.PriceLimitMax,
+				tradingPair.MinNotional,
+			)
+			if errTP != nil {
+				msg := fmt.Sprintf("failed to create trading pair, err=%v\n", err)
+				log.Println(msg)
+				return errTP
+			}
+		}
+
 	case common.ChangeTypeCreateTradingBy:
 		a, ok := entry.Data.(*common.CreateTradingByEntry)
 		if !ok {

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -129,6 +130,12 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 	require.NoError(t, err)
 
 	server := NewServer(s, "")
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		v1common.SupportedExchanges[exchangeID] = exchange
+	}
 
 	var tests = []testCase{
 

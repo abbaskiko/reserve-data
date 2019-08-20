@@ -57,51 +57,9 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 		case common.ChangeTypeCreateAsset:
 			asset := o.Data.(*common.CreateAssetEntry)
 			for _, assetExchange := range asset.Exchanges {
-				exhID := v1common.ExchangeID(assetExchange.ExchangeID)
-				centralExh, ok := v1common.SupportedExchanges[exhID]
-				if !ok {
-					return errors.Errorf("exchange %s not supported", exhID)
-				}
-				var tps []common.TradingPairSymbols
-				index := uint64(1)
-				for _, tradingPair := range assetExchange.TradingPairs {
-					tradingPairSymbol := common.TradingPairSymbols{TradingPair: tradingPair}
-					tradingPairSymbol.ID = index
-					if tradingPair.Quote == 0 {
-						tradingPairSymbol.QuoteSymbol = assetExchange.Symbol
-						base, err := getAssetExchange(assets, tradingPair.Base, assetExchange.ExchangeID)
-						if err != nil {
-							return err
-						}
-						tradingPairSymbol.BaseSymbol = base.Symbol
-					}
-					if tradingPair.Base == 0 {
-						tradingPairSymbol.BaseSymbol = assetExchange.Symbol
-						quote, err := getAssetExchange(assets, tradingPair.Quote, assetExchange.ExchangeID)
-						if err != nil {
-							return err
-						}
-						tradingPairSymbol.QuoteSymbol = quote.Symbol
-					}
-					tps = append(tps, tradingPairSymbol)
-					index++
-				}
-				exchangeInfo, err := centralExh.GetLiveExchangeInfos(tps)
+				err = fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
 				if err != nil {
 					return err
-				}
-				tradingPairID := uint64(1)
-				for idx := range assetExchange.TradingPairs {
-					if info, ok := exchangeInfo[tradingPairID]; ok {
-						assetExchange.TradingPairs[idx].MinNotional = info.MinNotional
-						assetExchange.TradingPairs[idx].AmountLimitMax = info.AmountLimit.Max
-						assetExchange.TradingPairs[idx].AmountLimitMin = info.AmountLimit.Min
-						assetExchange.TradingPairs[idx].AmountPrecision = uint64(info.Precision.Amount)
-						assetExchange.TradingPairs[idx].PricePrecision = uint64(info.Precision.Price)
-						assetExchange.TradingPairs[idx].PriceLimitMax = info.PriceLimit.Max
-						assetExchange.TradingPairs[idx].PriceLimitMin = info.PriceLimit.Min
-						tradingPairID++
-					}
 				}
 			}
 		case common.ChangeTypeCreateTradingPair:
@@ -131,6 +89,68 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			entry.PricePrecision = uint64(info.Precision.Price)
 			entry.PriceLimitMax = info.PriceLimit.Max
 			entry.PriceLimitMin = info.PriceLimit.Min
+		case common.ChangeTypeCreateAssetExchange:
+			assetExchange := o.Data.(*common.CreateAssetExchangeEntry)
+			err = fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uint64, tradingPairs []common.TradingPair, assetSymbol string, assetID uint64) error {
+	exhID := v1common.ExchangeID(exchangeID)
+	centralExh, ok := v1common.SupportedExchanges[exhID]
+	if !ok {
+		return errors.Errorf("exchange %s not supported", exhID)
+	}
+	var tps []common.TradingPairSymbols
+	index := uint64(1)
+	for idx, tradingPair := range tradingPairs {
+		tradingPairSymbol := common.TradingPairSymbols{TradingPair: tradingPair}
+		tradingPairSymbol.ID = index
+		if tradingPair.Quote == 0 {
+			tradingPairSymbol.QuoteSymbol = assetSymbol
+			base, err := getAssetExchange(assets, tradingPair.Base, exchangeID)
+			if err != nil {
+				return err
+			}
+			tradingPairSymbol.BaseSymbol = base.Symbol
+			if assetID != 0 {
+				tradingPairs[idx].Quote = assetID
+			}
+		}
+		if tradingPair.Base == 0 {
+			tradingPairSymbol.BaseSymbol = assetSymbol
+			quote, err := getAssetExchange(assets, tradingPair.Quote, exchangeID)
+			if err != nil {
+				return err
+			}
+			tradingPairSymbol.QuoteSymbol = quote.Symbol
+			if assetID != 0 {
+				tradingPairs[idx].Base = assetID
+			}
+		}
+		tps = append(tps, tradingPairSymbol)
+		index++
+	}
+	exchangeInfo, err := centralExh.GetLiveExchangeInfos(tps)
+	if err != nil {
+		return err
+	}
+	tradingPairID := uint64(1)
+	for idx := range tradingPairs {
+		if info, ok := exchangeInfo[tradingPairID]; ok {
+			tradingPairs[idx].MinNotional = info.MinNotional
+			tradingPairs[idx].AmountLimitMax = info.AmountLimit.Max
+			tradingPairs[idx].AmountLimitMin = info.AmountLimit.Min
+			tradingPairs[idx].AmountPrecision = uint64(info.Precision.Amount)
+			tradingPairs[idx].PricePrecision = uint64(info.Precision.Price)
+			tradingPairs[idx].PriceLimitMax = info.PriceLimit.Max
+			tradingPairs[idx].PriceLimitMin = info.PriceLimit.Min
+			tradingPairID++
 		}
 	}
 	return nil

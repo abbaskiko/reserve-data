@@ -53,5 +53,35 @@ func (s *Server) checkCreateAssetExchangeParams(createEntry common.CreateAssetEx
 	if asset.Transferable && common.IsZeroAddress(createEntry.DepositAddress) {
 		return common.ErrDepositAddressMissing
 	}
+	for _, tradingPair := range createEntry.TradingPairs {
+		if tradingPair.Base != 0 && tradingPair.Quote != 0 {
+			return errors.Wrapf(common.ErrBadTradingPairConfiguration, "base id:%v quote id:%v", tradingPair.Base, tradingPair.Quote)
+		}
+
+		if tradingPair.Base == 0 && tradingPair.Quote == 0 {
+			return errors.Wrapf(common.ErrBadTradingPairConfiguration, "base id:%v quote id:%v", tradingPair.Base, tradingPair.Quote)
+		}
+
+		if tradingPair.Base == 0 {
+			quoteAsset, err := s.storage.GetAsset(tradingPair.Quote)
+			if err != nil {
+				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+			}
+			if !quoteAsset.IsQuote {
+				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+			}
+		}
+
+		if tradingPair.Quote == 0 {
+			_, err := s.storage.GetAsset(tradingPair.Base)
+			if err != nil {
+				return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", tradingPair.Base)
+			}
+
+			if !asset.IsQuote {
+				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+			}
+		}
+	}
 	return nil
 }
