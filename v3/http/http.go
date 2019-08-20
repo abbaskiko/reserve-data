@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
@@ -21,6 +22,8 @@ type Server struct {
 // NewServer creates new HTTP server for v3 APIs.
 func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange) *Server {
 	r := gin.Default()
+	pprof.Register(r)
+
 	server := &Server{
 		storage:            storage,
 		r:                  r,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
 
@@ -544,6 +545,7 @@ func NewHTTPServer(
 	settingStorage storage.Interface,
 ) *Server {
 	r := gin.Default()
+	pprof.Register(r)
 	sentryCli, err := raven.NewWithTags(
 		"https://bf15053001464a5195a81bc41b644751:eff41ac715114b20b940010208271b13@sentry.io/228067",
 		map[string]string{
