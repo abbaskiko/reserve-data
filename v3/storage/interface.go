@@ -9,6 +9,7 @@ import (
 // Interface is the common persistent storage interface of V3 APIs.
 type Interface interface {
 	SettingReader
+	ControlInfoInterface
 	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
 	UpdateTradingPair(id uint64, opts UpdateTradingPairOpts) error
 
@@ -51,6 +52,14 @@ type SettingReader interface {
 	// GetTransferableAssets returns all assets that the set rate strategy is not not_set.
 	GetTransferableAssets() ([]v3.Asset, error)
 	GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error)
+}
+
+type ControlInfoInterface interface {
+	GetSetRateStatus() (bool, error)
+	SetSetRateStatus(status bool) error
+
+	GetRebalanceStatus() (bool, error)
+	SetRebalanceStatus(status bool) error
 }
 
 // UpdateAssetExchangeOpts these type match user type define in common package so we just need to make an alias here

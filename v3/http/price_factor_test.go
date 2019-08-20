@@ -111,3 +111,134 @@ func TestPriceFactor(t *testing.T) {
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
 	}
 }
+
+type statusRespBody struct {
+	Success bool
+	Data    bool
+}
+
+func TestServer_SetRateStatus(t *testing.T) {
+	const (
+		getSetRateStatusPath = "/v3/set-rate-status"
+		holdSetRatePath      = "/v3/hold-set-rate"
+		enableSetRatePath    = "/v3/enable-set-rate"
+	)
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	server := NewServer(s, "")
+
+	var tests = []testCase{
+		{
+			msg:      "hold set rate",
+			endpoint: holdSetRatePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "check hold set rate",
+			endpoint: getSetRateStatusPath,
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				if resp.Code != http.StatusOK {
+					t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
+				}
+				decoded := &statusRespBody{}
+				assert.NoError(t, json.NewDecoder(resp.Body).Decode(decoded))
+				assert.Equal(t, false, decoded.Data)
+			},
+		},
+		{
+			msg:      "enable set rate",
+			endpoint: enableSetRatePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "check enable set rate",
+			endpoint: getSetRateStatusPath,
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				if resp.Code != http.StatusOK {
+					t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
+				}
+				decoded := &statusRespBody{}
+				assert.NoError(t, json.NewDecoder(resp.Body).Decode(decoded))
+				assert.Equal(t, true, decoded.Data)
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestServer_RebalanceStatus(t *testing.T) {
+	const (
+		getRebalanceStatusPath = "/v3/rebalance-status"
+		holdRebalancePath      = "/v3/hold-rebalance"
+		enableRebalancePath    = "/v3/enable-rebalance"
+	)
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	server := NewServer(s, "")
+
+	var tests = []testCase{
+		{
+			msg:      "hold rebalance",
+			endpoint: holdRebalancePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "check hold rebalance",
+			endpoint: getRebalanceStatusPath,
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				if resp.Code != http.StatusOK {
+					t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
+				}
+				decoded := &statusRespBody{}
+				assert.NoError(t, json.NewDecoder(resp.Body).Decode(decoded))
+				assert.Equal(t, false, decoded.Data)
+			},
+		},
+		{
+			msg:      "enable rebalance",
+			endpoint: enableRebalancePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg:      "check enable rebalance",
+			endpoint: getRebalanceStatusPath,
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				if resp.Code != http.StatusOK {
+					t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
+				}
+				decoded := &statusRespBody{}
+				assert.NoError(t, json.NewDecoder(resp.Body).Decode(decoded))
+				assert.Equal(t, true, decoded.Data)
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}

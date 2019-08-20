@@ -1,6 +1,11 @@
 package postgres
 
 import (
+	"database/sql"
+	"time"
+
+	"github.com/pkg/errors"
+
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
@@ -39,4 +44,60 @@ func (s *Storage) GetPriceFactors(from, to uint64) ([]common.PriceFactorAtTime, 
 		res = append(res, e.toCommon())
 	}
 	return res, nil
+}
+
+type setRateDB struct {
+	ID        uint64    `db:"id"`
+	Timepoint time.Time `db:"timepoint"`
+	Status    bool      `db:"status"`
+}
+
+func (s *Storage) GetSetRateStatus() (bool, error) {
+	var setRateResult setRateDB
+	err := s.stmts.getSetRate.Get(&setRateResult)
+	switch err {
+	case sql.ErrNoRows:
+		err := s.SetSetRateStatus(false)
+		if err != nil {
+			return false, errors.Wrapf(err, "fail to set set-rate control 1st time")
+		}
+		return false, nil
+	case nil:
+		return setRateResult.Status, nil
+	default:
+		return false, err
+	}
+}
+
+func (s *Storage) SetSetRateStatus(status bool) error {
+	_, err := s.stmts.newSetRate.Exec(status)
+	return err
+}
+
+type rebalanceDB struct {
+	ID        uint64    `db:"id"`
+	Timepoint time.Time `db:"timepoint"`
+	Status    bool      `db:"status"`
+}
+
+func (s *Storage) GetRebalanceStatus() (bool, error) {
+	var rebalanceResult rebalanceDB
+	err := s.stmts.getRebalance.Get(&rebalanceResult)
+	switch err {
+	case sql.ErrNoRows:
+		err := s.SetRebalanceStatus(false)
+		if err != nil {
+			return false, errors.Wrapf(err, "fail to set rebalance 1st time")
+		}
+		return false, nil
+	case nil:
+		return rebalanceResult.Status, nil
+	default:
+		return false, err
+	}
+}
+
+func (s *Storage) SetRebalanceStatus(status bool) error {
+	_, err := s.stmts.newRebalance.Exec(status)
+	return err
 }
