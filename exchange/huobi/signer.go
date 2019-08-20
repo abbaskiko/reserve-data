@@ -27,8 +27,9 @@ func (s Signer) GetKey() string {
 	return s.Key
 }
 
-func NewSigner(key, secret string) *Signer {
-	return &Signer{key, secret}
+// NewSigner return huobi signer
+func NewSigner(key, secret string) Signer {
+	return Signer{key, secret}
 }
 
 func NewSignerFromFile(path string) Signer {

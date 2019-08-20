@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
@@ -22,6 +23,16 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 		settingChangePath = "/v3/setting-change"
 	)
 
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
+
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -33,7 +44,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, "")
+	server := NewServer(s, "", supportedExchanges)
 
 	var tests = []testCase{
 		{
@@ -166,6 +177,15 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	const (
 		settingChangePath = "/v3/setting-change"
 	)
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
 
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
@@ -191,7 +211,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(asset)
 
-	server := NewServer(s, "")
+	server := NewServer(s, "", supportedExchanges)
 
 	var tests = []testCase{
 		{

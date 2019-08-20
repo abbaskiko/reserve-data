@@ -36,7 +36,7 @@ func TestServer_TradingBy(t *testing.T) {
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
 	require.NoError(t, err)
-	server := NewServer(s, "")
+	server := NewServer(s, "", nil)
 
 	var tests = []testCase{
 		{

@@ -6,23 +6,26 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/gin-gonic/gin"
 
+	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 // Server is the HTTP server of token V3.
 type Server struct {
-	storage storage.Interface
-	r       *gin.Engine
-	host    string
+	storage            storage.Interface
+	r                  *gin.Engine
+	host               string
+	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
 }
 
 // NewServer creates new HTTP server for v3 APIs.
-func NewServer(storage storage.Interface, host string) *Server {
+func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange) *Server {
 	r := gin.Default()
 	server := &Server{
-		storage: storage,
-		r:       r,
-		host:    host,
+		storage:            storage,
+		r:                  r,
+		host:               host,
+		supportedExchanges: supportedExchanges,
 	}
 	g := r.Group("/v3")
 
