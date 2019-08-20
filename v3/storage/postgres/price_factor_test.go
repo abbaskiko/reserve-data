@@ -101,7 +101,6 @@ func TestPriceFactor(t *testing.T) {
 }
 
 func TestStorage_SetRebalanceControl(t *testing.T) {
-	t.Skip()
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -110,9 +109,10 @@ func TestStorage_SetRebalanceControl(t *testing.T) {
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 
+	require.NoError(t, s.SetRebalanceStatus(false))
 	rebalance, err := s.GetRebalanceStatus()
 	require.NoError(t, err)
-	require.Equal(t, false, rebalance) // default value is false
+	require.Equal(t, false, rebalance)
 
 	require.NoError(t, s.SetRebalanceStatus(true))
 	rebalance, err = s.GetRebalanceStatus()
@@ -121,7 +121,6 @@ func TestStorage_SetRebalanceControl(t *testing.T) {
 }
 
 func TestStorage_SetSetRateControl(t *testing.T) {
-	t.Skip()
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -130,9 +129,10 @@ func TestStorage_SetSetRateControl(t *testing.T) {
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 
+	require.NoError(t, s.SetSetRateStatus(false))
 	setRateStatus, err := s.GetSetRateStatus()
 	require.NoError(t, err)
-	require.Equal(t, false, setRateStatus) // default value is false
+	require.Equal(t, false, setRateStatus)
 
 	require.NoError(t, s.SetSetRateStatus(true))
 	setRateStatus, err = s.GetSetRateStatus()
