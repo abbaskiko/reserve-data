@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
+	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 func (s *Server) getTradingPair(c *gin.Context) {
@@ -20,4 +21,9 @@ func (s *Server) getTradingPair(c *gin.Context) {
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(result))
+}
+
+func (s *Server) checkDeleteTradingPairParams(entry common.DeleteTradingPairEntry) error {
+	_, err := s.storage.GetTradingPair(entry.TradingPairID)
+	return err
 }

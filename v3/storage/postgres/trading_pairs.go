@@ -117,3 +117,17 @@ func (s *Storage) updateTradingPair(tx *sqlx.Tx, id uint64, opts storage.UpdateT
 	log.Printf("trading pair configuration %d is updated", id)
 	return nil
 }
+
+func (s *Storage) deleteTradingPair(tx *sqlx.Tx, id uint64) error {
+	var returnedID uint64
+	row := tx.Stmt(s.stmts.deleteTradingPair.Stmt).QueryRow(id)
+	err := row.Scan(&returnedID)
+	switch err {
+	case nil:
+		return nil
+	case sql.ErrNoRows:
+		return common.ErrNotFound
+	default:
+		return err
+	}
+}

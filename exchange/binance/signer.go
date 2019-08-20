@@ -28,8 +28,9 @@ func (s Signer) Sign(msg string) string {
 	return result
 }
 
-func NewSigner(key, secret string) *Signer {
-	return &Signer{key, secret}
+// NewSigner return binance signer
+func NewSigner(key, secret string) Signer {
+	return Signer{key, secret}
 }
 
 func NewSignerFromFile(path string) Signer {

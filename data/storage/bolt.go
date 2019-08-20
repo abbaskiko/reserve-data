@@ -17,7 +17,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/pricefactor"
 	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/world"
 )
@@ -28,7 +27,6 @@ const (
 	activityBucket                  string = "activities"
 	authDataBucket                  string = "auth_data"
 	pendingActivityBucket           string = "pending_activities"
-	metricBucket                    string = "metrics"
 	metricTargetQuantity            string = "target_quantity"
 	enableRebalance                 string = "enable_rebalance"
 	setrateControl                  string = "setrate_control"
@@ -92,7 +90,6 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			activityBucket,
 			pendingActivityBucket,
 			authDataBucket,
-			metricBucket,
 			metricTargetQuantity,
 			enableRebalance,
 			setrateControl,
@@ -900,63 +897,6 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 	return result, err
 }
 
-//StorePriceFactor store metric info
-func (bs *BoltStorage) StorePriceFactor(data *common.AllPriceFactor, timepoint uint64) error {
-	var err error
-	err = bs.db.Update(func(tx *bolt.Tx) error {
-		var dataJSON []byte
-		b := tx.Bucket([]byte(metricBucket))
-		dataJSON, mErr := json.Marshal(data)
-		if mErr != nil {
-			return mErr
-		}
-		idByte := boltutil.Uint64ToBytes(data.Timestamp)
-		err = b.Put(idByte, dataJSON)
-		return err
-	})
-	return err
-}
-
-// GetPriceFactor return price data
-func (bs *BoltStorage) GetPriceFactor(tokens []commonv3.Asset, fromTime, toTime uint64) (map[pricefactor.AssetID]common.PriceFactorList, error) {
-	imResult := map[pricefactor.AssetID]*common.PriceFactorList{}
-	for _, tok := range tokens {
-		imResult[pricefactor.AssetID(tok.ID)] = &common.PriceFactorList{}
-	}
-
-	var err error
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(metricBucket))
-		c := b.Cursor()
-		min := boltutil.Uint64ToBytes(fromTime)
-		max := boltutil.Uint64ToBytes(toTime)
-
-		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
-			data := common.AllPriceFactor{}
-			err = json.Unmarshal(v, &data)
-			if err != nil {
-				return err
-			}
-			for tok, m := range data.Data {
-				metricList, found := imResult[pricefactor.AssetID(tok)]
-				if found {
-					*metricList = append(*metricList, common.AssetPriceFactorResponse{
-						Timestamp: data.Timestamp,
-						AfpMid:    m.AfpMid,
-						Spread:    m.Spread,
-					})
-				}
-			}
-		}
-		return nil
-	})
-	result := map[pricefactor.AssetID]common.PriceFactorList{}
-	for k, v := range imResult {
-		result[k] = *v
-	}
-	return result, err
-}
-
 //GetTokenTargetQty get target quantity
 func (bs *BoltStorage) GetTokenTargetQty() (common.TokenTargetQty, error) {
 	var (
@@ -978,99 +918,6 @@ func (bs *BoltStorage) GetTokenTargetQty() (common.TokenTargetQty, error) {
 		return json.Unmarshal(data, &tokenTargetQty)
 	})
 	return tokenTargetQty, err
-}
-
-func (bs *BoltStorage) GetRebalanceControl() (common.RebalanceControl, error) {
-	var err error
-	var result common.RebalanceControl
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(enableRebalance))
-		_, data := b.Cursor().First()
-		if data == nil {
-			result = common.RebalanceControl{
-				Status: false,
-			}
-			return bs.StoreRebalanceControl(false)
-		}
-		return json.Unmarshal(data, &result)
-	})
-	return result, err
-}
-
-func (bs *BoltStorage) StoreRebalanceControl(status bool) error {
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		var (
-			uErr     error
-			dataJSON []byte
-		)
-		b := tx.Bucket([]byte(enableRebalance))
-		// prune out old data
-		c := b.Cursor()
-		k, _ := c.First()
-		if k != nil {
-			if uErr = b.Delete(k); uErr != nil {
-				return uErr
-			}
-		}
-
-		// add new data
-		data := common.RebalanceControl{
-			Status: status,
-		}
-		if dataJSON, uErr = json.Marshal(data); uErr != nil {
-			return uErr
-		}
-		idByte := boltutil.Uint64ToBytes(common.GetTimepoint())
-		return b.Put(idByte, dataJSON)
-	})
-	return err
-}
-
-func (bs *BoltStorage) GetSetrateControl() (common.SetrateControl, error) {
-	var err error
-	var result common.SetrateControl
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(setrateControl))
-		_, data := b.Cursor().First()
-		if data == nil {
-			result = common.SetrateControl{
-				Status: false,
-			}
-			return bs.StoreSetrateControl(false)
-		}
-		return json.Unmarshal(data, &result)
-	})
-	return result, err
-}
-
-func (bs *BoltStorage) StoreSetrateControl(status bool) error {
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		var (
-			uErr     error
-			dataJSON []byte
-		)
-		b := tx.Bucket([]byte(setrateControl))
-		// prune out old data
-		c := b.Cursor()
-		k, _ := c.First()
-		if k != nil {
-			if uErr = b.Delete(k); uErr != nil {
-				return uErr
-			}
-		}
-
-		// add new data
-		data := common.SetrateControl{
-			Status: status,
-		}
-
-		if dataJSON, uErr = json.Marshal(data); uErr != nil {
-			return uErr
-		}
-		idByte := boltutil.Uint64ToBytes(common.GetTimepoint())
-		return b.Put(idByte, dataJSON)
-	})
-	return err
 }
 
 // GetExchangeStatus get exchange status to dashboard and analytics

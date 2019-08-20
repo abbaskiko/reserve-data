@@ -25,11 +25,13 @@ const (
 	rebalanceAccessKeyFlag = "rebalance-access-key"
 	rebalanceSecretKeyFlag = "rebalance-secret-key"
 
-	v3EndpointFlag = "v3-endpoint"
+	coreEndpointFlag    = "core-endpoint"
+	settingEndpointFlag = "setting-endpoint"
 )
 
 var (
-	v3EndpointDefaultValue = fmt.Sprint("http://127.0.0.1:8000")
+	coreEndpointDefaultValue    = fmt.Sprint("http://127.0.0.1:8000")
+	settingEndpointDefaultValue = fmt.Sprint("http://127.0.0.1:8002")
 )
 
 func main() {
@@ -78,10 +80,16 @@ func main() {
 			EnvVar: "REBALANCE_SECRET_KEY",
 		},
 		cli.StringFlag{
-			Name:   v3EndpointFlag,
-			Usage:  "v3 endpoint url",
-			EnvVar: "V3_ENDPOINT",
-			Value:  v3EndpointDefaultValue,
+			Name:   coreEndpointFlag,
+			Usage:  "core endpoint url",
+			EnvVar: "CORE_ENDPOINT",
+			Value:  coreEndpointDefaultValue,
+		},
+		cli.StringFlag{
+			Name:   settingEndpointFlag,
+			Usage:  "setting endpoint url",
+			EnvVar: "SETTING_ENDPOINT",
+			Value:  settingEndpointDefaultValue,
 		},
 	)
 
@@ -113,11 +121,16 @@ func run(c *cli.Context) error {
 	var (
 		keyPairs []authenticator.KeyPair
 	)
-	err := validation.Validate(c.String(v3EndpointFlag),
+	if err := validation.Validate(c.String(coreEndpointFlag),
 		validation.Required,
-		is.URL)
-	if err != nil {
-		return errors.Wrapf(err, "app names API URL error: %s", c.String(v3EndpointFlag))
+		is.URL); err != nil {
+		return errors.Wrapf(err, "app names API URL error: %s", c.String(coreEndpointFlag))
+	}
+
+	if err := validation.Validate(c.String(settingEndpointFlag),
+		validation.Required,
+		is.URL); err != nil {
+		return errors.Wrapf(err, "app names API URL error: %s", c.String(settingEndpointFlag))
 	}
 
 	readKeys, err := getKeyList(c, readAccessKeyFlag, readSecretKeyFlag)
@@ -161,7 +174,8 @@ func run(c *cli.Context) error {
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		auth,
 		perm,
-		http.WithV3Endpoint(c.String(v3EndpointFlag)),
+		http.WithCoreEndpoint(c.String(coreEndpointFlag)),
+		http.WithSettingEndpoint(c.String(settingEndpointFlag)),
 	)
 	if err != nil {
 		return errors.Wrap(err, "create new server error")

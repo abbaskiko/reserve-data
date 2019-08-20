@@ -26,7 +26,7 @@ func getAssetExchange(assets []common.Asset, assetID, exchangeID uint64) (common
 
 func (s *Server) fillTradingPair(ccAsset *common.CreateCreateAsset) error {
 	// skip if we have no exchanges enabled.
-	if len(v1common.SupportedExchanges) == 0 {
+	if len(s.supportedExchanges) == 0 {
 		return nil
 	}
 	// we fill trading pair parameters that receive from exchange here
@@ -67,7 +67,7 @@ func (s *Server) fillTradingPair(ccAsset *common.CreateCreateAsset) error {
 				tps = append(tps, tradingPairSymbol)
 			}
 			exhID := v1common.ExchangeID(assetExchange.ExchangeID)
-			centralExh, ok := v1common.SupportedExchanges[exhID]
+			centralExh, ok := s.supportedExchanges[exhID]
 			if !ok {
 				return fmt.Errorf("exchange %s not supported", exhID)
 			}

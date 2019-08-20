@@ -199,6 +199,7 @@ type CreateAssetExchangeEntry struct {
 	WithdrawFee       float64          `json:"withdraw_fee"`
 	TargetRecommended float64          `json:"target_recommended"`
 	TargetRatio       float64          `json:"target_ratio"`
+	TradingPairs      []TradingPair    `json:"trading_pairs"`
 }
 
 type CreateCreateAssetExchange struct {
@@ -391,4 +392,16 @@ type SettingChangeResponse struct {
 	ID         uint64               `json:"id"`
 	Created    time.Time            `json:"created"`
 	ChangeList []SettingChangeEntry `json:"change_list"`
+}
+
+// DeleteTradingPairEntry hold data to delete a trading pair entry
+type DeleteTradingPairEntry struct {
+	settingChangeMarker
+	TradingPairID uint64 `json:"id"`
+}
+
+// DeleteAssetExchangeEntry presents data to delete an asset exchange
+type DeleteAssetExchangeEntry struct {
+	settingChangeMarker
+	AssetExchangeID uint64 `json:"id"`
 }

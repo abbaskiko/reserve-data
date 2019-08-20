@@ -4,37 +4,6 @@ import (
 	"fmt"
 )
 
-type AssetPriceFactorRequest struct {
-	AfpMid float64
-	Spread float64
-}
-
-type AllPriceFactor struct {
-	Timestamp uint64
-	// data contain all token metric for all tokens
-	Data map[uint64]AssetPriceFactorRequest
-}
-
-type AssetPriceFactorResponse struct {
-	Timestamp uint64  `json:"timestamp"`
-	AfpMid    float64 `json:"afp_mid"`
-	Spread    float64 `json:"spread"`
-}
-
-// PriceFactorList list for one token
-type PriceFactorList []AssetPriceFactorResponse
-
-type AssetPriceFactor struct {
-	AssetID uint64          `json:"id"`
-	Data    PriceFactorList `json:"data"`
-}
-
-type PriceFactorResponse struct {
-	Timestamp  uint64
-	ReturnTime uint64
-	Data       []AssetPriceFactor
-}
-
 type TokenTargetQty struct {
 	ID        uint64
 	Timestamp uint64

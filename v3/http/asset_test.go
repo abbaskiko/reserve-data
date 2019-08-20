@@ -85,6 +85,9 @@ func getCreatePEAWithQuoteFalse() common.CreateCreateAsset {
 }
 
 func TestCreateAssetBySettingChange(t *testing.T) {
+	var (
+		supportedExchange = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -95,12 +98,11 @@ func TestCreateAssetBySettingChange(t *testing.T) {
 	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
-	server := NewServer(s, nil)
-
 	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
 		exchange := v1common.TestExchange{}
-		v1common.SupportedExchanges[exchangeID] = exchange
+		supportedExchange[exchangeID] = exchange
 	}
+	server := NewServer(s, "", supportedExchange)
 
 	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
 	createPEAWithQuoteFalse.AssetInputs[0].Exchanges[0].TradingPairs = []common.TradingPair{
@@ -191,7 +193,7 @@ func TestHTTPServerAsset(t *testing.T) {
 	_, err = s.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
 		0.2, 5.0, 0.3)
 	require.NoError(t, err)
-	server := NewServer(s, nil)
+	server := NewServer(s, "", nil)
 
 	var createPEAWithQuoteFalse = getCreatePEAWithQuoteFalse()
 	createPEAWithQuoteFalse.AssetInputs[0].Exchanges[0].TradingPairs = []common.TradingPair{

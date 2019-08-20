@@ -1,26 +1,31 @@
 package http
 
 import (
+	"log"
+
 	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/gin-gonic/gin"
 
+	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
 // Server is the HTTP server of token V3.
 type Server struct {
-	storage storage.Interface
-	r       *gin.Engine
+	storage            storage.Interface
+	r                  *gin.Engine
+	host               string
+	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
 }
 
 // NewServer creates new HTTP server for v3 APIs.
-func NewServer(storage storage.Interface, r *gin.Engine) *Server {
-	if r == nil {
-		r = gin.Default()
-	}
+func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange) *Server {
+	r := gin.Default()
 	server := &Server{
-		storage: storage,
-		r:       r,
+		storage:            storage,
+		r:                  r,
+		host:               host,
+		supportedExchanges: supportedExchanges,
 	}
 	g := r.Group("/v3")
 
@@ -98,5 +103,23 @@ func NewServer(storage storage.Interface, r *gin.Engine) *Server {
 	g.PUT("/setting-change/:id", server.confirmSettingChange)
 	g.DELETE("/setting-change/:id", server.rejectSettingChange)
 
+	g.GET("/price-factor", server.getPriceFactor)
+	g.POST("/price-factor", server.setPriceFactor)
+
+	g.GET("/set-rate-status", server.getSetRateStatus)
+	g.POST("/hold-set-rate", server.holdSetRate)
+	g.POST("/enable-set-rate", server.enableSetRate)
+
+	g.GET("/rebalance-status", server.getRebalanceStatus)
+	g.POST("/hold-rebalance", server.holdRebalance)
+	g.POST("/enable-rebalance", server.enableRebalance)
+
 	return server
+}
+
+// Run the server
+func (s *Server) Run() {
+	if err := s.r.Run(s.host); err != nil {
+		log.Panic(err)
+	}
 }

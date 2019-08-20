@@ -17,7 +17,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/pricefactor"
 	v3common "github.com/KyberNetwork/reserve-data/v3/common"
-	v3http "github.com/KyberNetwork/reserve-data/v3/http"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
@@ -413,59 +412,6 @@ func (s *Server) GetTimeServer(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(common.GetTimestamp()))
 }
 
-// GetRebalanceStatus return rebalanceStatus (true or false)
-func (s *Server) GetRebalanceStatus(c *gin.Context) {
-	data, err := s.priceFactorStorage.GetRebalanceControl()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data.Status))
-}
-
-//HoldRebalance stop rebalance action
-func (s *Server) HoldRebalance(c *gin.Context) {
-	if err := s.priceFactorStorage.StoreRebalanceControl(false); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-// EnableRebalance enable rebalance
-func (s *Server) EnableRebalance(c *gin.Context) {
-	if err := s.priceFactorStorage.StoreRebalanceControl(true); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-	}
-	httputil.ResponseSuccess(c)
-}
-
-// GetSetrateStatus return setRateStatus (true or false)
-func (s *Server) GetSetrateStatus(c *gin.Context) {
-	data, err := s.priceFactorStorage.GetSetrateControl()
-	if err != nil {
-		httputil.ResponseFailure(c)
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data.Status))
-}
-
-// HoldSetrate stop set rate
-func (s *Server) HoldSetrate(c *gin.Context) {
-	if err := s.priceFactorStorage.StoreSetrateControl(false); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-	}
-	httputil.ResponseSuccess(c)
-}
-
-// EnableSetrate allow analytics to call setrate
-func (s *Server) EnableSetrate(c *gin.Context) {
-	if err := s.priceFactorStorage.StoreSetrateControl(true); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-	}
-	httputil.ResponseSuccess(c)
-}
-
 // ValidateTimeInput check if the params fromTime, toTime is valid or not
 func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	fromTime, ok := strconv.ParseUint(c.Query("fromTime"), 10, 64)
@@ -555,8 +501,6 @@ func (s *Server) register() {
 		g.GET("/authdata", s.AuthData)
 		g.GET("/activities", s.GetActivities)
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
-		g.GET("/price-factor", s.getPriceFactor)
-		g.POST("/price-factor", s.setPriceFactor)
 
 		g.POST("/cancelorder/:exchangeid", s.CancelOrder)
 		g.POST("/deposit/:exchangeid", s.Deposit)
@@ -566,14 +510,6 @@ func (s *Server) register() {
 		g.GET("/tradehistory", s.GetTradeHistory)
 
 		g.GET("/timeserver", s.GetTimeServer)
-
-		g.GET("/rebalancestatus", s.GetRebalanceStatus)
-		g.POST("/holdrebalance", s.HoldRebalance)
-		g.POST("/enablerebalance", s.EnableRebalance)
-
-		g.GET("/setratestatus", s.GetSetrateStatus)
-		g.POST("/holdsetrate", s.HoldSetrate)
-		g.POST("/enablesetrate", s.EnableSetrate)
 
 		g.POST("/set-stable-token-params", s.SetStableTokenParams)
 		g.POST("/confirm-stable-token-params", s.ConfirmStableTokenParams)
@@ -586,7 +522,6 @@ func (s *Server) register() {
 		g.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		g.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
-		_ = v3http.NewServer(s.settingStorage, s.r) // ignore server object because we just use the route part
 	}
 }
 

@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS trading_by
 (
     id              SERIAL PRIMARY KEY,
     asset_id        INT REFERENCES assets (id)        NOT NULL,
-    trading_pair_id INT REFERENCES trading_pairs (id) NOT NULL,
+    trading_pair_id INT REFERENCES trading_pairs (id) ON DELETE CASCADE NOT NULL,
     UNIQUE (asset_id, trading_pair_id)
 );
 
@@ -142,6 +142,50 @@ CREATE TABLE IF NOT EXISTS setting_change (
     created TIMESTAMP NOT NULL,
     data JSON NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS price_factor (
+    id serial primary key,
+  	timepoint bigint NOT NULL,
+  	data json NOT NULL  
+);
+
+CREATE TABLE IF NOT EXISTS set_rate_control (
+	id 			SERIAL	PRIMARY	KEY,
+	timepoint 	TIMESTAMP 	NOT NULL,
+	status		BOOLEAN NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS rebalance_control (
+	id 			SERIAL	PRIMARY	KEY,
+	timepoint 	TIMESTAMP 	NOT NULL,
+	status		BOOLEAN 	NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION new_rebalance_control(_status rebalance_control.status%TYPE)
+	RETURNS int AS
+$$
+DECLARE
+    _id rebalance_control.id%TYPE;
+BEGIN
+	DELETE FROM rebalance_control;
+	INSERT INTO rebalance_control(timepoint, status) VALUES(now(), _status) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION new_set_rate_control(_status set_rate_control.status%TYPE)
+	RETURNS int AS
+$$
+DECLARE
+    _id set_rate_control.id%TYPE;
+BEGIN
+	DELETE FROM set_rate_control;
+	INSERT INTO set_rate_control(timepoint, status) VALUES(now(), _status) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION new_setting_change(_data setting_change.data%TYPE)
     RETURNS int AS
@@ -397,6 +441,26 @@ BEGIN
 END
 $$ LANGUAGE PLPGSQL;
 
+CREATE OR REPLACE FUNCTION delete_asset_exchange(_asset_exchange_id asset_exchanges.id%TYPE)
+RETURNS INT AS
+$$
+DECLARE
+    _id                   asset_exchanges.id%TYPE;
+BEGIN
+	PERFORM trading_pairs.id FROM "trading_pairs"
+	INNER JOIN "asset_exchanges" 
+	ON (trading_pairs.base_id = asset_exchanges.asset_id OR trading_pairs.base_id = asset_exchanges.asset_id)
+	AND trading_pairs.exchange_id = asset_exchanges.exchange_id
+	WHERE asset_exchanges.id = _asset_exchange_id;
+	IF FOUND THEN
+		RAISE EXCEPTION 'trading pair must be deleted before remove asset exchange, id=%',
+				_asset_exchange_id USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	DELETE FROM "asset_exchanges" WHERE id = _asset_exchange_id RETURNING id INTO _id;
+	RETURN _id;
+END
+$$ LANGUAGE PLPGSQL;
 
 `
 
@@ -408,6 +472,7 @@ type preparedStmts struct {
 	newAsset            *sqlx.NamedStmt
 	newAssetExchange    *sqlx.NamedStmt
 	updateAssetExchange *sqlx.NamedStmt
+	deleteAssetExchange *sqlx.Stmt
 	newTradingPair      *sqlx.NamedStmt
 
 	getAsset                 *sqlx.Stmt
@@ -420,6 +485,7 @@ type preparedStmts struct {
 	updateDepositAddress     *sqlx.Stmt
 	updateTradingPair        *sqlx.NamedStmt
 
+	deleteTradingPair     *sqlx.Stmt
 	getTradingPairByID    *sqlx.Stmt
 	getTradingPairSymbols *sqlx.Stmt
 	getMinNotional        *sqlx.Stmt
@@ -435,6 +501,13 @@ type preparedStmts struct {
 	newSettingChange    *sqlx.Stmt
 	deleteSettingChange *sqlx.Stmt
 	getSettingChange    *sqlx.Stmt
+
+	newPriceFactor *sqlx.Stmt
+	getPriceFactor *sqlx.Stmt
+	newSetRate     *sqlx.Stmt
+	getSetRate     *sqlx.Stmt
+	newRebalance   *sqlx.Stmt
+	getRebalance   *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -448,12 +521,12 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newAssetExchange, updateAssetExchange, getAssetExchange, getAssetExchangeBySymbol, err := assetExchangeStatements(db)
+	newAssetExchange, updateAssetExchange, getAssetExchange, getAssetExchangeBySymbol, deleteAssetExchangeStmt, err := assetExchangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
 
-	newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, err := tradingPairStatements(db)
+	tradingPairStmts, err := tradingPairStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -499,6 +572,21 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
+	newPriceFactor, getPriceFactor, err := priceFactorStatements(db)
+	if err != nil {
+		return nil, err
+	}
+
+	newSetRate, getSetRate, err := setRateControlStatements(db)
+	if err != nil {
+		return nil, err
+	}
+
+	newRebalance, getRebalance, err := rebalanceControlStatements(db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &preparedStmts{
 		getExchanges:        getExchanges,
 		getExchange:         getExchange,
@@ -507,8 +595,9 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newAsset:            newAsset,
 		newAssetExchange:    newAssetExchange,
 		updateAssetExchange: updateAssetExchange,
+		deleteAssetExchange: deleteAssetExchangeStmt,
 
-		newTradingPair:  newTradingPair,
+		newTradingPair:  tradingPairStmts.newStmt,
 		newTradingBy:    newTradingBy,
 		getTradingBy:    getTradingBy,
 		deleteTradingBy: deleteTradingBy,
@@ -517,14 +606,15 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		getAssetBySymbol:         getAssetBySymbol,
 		getAssetExchange:         getAssetExchange,
 		getAssetExchangeBySymbol: getAssetExchangeBySymbol,
-		getTradingPair:           getTradingPair,
+		getTradingPair:           tradingPairStmts.getStmt,
 		updateAsset:              updateAsset,
 		changeAssetAddress:       changeAssetAddress,
 		updateDepositAddress:     updateDepositAddress,
-		updateTradingPair:        updateTradingPair,
+		updateTradingPair:        tradingPairStmts.updateStmt,
 
-		getTradingPairByID:    getTradingPairByID,
-		getTradingPairSymbols: getTradingPairSymbols,
+		deleteTradingPair:     tradingPairStmts.deleteStmt,
+		getTradingPairByID:    tradingPairStmts.getByIDStmt,
+		getTradingPairSymbols: tradingPairStmts.getBySymbolStmt,
 		getMinNotional:        getMinNotional,
 
 		newPendingObject:    newPendingObj,
@@ -534,10 +624,26 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newSettingChange:    newSettingChange,
 		deleteSettingChange: deleteSettingChange,
 		getSettingChange:    getSettingChange,
+
+		newPriceFactor: newPriceFactor,
+		getPriceFactor: getPriceFactor,
+		newSetRate:     newSetRate,
+		getSetRate:     getSetRate,
+		newRebalance:   newRebalance,
+		getRebalance:   getRebalance,
 	}, nil
 }
 
-func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+type tradingPairStmts struct {
+	newStmt         *sqlx.NamedStmt
+	getStmt         *sqlx.Stmt
+	updateStmt      *sqlx.NamedStmt
+	getByIDStmt     *sqlx.Stmt
+	getBySymbolStmt *sqlx.Stmt
+	deleteStmt      *sqlx.Stmt
+}
+
+func tradingPairStatements(db *sqlx.DB) (*tradingPairStmts, error) {
 	const newTradingPairQuery = `SELECT new_trading_pair
 									FROM new_trading_pair(:exchange_id,
 									                      :base_id,
@@ -551,7 +657,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									                      :min_notional);`
 	newTradingPair, err := db.PrepareNamed(newTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare newTradingPair")
+		return nil, errors.Wrap(err, "failed to prepare newTradingPair")
 	}
 	const getTradingPairQuery = `SELECT DISTINCT tp.id,
 									                tp.exchange_id,
@@ -570,7 +676,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									`
 	getTradingPair, err := db.Preparex(getTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPair")
+		return nil, errors.Wrap(err, "failed to prepare getTradingPair")
 	}
 	const updateTradingPairQuery = `UPDATE "trading_pairs"
 									SET price_precision  = coalesce(:price_precision, price_precision),
@@ -583,7 +689,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									WHERE id = :id RETURNING id; `
 	updateTradingPair, err := db.PrepareNamed(updateTradingPairQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to updateTradingPair")
+		return nil, errors.Wrap(err, "failed to prepare updateTradingPair")
 	}
 
 	const getTradingPairByIDQuery = `SELECT DISTINCT tp.id,
@@ -607,7 +713,7 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									WHERE tp.exchange_id = bae.exchange_id AND tp.exchange_id = qae.exchange_id AND tp.id = $1;`
 	getTradingPairByID, err := db.Preparex(getTradingPairByIDQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairByID")
+		return nil, errors.Wrap(err, "failed to prepare getTradingPairByID")
 	}
 
 	const getTradingPairSymbolsQuery = `SELECT DISTINCT tp.id,
@@ -628,13 +734,27 @@ func tradingPairStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Name
 									         INNER JOIN asset_exchanges AS bae ON ba.id = bae.asset_id
 									         INNER JOIN assets AS qa ON tp.quote_id = qa.id
 									         INNER JOIN asset_exchanges AS qae ON qa.id = qae.asset_id
-									WHERE tp.exchange_id = $1;`
+									WHERE tp.exchange_id = $1 AND bae.exchange_id=tp.exchange_id and qae.exchange_id=tp.exchange_id;`
 	getTradingPairSymbols, err := db.Preparex(getTradingPairSymbolsQuery)
 	if err != nil {
-		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getTradingPairSymbols")
+		return nil, errors.Wrap(err, "failed to prepare getTradingPairSymbols")
 	}
 
-	return newTradingPair, getTradingPair, updateTradingPair, getTradingPairByID, getTradingPairSymbols, nil
+	const deleteTradingPairQuery = `DELETE FROM trading_pairs
+									WHERE id=$1 RETURNING id;`
+	deleteStmt, err := db.Preparex(deleteTradingPairQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to prepare deleteTradingPairQuery")
+	}
+
+	return &tradingPairStmts{
+		newStmt:         newTradingPair,
+		getStmt:         getTradingPair,
+		updateStmt:      updateTradingPair,
+		getByIDStmt:     getTradingPairByID,
+		getBySymbolStmt: getTradingPairSymbols,
+		deleteStmt:      deleteStmt,
+	}, nil
 }
 
 func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt, *sqlx.Stmt, error) {
@@ -786,7 +906,7 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 	return newAsset, getAsset, updateAsset, getAssetBySymbol, nil
 }
 
-func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
 	const newAssetExchangeQuery string = `INSERT INTO asset_exchanges(exchange_id,
 		                            asset_id,
 		                            symbol,
@@ -805,7 +925,7 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 		        :target_ratio) RETURNING id`
 	newAssetExchange, err := db.PrepareNamed(newAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare newAssetExchange")
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare newAssetExchange")
 	}
 	const updateAssetExchangeQuery string = `UPDATE "asset_exchanges"
 		SET symbol = COALESCE(:symbol, symbol),
@@ -817,7 +937,7 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 		WHERE id = :id RETURNING id;`
 	updateAssetExchange, err := db.PrepareNamed(updateAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare updateAssetExchange")
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare updateAssetExchange")
 	}
 
 	const getAssetExchangeQuery = `SELECT id,
@@ -834,7 +954,7 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 			AND id = coalesce($2, id)`
 	getAssetExchange, err := db.Preparex(getAssetExchangeQuery)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetExchange")
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetExchange")
 	}
 
 	const getAssetExchangeBySymbolQuery = `SELECT
@@ -847,10 +967,17 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 	AND asset_exchanges.symbol= $2`
 	getAssetExchangeBySymbol, err := db.Preparex(getAssetExchangeBySymbolQuery)
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetExchangeBySymbol")
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetExchangeBySymbol")
 	}
 
-	return newAssetExchange, updateAssetExchange, getAssetExchange, getAssetExchangeBySymbol, nil
+	const deleteAssetExchangeQuery = `SELECT * FROM delete_asset_exchange($1)`
+	deleteAssetExchangeStmt, err := db.Preparex(deleteAssetExchangeQuery)
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare deleteAssetExchangeStmt")
+	}
+
+	return newAssetExchange, updateAssetExchange, getAssetExchange,
+		getAssetExchangeBySymbol, deleteAssetExchangeStmt, nil
 }
 
 func exchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, *sqlx.NamedStmt, error) {
@@ -939,4 +1066,46 @@ func settingChangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, e
 		return nil, nil, nil, err
 	}
 	return newSettingChangeStmt, deleteSettingChangeStmt, listSettingChangeStmt, nil
+}
+
+func priceFactorStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
+	const newPriceFactorQuery = `INSERT INTO price_factor(timepoint,data) VALUES ($1,$2) RETURNING id;`
+	newPriceFactorStmt, err := db.Preparex(newPriceFactorQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	const listSettingChangeQuery = `SELECT id,timepoint,data FROM price_factor WHERE $1 <= timepoint AND timepoint <= $2`
+	listSettingChangeStmt, err := db.Preparex(listSettingChangeQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	return newPriceFactorStmt, listSettingChangeStmt, nil
+}
+
+func setRateControlStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
+	const newSetRateQuery = `SELECT FROM new_set_rate_control($1);`
+	newSetRateStmt, err := db.Preparex(newSetRateQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	const getSetRateQuery = `SELECT id,timepoint,status FROM set_rate_control`
+	getSetRateStmt, err := db.Preparex(getSetRateQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	return newSetRateStmt, getSetRateStmt, nil
+}
+
+func rebalanceControlStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
+	const newRebalanceQuery = `SELECT FROM new_rebalance_control($1);`
+	newRebalanceStmt, err := db.Preparex(newRebalanceQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	const getRebalanceQuery = `SELECT id,timepoint,status FROM rebalance_control ORDER BY timepoint DESC`
+	getRebalanceStmt, err := db.Preparex(getRebalanceQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	return newRebalanceStmt, getRebalanceStmt, nil
 }

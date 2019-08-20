@@ -355,4 +355,25 @@ func TestStorage_UpdateTradingPair(t *testing.T) {
 	assert.Equal(t, 1.5, pair.PriceLimitMin)
 	assert.Equal(t, 1.6, pair.PriceLimitMax)
 	assert.Equal(t, 1.7, pair.MinNotional)
+
+	// test delete trading pair
+	tradingByID, err := s.CreateTradingBy(pair.Quote, pair.ID)
+	require.NoError(t, err)
+	_, err = s.GetTradingBy(tradingByID)
+	require.NoError(t, err)
+
+	tx, err := s.db.Beginx()
+	require.NoError(t, err)
+
+	defer rollbackUnlessCommitted(tx)
+	err = s.deleteTradingPair(tx, pair.ID)
+	require.NoError(t, err)
+	err = tx.Commit()
+	require.NoError(t, err)
+
+	_, err = s.GetTradingPair(pair.ID)
+	require.Equal(t, commonv3.ErrNotFound, err)
+
+	_, err = s.GetTradingBy(tradingByID)
+	require.Equal(t, commonv3.ErrNotFound, err)
 }

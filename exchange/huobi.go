@@ -30,6 +30,7 @@ type Huobi struct {
 	blockchain HuobiBlockchain
 	storage    HuobiStorage
 	sr         storage.SettingReader
+	HuobiLive
 }
 
 func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
@@ -80,41 +81,6 @@ func (h *Huobi) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 		return result, false
 	}
 	return result, true
-}
-
-// GetLiveExchangeInfos querry the Exchange Endpoint for exchange precision and limit of a list of tokenPairIDs
-// It return error if occurs.
-func (h *Huobi) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
-	result := make(common.ExchangeInfo)
-	exchangeInfo, err := h.interf.GetExchangeInfo()
-	if err != nil {
-		return result, err
-	}
-	for _, pair := range pairs {
-		exchangePrecisionLimit, ok := h.getPrecisionLimitFromSymbols(pair, exchangeInfo)
-		if !ok {
-			return result, fmt.Errorf("huobi Exchange Info reply doesn't contain token pair %d", pair.ID)
-		}
-		result[pair.ID] = exchangePrecisionLimit
-	}
-	return result, nil
-}
-
-// getPrecisionLimitFromSymbols find the pairID amongs symbols from exchanges,
-// return ExchangePrecisionLimit of that pair and true if the pairID exist amongs symbols, false if otherwise
-func (h *Huobi) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSymbols, symbols HuobiExchangeInfo) (common.ExchangePrecisionLimit, bool) {
-	var result common.ExchangePrecisionLimit
-	pairName := strings.ToUpper(fmt.Sprintf("%s%s", pair.BaseSymbol, pair.QuoteSymbol))
-	for _, symbol := range symbols.Data {
-		symbolName := strings.ToUpper(symbol.Base + symbol.Quote)
-		if symbolName == pairName {
-			result.Precision.Amount = symbol.AmountPrecision
-			result.Precision.Price = symbol.PricePrecision
-			result.MinNotional = 0.02
-			return result, true
-		}
-	}
-	return result, false
 }
 
 func (h *Huobi) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
@@ -734,6 +700,9 @@ func NewHuobi(
 		blockchain: bc,
 		storage:    storage,
 		sr:         sr,
+		HuobiLive: HuobiLive{
+			interf: interf,
+		},
 	}
 	huobiObj.FetchTradeHistory()
 	huobiServer := huobihttp.NewHuobiHTTPServer(&huobiObj)

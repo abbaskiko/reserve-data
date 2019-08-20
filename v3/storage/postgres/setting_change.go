@@ -177,6 +177,25 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return err
 		}
+		for _, tradingPair := range a.TradingPairs {
+			_, errTP := s.createTradingPair(tx, a.ExchangeID,
+				tradingPair.Base,
+				tradingPair.Quote,
+				tradingPair.PricePrecision,
+				tradingPair.AmountPrecision,
+				tradingPair.AmountLimitMin,
+				tradingPair.AmountLimitMax,
+				tradingPair.PriceLimitMin,
+				tradingPair.PriceLimitMax,
+				tradingPair.MinNotional,
+			)
+			if errTP != nil {
+				msg := fmt.Sprintf("failed to create trading pair, err=%v\n", err)
+				log.Println(msg)
+				return errTP
+			}
+		}
+
 	case common.ChangeTypeCreateTradingBy:
 		a, ok := entry.Data.(*common.CreateTradingByEntry)
 		if !ok {
@@ -244,9 +263,32 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			return err
 		}
 	case common.ChangeTypeDeleteAssetExchange:
-		// TODO: implement delete
+		a, ok := entry.Data.(*common.DeleteAssetExchangeEntry)
+		if !ok {
+			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeDeleteAssetExchange)
+			log.Println(msg)
+			return errors.Wrap(err, msg)
+		}
+		err = s.deleteAssetExchange(tx, a.AssetExchangeID)
+		if err != nil {
+			msg := fmt.Sprintf("delete asset exchange id=%d, err=%v\n", i, err)
+			log.Println(msg)
+			return err
+		}
 	case common.ChangeTypeDeleteTradingBy:
 	case common.ChangeTypeDeleteTradingPair:
+		a, ok := entry.Data.(*common.DeleteTradingPairEntry)
+		if !ok {
+			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateExchange)
+			log.Println(msg)
+			return errors.Wrap(err, msg)
+		}
+		err = s.deleteTradingPair(tx, a.TradingPairID)
+		if err != nil {
+			msg := fmt.Sprintf("delete trading pair %d, err=%v\n", i, err)
+			log.Println(msg)
+			return err
+		}
 	case common.ChangeTypeUnknown:
 		return fmt.Errorf("change type not set at %d", i)
 	}
