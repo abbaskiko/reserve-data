@@ -91,7 +91,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 // TODO write more test cases
 func TestServer_SettingChangeBasic(t *testing.T) {
 	const (
-		settingChangePath = "/v3/setting-change"
+		settingChangePath = "/v3/setting-change-main"
 	)
 
 	var (
@@ -246,7 +246,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 
 func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	const (
-		settingChangePath = "/v3/setting-change"
+		settingChangePath = "/v3/setting-change-main"
 	)
 	var (
 		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
@@ -469,13 +469,6 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			msg:      "confirm asset exchange with duplicate trading pair",
-			endpoint: settingChangePath + "/1",
-			method:   http.MethodPut,
-			assert:   httputil.ExpectFailureWithReason(`failed to create trading pair base=2 quote=1 exchange_id=2 err=duplicate key value violates unique constraint "trading_pairs_exchange_id_base_id_quote_id_key"`),
-			data:     nil,
 		},
 		{
 			msg:      "create asset exchange with trading pair successfully",

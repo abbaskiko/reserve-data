@@ -8,13 +8,18 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
+const (
+	settingChangeCatUnique = "setting_change_cat_key"
+)
+
 // CreateSettingChange creates an setting change in database and return id
-func (s *Storage) CreateSettingChange(obj common.SettingChange) (uint64, error) {
+func (s *Storage) CreateSettingChange(cat common.ChangeCatalog, obj common.SettingChange) (uint64, error) {
 	var id uint64
 	jsonData, err := json.Marshal(obj)
 	if err != nil {
@@ -26,7 +31,16 @@ func (s *Storage) CreateSettingChange(obj common.SettingChange) (uint64, error) 
 	}
 	defer rollbackUnlessCommitted(tx)
 
-	if err = tx.Stmtx(s.stmts.newSettingChange).Get(&id, jsonData); err != nil {
+	if err = tx.Stmtx(s.stmts.newSettingChange).Get(&id, cat.String(), jsonData); err != nil {
+		pErr, ok := err.(*pq.Error)
+		if !ok {
+			return 0, fmt.Errorf("unknown returned err=%s", err.Error())
+		}
+
+		log.Printf("failed to create new setting change err=%s", pErr.Message)
+		if pErr.Code == errCodeUniqueViolation && pErr.Constraint == settingChangeCatUnique {
+			return 0, common.ErrSettingChangeExists
+		}
 		return 0, err
 	}
 	if err = tx.Commit(); err != nil {
@@ -55,10 +69,18 @@ func (objDB settingChangeDB) ToCommon() (common.SettingChangeResponse, error) {
 	}, nil
 }
 
-// GetSettingChange returns a object with a given id and type
+// GetSettingChange returns a object with a given id
 func (s *Storage) GetSettingChange(id uint64) (common.SettingChangeResponse, error) {
+	return s.getSettingChange(nil, id)
+}
+
+func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChangeResponse, error) {
 	var dbResult settingChangeDB
-	err := s.stmts.getSettingChange.Get(&dbResult, id)
+	sts := s.stmts.getSettingChange
+	if tx != nil {
+		sts = tx.Stmtx(sts)
+	}
+	err := sts.Get(&dbResult, id, nil)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("setting change not found in database id=%d\n", id)
@@ -68,15 +90,16 @@ func (s *Storage) GetSettingChange(id uint64) (common.SettingChangeResponse, err
 	}
 	res, err := dbResult.ToCommon()
 	if err != nil {
+		log.Printf("failed to convert to common setting change, err=%v\n", err)
 		return common.SettingChangeResponse{}, err
 	}
 	return res, nil
 }
 
 // GetSettingChanges return list setting change.
-func (s *Storage) GetSettingChanges() ([]common.SettingChangeResponse, error) {
+func (s *Storage) GetSettingChanges(cat common.ChangeCatalog) ([]common.SettingChangeResponse, error) {
 	var dbResult []settingChangeDB
-	err := s.stmts.getSettingChange.Select(&dbResult, nil)
+	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, common.ErrNotFound
@@ -116,23 +139,7 @@ func (s *Storage) RejectSettingChange(id uint64) error {
 	log.Printf("reject setting change success with id=%d\n", id)
 	return nil
 }
-func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChangeResponse, error) {
-	var dbResult settingChangeDB
-	err := tx.Stmtx(s.stmts.getSettingChange).Get(&dbResult, id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			log.Printf("setting change not found in database id=%d\n", id)
-			return common.SettingChangeResponse{}, common.ErrNotFound
-		}
-		return common.SettingChangeResponse{}, err
-	}
-	res, err := dbResult.ToCommon()
-	if err != nil {
-		log.Printf("failed to convert to common setting change, err=%v\n", err)
-		return common.SettingChangeResponse{}, err
-	}
-	return res, nil
-}
+
 func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntry) error {
 	var err error
 	switch entry.Type {

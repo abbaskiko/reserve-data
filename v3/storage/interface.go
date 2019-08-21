@@ -18,9 +18,9 @@ type Interface interface {
 	// TODO method for batch update exchange configuration
 	// TODO method for batch update target
 
-	CreateSettingChange(v3.SettingChange) (uint64, error)
+	CreateSettingChange(v3.ChangeCatalog, v3.SettingChange) (uint64, error)
 	GetSettingChange(uint64) (v3.SettingChangeResponse, error)
-	GetSettingChanges() ([]v3.SettingChangeResponse, error)
+	GetSettingChanges(catalog v3.ChangeCatalog) ([]v3.SettingChangeResponse, error)
 	RejectSettingChange(uint64) error
 	ConfirmSettingChange(uint64, bool) error
 
