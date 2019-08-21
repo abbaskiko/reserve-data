@@ -123,6 +123,9 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 	}
 	result := common.AuthDataResponseV3{}
 	data, err := rd.storage.GetAuthData(version)
+	if !data.Valid {
+		return common.AuthDataResponseV3{}, errors.New(data.Error)
+	}
 	if err != nil {
 		return common.AuthDataResponseV3{}, err
 	}
