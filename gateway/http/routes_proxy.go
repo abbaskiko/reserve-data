@@ -71,11 +71,35 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 		g.GET("/exchange/:id", settingProxyMW)
 		g.GET("/exchange", settingProxyMW)
 
-		g.GET("/setting-change", settingProxyMW)
-		g.GET("setting-change/:id", settingProxyMW)
-		g.POST("/setting-change", settingProxyMW)
-		g.PUT("/setting-change/:id", settingProxyMW)
-		g.DELETE("/setting-change/:id", settingProxyMW)
+		g.GET("/setting-change-main", settingProxyMW)
+		g.GET("setting-change-main/:id", settingProxyMW)
+		g.POST("/setting-change-main", settingProxyMW)
+		g.PUT("/setting-change-main/:id", settingProxyMW)
+		g.DELETE("/setting-change-main/:id", settingProxyMW)
+
+		g.GET("/setting-change-target", settingProxyMW)
+		g.GET("setting-change-target/:id", settingProxyMW)
+		g.POST("/setting-change-target", settingProxyMW)
+		g.PUT("/setting-change-target/:id", settingProxyMW)
+		g.DELETE("/setting-change-target/:id", settingProxyMW)
+
+		g.GET("/setting-change-rbquadratic", settingProxyMW)
+		g.GET("setting-change-rbquadratic/:id", settingProxyMW)
+		g.POST("/setting-change-rbquadratic", settingProxyMW)
+		g.PUT("/setting-change-rbquadratic/:id", settingProxyMW)
+		g.DELETE("/setting-change-rbquadratic/:id", settingProxyMW)
+
+		g.GET("/setting-change-pwis", settingProxyMW)
+		g.GET("setting-change-pwis/:id", settingProxyMW)
+		g.POST("/setting-change-pwis", settingProxyMW)
+		g.PUT("/setting-change-pwis/:id", settingProxyMW)
+		g.DELETE("/setting-change-pwis/:id", settingProxyMW)
+
+		g.GET("/setting-change-stable", settingProxyMW)
+		g.GET("setting-change-stable/:id", settingProxyMW)
+		g.POST("/setting-change-stable", settingProxyMW)
+		g.PUT("/setting-change-stable/:id", settingProxyMW)
+		g.DELETE("/setting-change-stable/:id", settingProxyMW)
 
 		return nil
 	}
