@@ -296,8 +296,6 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeUnknown:
-		return fmt.Errorf("change type not set at %d", i)
 	}
 	return nil
 }

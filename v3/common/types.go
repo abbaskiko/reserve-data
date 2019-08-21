@@ -262,9 +262,8 @@ const (
 type ChangeType int
 
 const (
-	ChangeTypeUnknown ChangeType = iota // unknown
 	// ChangeTypeCreateAsset is used when create an asset
-	ChangeTypeCreateAsset // create_asset
+	ChangeTypeCreateAsset ChangeType = iota // create_asset
 	// ChangeTypeUpdateAsset is used when update an asset
 	ChangeTypeUpdateAsset // update_asset
 	// ChangeTypeCreateAssetExchange is used when create an asset exchange
