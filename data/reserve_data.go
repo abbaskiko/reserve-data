@@ -148,12 +148,12 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 	tokens := make(map[string]v3.Asset)
 	exchanges := make(map[string]v3.Exchange)
 	// get id from exchange balance asset name
-	for exchangeName, balances := range data.ExchangeBalances {
-		exchange, err := rd.settingStorage.GetExchangeByName(string(exchangeName))
+	for exchangeID, balances := range data.ExchangeBalances {
+		exchange, err := rd.settingStorage.GetExchangeByName(exchangeID.String())
 		if err != nil {
-			return result, errors.Wrapf(err, "failed to get exchange by name: %s", exchangeName)
+			return result, errors.Wrapf(err, "failed to get exchange by name: %s", exchangeID.String())
 		}
-		exchanges[string(exchangeName)] = exchange
+		exchanges[exchangeID.String()] = exchange
 		for tokenSymbol := range balances.AvailableBalance {
 			token, err := rd.settingStorage.GetAssetExchangeBySymbol(exchange.ID, tokenSymbol)
 			if err != nil {
@@ -169,13 +169,13 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 		tokenBalance.AssetID = token.ID
 		tokenBalance.Symbol = tokenSymbol
 		exchangeBalances := []common.ExchangeBalance{}
-		for exchangeName, balances := range data.ExchangeBalances {
+		for exchangeID, balances := range data.ExchangeBalances {
 			exchangeBalance := common.ExchangeBalance{}
 			if _, exist := balances.AvailableBalance[tokenSymbol]; exist {
-				exchangeBalance.ExchangeID = exchanges[string(exchangeName)].ID
+				exchangeBalance.ExchangeID = exchanges[exchangeID.String()].ID
 				exchangeBalance.Available = balances.AvailableBalance[tokenSymbol]
 				exchangeBalance.Locked = balances.LockedBalance[tokenSymbol]
-				exchangeBalance.Name = string(exchangeName)
+				exchangeBalance.Name = exchangeID.String()
 				exchangeBalances = append(exchangeBalances, exchangeBalance)
 			}
 		}
