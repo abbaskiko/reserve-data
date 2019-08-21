@@ -66,5 +66,14 @@ type UpdateExchangeOpts = v3.UpdateExchangeEntry
 // UpdateAssetOpts update asset options
 type UpdateAssetOpts = v3.UpdateAssetEntry
 
-// UpdateTradingPairOpts ...
-type UpdateTradingPairOpts = v3.UpdateTradingPairEntry
+// UpdateTradingPairOpts
+type UpdateTradingPairOpts struct {
+	ID              uint64   `json:"id"`
+	PricePrecision  *uint64  `json:"price_precision"`
+	AmountPrecision *uint64  `json:"amount_precision"`
+	AmountLimitMin  *float64 `json:"amount_limit_min"`
+	AmountLimitMax  *float64 `json:"amount_limit_max"`
+	PriceLimitMin   *float64 `json:"price_limit_min"`
+	PriceLimitMax   *float64 `json:"price_limit_max"`
+	MinNotional     *float64 `json:"min_notional"`
+}

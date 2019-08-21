@@ -231,19 +231,6 @@ type CreateTradingPairEntry struct {
 	ExchangeID uint64 `json:"exchange_id"`
 }
 
-// UpdateTradingPairOpts
-type UpdateTradingPairEntry struct {
-	settingChangeMarker
-	ID              uint64   `json:"id"`
-	PricePrecision  *uint64  `json:"price_precision"`
-	AmountPrecision *uint64  `json:"amount_precision"`
-	AmountLimitMin  *float64 `json:"amount_limit_min"`
-	AmountLimitMax  *float64 `json:"amount_limit_max"`
-	PriceLimitMin   *float64 `json:"price_limit_min"`
-	PriceLimitMax   *float64 `json:"price_limit_max"`
-	MinNotional     *float64 `json:"min_notional"`
-}
-
 // CreateTradingByEntry present the information to create a trading by
 type CreateTradingByEntry struct {
 	settingChangeMarker
