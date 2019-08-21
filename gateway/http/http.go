@@ -34,6 +34,7 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 func NewServer(addr string,
 	auth *httpsign.Authenticator,
 	perm gin.HandlerFunc,
+	noAuth bool,
 	options ...Option,
 ) (*Server, error) {
 	r := gin.Default()
@@ -43,8 +44,10 @@ func NewServer(addr string,
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
-	r.Use(auth.Authenticated())
-	r.Use(perm)
+	if !noAuth {
+		r.Use(auth.Authenticated())
+		r.Use(perm)
+	}
 
 	server := Server{
 		addr: addr,
