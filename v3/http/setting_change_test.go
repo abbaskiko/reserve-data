@@ -14,8 +14,79 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
 )
+
+func createSampleAsset(store *postgres.Storage) (uint64, error) {
+	_, err := store.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
+		0.2, 5.0, 0.3)
+	if err != nil {
+		return 0, err
+	}
+	err = store.UpdateExchange(binance, storage.UpdateExchangeOpts{
+		Disable:         common.BoolPointer(false),
+		TradingFeeTaker: common.FloatPointer(0.1),
+		TradingFeeMaker: common.FloatPointer(0.2),
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := store.CreateAsset("ABC", "ABC", eth.HexToAddress("0x00000000000000001"),
+		18, true, common.ExchangeFeed, true, false, &common.AssetPWI{
+			Bid: common.PWIEquation{
+				A:                   0,
+				B:                   0,
+				C:                   0,
+				MinMinSpread:        0,
+				PriceMultiplyFactor: 0,
+			},
+			Ask: common.PWIEquation{
+				A:                   0,
+				B:                   0,
+				C:                   0,
+				MinMinSpread:        0,
+				PriceMultiplyFactor: 0,
+			},
+		}, &common.RebalanceQuadratic{
+			A: 0,
+			B: 0,
+			C: 0,
+		}, []common.AssetExchange{
+			{
+				Symbol:            "ABC",
+				DepositAddress:    eth.HexToAddress("0x00001"),
+				ExchangeID:        binance,
+				TargetRatio:       0.1,
+				TargetRecommended: 1000.0,
+				WithdrawFee:       0.5,
+				MinDeposit:        100.0,
+				TradingPairs: []common.TradingPair{
+					{
+						Quote:           1,
+						Base:            0,
+						AmountLimitMax:  1.0,
+						AmountLimitMin:  1.0,
+						MinNotional:     1.0,
+						AmountPrecision: 1.0,
+						PriceLimitMax:   1.0,
+						PriceLimitMin:   1.0,
+						PricePrecision:  1.0,
+					},
+				},
+			},
+		}, &common.AssetTarget{
+			TransferThreshold:  1.0,
+			RebalanceThreshold: 1.0,
+			Reserve:            1.0,
+			Total:              100.0,
+		})
+	if err != nil {
+		return 0, err
+	}
+	return id, err
+}
 
 // TODO write more test cases
 func TestServer_SettingChangeBasic(t *testing.T) {

@@ -16,13 +16,7 @@ type Interface interface {
 	// TODO method for batch update PWI
 	// TODO method for batch update rebalance quadratic
 	// TODO method for batch update exchange configuration
-	// TODO meethod for batch update target
-
-	CreatePendingObject(interface{}, v3.PendingObjectType) (uint64, error)
-	GetPendingObject(uint64, v3.PendingObjectType) (v3.PendingObject, error)
-	GetPendingObjects(v3.PendingObjectType) ([]v3.PendingObject, error)
-	RejectPendingObject(uint64, v3.PendingObjectType) error
-	ConfirmPendingObject(uint64, v3.PendingObjectType) error
+	// TODO method for batch update target
 
 	CreateSettingChange(v3.SettingChange) (uint64, error)
 	GetSettingChange(uint64) (v3.SettingChangeResponse, error)
@@ -72,5 +66,14 @@ type UpdateExchangeOpts = v3.UpdateExchangeEntry
 // UpdateAssetOpts update asset options
 type UpdateAssetOpts = v3.UpdateAssetEntry
 
-// UpdateTradingPairOpts ...
-type UpdateTradingPairOpts = v3.UpdateTradingPairEntry
+// UpdateTradingPairOpts
+type UpdateTradingPairOpts struct {
+	ID              uint64   `json:"id"`
+	PricePrecision  *uint64  `json:"price_precision"`
+	AmountPrecision *uint64  `json:"amount_precision"`
+	AmountLimitMin  *float64 `json:"amount_limit_min"`
+	AmountLimitMax  *float64 `json:"amount_limit_max"`
+	PriceLimitMin   *float64 `json:"price_limit_min"`
+	PriceLimitMax   *float64 `json:"price_limit_max"`
+	MinNotional     *float64 `json:"min_notional"`
+}

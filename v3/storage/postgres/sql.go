@@ -212,29 +212,6 @@ BEGIN
     END IF;
 END$$;
 
-CREATE TABLE IF NOT EXISTS pending_object
-(
-	id			SERIAL 					PRIMARY KEY,
-	created		TIMESTAMP 				NOT NULL,
-	data 		JSON					NOT NULL,
-	data_type 	pending_object_type		NOT NULL
-);
-
-CREATE OR REPLACE FUNCTION new_pending_object(_data pending_object.data%TYPE,_type pending_object.data_type%TYPE)
-    RETURNS int AS
-$$
-
-DECLARE
-    _id pending_object.id%TYPE;
-
-BEGIN
-    DELETE FROM pending_object WHERE data_type=_type;
-    INSERT INTO pending_object(created, data, data_type) VALUES (now(), _data, _type) RETURNING id INTO _id;
-    RETURN _id;
-END
-
-$$ LANGUAGE PLPGSQL;
-
 CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _name assets.symbol%TYPE,
                                      _address addresses.address%TYPE,
@@ -494,10 +471,6 @@ type preparedStmts struct {
 	getTradingBy    *sqlx.Stmt
 	deleteTradingBy *sqlx.Stmt
 
-	newPendingObject    *sqlx.Stmt
-	getPendingObject    *sqlx.Stmt
-	deletePendingObject *sqlx.Stmt
-
 	newSettingChange    *sqlx.Stmt
 	deleteSettingChange *sqlx.Stmt
 	getSettingChange    *sqlx.Stmt
@@ -562,11 +535,6 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newPendingObj, deletePendingObj, getPendingObj, err := pendingObjectStatements(db)
-	if err != nil {
-		return nil, err
-	}
-
 	newSettingChange, deleteSettingChange, getSettingChange, err := settingChangeStatements(db)
 	if err != nil {
 		return nil, err
@@ -616,10 +584,6 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		getTradingPairByID:    tradingPairStmts.getByIDStmt,
 		getTradingPairSymbols: tradingPairStmts.getBySymbolStmt,
 		getMinNotional:        getMinNotional,
-
-		newPendingObject:    newPendingObj,
-		deletePendingObject: deletePendingObj,
-		getPendingObject:    getPendingObj,
 
 		newSettingChange:    newSettingChange,
 		deleteSettingChange: deleteSettingChange,
@@ -1028,25 +992,6 @@ func tradingByStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error
 		return nil, nil, nil, err
 	}
 	return tradingBy, getTradingByPairs, deleteTradingByStmt, nil
-}
-
-func pendingObjectStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
-	const newPendingObjQuery = `SELECT new_pending_object FROM new_pending_object($1, $2)`
-	newPendingObjStmt, err := db.Preparex(newPendingObjQuery)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	const deletePendingObjQuery = `DELETE FROM pending_object WHERE id=$1 and data_type=COALESCE($2, pending_object.data_type) returning id`
-	deletePendingStmt, err := db.Preparex(deletePendingObjQuery)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	const listPendingObjQuery = `SELECT id,created,data FROM pending_object WHERE id=COALESCE($1, pending_object.id) and data_type=COALESCE($2, pending_object.data_type)`
-	listPendingObjStmt, err := db.Preparex(listPendingObjQuery)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return newPendingObjStmt, deletePendingStmt, listPendingObjStmt, nil
 }
 
 func settingChangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {

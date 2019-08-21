@@ -12,7 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
-//GetAssetExchange return asset exchange by its id
+// GetAssetExchange return asset exchange by its id
 func (s *Storage) GetAssetExchange(id uint64) (common.AssetExchange, error) {
 	var (
 		result assetExchangeDB
