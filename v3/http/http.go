@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
 
@@ -38,11 +39,35 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 	// because we don't allow to create asset directly, it must go through pending operation
 	// so all 'create' operation mean to operate on pending object.
 
-	g.POST("/setting-change", server.createSettingChange)
-	g.GET("/setting-change", server.getSettingChanges)
-	g.GET("/setting-change/:id", server.getSettingChange)
-	g.PUT("/setting-change/:id", server.confirmSettingChange)
-	g.DELETE("/setting-change/:id", server.rejectSettingChange)
+	g.POST("/setting-change-main", server.createSettingChangeWithType(common.ChangeCatalogMain))
+	g.GET("/setting-change-main", server.getSettingChangeWithType(common.ChangeCatalogMain))
+	g.GET("/setting-change-main/:id", server.getSettingChange)
+	g.PUT("/setting-change-main/:id", server.confirmSettingChange)
+	g.DELETE("/setting-change-main/:id", server.rejectSettingChange)
+
+	g.POST("/setting-change-target", server.createSettingChangeWithType(common.ChangeCatalogSetTarget))
+	g.GET("/setting-change-target", server.getSettingChangeWithType(common.ChangeCatalogSetTarget))
+	g.GET("/setting-change-target/:id", server.getSettingChange)
+	g.PUT("/setting-change-target/:id", server.confirmSettingChange)
+	g.DELETE("/setting-change-target/:id", server.rejectSettingChange)
+
+	g.POST("/setting-change-pwis", server.createSettingChangeWithType(common.ChangeCatalogSetPWIS))
+	g.GET("/setting-change-pwis", server.getSettingChangeWithType(common.ChangeCatalogSetPWIS))
+	g.GET("/setting-change-pwis/:id", server.getSettingChange)
+	g.PUT("/setting-change-pwis/:id", server.confirmSettingChange)
+	g.DELETE("/setting-change-pwis/:id", server.rejectSettingChange)
+
+	g.POST("/setting-change-stable", server.createSettingChangeWithType(common.ChangeCatalogStableToken))
+	g.GET("/setting-change-stable", server.getSettingChangeWithType(common.ChangeCatalogStableToken))
+	g.GET("/setting-change-stable/:id", server.getSettingChange)
+	g.PUT("/setting-change-stable/:id", server.confirmSettingChange)
+	g.DELETE("/setting-change-stable/:id", server.rejectSettingChange)
+
+	g.POST("/setting-change-rbquadratic", server.createSettingChangeWithType(common.ChangeCatalogRebalanceQuadratic))
+	g.GET("/setting-change-rbquadratic", server.getSettingChangeWithType(common.ChangeCatalogRebalanceQuadratic))
+	g.GET("/setting-change-rbquadratic/:id", server.getSettingChange)
+	g.PUT("/setting-change-rbquadratic/:id", server.confirmSettingChange)
+	g.DELETE("/setting-change-rbquadratic/:id", server.rejectSettingChange)
 
 	g.GET("/price-factor", server.getPriceFactor)
 	g.POST("/price-factor", server.setPriceFactor)

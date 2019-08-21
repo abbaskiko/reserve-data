@@ -18,7 +18,7 @@ var (
 )
 
 func initData(t *testing.T, s *Storage) {
-	id, err := s.CreateSettingChange(common.SettingChange{ChangeList: []common.SettingChangeEntry{
+	id, err := s.CreateSettingChange(common.ChangeCatalogMain, common.SettingChange{ChangeList: []common.SettingChangeEntry{
 		{
 			Type: common.ChangeTypeUpdateExchange,
 			Data: common.UpdateExchangeEntry{
@@ -179,7 +179,7 @@ func initData(t *testing.T, s *Storage) {
 	require.NoError(t, err)
 }
 
-func TestStorage_ObjectChangeCreate(t *testing.T) {
+func TestStorage_SettingChangeCreate(t *testing.T) {
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -215,6 +215,7 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrPWIMissing, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 		{
@@ -258,6 +259,7 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrRebalanceQuadraticMissing, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 		{
@@ -293,6 +295,7 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrAssetExchangeMissing, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 		{
@@ -335,6 +338,7 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrAssetTargetMissing, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 		{
@@ -375,6 +379,7 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrAddressMissing, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 		{
@@ -415,6 +420,7 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrDepositAddressMissing, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 		{
@@ -466,6 +472,7 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrQuoteAssetInvalid, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 		{
@@ -493,12 +500,13 @@ func TestStorage_ObjectChangeCreate(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrDepositAddressMissing, e)
+				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
 	}
 	for _, tc := range tests {
 		t.Logf("running test case for: %s", tc.msg)
-		id, err := s.CreateSettingChange(tc.data)
+		id, err := s.CreateSettingChange(common.ChangeCatalogMain, tc.data)
 		assert.NoError(t, err)
 		err = s.ConfirmSettingChange(id, true)
 		tc.assertFn(t, id, err)

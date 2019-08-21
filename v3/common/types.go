@@ -245,6 +245,18 @@ type ChangeAssetAddressEntry struct {
 	Address ethereum.Address `json:"address" binding:"required"`
 }
 
+// ChangeCatalog represent catalog the change list belong to, each catalog keep track pending change independent
+//go:generate enumer -type=ChangeCatalog -linecomment -json=true
+type ChangeCatalog int
+
+const (
+	ChangeCatalogSetTarget          ChangeCatalog = iota // set_target
+	ChangeCatalogSetPWIS                                 // set_pwis
+	ChangeCatalogStableToken                             // set_stable_token
+	ChangeCatalogRebalanceQuadratic                      // set_rebalance_quadratic
+	ChangeCatalogMain                                    // main
+)
+
 // ChangeType represent type of change type entry in list change
 //go:generate enumer -type=ChangeType -linecomment -json=true
 type ChangeType int

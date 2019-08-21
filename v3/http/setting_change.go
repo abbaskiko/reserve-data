@@ -155,8 +155,12 @@ func (s *Server) fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uin
 	}
 	return nil
 }
-
-func (s *Server) createSettingChange(c *gin.Context) {
+func (s *Server) createSettingChangeWithType(t common.ChangeCatalog) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		s.createSettingChange(ctx, t)
+	}
+}
+func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	var settingChange common.SettingChange
 	if err := c.ShouldBindJSON(&settingChange); err != nil {
 		log.Printf("cannot bind data to create setting_change from request err=%s", err.Error())
@@ -184,7 +188,7 @@ func (s *Server) createSettingChange(c *gin.Context) {
 		return
 	}
 
-	id, err := s.storage.CreateSettingChange(settingChange)
+	id, err := s.storage.CreateSettingChange(t, settingChange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -194,6 +198,10 @@ func (s *Server) createSettingChange(c *gin.Context) {
 	err = s.storage.ConfirmSettingChange(id, false)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		// clean up
+		if err = s.storage.RejectSettingChange(id); err != nil {
+			log.Printf("failed to clean up, error")
+		}
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
@@ -216,9 +224,13 @@ func (s *Server) getSettingChange(c *gin.Context) {
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
-
-func (s *Server) getSettingChanges(c *gin.Context) {
-	result, err := s.storage.GetSettingChanges()
+func (s *Server) getSettingChangeWithType(t common.ChangeCatalog) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		s.getSettingChanges(ctx, t)
+	}
+}
+func (s *Server) getSettingChanges(c *gin.Context, t common.ChangeCatalog) {
+	result, err := s.storage.GetSettingChanges(t)
 	if err != nil {
 		log.Printf("failed to get setting changes %v\n", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
