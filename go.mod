@@ -18,6 +18,7 @@ require (
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/elastic/gosigar v0.10.3 // indirect
 	github.com/ethereum/go-ethereum v1.8.22-0.20190625100134-54fd263b400d
+	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
 	github.com/getsentry/raven-go v0.2.0
 	github.com/gin-contrib/cors v1.3.0
@@ -33,7 +34,9 @@ require (
 	github.com/graph-gophers/graphql-go v0.0.0-20190610161739-8f92f34fc598 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/howeyc/fsnotify v0.9.0 // indirect
+	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.7.7 // indirect
+	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/julienschmidt/httprouter v1.2.0 // indirect
 	github.com/karalabe/usb v0.0.0-20190613070255-4d6ba34a8414 // indirect
@@ -60,6 +63,9 @@ require (
 	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/urfave/cli v1.20.0
 	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208 // indirect
+	go.uber.org/atomic v1.4.0 // indirect
+	go.uber.org/multierr v1.1.0 // indirect
+	go.uber.org/zap v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
