@@ -1,7 +1,6 @@
 package common
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -29,32 +28,6 @@ const (
 	GoldFeed // gold_feed
 	// BTCFeed is used when asset rate is set from fetching Bitcoin prices.
 	BTCFeed // btc_feed
-)
-
-// PendingObjectType represent type of pending obj in database
-//go:generate stringer -type=PendingObjectType -linecomment
-type PendingObjectType int
-
-const (
-	PendingTypeUnknown PendingObjectType = iota // unknown
-	// PendingTypeCreateAsset is used when create an asset
-	PendingTypeCreateAsset //create_asset
-	// PendingTypeUpdateAsset is used when update an asset
-	PendingTypeUpdateAsset // update_asset
-	// PendingTypeCreateAssetExchange is used when create an asset exchange
-	PendingTypeCreateAssetExchange // create_asset_exchange
-	// PendingTypeUpdateAssetExchange is used when update an asset exchange
-	PendingTypeUpdateAssetExchange // update_asset_exchange
-	// PendingTypeCreateTradingPair is used when create a trading pair
-	PendingTypeCreateTradingPair // create_trading_pair
-	// PendingTypeUpdateTradingPair is used when update a trading pair
-	PendingTypeUpdateTradingPair // update_trading_pair
-	// PendingTypeCreateTradingBy is used when create a trading by
-	PendingTypeCreateTradingBy // create_trading_by
-	// PendingTypeUpdateExchange is used when update exchange
-	PendingTypeUpdateExchange // update_exchange
-	// PendingTypeChangeAssetAddr is used when update address of an asset
-	PendingTypeChangeAssetAddr // change_asset_addr
 )
 
 var validSetRateTypes = map[string]SetRate{
@@ -181,13 +154,6 @@ type Asset struct {
 
 // TODO: write custom marshal json for created/updated fields
 
-// PendingObject holds data of pending obj waiting to be confirmed
-type PendingObject struct {
-	ID      uint64          `json:"id"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data"`
-}
-
 // CreateAssetExchangeEntry is the configuration of an asset for a specific exchange.
 type CreateAssetExchangeEntry struct {
 	settingChangeMarker
@@ -202,10 +168,6 @@ type CreateAssetExchangeEntry struct {
 	TradingPairs      []TradingPair    `json:"trading_pairs"`
 }
 
-type CreateCreateAssetExchange struct {
-	AssetExchanges []CreateAssetExchangeEntry `json:"asset_exchanges" binding:"required,dive"`
-}
-
 // UpdateAssetExchangeEntry is the configuration of an asset for a specific exchange to be update
 type UpdateAssetExchangeEntry struct {
 	settingChangeMarker
@@ -216,11 +178,6 @@ type UpdateAssetExchangeEntry struct {
 	WithdrawFee       *float64          `json:"withdraw_fee"`
 	TargetRecommended *float64          `json:"target_recommended"`
 	TargetRatio       *float64          `json:"target_ratio"`
-}
-
-// CreateUpdateAssetExchange present for a UpdateAssetExchange(pending) request
-type CreateUpdateAssetExchange struct {
-	AssetExchanges []UpdateAssetExchangeEntry `json:"asset_exchanges" binding:"required,dive"`
 }
 
 // CreateAssetEntry represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
@@ -239,16 +196,6 @@ type CreateAssetEntry struct {
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
 	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
 	Target             *AssetTarget        `json:"target"`
-}
-
-// CreateCreateAsset present for a CreateAsset(pending) request
-type CreateCreateAsset struct {
-	AssetInputs []CreateAssetEntry `json:"assets" binding:"required,dive"`
-}
-
-// CreateUpdateAsset present for an CreateUpdateAsset request
-type CreateUpdateAsset struct {
-	Assets []UpdateAssetEntry `json:"assets" binding:"required,dive"`
 }
 
 // UpdateAssetEntry
@@ -276,44 +223,12 @@ type UpdateExchangeEntry struct {
 	Disable         *bool    `json:"disable"`
 }
 
-type CreateUpdateExchange struct {
-	Exchanges []UpdateExchangeEntry `json:"exchanges"`
-}
-
 // CreateTradingPairEntry represents an trading pair in central exchange.
 // this is use when create new trading pair in separate step(not when define Asset), so ExchangeID is required.
 type CreateTradingPairEntry struct {
 	settingChangeMarker
 	TradingPair
 	ExchangeID uint64 `json:"exchange_id"`
-}
-
-// CreateCreateTradingPair present for a CreateTradingPair(pending) request
-type CreateCreateTradingPair struct {
-	TradingPairs []CreateTradingPairEntry `json:"trading_pairs" binding:"required"`
-}
-
-// UpdateTradingPairOpts
-type UpdateTradingPairEntry struct {
-	settingChangeMarker
-	ID              uint64   `json:"id"`
-	PricePrecision  *uint64  `json:"price_precision"`
-	AmountPrecision *uint64  `json:"amount_precision"`
-	AmountLimitMin  *float64 `json:"amount_limit_min"`
-	AmountLimitMax  *float64 `json:"amount_limit_max"`
-	PriceLimitMin   *float64 `json:"price_limit_min"`
-	PriceLimitMax   *float64 `json:"price_limit_max"`
-	MinNotional     *float64 `json:"min_notional"`
-}
-
-// CreateUpdateTradingPair present for a UpdateTradingPair(pending) request
-type CreateUpdateTradingPair struct {
-	TradingPairs []UpdateTradingPairEntry `json:"trading_pairs" binding:"required,dive"`
-}
-
-// CreateCreateTradingBy present for a CreateTradingBy(pending) request
-type CreateCreateTradingBy struct {
-	TradingBys []CreateTradingByEntry
 }
 
 // CreateTradingByEntry present the information to create a trading by
@@ -330,10 +245,17 @@ type ChangeAssetAddressEntry struct {
 	Address ethereum.Address `json:"address" binding:"required"`
 }
 
-// CreateChangeAssetAddress present data to create a change asset address
-type CreateChangeAssetAddress struct {
-	Assets []ChangeAssetAddressEntry `json:"assets" binding:"dive"`
-}
+// ChangeCatalog represent catalog the change list belong to, each catalog keep track pending change independent
+//go:generate enumer -type=ChangeCatalog -linecomment -json=true
+type ChangeCatalog int
+
+const (
+	ChangeCatalogSetTarget          ChangeCatalog = iota // set_target
+	ChangeCatalogSetPWIS                                 // set_pwis
+	ChangeCatalogStableToken                             // set_stable_token
+	ChangeCatalogRebalanceQuadratic                      // set_rebalance_quadratic
+	ChangeCatalogMain                                    // main
+)
 
 // ChangeType represent type of change type entry in list change
 //go:generate enumer -type=ChangeType -linecomment -json=true

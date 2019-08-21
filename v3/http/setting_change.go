@@ -155,8 +155,12 @@ func (s *Server) fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uin
 	}
 	return nil
 }
-
-func (s *Server) createSettingChange(c *gin.Context) {
+func (s *Server) createSettingChangeWithType(t common.ChangeCatalog) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		s.createSettingChange(ctx, t)
+	}
+}
+func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	var settingChange common.SettingChange
 	if err := c.ShouldBindJSON(&settingChange); err != nil {
 		log.Printf("cannot bind data to create setting_change from request err=%s", err.Error())
@@ -184,7 +188,7 @@ func (s *Server) createSettingChange(c *gin.Context) {
 		return
 	}
 
-	id, err := s.storage.CreateSettingChange(settingChange)
+	id, err := s.storage.CreateSettingChange(t, settingChange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -194,6 +198,10 @@ func (s *Server) createSettingChange(c *gin.Context) {
 	err = s.storage.ConfirmSettingChange(id, false)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		// clean up
+		if err = s.storage.RejectSettingChange(id); err != nil {
+			log.Printf("failed to clean up, error")
+		}
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
@@ -216,9 +224,13 @@ func (s *Server) getSettingChange(c *gin.Context) {
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
-
-func (s *Server) getSettingChanges(c *gin.Context) {
-	result, err := s.storage.GetSettingChanges()
+func (s *Server) getSettingChangeWithType(t common.ChangeCatalog) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		s.getSettingChanges(ctx, t)
+	}
+}
+func (s *Server) getSettingChanges(c *gin.Context, t common.ChangeCatalog) {
+	result, err := s.storage.GetSettingChanges(t)
 	if err != nil {
 		log.Printf("failed to get setting changes %v\n", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -257,4 +269,232 @@ func (s *Server) confirmSettingChange(c *gin.Context) {
 		return
 	}
 	httputil.ResponseSuccess(c)
+}
+
+func (s *Server) checkCreateTradingPairParams(createEntry common.CreateTradingPairEntry) (string, string, error) {
+	var (
+		ok           bool
+		quoteAssetEx common.AssetExchange
+		baseAssetEx  common.AssetExchange
+	)
+
+	base, err := s.storage.GetAsset(createEntry.Base)
+	if err != nil {
+		return "", "", errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", createEntry.Base)
+	}
+	quote, err := s.storage.GetAsset(createEntry.Quote)
+	if err != nil {
+		return "", "", errors.Wrapf(common.ErrBaseAssetInvalid, "quote id: %v", createEntry.Quote)
+	}
+
+	if !quote.IsQuote {
+		return "", "", errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset should have is_quote=true")
+	}
+
+	if baseAssetEx, ok = getAssetExchangeByExchangeID(base, createEntry.ExchangeID); !ok {
+		return "", "", errors.Wrap(common.ErrBaseAssetInvalid, "exchange id not found")
+	}
+
+	if quoteAssetEx, ok = getAssetExchangeByExchangeID(base, createEntry.ExchangeID); !ok {
+		return "", "", errors.Wrap(common.ErrQuoteAssetInvalid, "exchange id not found")
+	}
+	return baseAssetEx.Symbol, quoteAssetEx.Symbol, nil
+}
+
+func getAssetExchangeByExchangeID(asset common.Asset, exchangeID uint64) (common.AssetExchange, bool) {
+	for _, exchange := range asset.Exchanges {
+		if exchange.ExchangeID == exchangeID {
+			return exchange,
+				true
+		}
+	}
+	return common.AssetExchange{}, false
+}
+
+func (s *Server) checkCreateTradingByParams(createEntry common.CreateTradingByEntry) error {
+	tpSymBol, err := s.storage.GetTradingPair(createEntry.TradingPairID)
+	if err != nil {
+		return err
+	}
+	if tpSymBol.Base != createEntry.AssetID && tpSymBol.Quote != createEntry.AssetID {
+		return common.ErrTradingByAssetIDInvalid
+	}
+	return nil
+}
+
+func (s *Server) checkUpdateAssetParams(updateEntry common.UpdateAssetEntry) error {
+	asset, err := s.storage.GetAsset(updateEntry.AssetID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get asset id: %v from db ", updateEntry.AssetID)
+	}
+
+	if updateEntry.Rebalance != nil && *updateEntry.Rebalance {
+		if asset.RebalanceQuadratic == nil && updateEntry.RebalanceQuadratic == nil {
+			return errors.Errorf("%v at asset id: %v", common.ErrRebalanceQuadraticMissing.Error(), updateEntry.AssetID)
+		}
+
+		if asset.Target == nil && updateEntry.Target == nil {
+			return errors.Errorf("%v at asset id: %v", common.ErrAssetTargetMissing.Error(), updateEntry.AssetID)
+		}
+	}
+
+	if updateEntry.SetRate != nil && *updateEntry.SetRate != common.SetRateNotSet && asset.PWI == nil && updateEntry.PWI == nil {
+		return errors.Errorf("%v at asset id: %v", common.ErrPWIMissing.Error(), updateEntry.AssetID)
+	}
+
+	if updateEntry.Transferable != nil && *updateEntry.Transferable {
+		for _, exchange := range asset.Exchanges {
+			if common.IsZeroAddress(exchange.DepositAddress) {
+				return errors.Errorf("%v at asset id: %v and asset_exchange: %v", common.ErrDepositAddressMissing, updateEntry.AssetID, exchange.ID)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Server) checkUpdateAssetExchangeParams(updateEntry common.UpdateAssetExchangeEntry) error {
+	assetExchange, err := s.storage.GetAssetExchange(updateEntry.ID)
+	if err != nil {
+		return errors.Wrap(err, "asset exchange not found")
+	}
+
+	asset, err := s.storage.GetAsset(assetExchange.AssetID)
+	if err != nil {
+		return errors.Wrap(err, "asset not found")
+	}
+
+	if asset.Transferable && updateEntry.DepositAddress != nil && common.IsZeroAddress(*updateEntry.DepositAddress) {
+		return common.ErrDepositAddressMissing
+	}
+	return nil
+}
+
+func (s *Server) checkCreateAssetExchangeParams(createEntry common.CreateAssetExchangeEntry) error {
+	asset, err := s.storage.GetAsset(createEntry.AssetID)
+	if err != nil {
+		return errors.Wrap(err, "asset not found")
+	}
+
+	_, err = s.storage.GetExchange(createEntry.ExchangeID)
+	if err != nil {
+		return errors.Wrap(err, "exchange not found")
+	}
+
+	for _, exchange := range asset.Exchanges {
+		if exchange.ExchangeID == createEntry.ExchangeID {
+			return common.ErrAssetExchangeAlreadyExist
+		}
+	}
+	if asset.Transferable && common.IsZeroAddress(createEntry.DepositAddress) {
+		return common.ErrDepositAddressMissing
+	}
+	for _, tradingPair := range createEntry.TradingPairs {
+		if tradingPair.Base != 0 && tradingPair.Quote != 0 {
+			return errors.Wrapf(common.ErrBadTradingPairConfiguration, "base id:%v quote id:%v", tradingPair.Base, tradingPair.Quote)
+		}
+
+		if tradingPair.Base == 0 && tradingPair.Quote == 0 {
+			return errors.Wrapf(common.ErrBadTradingPairConfiguration, "base id:%v quote id:%v", tradingPair.Base, tradingPair.Quote)
+		}
+
+		if tradingPair.Base == 0 {
+			quoteAsset, err := s.storage.GetAsset(tradingPair.Quote)
+			if err != nil {
+				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+			}
+			if !quoteAsset.IsQuote {
+				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+			}
+		}
+
+		if tradingPair.Quote == 0 {
+			_, err := s.storage.GetAsset(tradingPair.Base)
+			if err != nil {
+				return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", tradingPair.Base)
+			}
+
+			if !asset.IsQuote {
+				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+			}
+		}
+	}
+	return nil
+}
+
+func getAssetExchange(assets []common.Asset, assetID, exchangeID uint64) (common.AssetExchange, error) {
+	for _, asset := range assets {
+		if asset.ID == assetID {
+			for _, assetExchange := range asset.Exchanges {
+				if assetExchange.ExchangeID == exchangeID {
+					return assetExchange, nil
+				}
+			}
+		}
+	}
+	return common.AssetExchange{}, fmt.Errorf("AssetExchange not found, asset=%d exchange=%d", assetID, exchangeID)
+}
+
+func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) error {
+	if createEntry.Rebalance && createEntry.RebalanceQuadratic == nil {
+		return common.ErrRebalanceQuadraticMissing
+	}
+
+	if createEntry.Rebalance && createEntry.Target == nil {
+		return common.ErrAssetTargetMissing
+	}
+
+	if createEntry.SetRate != common.SetRateNotSet && createEntry.PWI == nil {
+		return common.ErrPWIMissing
+	}
+
+	for _, exchange := range createEntry.Exchanges {
+		if common.IsZeroAddress(exchange.DepositAddress) && createEntry.Transferable {
+			return errors.Wrapf(common.ErrDepositAddressMissing, "exchange %v", exchange.Symbol)
+		}
+
+		for _, tradingPair := range exchange.TradingPairs {
+
+			if tradingPair.Base != 0 && tradingPair.Quote != 0 {
+				return errors.Wrapf(common.ErrBadTradingPairConfiguration, "base id:%v quote id:%v", tradingPair.Base, tradingPair.Quote)
+			}
+
+			if tradingPair.Base == 0 && tradingPair.Quote == 0 {
+				return errors.Wrapf(common.ErrBadTradingPairConfiguration, "base id:%v quote id:%v", tradingPair.Base, tradingPair.Quote)
+			}
+
+			if tradingPair.Base == 0 {
+				quoteAsset, err := s.storage.GetAsset(tradingPair.Quote)
+				if err != nil {
+					return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+				}
+				if !quoteAsset.IsQuote {
+					return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+				}
+			}
+
+			if tradingPair.Quote == 0 {
+				_, err := s.storage.GetAsset(tradingPair.Base)
+				if err != nil {
+					return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", tradingPair.Base)
+				}
+
+				if !createEntry.IsQuote {
+					return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *Server) checkChangeAssetAddressParams(changeAssetAddressEntry common.ChangeAssetAddressEntry) error {
+	asset, err := s.storage.GetAsset(changeAssetAddressEntry.ID)
+	if err != nil {
+		return err
+	}
+	if asset.Address == changeAssetAddressEntry.Address {
+		return common.ErrAddressExists
+	}
+	return nil
 }

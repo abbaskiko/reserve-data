@@ -19,13 +19,19 @@ p, %[1]s, /*, GET`, key)
 func addKeyWritePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
-p, %[1]s, /v3/setting-change, POST`, key)
+p, %[1]s, /v3/setting-change-target, POST
+p, %[1]s, /v3/setting-change-pwis, POST
+p, %[1]s, /v3/setting-change-rbquadratic, POST
+p, %[1]s, /v3/setting-change-main, POST`, key)
 }
 
 func addKeyConfirmPolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
-p, %[1]s, /v3/setting-change/:id, (PUT)|(DELETE)`, key)
+p, %[1]s, /v3/setting-change-target/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/setting-change-pwis/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/setting-change-rbquadratic/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/setting-change-main/:id, (PUT)|(DELETE)`, key)
 }
 
 func addKeyRebalancePolicy(key string) string {

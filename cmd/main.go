@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/http"
 )
 
@@ -20,6 +21,7 @@ func main() {
 	app.Action = run
 
 	app.Flags = configuration.NewCliFlags()
+	app.Flags = append(app.Flags, profiler.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -74,6 +76,9 @@ func run(c *cli.Context) error {
 		bc,
 		conf.SettingStorage,
 	)
+	if profiler.IsEnableProfilerFromContext(c) {
+		server.EnableProfiler()
+	}
 
 	if !dryRun {
 		server.Run()

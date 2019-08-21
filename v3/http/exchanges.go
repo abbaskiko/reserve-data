@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 func (s *Server) getExchanges(c *gin.Context) {
@@ -31,22 +30,4 @@ func (s *Server) getExchange(c *gin.Context) {
 		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(asset))
-}
-
-func (s *Server) createUpdateExchange(c *gin.Context) {
-	var updateExchange common.CreateUpdateExchange
-
-	err := c.ShouldBindJSON(&updateExchange)
-
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	// TODO validate if the update request satisfy constraint
-	id, err := s.storage.CreatePendingObject(updateExchange, common.PendingTypeUpdateExchange)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }

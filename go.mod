@@ -1,8 +1,8 @@
 module github.com/KyberNetwork/reserve-data
 
 require (
+	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/KyberNetwork/httpsign-utils v0.1.1
-	github.com/KyberNetwork/reserve-stats v0.7.0
 	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/apilayer/freegeoip v3.5.0+incompatible // indirect
 	github.com/aristanetworks/goarista v0.0.0-20190625195245-f3b0eb5a88b2 // indirect
@@ -13,6 +13,7 @@ require (
 	github.com/casbin/casbin v1.7.0
 	github.com/certifi/gocertifi v0.0.0-20190506164543-d2eda7129713 // indirect
 	github.com/cespare/cp v1.1.1 // indirect
+	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/elastic/gosigar v0.10.3 // indirect
@@ -21,9 +22,9 @@ require (
 	github.com/getsentry/raven-go v0.2.0
 	github.com/gin-contrib/cors v1.3.0
 	github.com/gin-contrib/httpsign v0.0.0-20190528142004-2c3839fd2eac
+	github.com/gin-contrib/pprof v1.2.1
 	github.com/gin-contrib/sentry v0.0.0-20190528141903-48a399dfd39f
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-contrib/zap v0.0.0-20190528085758-3cc18cd8fce3 // indirect
 	github.com/gin-gonic/gin v1.4.0
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
@@ -44,9 +45,12 @@ require (
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/oschwald/maxminddb-golang v1.3.1 // indirect
+	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/tsdb v0.8.0 // indirect
 	github.com/qiangmzsx/string-adapter v0.0.0-20180323073508-38f25303bb0c
+	github.com/rjeczalik/notify v0.9.2 // indirect
+	github.com/rs/cors v1.7.0 // indirect
 	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48 // indirect
 	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570 // indirect
 	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
@@ -62,5 +66,6 @@ require (
 	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb // indirect
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
+	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190213234257-ec84240a7772 // indirect
 )

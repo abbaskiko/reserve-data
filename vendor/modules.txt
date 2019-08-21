@@ -2,16 +2,12 @@
 github.com/Knetic/govaluate
 # github.com/KyberNetwork/httpsign-utils v0.1.1
 github.com/KyberNetwork/httpsign-utils/authenticator
-# github.com/KyberNetwork/reserve-stats v0.7.0
-github.com/KyberNetwork/reserve-stats/gateway/permission
-github.com/KyberNetwork/reserve-stats/lib/httputil
-github.com/KyberNetwork/reserve-stats/lib/timeutil
 # github.com/allegro/bigcache v1.2.1
 github.com/allegro/bigcache
 github.com/allegro/bigcache/queue
 # github.com/aristanetworks/goarista v0.0.0-20190625195245-f3b0eb5a88b2
 github.com/aristanetworks/goarista/monotime
-# github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
+# github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 github.com/asaskevich/govalidator
 # github.com/aws/aws-sdk-go v1.20.10
 github.com/aws/aws-sdk-go/aws
@@ -107,6 +103,8 @@ github.com/gin-contrib/cors
 github.com/gin-contrib/httpsign
 github.com/gin-contrib/httpsign/crypto
 github.com/gin-contrib/httpsign/validator
+# github.com/gin-contrib/pprof v1.2.1
+github.com/gin-contrib/pprof
 # github.com/gin-contrib/sentry v0.0.0-20190528141903-48a399dfd39f
 github.com/gin-contrib/sentry
 # github.com/gin-contrib/sse v0.1.0
@@ -152,7 +150,7 @@ github.com/pmezard/go-difflib/difflib
 github.com/qiangmzsx/string-adapter
 # github.com/rjeczalik/notify v0.9.2
 github.com/rjeczalik/notify
-# github.com/rs/cors v1.6.0
+# github.com/rs/cors v1.7.0
 github.com/rs/cors
 # github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570
 github.com/steakknife/bloomfilter

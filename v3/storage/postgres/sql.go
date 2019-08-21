@@ -137,9 +137,19 @@ CREATE TABLE IF NOT EXISTS trading_by
     UNIQUE (asset_id, trading_pair_id)
 );
 
+--create enum types if not exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'setting_change_cat') THEN
+        CREATE TYPE setting_change_cat AS ENUM ('set_target', 'set_pwis', 
+			'set_stable_token','set_rebalance_quadratic', 'main');
+    END IF;
+END$$;
+
 CREATE TABLE IF NOT EXISTS setting_change (
     id SERIAL PRIMARY KEY,
     created TIMESTAMP NOT NULL,
+	cat setting_change_cat UNIQUE NOT NULL,
     data JSON NOT NULL
 );
 
@@ -187,7 +197,7 @@ END
 
 $$ LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE FUNCTION new_setting_change(_data setting_change.data%TYPE)
+CREATE OR REPLACE FUNCTION new_setting_change(_cat setting_change.cat%TYPE, _data setting_change.data%TYPE)
     RETURNS int AS
 $$
 
@@ -195,41 +205,7 @@ DECLARE
     _id setting_change.id%TYPE;
 
 BEGIN
-    DELETE FROM setting_change WHERE TRUE; -- delete whole table
-    INSERT INTO setting_change(created, data) VALUES (now(), _data) RETURNING id INTO _id;
-    RETURN _id;
-END
-
-$$ LANGUAGE PLPGSQL;
-
---create enum types if not exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pending_object_type') THEN
-        CREATE TYPE pending_object_type AS ENUM ('create_asset', 'update_asset', 
-			'create_asset_exchange','update_asset_exchange', 'create_trading_pair', 'update_trading_pair',
-			'create_trading_by', 'update_exchange', 'change_asset_addr');
-    END IF;
-END$$;
-
-CREATE TABLE IF NOT EXISTS pending_object
-(
-	id			SERIAL 					PRIMARY KEY,
-	created		TIMESTAMP 				NOT NULL,
-	data 		JSON					NOT NULL,
-	data_type 	pending_object_type		NOT NULL
-);
-
-CREATE OR REPLACE FUNCTION new_pending_object(_data pending_object.data%TYPE,_type pending_object.data_type%TYPE)
-    RETURNS int AS
-$$
-
-DECLARE
-    _id pending_object.id%TYPE;
-
-BEGIN
-    DELETE FROM pending_object WHERE data_type=_type;
-    INSERT INTO pending_object(created, data, data_type) VALUES (now(), _data, _type) RETURNING id INTO _id;
+    INSERT INTO setting_change(created, cat, data) VALUES (now(), _cat, _data) RETURNING id INTO _id;
     RETURN _id;
 END
 
@@ -494,10 +470,6 @@ type preparedStmts struct {
 	getTradingBy    *sqlx.Stmt
 	deleteTradingBy *sqlx.Stmt
 
-	newPendingObject    *sqlx.Stmt
-	getPendingObject    *sqlx.Stmt
-	deletePendingObject *sqlx.Stmt
-
 	newSettingChange    *sqlx.Stmt
 	deleteSettingChange *sqlx.Stmt
 	getSettingChange    *sqlx.Stmt
@@ -562,11 +534,6 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newPendingObj, deletePendingObj, getPendingObj, err := pendingObjectStatements(db)
-	if err != nil {
-		return nil, err
-	}
-
 	newSettingChange, deleteSettingChange, getSettingChange, err := settingChangeStatements(db)
 	if err != nil {
 		return nil, err
@@ -616,10 +583,6 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		getTradingPairByID:    tradingPairStmts.getByIDStmt,
 		getTradingPairSymbols: tradingPairStmts.getBySymbolStmt,
 		getMinNotional:        getMinNotional,
-
-		newPendingObject:    newPendingObj,
-		deletePendingObject: deletePendingObj,
-		getPendingObject:    getPendingObj,
 
 		newSettingChange:    newSettingChange,
 		deleteSettingChange: deleteSettingChange,
@@ -1030,27 +993,8 @@ func tradingByStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error
 	return tradingBy, getTradingByPairs, deleteTradingByStmt, nil
 }
 
-func pendingObjectStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
-	const newPendingObjQuery = `SELECT new_pending_object FROM new_pending_object($1, $2)`
-	newPendingObjStmt, err := db.Preparex(newPendingObjQuery)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	const deletePendingObjQuery = `DELETE FROM pending_object WHERE id=$1 and data_type=COALESCE($2, pending_object.data_type) returning id`
-	deletePendingStmt, err := db.Preparex(deletePendingObjQuery)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	const listPendingObjQuery = `SELECT id,created,data FROM pending_object WHERE id=COALESCE($1, pending_object.id) and data_type=COALESCE($2, pending_object.data_type)`
-	listPendingObjStmt, err := db.Preparex(listPendingObjQuery)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return newPendingObjStmt, deletePendingStmt, listPendingObjStmt, nil
-}
-
 func settingChangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
-	const newSettingChangeQuery = `SELECT new_setting_change FROM new_setting_change($1)`
+	const newSettingChangeQuery = `SELECT new_setting_change FROM new_setting_change($1, $2)`
 	newSettingChangeStmt, err := db.Preparex(newSettingChangeQuery)
 	if err != nil {
 		return nil, nil, nil, err
@@ -1060,7 +1004,7 @@ func settingChangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, e
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	const listSettingChangeQuery = `SELECT id,created,data FROM setting_change WHERE id=COALESCE($1, setting_change.id)`
+	const listSettingChangeQuery = `SELECT id,created,data FROM setting_change WHERE id=COALESCE($1, setting_change.id) AND cat=COALESCE($2, setting_change.cat)`
 	listSettingChangeStmt, err := db.Preparex(listSettingChangeQuery)
 	if err != nil {
 		return nil, nil, nil, err
