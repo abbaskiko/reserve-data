@@ -70,7 +70,6 @@ func run(c *cli.Context) error {
 	host := configuration.NewHTTPAddressFromContext(c)
 	server := http.NewHTTPServer(
 		rData, rCore,
-		conf.MetricStorage,
 		host,
 		dpl,
 		bc,

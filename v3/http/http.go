@@ -35,6 +35,7 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 	g.GET("/exchange/:id", server.getExchange)
 	g.GET("/exchange", server.getExchanges)
 	g.GET("/trading-pair/:id", server.getTradingPair)
+	g.GET("/stable-token-params", server.getStableTokenParams)
 
 	// because we don't allow to create asset directly, it must go through pending operation
 	// so all 'create' operation mean to operate on pending object.

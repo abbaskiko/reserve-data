@@ -8,7 +8,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -1016,106 +1015,4 @@ func (bs *BoltStorage) GetExchangeNotifications() (common.ExchangeNotifications,
 		return nil
 	})
 	return result, err
-}
-
-func (bs *BoltStorage) SetStableTokenParams(value []byte) error {
-	var err error
-	k := boltutil.Uint64ToBytes(1)
-	temp := make(map[string]interface{})
-
-	if err = json.Unmarshal(value, &temp); err != nil {
-		return fmt.Errorf("rejected: Data could not be unmarshalled to defined format: %s", err)
-	}
-	err = bs.db.Update(func(tx *bolt.Tx) error {
-		b, uErr := tx.CreateBucketIfNotExists([]byte(pendingStatbleTokenParamsBucket))
-		if uErr != nil {
-			return uErr
-		}
-		if b.Get(k) != nil {
-			return errors.New("currently there is a pending record")
-		}
-		return b.Put(k, value)
-	})
-	return err
-}
-
-func (bs *BoltStorage) ConfirmStableTokenParams(value []byte) error {
-	var err error
-	k := boltutil.Uint64ToBytes(1)
-	temp := make(map[string]interface{})
-
-	if err = json.Unmarshal(value, &temp); err != nil {
-		return fmt.Errorf("rejected: Data could not be unmarshalled to defined format: %s", err)
-	}
-
-	pending, err := bs.GetPendingStableTokenParams()
-	if err != nil {
-		return err
-	}
-
-	if eq := reflect.DeepEqual(pending, temp); !eq {
-		return errors.New("rejected: confiming data isn't consistent")
-	}
-
-	err = bs.db.Update(func(tx *bolt.Tx) error {
-		b, uErr := tx.CreateBucketIfNotExists([]byte(stableTokenParamsBucket))
-		if uErr != nil {
-			return uErr
-		}
-		return b.Put(k, value)
-	})
-	if err != nil {
-		return err
-	}
-	return bs.RemovePendingStableTokenParams()
-}
-
-func (bs *BoltStorage) GetStableTokenParams() (map[string]interface{}, error) {
-	k := boltutil.Uint64ToBytes(1)
-	result := make(map[string]interface{})
-	err := bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(stableTokenParamsBucket))
-		if b == nil {
-			return errors.New("bucket hasn't exist yet")
-		}
-		record := b.Get(k)
-		if record != nil {
-			return json.Unmarshal(record, &result)
-		}
-		return nil
-	})
-	return result, err
-}
-
-func (bs *BoltStorage) GetPendingStableTokenParams() (map[string]interface{}, error) {
-	k := boltutil.Uint64ToBytes(1)
-	result := make(map[string]interface{})
-	err := bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(pendingStatbleTokenParamsBucket))
-		if b == nil {
-			return errors.New("bucket hasn't exist yet")
-		}
-		record := b.Get(k)
-		if record != nil {
-			return json.Unmarshal(record, &result)
-		}
-		return nil
-	})
-	return result, err
-}
-
-func (bs *BoltStorage) RemovePendingStableTokenParams() error {
-	k := boltutil.Uint64ToBytes(1)
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(pendingStatbleTokenParamsBucket))
-		if b == nil {
-			return errors.New("bucket hasn't existed yet")
-		}
-		record := b.Get(k)
-		if record == nil {
-			return errors.New("bucket is empty")
-		}
-		return b.Delete(k)
-	})
-	return err
 }
