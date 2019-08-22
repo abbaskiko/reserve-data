@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -46,8 +45,6 @@ func SetRatePointer(i SetRate) *SetRate {
 func SettingChangeFromType(t ChangeType) (SettingChangeType, error) {
 	var i SettingChangeType
 	switch t {
-	case ChangeTypeUnknown:
-		return nil, fmt.Errorf("got unknow change type")
 	case ChangeTypeCreateAsset:
 		i = &CreateAssetEntry{}
 	case ChangeTypeUpdateAsset:

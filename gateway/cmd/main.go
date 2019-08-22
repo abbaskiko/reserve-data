@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-contrib/httpsign"
+	"github.com/gin-gonic/gin"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/pkg/errors"
@@ -27,6 +29,8 @@ const (
 
 	coreEndpointFlag    = "core-endpoint"
 	settingEndpointFlag = "setting-endpoint"
+
+	noAuthFlag = "no-auth"
 )
 
 var (
@@ -91,6 +95,11 @@ func main() {
 			EnvVar: "SETTING_ENDPOINT",
 			Value:  settingEndpointDefaultValue,
 		},
+		cli.BoolFlag{
+			Name:   noAuthFlag,
+			Usage:  "no authenticate",
+			EnvVar: "NO_AUTH",
+		},
 	)
 
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
@@ -119,7 +128,10 @@ func getKeyList(c *cli.Context, accessKeyFlag, secretKeyFlag string) ([]authenti
 
 func run(c *cli.Context) error {
 	var (
-		keyPairs []authenticator.KeyPair
+		keyPairs, readKeys, writeKeys, confirmKeys, rebalanceKeys []authenticator.KeyPair
+		err                                                       error
+		auth                                                      *httpsign.Authenticator
+		perm                                                      gin.HandlerFunc
 	)
 	if err := validation.Validate(c.String(coreEndpointFlag),
 		validation.Required,
@@ -133,47 +145,50 @@ func run(c *cli.Context) error {
 		return errors.Wrapf(err, "app names API URL error: %s", c.String(settingEndpointFlag))
 	}
 
-	readKeys, err := getKeyList(c, readAccessKeyFlag, readSecretKeyFlag)
-	if err != nil {
-		return errors.Wrap(err, "failed to get read keys")
-	}
-	keyPairs = append(keyPairs, readKeys...)
-	writeKeys, err := getKeyList(c, writeAccessKeyFlag, writeSecretKeyFlag)
-	if err != nil {
-		return errors.Wrap(err, "failed to get write keys")
-	}
-	keyPairs = append(keyPairs, writeKeys...)
-	confirmKeys, err := getKeyList(c, confirmAccessKeyFlag, confirmSecretKeyFlag)
-	if err != nil {
-		return errors.Wrap(err, "failed to get confirm keys")
-	}
-	keyPairs = append(keyPairs, confirmKeys...)
-	rebalanceKeys, err := getKeyList(c, rebalanceAccessKeyFlag, rebalanceSecretKeyFlag)
-	if err != nil {
-		return errors.Wrap(err, "failed to get rebalance keys")
-	}
-	keyPairs = append(keyPairs, rebalanceKeys...)
+	noAuth := c.Bool(noAuthFlag)
+	if !noAuth {
+		readKeys, err = getKeyList(c, readAccessKeyFlag, readSecretKeyFlag)
+		if err != nil {
+			return errors.Wrap(err, "failed to get read keys")
+		}
+		keyPairs = append(keyPairs, readKeys...)
+		writeKeys, err = getKeyList(c, writeAccessKeyFlag, writeSecretKeyFlag)
+		if err != nil {
+			return errors.Wrap(err, "failed to get write keys")
+		}
+		keyPairs = append(keyPairs, writeKeys...)
+		confirmKeys, err = getKeyList(c, confirmAccessKeyFlag, confirmSecretKeyFlag)
+		if err != nil {
+			return errors.Wrap(err, "failed to get confirm keys")
+		}
+		keyPairs = append(keyPairs, confirmKeys...)
+		rebalanceKeys, err = getKeyList(c, rebalanceAccessKeyFlag, rebalanceSecretKeyFlag)
+		if err != nil {
+			return errors.Wrap(err, "failed to get rebalance keys")
+		}
+		keyPairs = append(keyPairs, rebalanceKeys...)
 
-	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
-		return errors.Wrap(err, "write access key error")
-	}
+		if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
+			return errors.Wrap(err, "write access key error")
+		}
 
-	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
-		return errors.Wrap(err, "secret key error")
-	}
-
-	auth, err := authenticator.NewAuthenticator(keyPairs...)
-	if err != nil {
-		return errors.Wrap(err, "authentication object creation error")
-	}
-	perm, err := http.NewPermissioner(readKeys, writeKeys, confirmKeys, rebalanceKeys)
-	if err != nil {
-		return errors.Wrap(err, "permission object creation error")
+		if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
+			return errors.Wrap(err, "secret key error")
+		}
+		auth, err = authenticator.NewAuthenticator(keyPairs...)
+		if err != nil {
+			return errors.Wrap(err, "authentication object creation error")
+		}
+		perm, err = http.NewPermissioner(readKeys, writeKeys, confirmKeys, rebalanceKeys)
+		if err != nil {
+			return errors.Wrap(err, "permission object creation error")
+		}
 	}
 
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		auth,
 		perm,
+		noAuth,
 		http.WithCoreEndpoint(c.String(coreEndpointFlag)),
 		http.WithSettingEndpoint(c.String(settingEndpointFlag)),
 	)

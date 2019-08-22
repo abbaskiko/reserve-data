@@ -156,8 +156,11 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 		exchanges[exchangeID.String()] = exchange
 		for tokenSymbol := range balances.AvailableBalance {
 			token, err := rd.settingStorage.GetAssetExchangeBySymbol(exchange.ID, tokenSymbol)
+			// it seems this token have balance in exchange but have not configured
+			// in core, just ignore it
 			if err != nil {
-				return result, errors.Wrapf(err, "failed to get token by name: %s", tokenSymbol)
+				log.Printf("failed to get token by name: %s", tokenSymbol)
+				continue
 			}
 			tokens[tokenSymbol] = token
 		}
@@ -165,12 +168,17 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 
 	balances := []common.AuthdataBalance{}
 	for tokenSymbol, token := range tokens {
-		tokenBalance := common.AuthdataBalance{}
+		tokenBalance := common.AuthdataBalance{
+			Valid: true,
+		}
 		tokenBalance.AssetID = token.ID
 		tokenBalance.Symbol = tokenSymbol
 		exchangeBalances := []common.ExchangeBalance{}
 		for exchangeID, balances := range data.ExchangeBalances {
 			exchangeBalance := common.ExchangeBalance{}
+			if !balances.Valid {
+				exchangeBalance.Error = balances.Error
+			}
 			if _, exist := balances.AvailableBalance[tokenSymbol]; exist {
 				exchangeBalance.ExchangeID = exchanges[exchangeID.String()].ID
 				exchangeBalance.Available = balances.AvailableBalance[tokenSymbol]
@@ -182,6 +190,10 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 		tokenBalance.Exchanges = exchangeBalances
 		if balance, exist := data.ReserveBalances[tokenSymbol]; exist {
 			tokenBalance.Reserve = balance.Balance.ToFloat(int64(token.Decimals))
+			if !balance.Valid {
+				tokenBalance.Valid = balance.Valid
+				tokenBalance.ReserveError = balance.Error
+			}
 		}
 		balances = append(balances, tokenBalance)
 	}
