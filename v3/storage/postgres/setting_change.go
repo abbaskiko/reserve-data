@@ -99,7 +99,7 @@ func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChange
 // GetSettingChanges return list setting change.
 func (s *Storage) GetSettingChanges(cat common.ChangeCatalog) ([]common.SettingChangeResponse, error) {
 	var dbResult []settingChangeDB
-	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat)
+	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat.String())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, common.ErrNotFound

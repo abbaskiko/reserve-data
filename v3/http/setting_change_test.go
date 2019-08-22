@@ -566,6 +566,20 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 			},
 		},
 		{
+			msg: "test get pending",
+			endpointExp: func() string {
+				return updateExchange + fmt.Sprintf("/%d", updateExchID)
+			},
+			method: http.MethodGet,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "test get pending objs",
+			endpoint: updateExchange,
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
 			msg: "confirm update exchange",
 			endpointExp: func() string {
 				return updateExchange + fmt.Sprintf("/%d", updateExchID)
