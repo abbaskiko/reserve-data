@@ -296,6 +296,19 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return err
 		}
+	case common.ChangeTypeUpdateStableTokenParams:
+		a, ok := entry.Data.(*common.UpdateStableTokenParamsEntry)
+		if !ok {
+			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateStableTokenParams)
+			log.Println(msg)
+			return errors.Wrap(err, msg)
+		}
+		err = s.updateStableTokenParams(tx, a.Data)
+		if err != nil {
+			msg := fmt.Sprintf("update stable token params %d, err=%v\n", i, err)
+			log.Println(msg)
+			return err
+		}
 	}
 	return nil
 }

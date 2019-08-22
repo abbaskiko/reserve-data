@@ -172,6 +172,25 @@ CREATE TABLE IF NOT EXISTS rebalance_control (
 	status		BOOLEAN 	NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS stable_token_params_control (
+	id			SERIAL 		PRIMARY KEY,
+	timepoint	TIMESTAMP 	NOT NULL,
+	data		JSON 		NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION new_stable_token_params_control(_data stable_token_params_control.data%TYPE)
+	RETURNS int AS
+$$
+DECLARE
+    _id stable_token_params_control.id%TYPE;
+BEGIN
+	DELETE FROM stable_token_params_control;
+	INSERT INTO stable_token_params_control(timepoint, data) VALUES(now(), _data) RETURNING id INTO _id;
+	RETURN _id;
+END
+
+$$ LANGUAGE PLPGSQL;
+
 CREATE OR REPLACE FUNCTION new_rebalance_control(_status rebalance_control.status%TYPE)
 	RETURNS int AS
 $$
@@ -481,12 +500,14 @@ type preparedStmts struct {
 	deleteSettingChange *sqlx.Stmt
 	getSettingChange    *sqlx.Stmt
 
-	newPriceFactor *sqlx.Stmt
-	getPriceFactor *sqlx.Stmt
-	newSetRate     *sqlx.Stmt
-	getSetRate     *sqlx.Stmt
-	newRebalance   *sqlx.Stmt
-	getRebalance   *sqlx.Stmt
+	newPriceFactor      *sqlx.Stmt
+	getPriceFactor      *sqlx.Stmt
+	newSetRate          *sqlx.Stmt
+	getSetRate          *sqlx.Stmt
+	newRebalance        *sqlx.Stmt
+	getRebalance        *sqlx.Stmt
+	newStableTokenParam *sqlx.Stmt
+	getStableTokenParam *sqlx.Stmt
 }
 
 func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
@@ -561,6 +582,10 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
+	newStabeTokenParams, getStableTokenParams, err := stableTokenParamsControlStatements(db)
+	if err != nil {
+		return nil, err
+	}
 	return &preparedStmts{
 		getExchanges:        getExchanges,
 		getExchange:         getExchange,
@@ -595,12 +620,14 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		deleteSettingChange: deleteSettingChange,
 		getSettingChange:    getSettingChange,
 
-		newPriceFactor: newPriceFactor,
-		getPriceFactor: getPriceFactor,
-		newSetRate:     newSetRate,
-		getSetRate:     getSetRate,
-		newRebalance:   newRebalance,
-		getRebalance:   getRebalance,
+		newPriceFactor:      newPriceFactor,
+		getPriceFactor:      getPriceFactor,
+		newSetRate:          newSetRate,
+		getSetRate:          getSetRate,
+		newRebalance:        newRebalance,
+		getRebalance:        getRebalance,
+		newStableTokenParam: newStabeTokenParams,
+		getStableTokenParam: getStableTokenParams,
 	}, nil
 }
 
@@ -1059,4 +1086,18 @@ func rebalanceControlStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
 		return nil, nil, err
 	}
 	return newRebalanceStmt, getRebalanceStmt, nil
+}
+
+func stableTokenParamsControlStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {
+	const newStableTokenQuery = `SELECT FROM new_stable_token_params_control($1);`
+	newStableTokenStmt, err := db.Preparex(newStableTokenQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	const getStableTokenQuery = `SELECT id,timepoint,data FROM stable_token_params_control ORDER BY timepoint DESC`
+	getStableTokenStmt, err := db.Preparex(getStableTokenQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	return newStableTokenStmt, getStableTokenStmt, nil
 }

@@ -285,6 +285,8 @@ const (
 	ChangeTypeDeleteAssetExchange
 	// ChangeTypeDeleteTradingBy is used in present delete trading_by object.
 	ChangeTypeDeleteTradingBy
+	// ChangeTypeUpdateStableTokenParams is used in present update stable token params
+	ChangeTypeUpdateStableTokenParams
 )
 
 // SettingChangeType interface just make sure that only some of selected type can be put into SettingChange list
@@ -326,4 +328,9 @@ type DeleteTradingPairEntry struct {
 type DeleteAssetExchangeEntry struct {
 	settingChangeMarker
 	AssetExchangeID uint64 `json:"id"`
+}
+
+type UpdateStableTokenParamsEntry struct {
+	settingChangeMarker
+	Data map[string]interface{} `json:"data"`
 }

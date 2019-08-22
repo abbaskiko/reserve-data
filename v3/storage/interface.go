@@ -46,6 +46,7 @@ type SettingReader interface {
 	// GetTransferableAssets returns all assets that the set rate strategy is not not_set.
 	GetTransferableAssets() ([]v3.Asset, error)
 	GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error)
+	GetStableTokenParams() (map[string]interface{}, error)
 }
 
 type ControlInfoInterface interface {
