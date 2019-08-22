@@ -1,15 +1,20 @@
 package postgres
 
 import (
-	"fmt"
-	"github.com/KyberNetwork/reserve-data/common/testutil"
-	"github.com/KyberNetwork/reserve-data/v3/common"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
+
+	"github.com/KyberNetwork/reserve-data/common/testutil"
+	"github.com/KyberNetwork/reserve-data/v3/common"
 )
 
 func TestStorage_GetStableTokenParams(t *testing.T) {
+	var params = map[string]interface{}{
+		"a": "1",
+		"b": 2,
+	}
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {
 		assert.NoError(t, tearDown())
@@ -23,17 +28,16 @@ func TestStorage_GetStableTokenParams(t *testing.T) {
 			{
 				Type: common.ChangeTypeUpdateStableTokenParams,
 				Data: common.UpdateStableTokenParamsEntry{
-					Data: map[string]interface{}{
-						"a": "1",
-						"b": 2,
-					},
+					Data: params,
 				},
 			},
 		},
 	})
 	require.NoError(t, err)
 	require.NoError(t, s.ConfirmSettingChange(id, true))
-	data, err := s.GetStableTokenParams()
+	outputParams, err := s.GetStableTokenParams()
 	require.NoError(t, err)
-	fmt.Println(data)
+	t.Log(outputParams)
+	require.Contains(t, outputParams, "a")
+	require.Equal(t, "1", outputParams["a"])
 }

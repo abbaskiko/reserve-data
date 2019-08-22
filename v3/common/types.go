@@ -280,13 +280,13 @@ const (
 	// ChangeTypeChangeAssetAddr is used when update address of an asset
 	ChangeTypeChangeAssetAddr // change_asset_addr
 	// ChangeTypeDeleteTradingPair is used to present delete trading pair
-	ChangeTypeDeleteTradingPair
+	ChangeTypeDeleteTradingPair // delete_trading_pair
 	// ChangeTypeDeleteAssetExchange is used in present delete asset exchange object.
-	ChangeTypeDeleteAssetExchange
+	ChangeTypeDeleteAssetExchange // delete_asset_exchange
 	// ChangeTypeDeleteTradingBy is used in present delete trading_by object.
-	ChangeTypeDeleteTradingBy
+	ChangeTypeDeleteTradingBy // delete_trading_by
 	// ChangeTypeUpdateStableTokenParams is used in present update stable token params
-	ChangeTypeUpdateStableTokenParams
+	ChangeTypeUpdateStableTokenParams // update_stable_token_params
 )
 
 // SettingChangeType interface just make sure that only some of selected type can be put into SettingChange list
