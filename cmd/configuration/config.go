@@ -16,7 +16,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/pricefactor"
 	storagev3 "github.com/KyberNetwork/reserve-data/v3/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
@@ -27,7 +26,6 @@ type Config struct {
 	DataGlobalStorage    data.GlobalStorage
 	FetcherStorage       fetcher.Storage
 	FetcherGlobalStorage fetcher.GlobalStorage
-	MetricStorage        pricefactor.Storage
 	Archive              archive.Archive
 
 	World                *world.TheWorld
@@ -96,7 +94,6 @@ func (c *Config) AddCoreConfig(
 	c.DataGlobalStorage = dataStorage
 	c.FetcherStorage = dataStorage
 	c.FetcherGlobalStorage = dataStorage
-	c.MetricStorage = dataStorage
 	c.FetcherRunner = fetcherRunner
 	c.DataControllerRunner = dataControllerRunner
 	c.BlockchainSigner = pricingSigner

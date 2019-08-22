@@ -28,7 +28,7 @@ func TestStorage_GetStableTokenParams(t *testing.T) {
 			{
 				Type: common.ChangeTypeUpdateStableTokenParams,
 				Data: common.UpdateStableTokenParamsEntry{
-					Data: params,
+					Params: params,
 				},
 			},
 		},

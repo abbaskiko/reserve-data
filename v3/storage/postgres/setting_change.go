@@ -303,7 +303,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return errors.Wrap(err, msg)
 		}
-		err = s.updateStableTokenParams(tx, a.Data)
+		err = s.updateStableTokenParams(tx, a.Params)
 		if err != nil {
 			msg := fmt.Sprintf("update stable token params %d, err=%v\n", i, err)
 			log.Println(msg)

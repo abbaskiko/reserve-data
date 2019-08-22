@@ -332,5 +332,5 @@ type DeleteAssetExchangeEntry struct {
 
 type UpdateStableTokenParamsEntry struct {
 	settingChangeMarker
-	Data map[string]interface{} `json:"data"`
+	Params map[string]interface{} `json:"params"`
 }

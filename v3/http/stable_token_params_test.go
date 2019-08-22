@@ -52,7 +52,7 @@ func TestServer_StableTokenParams(t *testing.T) {
 					{
 						Type: common.ChangeTypeUpdateStableTokenParams,
 						Data: common.UpdateStableTokenParamsEntry{
-							Data: map[string]interface{}{
+							Params: map[string]interface{}{
 								"a": "def",
 								"b": 2,
 								"e": []int{1, 2, 3},
