@@ -490,14 +490,17 @@ type ExchangeBalance struct {
 	Available  float64 `json:"available"`
 	Locked     float64 `json:"locked"`
 	Name       string  `json:"name"`
+	Error      string  `json:"error"`
 }
 
 // AuthdataBalance is balance for a token in v3 authata
 type AuthdataBalance struct {
-	AssetID   uint64            `json:"asset_id"`
-	Exchanges []ExchangeBalance `json:"exchanges"`
-	Reserve   float64           `json:"reserve"`
-	Symbol    string            `json:"symbol"`
+	Valid        bool              `json:"valid"`
+	AssetID      uint64            `json:"asset_id"`
+	Exchanges    []ExchangeBalance `json:"exchanges"`
+	Reserve      float64           `json:"reserve"`
+	ReserveError string            `json:"reserve_error"`
+	Symbol       string            `json:"symbol"`
 }
 
 //PendingActivities is pending activities for authdata
