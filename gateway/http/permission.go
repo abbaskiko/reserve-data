@@ -19,6 +19,7 @@ p, %[1]s, /*, GET`, key)
 func addKeyWritePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
+p, %[1]s, /v3/setting-change-update-exchange, POST
 p, %[1]s, /v3/setting-change-target, POST
 p, %[1]s, /v3/setting-change-pwis, POST
 p, %[1]s, /v3/setting-change-rbquadratic, POST
@@ -28,6 +29,7 @@ p, %[1]s, /v3/setting-change-main, POST`, key)
 func addKeyConfirmPolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
+p, %[1]s, /v3/setting-change-update-exchange/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-target/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-pwis/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-rbquadratic/:id, (PUT)|(DELETE)

@@ -254,6 +254,7 @@ const (
 	ChangeCatalogSetPWIS                                 // set_pwis
 	ChangeCatalogStableToken                             // set_stable_token
 	ChangeCatalogRebalanceQuadratic                      // set_rebalance_quadratic
+	ChangeCatalogUpdateExchange                          // update_exchange
 	ChangeCatalogMain                                    // main
 )
 

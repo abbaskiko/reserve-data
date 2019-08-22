@@ -69,6 +69,12 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 	g.PUT("/setting-change-rbquadratic/:id", server.confirmSettingChange)
 	g.DELETE("/setting-change-rbquadratic/:id", server.rejectSettingChange)
 
+	g.POST("/setting-change-update-exchange", server.createSettingChangeWithType(common.ChangeCatalogUpdateExchange))
+	g.GET("/setting-change-update-exchange", server.getSettingChangeWithType(common.ChangeCatalogUpdateExchange))
+	g.GET("/setting-change-update-exchange/:id", server.getSettingChange)
+	g.PUT("/setting-change-update-exchange/:id", server.confirmSettingChange)
+	g.DELETE("/setting-change-update-exchange/:id", server.rejectSettingChange)
+
 	g.GET("/price-factor", server.getPriceFactor)
 	g.POST("/price-factor", server.setPriceFactor)
 
