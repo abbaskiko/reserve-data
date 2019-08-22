@@ -641,73 +641,9 @@ type AddressesResponse struct {
 	Addresses map[string]ethereum.Address `json:"addresses"`
 }
 
-func NewAddressResponse(addrs map[string]ethereum.Address) *AddressesResponse {
+// NewAddressesResponse return new addresses response
+func NewAddressesResponse(addrs map[string]ethereum.Address) *AddressesResponse {
 	return &AddressesResponse{
 		Addresses: addrs,
 	}
-}
-
-type TokenResponse struct {
-	Tokens  []Token `json:"tokens"`
-	Version uint64  `json:"version"`
-}
-
-func NewTokenResponse(tokens []Token, version uint64) *TokenResponse {
-	return &TokenResponse{
-		Tokens:  tokens,
-		Version: version,
-	}
-}
-
-type ExchangeResponse struct {
-	Exchanges map[string]*ExchangeSetting `json:"exchanges"`
-	Version   uint64                      `json:"version"`
-}
-
-func NewExchangeResponse(exs map[string]*ExchangeSetting, version uint64) *ExchangeResponse {
-	return &ExchangeResponse{
-		Exchanges: exs,
-		Version:   version,
-	}
-}
-
-type AllSettings struct {
-	Addresses *AddressesResponse `json:"addresses"`
-	Tokens    *TokenResponse     `json:"tokens"`
-	Exchanges *ExchangeResponse  `json:"exchanges"`
-}
-
-func NewAllSettings(addrs *AddressesResponse, toks *TokenResponse, exs *ExchangeResponse) *AllSettings {
-	return &AllSettings{
-		Addresses: addrs,
-		Tokens:    toks,
-		Exchanges: exs,
-	}
-}
-
-//QuantityStepFunction represent a quatity step function for a token
-type QuantityStepFunction struct {
-	XBuy  []*big.Int `json:"x_buy"`
-	YBuy  []*big.Int `json:"y_buy"`
-	XSell []*big.Int `json:"x_sell"`
-	YSell []*big.Int `json:"y_sell"`
-}
-
-//ImbalanceStepFunction represent an imbalance step function for a token
-type ImbalanceStepFunction struct {
-	XBuy  []*big.Int `json:"x_buy"`
-	YBuy  []*big.Int `json:"y_buy"`
-	XSell []*big.Int `json:"x_sell"`
-	YSell []*big.Int `json:"y_sell"`
-}
-
-//StepFunctionResponse api response about a token step function
-type StepFunctionResponse struct {
-	QuantityStepResponse  QuantityStepFunction  `json:"quantity_step_function"`
-	ImbalanceStepResponse ImbalanceStepFunction `json:"imbalance_step_function"`
-}
-
-//FetcherConfiguration is configuration of fetcher
-type FetcherConfiguration struct {
-	BTC bool `json:"btc" binding:"exists"`
 }

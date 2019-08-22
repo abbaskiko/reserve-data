@@ -453,6 +453,8 @@ func (s *Server) register() {
 		g.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		g.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
+		g.GET("/addresses", s.GetAddresses)
+
 	}
 }
 
