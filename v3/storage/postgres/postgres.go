@@ -71,7 +71,7 @@ func NewStorage(db *sqlx.DB) (*Storage, error) {
 		return nil, fmt.Errorf("failed to intialize database schema err=%s", err.Error())
 	}
 
-	for _, query := range alterScripts {
+	for _, query := range migrateScripts {
 		if _, err := db.Exec(query); err != nil {
 			return nil, err
 		}
