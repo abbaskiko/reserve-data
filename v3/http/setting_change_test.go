@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -517,6 +518,83 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Log(tc.msg)
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+
+	exchangeID := uint64(1)
+	// pre-insert exchange
+	server := NewServer(s, "", nil)
+	const updateExchange = "/v3/setting-change-update-exchange"
+	var updateExchID uint64
+	var tests = []testCase{
+		{
+			msg:      "create update exchange",
+			endpoint: updateExchange,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateExchange,
+						Data: common.UpdateExchangeEntry{
+							ExchangeID:      exchangeID,
+							TradingFeeMaker: common.FloatPointer(0.4),
+							TradingFeeTaker: common.FloatPointer(0.6),
+							Disable:         common.BoolPointer(false),
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					ID      uint64 `json:"id"`
+					Success bool   `json:"success"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &idResponse)
+				require.NoError(t, err)
+				require.True(t, idResponse.Success)
+				updateExchID = idResponse.ID
+			},
+		},
+		{
+			msg: "confirm update exchange",
+			endpointExp: func() string {
+				return updateExchange + fmt.Sprintf("/%d", updateExchID)
+			},
+			method: http.MethodPut,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "get exchange",
+			endpoint: fmt.Sprintf("/v3/exchange/%d", exchangeID),
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var response struct {
+					Success bool            `json:"success"`
+					Data    common.Exchange `json:"data"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &response)
+				require.NoError(t, err)
+				assert.True(t, response.Success)
+				assert.Equal(t, false, response.Data.Disable)
+				assert.Equal(t, 0.4, response.Data.TradingFeeMaker)
+				assert.Equal(t, 0.6, response.Data.TradingFeeTaker)
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
 	}
 }

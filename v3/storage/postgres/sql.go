@@ -137,12 +137,14 @@ CREATE TABLE IF NOT EXISTS trading_by
     UNIQUE (asset_id, trading_pair_id)
 );
 
---create enum types if not exist
+--create enum types if exist then alter 
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'setting_change_cat') THEN
         CREATE TYPE setting_change_cat AS ENUM ('set_target', 'set_pwis', 
-			'set_stable_token','set_rebalance_quadratic', 'main');
+			'set_stable_token','set_rebalance_quadratic', 'main', 'update_exchange');
+	ELSE
+		ALTER TYPE "setting_change_cat" ADD VALUE IF NOT EXISTS 'update_exchange';
     END IF;
 END$$;
 
