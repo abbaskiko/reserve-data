@@ -167,6 +167,10 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+	if len(settingChange.ChangeList) == 0 {
+		httputil.ResponseFailure(c, httputil.WithReason("change_list must not empty"))
+		return
+	}
 	for i, o := range settingChange.ChangeList {
 		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
 			msg := fmt.Sprintf("validate obj error at %d, err=%s", i, err)
