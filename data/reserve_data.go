@@ -156,8 +156,11 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 		exchanges[exchangeID.String()] = exchange
 		for tokenSymbol := range balances.AvailableBalance {
 			token, err := rd.settingStorage.GetAssetExchangeBySymbol(exchange.ID, tokenSymbol)
+			// it seems this token have balance in exchange but have not configured
+			// in core, just ignore it
 			if err != nil {
-				return result, errors.Wrapf(err, "failed to get token by name: %s", tokenSymbol)
+				log.Printf("failed to get token by name: %s", tokenSymbol)
+				continue
 			}
 			tokens[tokenSymbol] = token
 		}
