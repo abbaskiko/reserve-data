@@ -26,7 +26,6 @@ type Token struct {
 	Name                 string `json:"name"`
 	Address              string `json:"address"`
 	Decimals             int64  `json:"decimals"`
-	Active               bool   `json:"active"`
 	Internal             bool   `json:"internal"`
 	LastActivationChange uint64 `json:"last_activation_change"`
 	CreationTime         uint64 `json:"creation_time"`
@@ -39,7 +38,6 @@ func NewToken(id, name, address string, decimal int64, active, internal bool, ti
 		Name:                 name,
 		Address:              address,
 		Decimals:             decimal,
-		Active:               active,
 		Internal:             internal,
 		LastActivationChange: timepoint,
 	}
