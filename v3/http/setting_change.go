@@ -35,7 +35,7 @@ func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType comm
 	case common.ChangeTypeChangeAssetAddr:
 		err = s.checkChangeAssetAddressParams(*e.(*common.ChangeAssetAddressEntry))
 	case common.ChangeTypeUpdateExchange:
-		return nil
+		err = s.checkUpdateExchangeParams(*e.(*common.UpdateExchangeEntry))
 	case common.ChangeTypeDeleteTradingPair:
 		err = s.checkDeleteTradingPairParams(*e.(*common.DeleteTradingPairEntry))
 	case common.ChangeTypeDeleteAssetExchange:
@@ -140,7 +140,7 @@ func (s *Server) fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uin
 	}
 	exchangeInfo, err := centralExh.GetLiveExchangeInfos(tps)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to get live exchange info, exchange=%v, symbol=%+v", exhID, tps)
 	}
 	tradingPairID := uint64(1)
 	for idx := range tradingPairs {
@@ -175,20 +175,19 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	}
 	for i, o := range settingChange.ChangeList {
 		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
-			msg := fmt.Sprintf("validate obj error at %d, err=%s", i, err)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+			msg := fmt.Sprintf("verify change list get error at index %d", i)
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 
 		if err := s.validateChangeEntry(o.Data, o.Type); err != nil {
-			msg := fmt.Sprintf("validate error at %d, err=%s", i, err)
-			log.Println(msg)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+			msg := fmt.Sprintf("verify change list get error at index %d", i)
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 	}
 	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
-		msg := fmt.Sprintf("fill live info error=%s", err)
+		msg := fmt.Sprintf("fill trading pair info error=%s", err)
 		log.Println(msg)
 		httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
 		return
@@ -503,4 +502,10 @@ func (s *Server) checkChangeAssetAddressParams(changeAssetAddressEntry common.Ch
 		return common.ErrAddressExists
 	}
 	return nil
+}
+
+func (s *Server) checkUpdateExchangeParams(updateExchangeEntry common.UpdateExchangeEntry) error {
+	//check if exchange exist
+	_, err := s.storage.GetExchange(updateExchangeEntry.ExchangeID)
+	return err
 }
