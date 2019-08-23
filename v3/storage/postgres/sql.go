@@ -435,9 +435,9 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 									rebalance_quadratic_b = COALESCE(:rebalance_quadratic_b,rebalance_quadratic_b),
 									rebalance_quadratic_c = COALESCE(:rebalance_quadratic_c,rebalance_quadratic_c),
 									target_total = COALESCE(:target_total,target_total),
-									target_reserve = COALESCE(:target_total,target_reserve),
-									target_rebalance_threshold = COALESCE(:target_total,target_rebalance_threshold),
-									target_transfer_threshold = COALESCE(:target_total,target_transfer_threshold),
+									target_reserve = COALESCE(:target_reserve,target_reserve),
+									target_rebalance_threshold = COALESCE(:target_rebalance_threshold,target_rebalance_threshold),
+									target_transfer_threshold = COALESCE(:target_transfer_threshold,target_transfer_threshold),
 								    updated      = now()
 								WHERE id = :id RETURNING id;
 								`
@@ -542,7 +542,7 @@ func exchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, *sqlx.
 	SET trading_fee_maker = COALESCE(:trading_fee_maker, trading_fee_maker),
 	    trading_fee_taker = COALESCE(:trading_fee_taker, trading_fee_taker),
 	    disable           = COALESCE(:disable, disable)
-	WHERE id = :id
+	WHERE id = :id RETURNING id
 	`
 	updateExchange, err := db.PrepareNamed(updateExchangeQuery)
 	if err != nil {

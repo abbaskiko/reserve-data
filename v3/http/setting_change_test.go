@@ -605,6 +605,36 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 				assert.Equal(t, 0.6, response.Data.TradingFeeTaker)
 			},
 		},
+		{
+			msg:      "create update exchange",
+			endpoint: updateExchange,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateExchange,
+						Data: common.UpdateExchangeEntry{
+							ExchangeID:      10000,
+							TradingFeeMaker: common.FloatPointer(0.4),
+							TradingFeeTaker: common.FloatPointer(0.6),
+							Disable:         common.BoolPointer(false),
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				msg := resp.Body.Bytes()
+				require.NoError(t, err)
+				t.Logf("%+v", string(msg))
+				var response struct {
+					Success bool `json:"success"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(msg, &response)
+				require.NoError(t, err)
+				assert.False(t, response.Success)
+			},
+		},
 	}
 
 	for _, tc := range tests {

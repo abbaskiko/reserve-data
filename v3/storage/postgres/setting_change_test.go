@@ -22,7 +22,7 @@ func initData(t *testing.T, s *Storage) {
 		{
 			Type: common.ChangeTypeUpdateExchange,
 			Data: common.UpdateExchangeEntry{
-				ExchangeID:      0,
+				ExchangeID:      binance,
 				TradingFeeMaker: common.FloatPointer(1.5),
 				TradingFeeTaker: common.FloatPointer(1.5),
 				Disable:         common.BoolPointer(false),

@@ -246,6 +246,12 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 	// 2. Get list of balances (B)
 	// 3. Get list of pending activity status again (C)
 	// 4. if C != A, repeat 1, otherwise return A, B
+
+	/*
+		we try to build a consistent view of pending activities and balances,
+		activities update(eg, some txs become complete) can make balances result looks wrong
+		so, we verify activities status before and after we collect balances, make sure it does not change.
+	*/
 	var balances map[string]common.BalanceEntry
 	var preStatuses, statuses map[common.ActivityID]common.ActivityStatus
 	var err error

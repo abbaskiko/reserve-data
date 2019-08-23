@@ -39,9 +39,9 @@ var (
 	// ErrTradingByAlreadyExists is returned when trading by already exist for asset<->tradingPair
 	ErrTradingByAlreadyExists = errors.New("trading by already exists")
 	// ErrExchangeNotExists is returned when exchange is not exist.
-	ErrExchangeNotExists = errors.New("exchange is not exist")
+	ErrExchangeNotExists = errors.New("exchange does not exist")
 	// ErrAssetNotExists is returned when foreign key is not exist.
-	ErrAssetNotExists = errors.New("asset is not exist")
+	ErrAssetNotExists = errors.New("asset does not exist")
 	// ErrTradingByAssetIDInvalid is returned when trading by asset id is invalid
 	ErrTradingByAssetIDInvalid = errors.New("asset_id is either base or quote of trading_pair")
 	// ErrAssetExchangeDeleteViolation is returned when there are trading pair relating to deleted asset exchange
