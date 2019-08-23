@@ -53,6 +53,8 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.POST("/set-feed-configuration", coreProxyMW)
 		g.GET("/get-feed-configuration", coreProxyMW)
 
+		g.GET("/addresses", coreProxyMW)
+
 		return nil
 	}
 }
