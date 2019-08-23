@@ -154,23 +154,24 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 			return result, errors.Wrapf(err, "failed to get exchange by name: %s", exchangeID.String())
 		}
 		exchanges[exchangeID.String()] = exchange
-		for tokenSymbol := range balances.AvailableBalance {
-			token, err := rd.settingStorage.GetAssetBySymbol(tokenSymbol)
-			// it seems this token have balance in exchange but have not configured
-			// in core, just ignore it
+		for exchangeTokenSymbol := range balances.AvailableBalance {
+			//* cos symbol of token in an exchange can be different then we need to use GetAssetExchangeBySymbol
+			token, err := rd.settingStorage.GetAssetExchangeBySymbol(exchange.ID, exchangeTokenSymbol)
+			//* it seems this token have balance in exchange but have not configured
+			//* in core, just ignore it
 			if err != nil {
-				log.Printf("failed to get token by name: %s", tokenSymbol)
+				log.Printf("failed to get token by name: %s", exchangeTokenSymbol)
 				continue
 			}
-			tokens[tokenSymbol] = token
+			tokens[exchangeTokenSymbol] = token
 		}
 	}
 
 	for tokenSymbol := range data.ReserveBalances {
 		if _, exist := tokens[tokenSymbol]; !exist {
 			token, err := rd.settingStorage.GetAssetBySymbol(tokenSymbol)
-			// it seems this token have balance in exchange but have not configured
-			// in core, just ignore it
+			//* it seems this token have balance in exchange but have not configured
+			//* in core, just ignore it
 			if err != nil {
 				log.Printf("failed to get token by name: %s", tokenSymbol)
 				continue
