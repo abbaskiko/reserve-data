@@ -13,7 +13,9 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/httpsign-utils/authenticator"
+	"github.com/KyberNetwork/reserve-data/cmd/mode"
 	"github.com/KyberNetwork/reserve-data/gateway/http"
+	libapp "github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/lib/httputil"
 )
 
@@ -103,6 +105,7 @@ func main() {
 	)
 
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
+	app.Flags = append(app.Flags, mode.NewCliFlag())
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -133,6 +136,11 @@ func run(c *cli.Context) error {
 		auth                                                      *httpsign.Authenticator
 		perm                                                      gin.HandlerFunc
 	)
+	logger, err := libapp.NewLogger(c)
+	if err != nil {
+		return err
+	}
+	defer libapp.NewFlusher(logger)()
 	if err := validation.Validate(c.String(coreEndpointFlag),
 		validation.Required,
 		is.URL); err != nil {
@@ -189,6 +197,7 @@ func run(c *cli.Context) error {
 		auth,
 		perm,
 		noAuth,
+		logger,
 		http.WithCoreEndpoint(c.String(coreEndpointFlag)),
 		http.WithSettingEndpoint(c.String(settingEndpointFlag)),
 	)

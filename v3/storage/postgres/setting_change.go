@@ -99,7 +99,7 @@ func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChange
 // GetSettingChanges return list setting change.
 func (s *Storage) GetSettingChanges(cat common.ChangeCatalog) ([]common.SettingChangeResponse, error) {
 	var dbResult []settingChangeDB
-	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat)
+	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat.String())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, common.ErrNotFound
@@ -293,6 +293,19 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 		err = s.deleteTradingPair(tx, a.TradingPairID)
 		if err != nil {
 			msg := fmt.Sprintf("delete trading pair %d, err=%v\n", i, err)
+			log.Println(msg)
+			return err
+		}
+	case common.ChangeTypeUpdateStableTokenParams:
+		a, ok := entry.Data.(*common.UpdateStableTokenParamsEntry)
+		if !ok {
+			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateStableTokenParams)
+			log.Println(msg)
+			return errors.Wrap(err, msg)
+		}
+		err = s.updateStableTokenParams(tx, a.Params)
+		if err != nil {
+			msg := fmt.Sprintf("update stable token params %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}

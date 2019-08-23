@@ -40,6 +40,8 @@ func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType comm
 		err = s.checkDeleteTradingPairParams(*e.(*common.DeleteTradingPairEntry))
 	case common.ChangeTypeDeleteAssetExchange:
 		err = s.checkDeleteAssetExchangeParams(*e.(*common.DeleteAssetExchangeEntry))
+	case common.ChangeTypeUpdateStableTokenParams:
+		return nil
 	default:
 		return errors.Errorf("unknown type of setting change: %v", reflect.TypeOf(e))
 	}
@@ -165,6 +167,10 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	if err := c.ShouldBindJSON(&settingChange); err != nil {
 		log.Printf("cannot bind data to create setting_change from request err=%s", err.Error())
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	if len(settingChange.ChangeList) == 0 {
+		httputil.ResponseFailure(c, httputil.WithReason("change_list must not empty"))
 		return
 	}
 	for i, o := range settingChange.ChangeList {

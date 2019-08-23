@@ -16,7 +16,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	"github.com/KyberNetwork/reserve-data/pricefactor"
 	v3common "github.com/KyberNetwork/reserve-data/v3/common"
 	"github.com/KyberNetwork/reserve-data/v3/storage"
 )
@@ -33,13 +32,12 @@ var (
 
 // Server struct for http package
 type Server struct {
-	app                reserve.Data
-	core               reserve.Core
-	priceFactorStorage pricefactor.Storage
-	host               string
-	r                  *gin.Engine
-	blockchain         Blockchain
-	settingStorage     storage.Interface
+	app            reserve.Data
+	core           reserve.Core
+	host           string
+	r              *gin.Engine
+	blockchain     Blockchain
+	settingStorage storage.Interface
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -427,68 +425,6 @@ func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	return fromTime, toTime, true
 }
 
-// SetStableTokenParams set stable token params
-func (s *Server) SetStableTokenParams(c *gin.Context) {
-	postForm := c.Request.Form
-	value := []byte(postForm.Get("value"))
-	if len(value) > maxDataSize {
-		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
-		return
-	}
-	err := s.priceFactorStorage.SetStableTokenParams(value)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-// ConfirmStableTokenParams confirm stable token params
-func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
-	postForm := c.Request.Form
-	value := []byte(postForm.Get("value"))
-	if len(value) > maxDataSize {
-		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
-		return
-	}
-	err := s.priceFactorStorage.ConfirmStableTokenParams(value)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-// RejectStableTokenParams reject stable token params
-func (s *Server) RejectStableTokenParams(c *gin.Context) {
-	err := s.priceFactorStorage.RemovePendingStableTokenParams()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-// GetPendingStableTokenParams return pending stable token params
-func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
-	data, err := s.priceFactorStorage.GetPendingStableTokenParams()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
-// GetStableTokenParams return all stable token params
-func (s *Server) GetStableTokenParams(c *gin.Context) {
-	data, err := s.priceFactorStorage.GetStableTokenParams()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
-}
-
 func (s *Server) register() {
 	if s.core != nil && s.app != nil {
 		g := s.r.Group("/v3")
@@ -512,16 +448,12 @@ func (s *Server) register() {
 
 		g.GET("/timeserver", s.GetTimeServer)
 
-		g.POST("/set-stable-token-params", s.SetStableTokenParams)
-		g.POST("/confirm-stable-token-params", s.ConfirmStableTokenParams)
-		g.POST("/reject-stable-token-params", s.RejectStableTokenParams)
-		g.GET("/pending-stable-token-params", s.GetPendingStableTokenParams)
-		g.GET("/stable-token-params", s.GetStableTokenParams)
-
 		g.GET("/gold-feed", s.GetGoldData)
 		g.GET("/btc-feed", s.GetBTCData)
 		g.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		g.GET("/get-feed-configuration", s.GetFeedConfiguration)
+
+		g.GET("/addresses", s.GetAddresses)
 
 	}
 }
@@ -543,7 +475,6 @@ func (s *Server) EnableProfiler() {
 func NewHTTPServer(
 	app reserve.Data,
 	core reserve.Core,
-	metric pricefactor.Storage,
 	host string,
 	dpl deployment.Deployment,
 	bc Blockchain,
@@ -565,12 +496,11 @@ func NewHTTPServer(
 	))
 
 	return &Server{
-		app:                app,
-		core:               core,
-		priceFactorStorage: metric,
-		host:               host,
-		r:                  r,
-		blockchain:         bc,
-		settingStorage:     settingStorage,
+		app:            app,
+		core:           core,
+		host:           host,
+		r:              r,
+		blockchain:     bc,
+		settingStorage: settingStorage,
 	}
 }

@@ -53,6 +53,8 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.POST("/set-feed-configuration", coreProxyMW)
 		g.GET("/get-feed-configuration", coreProxyMW)
 
+		g.GET("/addresses", coreProxyMW)
+
 		return nil
 	}
 }
@@ -100,6 +102,12 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 		g.POST("/setting-change-stable", settingProxyMW)
 		g.PUT("/setting-change-stable/:id", settingProxyMW)
 		g.DELETE("/setting-change-stable/:id", settingProxyMW)
+
+		g.GET("/setting-change-update-exchange", settingProxyMW)
+		g.GET("setting-change-update-exchange/:id", settingProxyMW)
+		g.POST("/setting-change-update-exchange", settingProxyMW)
+		g.PUT("/setting-change-update-exchange/:id", settingProxyMW)
+		g.DELETE("/setting-change-update-exchange/:id", settingProxyMW)
 
 		return nil
 	}

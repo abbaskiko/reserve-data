@@ -1,9 +1,13 @@
 package common
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+)
 
 type settingChangeEntry struct {
-	Type ChangeType      `json:"type"`
+	Type *ChangeType     `json:"type"`
 	Data json.RawMessage `json:"data"`
 }
 
@@ -13,12 +17,18 @@ func (entry *SettingChangeEntry) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return nil
 	}
-	entry.Type = tmp.Type
-	obj, err := SettingChangeFromType(tmp.Type)
+	if tmp.Type == nil {
+		return errors.New("'type' field of change is required")
+	}
+	entry.Type = *tmp.Type
+	obj, err := SettingChangeFromType(*tmp.Type)
 	if err != nil {
 		return err
 	}
-	if err = json.Unmarshal(tmp.Data, obj); err != nil {
+	decode := json.NewDecoder(bytes.NewBuffer(tmp.Data))
+	decode.DisallowUnknownFields()
+
+	if err = decode.Decode(obj); err != nil {
 		return err
 	}
 	entry.Data = obj
