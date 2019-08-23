@@ -140,7 +140,7 @@ func (s *Server) fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uin
 	}
 	exchangeInfo, err := centralExh.GetLiveExchangeInfos(tps)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to get live exchange info, exchange=%v, symbol=%+v", exhID, tps)
 	}
 	tradingPairID := uint64(1)
 	for idx := range tradingPairs {
@@ -176,14 +176,14 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	for i, o := range settingChange.ChangeList {
 		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
 			msg := fmt.Sprintf("validate obj error at %d, err=%s", i, err)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithData(o))
 			return
 		}
 
 		if err := s.validateChangeEntry(o.Data, o.Type); err != nil {
 			msg := fmt.Sprintf("validate error at %d, err=%s", i, err)
 			log.Println(msg)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithData(o))
 			return
 		}
 	}
