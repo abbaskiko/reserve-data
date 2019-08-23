@@ -175,20 +175,19 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	}
 	for i, o := range settingChange.ChangeList {
 		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
-			msg := fmt.Sprintf("validate obj error at %d, err=%s", i, err)
+			msg := fmt.Sprintf("verify change list get error at index %d", i)
 			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 
 		if err := s.validateChangeEntry(o.Data, o.Type); err != nil {
-			msg := fmt.Sprintf("validate error at %d, err=%s", i, err)
-			log.Println(msg)
+			msg := fmt.Sprintf("verify change list get error at index %d", i)
 			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 	}
 	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
-		msg := fmt.Sprintf("fill live info error=%s", err)
+		msg := fmt.Sprintf("fill trading pair info error=%s", err)
 		log.Println(msg)
 		httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
 		return
