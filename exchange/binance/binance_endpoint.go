@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"math/big"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -52,6 +51,7 @@ func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint ui
 	}
 }
 
+// GetResponse call to binance endpoint and get response
 func (ep *Endpoint) GetResponse(
 	method string, url string,
 	params map[string]string, signNeeded bool, timepoint uint64) ([]byte, error) {
@@ -103,8 +103,8 @@ func (ep *Endpoint) GetResponse(
 		}
 		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
-	if err != nil || len(respBody) == 0 || rand.Int()%10 == 0 {
-		log.Printf("request to %s, got response from binance (error or throttled to 10%%): %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
+	if err != nil || len(respBody) == 0 {
+		log.Printf("request to %s, got response from binance: %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
 	}
 	return respBody, err
 }
