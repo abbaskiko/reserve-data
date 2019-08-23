@@ -35,7 +35,7 @@ func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType comm
 	case common.ChangeTypeChangeAssetAddr:
 		err = s.checkChangeAssetAddressParams(*e.(*common.ChangeAssetAddressEntry))
 	case common.ChangeTypeUpdateExchange:
-		return nil
+		err = s.checkUpdateExchangeParams(*e.(*common.UpdateExchangeEntry))
 	case common.ChangeTypeDeleteTradingPair:
 		err = s.checkDeleteTradingPairParams(*e.(*common.DeleteTradingPairEntry))
 	case common.ChangeTypeDeleteAssetExchange:
@@ -176,14 +176,14 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	for i, o := range settingChange.ChangeList {
 		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
 			msg := fmt.Sprintf("validate obj error at %d, err=%s", i, err)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithData(o))
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 
 		if err := s.validateChangeEntry(o.Data, o.Type); err != nil {
 			msg := fmt.Sprintf("validate error at %d, err=%s", i, err)
 			log.Println(msg)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithData(o))
+			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 	}
@@ -503,4 +503,10 @@ func (s *Server) checkChangeAssetAddressParams(changeAssetAddressEntry common.Ch
 		return common.ErrAddressExists
 	}
 	return nil
+}
+
+func (s *Server) checkUpdateExchangeParams(updateExchangeEntry common.UpdateExchangeEntry) error {
+	//check if exchange exist
+	_, err := s.storage.GetExchange(updateExchangeEntry.ExchangeID)
+	return err
 }
