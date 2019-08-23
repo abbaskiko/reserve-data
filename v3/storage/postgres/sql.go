@@ -542,7 +542,7 @@ func exchangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, *sqlx.
 	SET trading_fee_maker = COALESCE(:trading_fee_maker, trading_fee_maker),
 	    trading_fee_taker = COALESCE(:trading_fee_taker, trading_fee_taker),
 	    disable           = COALESCE(:disable, disable)
-	WHERE id = :id
+	WHERE id = :id RETURNING id
 	`
 	updateExchange, err := db.PrepareNamed(updateExchangeQuery)
 	if err != nil {

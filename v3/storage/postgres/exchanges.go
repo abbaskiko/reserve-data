@@ -124,7 +124,8 @@ func (s *Storage) updateExchange(tx *sqlx.Tx, id uint64, updateOpts storage.Upda
 	if tx != nil {
 		sts = tx.NamedStmt(s.stmts.updateExchange)
 	}
-	_, err := sts.Exec(
+	var updatedID uint64
+	err := sts.Get(&updatedID,
 		struct {
 			ID              uint64   `db:"id"`
 			TradingFeeMaker *float64 `db:"trading_fee_maker"`
@@ -138,6 +139,9 @@ func (s *Storage) updateExchange(tx *sqlx.Tx, id uint64, updateOpts storage.Upda
 		},
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return common.ErrExchangeNotExists
+		}
 		pErr, ok := err.(*pq.Error)
 		if !ok {
 			return fmt.Errorf("unknown error returned err=%s", err.Error())
