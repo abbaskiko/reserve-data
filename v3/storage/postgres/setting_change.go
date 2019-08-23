@@ -327,7 +327,7 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 
 	for i, change := range changeObj.ChangeList {
 		if err = s.applyChange(tx, i, change); err != nil {
-			return errors.Wrapf(err, "failed to exec change with data:%+v", change)
+			return err
 		}
 	}
 	_, err = tx.Stmtx(s.stmts.deleteSettingChange).Exec(id)
