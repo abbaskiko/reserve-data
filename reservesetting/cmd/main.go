@@ -17,6 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/lib/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/http"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
+	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
 )
 
 const (
@@ -35,6 +36,8 @@ func main() {
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.V3ServicePort)...)
 	app.Flags = append(app.Flags, configuration.NewExchangeCliFlag())
 	app.Flags = append(app.Flags, profiler.NewCliFlags()...)
+	app.Flags = append(app.Flags, blockchain.NewWrapperAddressFlag()...)
+	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -63,6 +66,7 @@ func run(c *cli.Context) error {
 	binanceSigner := binance.NewSigner("", "")
 	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
 	hi := configuration.NewhuobiInterfaceFromContext(c)
+
 	// dummy signer as live infos does not need to sign
 	huobiSigner := huobi.NewSigner("", "")
 	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi)
@@ -77,7 +81,27 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	server := http.NewServer(sr, host, liveExchanges)
+	wrapperAddress, err := blockchain.NewWrapperAddressFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	rateAddress, err := blockchain.NewRateAddressFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
+
+	newBlockchain, err := blockchain.NewBlockchain(wrapperAddress, rateAddress, ethClient)
+	if err != nil {
+		return err
+	}
+
+	server := http.NewServer(sr, host, liveExchanges, newBlockchain)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}

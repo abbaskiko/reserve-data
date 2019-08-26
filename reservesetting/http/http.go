@@ -9,6 +9,7 @@ import (
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
+	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
 )
 
 // Server is the HTTP server of token V3.
@@ -16,6 +17,7 @@ type Server struct {
 	storage            storage.Interface
 	r                  *gin.Engine
 	host               string
+	blockchain         *blockchain.Blockchain
 	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
 }
 
@@ -26,6 +28,7 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 		storage:            storage,
 		r:                  r,
 		host:               host,
+		blockchain:         blockchain,
 		supportedExchanges: supportedExchanges,
 	}
 	g := r.Group("/v3")

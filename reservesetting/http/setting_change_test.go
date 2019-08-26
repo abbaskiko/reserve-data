@@ -139,7 +139,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, "", supportedExchanges)
+	server := NewServer(s, "", supportedExchanges, nil)
 
 	var tests = []testCase{
 		{
@@ -315,7 +315,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(asset)
 
-	server := NewServer(s, "", supportedExchanges)
+	server := NewServer(s, "", supportedExchanges, nil)
 
 	var tests = []testCase{
 		{
@@ -584,7 +584,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 
 	exchangeID := uint64(1)
 	// pre-insert exchange
-	server := NewServer(s, "", nil)
+	server := NewServer(s, "", nil, nil)
 	const updateExchange = "/v3/setting-change-update-exchange"
 	var updateExchID uint64
 	var tests = []testCase{
