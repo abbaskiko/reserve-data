@@ -10,7 +10,7 @@ import (
 )
 
 func TestCheckTokenIndices(t *testing.T) {
-	//? this is an which call to external resourc
+	//? this is a test which call to external resource
 	//? skip after run in local
 	t.Skip()
 
