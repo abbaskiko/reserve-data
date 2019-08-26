@@ -15,7 +15,6 @@ const (
 	wrapperAddressFlag = "wrapper-address"
 	rateAddressFlag    = "rate-address"
 	ethereumNodeFlag   = "ethereum-node"
-	infuraEndpoint     = "https://mainnet.infura.io"
 )
 
 var (
@@ -30,6 +29,12 @@ var (
 		deployment.Ropsten:     "0x535DE1F5a982c2a896da62790a42723A71c0c12B",
 		deployment.Staging:     "0xe3E415a7a6c287a95DC68a01ff036828073fD2e6",
 		deployment.Production:  "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B",
+	}
+	defaultNodeEndpoint = map[deployment.Deployment]string{
+		deployment.Development: "https://mainnet.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
+		deployment.Ropsten:     "https://ropsten.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
+		deployment.Staging:     "https://mainnet.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
+		deployment.Production:  "https://mainnet.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
 	}
 )
 
@@ -89,12 +94,22 @@ func NewEthereumNodeFlags() cli.Flag {
 		Name:   ethereumNodeFlag,
 		Usage:  "Ethereum Node URL",
 		EnvVar: "ETHEREUM_NODE",
-		Value:  infuraEndpoint,
 	}
 }
 
 // NewEthereumClientFromFlag returns Ethereum client from flag variable, or error if occurs
 func NewEthereumClientFromFlag(c *cli.Context) (*ethclient.Client, error) {
 	ethereumNodeURL := c.GlobalString(ethereumNodeFlag)
+	if ethereumNodeURL == "" {
+		dpl, err := deployment.NewDeploymentFromContext(c)
+		if err != nil {
+			return nil, err
+		}
+		if url, exist := defaultNodeEndpoint[dpl]; exist {
+			ethereumNodeURL = url
+		} else {
+			return nil, fmt.Errorf("deployment does not have default ethereum node url value: %s", dpl.String())
+		}
+	}
 	return ethclient.Dial(ethereumNodeURL)
 }
