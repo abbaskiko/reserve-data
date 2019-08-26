@@ -1,8 +1,6 @@
 package blockchain
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -32,7 +30,7 @@ func NewBlockchain(wrapperAddress, rateAddress common.Address, ethClient *ethcli
 func (bc *Blockchain) CheckTokenIndices(tokenAddr common.Address) error {
 	tokenAddrs := []common.Address{}
 	tokenAddrs = append(tokenAddrs, tokenAddr)
-	opts := &bind.CallOpts{BlockNumber: big.NewInt(0)}
+	opts := &bind.CallOpts{}
 	_, _, err := bc.Wrapper.GetTokenIndicies(
 		opts,
 		bc.RateAddress,
