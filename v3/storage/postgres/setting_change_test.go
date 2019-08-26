@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"fmt"
 	"testing"
 
 	common3 "github.com/ethereum/go-ethereum/common"
@@ -170,7 +171,12 @@ func initData(t *testing.T, s *Storage) {
 						},
 					},
 				},
-				Target: nil,
+				Target: &common.AssetTarget{
+					Total:              1,
+					Reserve:            2,
+					RebalanceThreshold: 3,
+					TransferThreshold:  4,
+				},
 			},
 		},
 	}})
@@ -194,7 +200,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 		assertFn func(*testing.T, uint64, error)
 	}{
 		{
-			msg: "test missing PWI",
+			msg: fmt.Sprintf("test missing PWI when SetRate != %s", common.SetRateNotSet),
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -219,7 +225,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 			},
 		},
 		{
-			msg: "test missing RebalanceQuadratic",
+			msg: "test missing RebalanceQuadratic when Rebalance set",
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -263,7 +269,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 			},
 		},
 		{
-			msg: "test missing exchange",
+			msg: "test Transferable but no exchange define",
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -299,7 +305,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 			},
 		},
 		{
-			msg: "test missing target",
+			msg: "test missing target when Rebalance set",
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -342,7 +348,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 			},
 		},
 		{
-			msg: "test missing address",
+			msg: "test missing address when Transferable set",
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -383,7 +389,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 			},
 		},
 		{
-			msg: "test missing deposit address",
+			msg: "test missing deposit address when Transferable set",
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -424,7 +430,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 			},
 		},
 		{
-			msg: "test invalid trading pair",
+			msg: "test invalid trading pair, quote asset does not exist or not is a quote asset",
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -476,7 +482,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 			},
 		},
 		{
-			msg: "test update asset, transferable",
+			msg: "test update asset, transferable but asset exchange deposit address not set",
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
@@ -498,6 +504,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 					},
 				},
 			},
+
 			assertFn: func(t *testing.T, u uint64, e error) {
 				assert.Equal(t, common.ErrDepositAddressMissing, e)
 				assert.NoError(t, s.RejectSettingChange(u))
