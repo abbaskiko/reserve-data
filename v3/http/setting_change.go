@@ -195,14 +195,14 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 
 	id, err := s.storage.CreateSettingChange(t, settingChange)
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+		httputil.ResponseFailure(c, httputil.WithError(makeFriendlyMessage(err)))
 		return
 	}
 
 	// test confirm
 	err = s.storage.ConfirmSettingChange(id, false)
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+		httputil.ResponseFailure(c, httputil.WithError(makeFriendlyMessage(err)))
 		// clean up
 		if err = s.storage.RejectSettingChange(id); err != nil {
 			log.Printf("failed to clean up, error")
