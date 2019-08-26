@@ -449,14 +449,32 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 	}, nil
 }
 
+// GetPricingOPAddress return pricing op address
 func (bc *Blockchain) GetPricingOPAddress() ethereum.Address {
 	return bc.MustGetOperator(pricingOP).Address
 }
 
+// GetDepositOPAddress return deposit op address
 func (bc *Blockchain) GetDepositOPAddress() ethereum.Address {
 	return bc.MustGetOperator(depositOP).Address
 }
 
+// GetIntermediatorOPAddress return intermediator op address
 func (bc *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return bc.MustGetOperator(huobiblockchain.HuobiOP).Address
+}
+
+// GetWrapperAddress return wrapper address
+func (bc *Blockchain) GetWrapperAddress() ethereum.Address {
+	return bc.contractAddress.Wrapper
+}
+
+// GetInternalNetworkAddress return internal network address
+func (bc *Blockchain) GetInternalNetworkAddress() ethereum.Address {
+	return bc.contractAddress.InternalNetwork
+}
+
+// GetNetworkAddress return network address
+func (bc *Blockchain) GetNetworkAddress() ethereum.Address {
+	return bc.contractAddress.Network
 }
