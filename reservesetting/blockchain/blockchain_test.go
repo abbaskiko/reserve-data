@@ -12,7 +12,7 @@ import (
 func TestCheckTokenIndices(t *testing.T) {
 	//? this is a test which call to external resource
 	//? skip after run in local
-	t.Skip()
+	// t.Skip()
 
 	wrapperAddress := ethereum.HexToAddress("0x6172AFC8c00c46E0D07ce3AF203828198194620a")
 	rateAddress := ethereum.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B")

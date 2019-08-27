@@ -31,10 +31,10 @@ var (
 		deployment.Production:  "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B",
 	}
 	defaultNodeEndpoint = map[deployment.Deployment]string{
-		deployment.Development: "https://mainnet.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
-		deployment.Ropsten:     "https://ropsten.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
-		deployment.Staging:     "https://mainnet.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
-		deployment.Production:  "https://mainnet.infura.io/v3/fd330878eff84d48b97e3023c996dff6",
+		deployment.Development: "https://mainnet.infura.io/",
+		deployment.Ropsten:     "https://ropsten.infura.io/",
+		deployment.Staging:     "https://mainnet.infura.io/",
+		deployment.Production:  "https://mainnet.infura.io/",
 	}
 )
 
