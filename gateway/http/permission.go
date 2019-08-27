@@ -37,7 +37,8 @@ p, %[1]s, /v3/setting-change-main/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/hold-rebalance, POST
 p, %[1]s, /v3/enable-rebalance, POST
 p, %[1]s, /v3/hold-setrate, POST
-p, %[1]s, /v3/enable-set-rate, POST`, key)
+p, %[1]s, /v3/enable-set-rate, POST
+p, %[1]s, /v3/set-feed-configuration, POST`, key)
 }
 
 func addKeyRebalancePolicy(key string) string {
