@@ -50,4 +50,6 @@ var (
 	ErrSettingChangeExists = errors.New("setting change already exists, confirm/reject it first")
 	// ErrAssetAddressIsNotIndexInContract is return if address is not index in contract
 	ErrAssetAddressIsNotIndexInContract = errors.New("asset address is not index in address please check again")
+	// ErrBlockchainHaveNotInitiated is return if blockchain have not initiated yet
+	ErrBlockchainHaveNotInitiated = errors.New("blockchain instance have not initiated")
 )
