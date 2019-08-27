@@ -42,7 +42,7 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 	assetResp, err := c.getAsset(assetID)
 	require.NoError(t, err)
 
-	selectAssetExchange := assetResp.asset.Exchanges[0]
+	selectAssetExchange := assetResp.Asset.Exchanges[0]
 	updateAxe := common.UpdateAssetExchangeEntry{
 		ID:                selectAssetExchange.ID,
 		Symbol:            common.StringPointer("XYZ"),
@@ -66,7 +66,7 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 	require.NoError(t, err)
 	found := false
 
-	for _, x := range updatedResp.asset.Exchanges {
+	for _, x := range updatedResp.Asset.Exchanges {
 		if x.ID == selectAssetExchange.ID {
 			found = true
 			assert.Equal(t, *updateAxe.MinDeposit, x.MinDeposit)
@@ -81,5 +81,5 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 	assert.Equal(t, true, found)
 	assets, err := c.getAssets()
 	assert.NoError(t, err)
-	assert.Len(t, assets.assets, 2)
+	assert.Len(t, assets.Assets, 2)
 }
