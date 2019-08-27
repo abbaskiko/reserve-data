@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -10,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetGoldData return gold data feed
 func (s *Server) GetGoldData(c *gin.Context) {
 	log.Printf("Getting gold data")
 
@@ -21,6 +21,7 @@ func (s *Server) GetGoldData(c *gin.Context) {
 	}
 }
 
+// GetBTCData return BTC data feed
 func (s *Server) GetBTCData(c *gin.Context) {
 	data, err := s.app.GetBTCData(getTimePoint(c, true))
 	if err != nil {
@@ -38,9 +39,6 @@ func (s *Server) UpdateFeedConfiguration(c *gin.Context) {
 		return
 	}
 
-	inputJSON, _ := json.Marshal(input)
-	log.Printf("input: %s", inputJSON)
-
 	if err := s.app.UpdateFeedConfiguration(input.Data.Name, input.Data.Enabled); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -48,6 +46,7 @@ func (s *Server) UpdateFeedConfiguration(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetFeedConfiguration return feed configuration
 func (s *Server) GetFeedConfiguration(c *gin.Context) {
 	data, err := s.app.GetFeedConfiguration()
 	if err != nil {
