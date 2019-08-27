@@ -15,21 +15,34 @@ type apiClient struct {
 	s *Server
 }
 
-type apiStatus struct {
-	ID      uint64          `json:"id"`
-	Success bool            `json:"success"`
-	Reason  string          `json:"reason"`
-	Data    json.RawMessage `json:"data"`
+type commonResponse struct {
+	Success bool   `json:"success"`
+	Reason  string `json:"reason"`
+}
+
+type postResponse struct {
+	commonResponse
+	ID uint64 `json:"id"`
 }
 
 type assetResponse struct {
-	apiStatus
-	asset common.Asset
+	commonResponse
+	Asset common.Asset `json:"data"`
 }
 
 type assetsResponse struct {
-	apiStatus
-	assets []common.Asset
+	commonResponse
+	Assets []common.Asset `json:"data"`
+}
+
+type exchangeResponse struct {
+	commonResponse
+	Exchange common.Exchange `json:"data"`
+}
+
+type exchangesResponse struct {
+	commonResponse
+	Exchanges []common.Exchange `json:"data"`
 }
 
 func (c *apiClient) getAsset(id uint64) (assetResponse, error) {
@@ -42,15 +55,12 @@ func (c *apiClient) getAsset(id uint64) (assetResponse, error) {
 	if httpResp.Code != http.StatusOK {
 		return assetResponse{}, fmt.Errorf("server return %d - %s", httpResp.Code, httpResp.Body.String())
 	}
-	asset := common.Asset{}
-	status, err := readResponse(httpResp.Body, &asset)
+	asset := assetResponse{}
+	err = readResponse(httpResp.Body, &asset)
 	if err != nil {
 		return assetResponse{}, err
 	}
-	return assetResponse{
-		apiStatus: status,
-		asset:     asset,
-	}, nil
+	return asset, nil
 }
 
 func (c *apiClient) getAssets() (assetsResponse, error) {
@@ -63,57 +73,77 @@ func (c *apiClient) getAssets() (assetsResponse, error) {
 	if httpResp.Code != http.StatusOK {
 		return assetsResponse{}, fmt.Errorf("server return %d - %s", httpResp.Code, httpResp.Body.String())
 	}
-	var assets []common.Asset
-	status, err := readResponse(httpResp.Body, &assets)
+	var assets assetsResponse
+	err = readResponse(httpResp.Body, &assets)
 	if err != nil {
 		return assetsResponse{}, err
 	}
-	return assetsResponse{
-		apiStatus: status,
-		assets:    assets,
-	}, nil
+	return assets, nil
 }
 
-func (c *apiClient) createSettingChange(change common.SettingChange) (apiStatus, error) {
+func (c *apiClient) createSettingChange(change common.SettingChange) (postResponse, error) {
 	req, err := createRequest(http.MethodPost, settingChangePath, change)
 	if err != nil {
-		return apiStatus{}, err
+		return postResponse{}, err
 	}
 	resp := httptest.NewRecorder()
 	c.s.r.ServeHTTP(resp, req)
 	if resp.Code != http.StatusOK {
-		return apiStatus{}, fmt.Errorf("server return %d - %s", resp.Code, resp.Body.String())
+		return postResponse{}, fmt.Errorf("server return %d - %s", resp.Code, resp.Body.String())
 	}
-	return readResponse(resp.Body, nil)
+	var s postResponse
+	err = readResponse(resp.Body, &s)
+	return s, err
 }
 
-func (c *apiClient) confirmSettingChange(id uint64) (apiStatus, error) {
+func (c *apiClient) confirmSettingChange(id uint64) (commonResponse, error) {
 	req, err := createRequest(http.MethodPut, fmt.Sprintf("%s/%d", settingChangePath, id), nil)
 	if err != nil {
-		return apiStatus{}, err
+		return commonResponse{}, err
 	}
 	resp := httptest.NewRecorder()
 	c.s.r.ServeHTTP(resp, req)
 	if resp.Code != http.StatusOK {
-		return apiStatus{}, fmt.Errorf("server return %d - %s", resp.Code, resp.Body.String())
+		return commonResponse{}, fmt.Errorf("server return %d - %s", resp.Code, resp.Body.String())
 	}
-	return readResponse(resp.Body, nil)
+	var status commonResponse
+	err = readResponse(resp.Body, &status)
+	return status, err
+}
+
+func (c *apiClient) getExchange(id uint64) (exchangeResponse, error) {
+	req, err := createRequest(http.MethodGet, fmt.Sprintf("/v3/exchange/%d", id), nil)
+	if err != nil {
+		return exchangeResponse{}, err
+	}
+	resp := httptest.NewRecorder()
+	c.s.r.ServeHTTP(resp, req)
+	if resp.Code != http.StatusOK {
+		return exchangeResponse{}, fmt.Errorf("server return %d - %s", resp.Code, resp.Body.String())
+	}
+	var status exchangeResponse
+	err = readResponse(resp.Body, &status)
+	return status, err
+}
+
+func (c *apiClient) getExchanges() (exchangesResponse, error) {
+	req, err := createRequest(http.MethodGet, "/v3/exchange", nil)
+	if err != nil {
+		return exchangesResponse{}, err
+	}
+	resp := httptest.NewRecorder()
+	c.s.r.ServeHTTP(resp, req)
+	if resp.Code != http.StatusOK {
+		return exchangesResponse{}, fmt.Errorf("server return %d - %s", resp.Code, resp.Body.String())
+	}
+	var status exchangesResponse
+	err = readResponse(resp.Body, &status)
+	return status, err
 }
 
 // ReadResponse retry to parse response into object
-func readResponse(data io.Reader, dataField interface{}) (apiStatus, error) {
-	resp := apiStatus{}
-	err := json.NewDecoder(data).Decode(&resp)
-	if err != nil {
-		return apiStatus{}, err
-	}
-	if dataField != nil {
-		err = json.Unmarshal(resp.Data, dataField)
-		if err != nil {
-			return apiStatus{}, err
-		}
-	}
-	return resp, nil
+func readResponse(data io.Reader, dataField interface{}) error {
+	return json.NewDecoder(data).Decode(dataField)
 }
 
 func createRequest(method, url string, data interface{}) (*http.Request, error) {

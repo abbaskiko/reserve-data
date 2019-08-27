@@ -34,6 +34,20 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 		return 0, err
 	}
 
+	_, err = store.CreateAssetExchange(stable, 1, "ETH", eth.HexToAddress("0x00"), 10,
+		0.2, 5.0, 0.3)
+	if err != nil {
+		return 0, err
+	}
+	err = store.UpdateExchange(stable, storage.UpdateExchangeOpts{
+		Disable:         common.BoolPointer(false),
+		TradingFeeTaker: common.FloatPointer(0.1),
+		TradingFeeMaker: common.FloatPointer(0.2),
+	})
+	if err != nil {
+		return 0, err
+	}
+
 	id, err := store.CreateAsset("ABC", "ABC", eth.HexToAddress("0x00000000000000001"),
 		18, true, common.ExchangeFeed, true, false, &common.AssetPWI{
 			Bid: common.PWIEquation{
@@ -76,6 +90,15 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 						PricePrecision:  1.0,
 					},
 				},
+			},
+			{
+				Symbol:            "ABC",
+				DepositAddress:    eth.HexToAddress("0x000002"),
+				ExchangeID:        stable,
+				TargetRatio:       0.1,
+				TargetRecommended: 1000.0,
+				WithdrawFee:       0.5,
+				MinDeposit:        100.0,
 			},
 		}, &common.AssetTarget{
 			TransferThreshold:  1.0,
@@ -163,8 +186,17 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				require.Equal(t, 6.0, assetExchange.MinDeposit)
 				require.Equal(t, 9.0, assetExchange.WithdrawFee)
 				//check create asset exchange
-				assetExchange, err = s.GetAssetExchange(4)
+				asset, err := s.GetAsset(assetID)
 				require.NoError(t, err)
+				found := false
+				for _, x := range asset.Exchanges {
+					if x.ExchangeID == huobi {
+						assetExchange = x
+						found = true
+						break
+					}
+				}
+				require.Equal(t, true, found)
 				require.Equal(t, "ETH", assetExchange.Symbol)
 				require.Equal(t, huobi, assetExchange.ExchangeID)
 			},
@@ -512,6 +544,26 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 			method:   http.MethodPut,
 			assert:   httputil.ExpectSuccess,
 			data:     nil,
+		},
+		{
+			msg:      "create trading pair successfully",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectSuccess,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateTradingPair,
+						Data: common.CreateTradingPairEntry{
+							TradingPair: common.TradingPair{
+								Base:  assetID, // ABC asset
+								Quote: 1,       // ETH
+							},
+							ExchangeID: stable,
+						},
+					},
+				},
+			},
 		},
 	}
 
