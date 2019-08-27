@@ -94,17 +94,11 @@ func (s *Server) AllPrices(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
-		for exchangeName, exchangePrice := range onePrice {
-			exchange, err := common.GetExchange(string(exchangeName))
-			if err != nil {
-				httputil.ResponseFailure(c, httputil.WithError(err))
-				return
-			}
-			// TODO: should we check exchangeID.Name() match pair.ExchangeID?
+		for exchangeID, exchangePrice := range onePrice {
 			responseData = append(responseData, price{
 				Base:     pair.Base,
 				Quote:    pair.Quote,
-				Exchange: uint64(exchange.ID()),
+				Exchange: uint64(exchangeID),
 				Bids:     exchangePrice.Bids,
 				Asks:     exchangePrice.Asks,
 			})
