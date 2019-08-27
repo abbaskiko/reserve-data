@@ -24,7 +24,7 @@ type preparedStmts struct {
 
 	getAsset                 *sqlx.Stmt
 	getAssetBySymbol         *sqlx.Stmt
-	getAssetExchange         *sqlx.Stmt
+	getAssetExchange         *sqlx.NamedStmt
 	getAssetExchangeBySymbol *sqlx.Stmt
 	getTradingPair           *sqlx.Stmt
 	updateAsset              *sqlx.NamedStmt
@@ -448,7 +448,7 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 	return newAsset, getAsset, updateAsset, getAssetBySymbol, nil
 }
 
-func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, error) {
+func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.NamedStmt, *sqlx.Stmt, *sqlx.Stmt, error) {
 	const newAssetExchangeQuery string = `INSERT INTO asset_exchanges(exchange_id,
 		                            asset_id,
 		                            symbol,
@@ -492,9 +492,10 @@ func assetExchangeStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.NamedStmt, *sq
 			       target_recommended,
 			       target_ratio
 			FROM asset_exchanges
-			WHERE asset_id = coalesce($1, asset_id)
-			AND id = coalesce($2, id)`
-	getAssetExchange, err := db.Preparex(getAssetExchangeQuery)
+			WHERE asset_id = coalesce(:asset_id, asset_id)
+			AND id = coalesce(:id, id)
+			AND exchange_id= coalesce(:exchange_id, exchange_id)`
+	getAssetExchange, err := db.PrepareNamed(getAssetExchangeQuery)
 	if err != nil {
 		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to prepare getAssetExchange")
 	}

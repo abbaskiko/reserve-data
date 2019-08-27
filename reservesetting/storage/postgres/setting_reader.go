@@ -57,23 +57,22 @@ func (s *Storage) GetTradingPairs(id uint64) ([]common.TradingPairSymbols, error
 	return result, nil
 }
 
-// TODO: rewrite this function to filter the exchange if in SQL query.
 func (s *Storage) GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error) {
-	var results = make(map[string]ethereum.Address)
-
-	allAssets, err := s.GetAssets()
+	var (
+		dbResult []assetExchangeDB
+		results  = make(map[string]ethereum.Address)
+	)
+	err := s.stmts.getAssetExchange.Select(&dbResult, assetExchangeCondition{
+		ExchangeID: &exchangeID,
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	for _, asset := range allAssets {
-		for _, exchange := range asset.Exchanges {
-			if exchange.ExchangeID == exchangeID {
-				results[exchange.Symbol] = exchange.DepositAddress
-			}
+	for _, r := range dbResult {
+		if r.DepositAddress.Valid {
+			results[r.Symbol] = ethereum.HexToAddress(r.DepositAddress.String)
 		}
 	}
-
 	return results, nil
 }
 

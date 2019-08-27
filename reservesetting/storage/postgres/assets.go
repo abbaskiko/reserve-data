@@ -475,46 +475,6 @@ func (s *Storage) createAsset(
 	return assetID, nil
 }
 
-type assetExchangeDB struct {
-	ID                uint64          `db:"id"`
-	ExchangeID        uint64          `db:"exchange_id"`
-	AssetID           uint64          `db:"asset_id"`
-	Symbol            string          `db:"symbol"`
-	DepositAddress    sql.NullString  `db:"deposit_address"`
-	MinDeposit        float64         `db:"min_deposit"`
-	WithdrawFee       float64         `db:"withdraw_fee"`
-	PricePrecision    int64           `db:"price_precision"`
-	AmountPrecision   int64           `db:"amount_precision"`
-	AmountLimitMin    float64         `db:"amount_limit_min"`
-	AmountLimitMax    float64         `db:"amount_limit_max"`
-	PriceLimitMin     float64         `db:"price_limit_min"`
-	PriceLimitMax     float64         `db:"price_limit_max"`
-	TargetRecommended sql.NullFloat64 `db:"target_recommended"`
-	TargetRatio       sql.NullFloat64 `db:"target_ratio"`
-}
-
-func (aedb *assetExchangeDB) ToCommon() common.AssetExchange {
-	result := common.AssetExchange{
-		ID:           aedb.ID,
-		AssetID:      aedb.AssetID,
-		ExchangeID:   aedb.ExchangeID,
-		Symbol:       aedb.Symbol,
-		MinDeposit:   aedb.MinDeposit,
-		WithdrawFee:  aedb.WithdrawFee,
-		TradingPairs: nil,
-	}
-	if aedb.DepositAddress.Valid {
-		result.DepositAddress = ethereum.HexToAddress(aedb.DepositAddress.String)
-	}
-	if aedb.TargetRecommended.Valid {
-		result.TargetRecommended = aedb.TargetRecommended.Float64
-	}
-	if aedb.TargetRatio.Valid {
-		result.TargetRatio = aedb.TargetRatio.Float64
-	}
-	return result
-}
-
 type tradingPairDB struct {
 	ID              uint64  `db:"id"`
 	ExchangeID      uint64  `db:"exchange_id"`
@@ -706,7 +666,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 		return nil, err
 	}
 
-	if err := tx.Stmtx(s.stmts.getAssetExchange).Select(&allAssetExchanges, nil, nil); err != nil {
+	if err := tx.NamedStmt(s.stmts.getAssetExchange).Select(&allAssetExchanges, assetExchangeCondition{}); err != nil {
 		return nil, err
 	}
 
@@ -761,7 +721,9 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 	}
 	defer rollbackUnlessCommitted(tx)
 
-	if err := tx.Stmtx(s.stmts.getAssetExchange).Select(&assetExchangeResults, id, nil); err != nil {
+	if err := tx.NamedStmt(s.stmts.getAssetExchange).Select(&assetExchangeResults, assetExchangeCondition{
+		AssetID: &id,
+	}); err != nil {
 		return common.Asset{}, fmt.Errorf("failed to query asset exchanges err=%s", err.Error())
 	}
 

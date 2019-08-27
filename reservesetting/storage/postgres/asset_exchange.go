@@ -17,7 +17,9 @@ func (s *Storage) GetAssetExchange(id uint64) (common.AssetExchange, error) {
 	var (
 		result assetExchangeDB
 	)
-	err := s.stmts.getAssetExchange.Get(&result, nil, id)
+	err := s.stmts.getAssetExchange.Get(&result, assetExchangeCondition{
+		ID: &id,
+	})
 	switch err {
 	case sql.ErrNoRows:
 		log.Printf("asset exchange not found id=%d", id)

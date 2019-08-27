@@ -519,3 +519,21 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 		tc.assertFn(t, id, err)
 	}
 }
+
+func TestStorage_GetDepositAddresses(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	assert.NoError(t, err)
+	initData(t, s)
+
+	depositAddr, err := s.GetDepositAddresses(binance)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(depositAddr))
+	for symbol, addr := range depositAddr {
+		t.Logf("symbol=%v deposit address=%v", symbol, addr.Hex())
+	}
+}
