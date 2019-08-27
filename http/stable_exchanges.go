@@ -30,22 +30,18 @@ func (s *Server) GetBTCData(c *gin.Context) {
 	}
 }
 
+// UpdateFeedConfiguration update configuration for feed
 func (s *Server) UpdateFeedConfiguration(c *gin.Context) {
-	const dataPostFormKey = "data"
-	postForm := c.Request.Form
-	data := []byte(postForm.Get(dataPostFormKey))
-	if len(data) > maxDataSize {
-		httputil.ResponseFailure(c, httputil.WithError(errDataSizeExceed))
-		return
-	}
-
-	var input common.FeedConfiguration
-	if err := json.Unmarshal(data, &input); err != nil {
+	var input common.FeedConfigurationRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	if err := s.app.UpdateFeedConfiguration(input.Name, input.Enabled); err != nil {
+	inputJSON, _ := json.Marshal(input)
+	log.Printf("input: %s", inputJSON)
+
+	if err := s.app.UpdateFeedConfiguration(input.Data.Name, input.Data.Enabled); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
