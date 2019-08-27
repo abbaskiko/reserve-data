@@ -193,6 +193,7 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 				ExchangeID: exchanges[exchangeID.String()].ID,
 			}
 			if !balances.Valid {
+				tokenBalance.Valid = balances.Valid
 				exchangeBalance.Error = balances.Error
 			}
 			if _, exist := balances.AvailableBalance[tokenSymbol]; exist {
