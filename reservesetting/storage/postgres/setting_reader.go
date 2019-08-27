@@ -71,6 +71,8 @@ func (s *Storage) GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Ad
 	for _, r := range dbResult {
 		if r.DepositAddress.Valid {
 			results[r.Symbol] = ethereum.HexToAddress(r.DepositAddress.String)
+		} else {
+			results[r.Symbol] = ethereum.HexToAddress("0x0")
 		}
 	}
 	return results, nil
