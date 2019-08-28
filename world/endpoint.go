@@ -36,10 +36,21 @@ type Endpoint interface {
 
 	CoinbaseBTCEndpoint() string
 	GeminiBTCEndpoint() string
+
+	CoinbaseUSDEndpoint() string
+	BinanceUSDEndpoint() string
 }
 
 type RealEndpoint struct {
 	OneForgeKey string `json:"oneforge"`
+}
+
+func (re RealEndpoint) CoinbaseUSDEndpoint() string {
+	return "https://api.pro.coinbase.com/products/eth-usdc/ticker"
+}
+
+func (re RealEndpoint) BinanceUSDEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC"
 }
 
 func (re RealEndpoint) GoldDataEndpoint() string {
@@ -85,6 +96,15 @@ func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
 }
 
 type SimulatedEndpoint struct {
+}
+
+// TODO: support simulation
+func (se SimulatedEndpoint) CoinbaseUSDEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinanceUSDEndpoint() string {
+	panic("implement me")
 }
 
 func (se SimulatedEndpoint) GoldDataEndpoint() string {
