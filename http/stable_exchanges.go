@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -10,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetGoldData return gold data feed
 func (s *Server) GetGoldData(c *gin.Context) {
 	log.Printf("Getting gold data")
 
@@ -21,6 +21,7 @@ func (s *Server) GetGoldData(c *gin.Context) {
 	}
 }
 
+// GetBTCData return BTC data feed
 func (s *Server) GetBTCData(c *gin.Context) {
 	data, err := s.app.GetBTCData(getTimePoint(c, true))
 	if err != nil {
@@ -30,28 +31,22 @@ func (s *Server) GetBTCData(c *gin.Context) {
 	}
 }
 
+// UpdateFeedConfiguration update configuration for feed
 func (s *Server) UpdateFeedConfiguration(c *gin.Context) {
-	const dataPostFormKey = "data"
-	postForm := c.Request.Form
-	data := []byte(postForm.Get(dataPostFormKey))
-	if len(data) > maxDataSize {
-		httputil.ResponseFailure(c, httputil.WithError(errDataSizeExceed))
-		return
-	}
-
-	var input common.FeedConfiguration
-	if err := json.Unmarshal(data, &input); err != nil {
+	var input common.FeedConfigurationRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	if err := s.app.UpdateFeedConfiguration(input.Name, input.Enabled); err != nil {
+	if err := s.app.UpdateFeedConfiguration(input.Data.Name, input.Data.Enabled); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	httputil.ResponseSuccess(c)
 }
 
+// GetFeedConfiguration return feed configuration
 func (s *Server) GetFeedConfiguration(c *gin.Context) {
 	data, err := s.app.GetFeedConfiguration()
 	if err != nil {
