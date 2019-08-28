@@ -72,6 +72,7 @@ type price struct {
 	Asks     []common.PriceEntry `json:"asks"`
 }
 
+// AllPrices return prices of all tokens
 func (s *Server) AllPrices(c *gin.Context) {
 	log.Printf("Getting all prices \n")
 	data, err := s.app.GetAllPrices(getTimePoint(c, true))
@@ -201,8 +202,8 @@ func (s *Server) Trade(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	exchangeID := c.Param("exchangeid")
-	exchange, err := common.GetExchange(exchangeID)
+	exchangeName := c.Param("exchange_name")
+	exchange, err := common.GetExchange(exchangeName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -246,8 +247,8 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	exchangeParam := c.Param("exchangeid")
-	exchange, err := common.GetExchange(exchangeParam)
+	exchangeName := c.Param("exchange_name")
+	exchange, err := common.GetExchange(exchangeName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -280,8 +281,8 @@ func (s *Server) Withdraw(c *gin.Context) {
 		return
 	}
 
-	exchangeParam := c.Param("exchangeid")
-	exchange, err := common.GetExchange(exchangeParam)
+	exchangeName := c.Param("exchange_name")
+	exchange, err := common.GetExchange(exchangeName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -314,9 +315,9 @@ func (s *Server) Deposit(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	exchangeParam := c.Param("exchangeid")
+	exchangeName := c.Param("exchange_name")
 
-	exchange, err := common.GetExchange(exchangeParam)
+	exchange, err := common.GetExchange(exchangeName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -420,10 +421,10 @@ func (s *Server) register() {
 		g.GET("/activities", s.GetActivities)
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
 
-		g.POST("/cancelorder/:exchangeid", s.CancelOrder)
-		g.POST("/deposit/:exchangeid", s.Deposit)
-		g.POST("/withdraw/:exchangeid", s.Withdraw)
-		g.POST("/trade/:exchangeid", s.Trade)
+		g.POST("/cancelorder/:exchange_name", s.CancelOrder)
+		g.POST("/deposit/:exchange_name", s.Deposit)
+		g.POST("/withdraw/:exchange_name", s.Withdraw)
+		g.POST("/trade/:exchange_name", s.Trade)
 		g.POST("/setrates", s.SetRate)
 		g.GET("/tradehistory", s.GetTradeHistory)
 
