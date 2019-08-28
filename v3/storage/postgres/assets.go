@@ -120,27 +120,6 @@ func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string,
 	return id, nil
 }
 
-// UpdateAssetExchange update information about asset exchange
-func (s *Storage) UpdateAssetExchange(id uint64, opts storage.UpdateAssetExchangeOpts) error {
-
-	tx, err := s.db.Beginx()
-	if err != nil {
-		return err
-	}
-
-	defer rollbackUnlessCommitted(tx)
-	err = s.updateAssetExchange(tx, id, opts)
-	if err != nil {
-		return err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, symbol string,
 	depositAddress ethereum.Address, minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error) {
 	var assetExchangeID uint64
