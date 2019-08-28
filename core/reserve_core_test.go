@@ -25,7 +25,7 @@ func (te testExchange) Address(_ commonv3.Asset) (address ethereum.Address, supp
 func (te testExchange) Withdraw(token commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
 	return "withdrawid", nil
 }
-func (te testExchange) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (te testExchange) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
 func (te testExchange) CancelOrder(id string, base, quote string) error {

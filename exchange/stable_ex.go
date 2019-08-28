@@ -59,7 +59,7 @@ func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remainin
 	return 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (se *StableEx) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	// TODO: communicate with dgx connector to do the trade
 	return "not supported", 0, 0, false, errors.New("not supported")
 }

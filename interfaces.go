@@ -48,8 +48,7 @@ type Core interface {
 		tradeType string,
 		pair commonv3.TradingPairSymbols,
 		rate float64,
-		amount float64,
-		timestamp uint64) (id common.ActivityID, done float64, remaining float64, finished bool, err error)
+		amount float64) (id common.ActivityID, done float64, remaining float64, finished bool, err error)
 
 	Deposit(
 		exchange common.Exchange,

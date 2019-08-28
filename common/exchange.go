@@ -37,7 +37,7 @@ type Exchange interface {
 	// This function will prioritize live address from exchange above the current stored address.
 	Address(asset common.Asset) (address ethereum.Address, supported bool)
 	Withdraw(asset common.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error)
-	Trade(tradeType string, pair common.TradingPairSymbols, rate, amount float64, timepoint uint64) (id string, done, remaining float64, finished bool, err error)
+	Trade(tradeType string, pair common.TradingPairSymbols, rate, amount float64) (id string, done, remaining float64, finished bool, err error)
 	CancelOrder(id, base, quote string) error
 	MarshalText() (text []byte, err error)
 

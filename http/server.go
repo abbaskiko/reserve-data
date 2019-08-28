@@ -221,7 +221,7 @@ func (s *Server) Trade(c *gin.Context) {
 	}
 
 	id, done, remaining, finished, err := s.core.Trade(
-		exchange, request.Type, pair, request.Rate, request.Amount, getTimePoint(c, false))
+		exchange, request.Type, pair, request.Rate, request.Amount)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

@@ -25,6 +25,7 @@ const (
 	huobiEpsilon float64 = 0.0000000001 // 10e-10
 )
 
+// Huobi is instance for Huobi exchange
 type Huobi struct {
 	interf     HuobiInterface
 	blockchain HuobiBlockchain
@@ -33,6 +34,7 @@ type Huobi struct {
 	HuobiLive
 }
 
+// TokenAddresses return deposit of all token supported by Huobi
 func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
 	result, err := h.sr.GetDepositAddresses(uint64(common.Huobi))
 	if err != nil {
@@ -41,6 +43,7 @@ func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
 	return result, nil
 }
 
+// MarshalText marshal Huobi exchange name
 func (h *Huobi) MarshalText() (text []byte, err error) {
 	return []byte(h.ID().String()), nil
 }
@@ -83,6 +86,7 @@ func (h *Huobi) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 	return result, true
 }
 
+// TokenPairs return all token pair support by Huobi
 func (h *Huobi) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
 	pairs, err := h.sr.GetTradingPairs(uint64(common.Huobi))
 	if err != nil {
@@ -91,6 +95,7 @@ func (h *Huobi) TokenPairs() ([]commonv3.TradingPairSymbols, error) {
 	return pairs, nil
 }
 
+// QueryOrder return order status
 func (h *Huobi) QueryOrder(symbol string, id uint64) (done float64, remaining float64, finished bool, err error) {
 	result, err := h.interf.OrderStatus(symbol, id)
 	if err != nil {
@@ -112,8 +117,9 @@ func (h *Huobi) QueryOrder(symbol string, id uint64) (done float64, remaining fl
 	return done, total - done, total-done < huobiEpsilon, nil
 }
 
-func (h *Huobi) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
-	result, err := h.interf.Trade(tradeType, pair, rate, amount, timepoint)
+// Trade on Huobi
+func (h *Huobi) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
+	result, err := h.interf.Trade(tradeType, pair, rate, amount)
 
 	if err != nil {
 		return "", 0, 0, false, err
@@ -238,19 +244,6 @@ func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePric
 		return true
 	})
 	return result, err
-}
-
-func (h *Huobi) OpenOrdersForOnePair(
-	wg *sync.WaitGroup,
-	pair commonv3.TradingPairSymbols,
-	data *sync.Map,
-	timepoint uint64) {
-
-	// defer wg.Done()
-
-	// result, err := h.interf.OpenOrdersForOnePair(pair, timepoint)
-
-	//TODO: complete open orders for one pair
 }
 
 func (h *Huobi) FetchOrderData(timepoint uint64) (common.OrderEntry, error) {

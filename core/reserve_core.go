@@ -72,10 +72,10 @@ func (rc ReserveCore) Trade(
 	tradeType string,
 	pair commonv3.TradingPairSymbols,
 	rate float64,
-	amount float64,
-	timepoint uint64) (common.ActivityID, float64, float64, bool, error) {
+	amount float64) (common.ActivityID, float64, float64, bool, error) {
 	var err error
 
+	timepoint := common.GetTimepoint()
 	recordActivity := func(id, status string, done, remaining float64, finished bool, err error) error {
 		uid := timebasedID(id)
 		log.Printf(
@@ -122,7 +122,7 @@ func (rc ReserveCore) Trade(
 		return common.ActivityID{}, 0, 0, false, err
 	}
 
-	id, done, remaining, finished, err := exchange.Trade(tradeType, pair, rate, amount, timepoint)
+	id, done, remaining, finished, err := exchange.Trade(tradeType, pair, rate, amount)
 	uid := timebasedID(id)
 	if err != nil {
 		if sErr := recordActivity(id, statusFailed, done, remaining, finished, err); sErr != nil {

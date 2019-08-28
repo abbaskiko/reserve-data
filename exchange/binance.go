@@ -93,7 +93,7 @@ func (bn *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining
 	return done, total - done, total-done < binanceEpsilon, nil
 }
 
-func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	result, err := bn.interf.Trade(tradeType, pair, rate, amount)
 	if err != nil {
 		return "", 0, 0, false, err

@@ -28,7 +28,7 @@ func (te TestExchange) Withdraw(asset common.Asset, amount *big.Int, address eth
 }
 
 // Trade mock function
-func (te TestExchange) Trade(tradeType string, pair common.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (te TestExchange) Trade(tradeType string, pair common.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
 
