@@ -85,6 +85,7 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 		buckets := []string{
 			goldBucket,
 			btcBucket,
+			usdBucket,
 			disabledFeedsBucket,
 			priceBucket,
 			rateBucket,
