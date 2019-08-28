@@ -16,6 +16,52 @@ type TheWorld struct {
 	endpoint Endpoint
 }
 
+func (tw *TheWorld) getBinanceInfo(ep string) common.BinanceData {
+	var (
+		client = &http.Client{Timeout: 30 * time.Second}
+		url    = ep
+		result = common.BinanceData{}
+	)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return common.BinanceData{
+			Valid: false,
+			Error: err.Error(),
+		}
+	}
+
+	req.Header.Add("Accept", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return common.BinanceData{
+			Valid: false,
+			Error: err.Error(),
+		}
+	}
+	defer func() {
+		if cErr := resp.Body.Close(); cErr != nil {
+			log.Printf("failed to close response body: %s", cErr.Error())
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return common.BinanceData{
+			Valid: false,
+			Error: fmt.Sprintf("unexpected return code: %d", resp.StatusCode),
+		}
+	}
+
+	if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return common.BinanceData{
+			Valid: false,
+			Error: err.Error(),
+		}
+	}
+	result.Valid = true
+	return result
+}
+
 func (tw *TheWorld) getOneForgeGoldUSDInfo() common.OneForgeGoldData {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
