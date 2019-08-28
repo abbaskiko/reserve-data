@@ -36,7 +36,7 @@ p, %[1]s, /v3/setting-change-rbquadratic/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-main/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/hold-rebalance, POST
 p, %[1]s, /v3/enable-rebalance, POST
-p, %[1]s, /v3/hold-setrate, POST
+p, %[1]s, /v3/hold-set-rate, POST
 p, %[1]s, /v3/enable-set-rate, POST
 p, %[1]s, /v3/set-feed-configuration, POST`, key)
 }
