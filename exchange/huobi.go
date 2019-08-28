@@ -142,7 +142,7 @@ func (h *Huobi) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate f
 }
 
 //Withdraw return withdraw id from huobi
-func (h *Huobi) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (h *Huobi) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	withdrawID, err := h.interf.Withdraw(asset, amount, address)
 	if err != nil {
 		return "", err
@@ -150,6 +150,7 @@ func (h *Huobi) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum
 	return withdrawID, err
 }
 
+// CancelOrder cancel an order from Huobi
 func (h *Huobi) CancelOrder(id, base, quote string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
@@ -166,6 +167,7 @@ func (h *Huobi) CancelOrder(id, base, quote string) error {
 	return nil
 }
 
+// FetchOnePairData return data of one pair
 func (h *Huobi) FetchOnePairData(
 	wg *sync.WaitGroup,
 	pair commonv3.TradingPairSymbols,
@@ -215,6 +217,7 @@ func (h *Huobi) FetchOnePairData(
 	data.Store(pair.ID, result)
 }
 
+// FetchPriceData return price data from Huobi
 func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
@@ -246,30 +249,7 @@ func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePric
 	return result, err
 }
 
-func (h *Huobi) FetchOrderData(timepoint uint64) (common.OrderEntry, error) {
-	result := common.OrderEntry{}
-	result.Timestamp = common.Timestamp(fmt.Sprintf("%d", timepoint))
-	result.Valid = true
-	result.Data = []common.Order{}
-
-	var (
-		data = sync.Map{}
-		err  error
-	)
-
-	result.ReturnTime = common.GetTimestamp()
-	data.Range(func(key, value interface{}) bool {
-		orders, ok := value.([]common.Order)
-		if !ok {
-			err = fmt.Errorf("cannot convert value (%v) to Order", value)
-			return false
-		}
-		result.Data = append(result.Data, orders...)
-		return true
-	})
-	return result, err
-}
-
+// FetchEBalanceData return account balance
 func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
 	result := common.EBalanceEntry{}
 	result.Timestamp = common.Timestamp(fmt.Sprintf("%d", timepoint))
@@ -318,6 +298,7 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 	return result, nil
 }
 
+// FetchOnePairTradeHistory return trade history of one pair token
 func (h *Huobi) FetchOnePairTradeHistory(
 	wait *sync.WaitGroup,
 	data *sync.Map,
@@ -397,10 +378,12 @@ func (h *Huobi) FetchTradeHistory() {
 	}()
 }
 
+// GetTradeHistory return list of trade history
 func (h *Huobi) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return h.storage.GetTradeHistory(fromTime, toTime)
 }
 
+// Send2ndTransaction send the second transaction
 func (h *Huobi) Send2ndTransaction(amount float64, asset commonv3.Asset, exchangeAddress ethereum.Address) (*types.Transaction, error) {
 	IAmount := common.FloatToBigInt(amount, int64(asset.Decimals))
 	// Check balance, removed from huobi's blockchain object.
@@ -428,6 +411,7 @@ func (h *Huobi) Send2ndTransaction(amount float64, asset commonv3.Asset, exchang
 
 }
 
+// PendingIntermediateTxs return list of intermediate pending txs
 func (h *Huobi) PendingIntermediateTxs() (map[common.ActivityID]common.TXEntry, error) {
 	result, err := h.storage.GetPendingIntermediateTXs()
 	if err != nil {
@@ -436,6 +420,7 @@ func (h *Huobi) PendingIntermediateTxs() (map[common.ActivityID]common.TXEntry, 
 	return result, nil
 }
 
+// FindTx2InPending find the second transaction from pending list
 func (h *Huobi) FindTx2InPending(id common.ActivityID) (common.TXEntry, bool) {
 	pendings, err := h.storage.GetPendingIntermediateTXs()
 	if err != nil {
@@ -557,6 +542,7 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID uint6
 	return "", nil
 }
 
+// DepositStatus return status of a deposit
 func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID uint64, sentAmount float64, timepoint uint64) (string, error) {
 	var data common.TXEntry
 	tx2Entry, found := h.FindTx2(id)
@@ -652,6 +638,7 @@ func (h *Huobi) WithdrawStatus(
 	return "", "", errors.New("huobi Withdrawal doesn't exist. This shouldn't happen unless tx returned from withdrawal from huobi and activity ID are not consistently designed")
 }
 
+// OrderStatus return order status from Huobi
 func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 	orderID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {

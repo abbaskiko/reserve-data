@@ -59,8 +59,7 @@ type Core interface {
 	Withdraw(
 		exchange common.Exchange,
 		token commonv3.Asset,
-		amount *big.Int,
-		timestamp uint64) (common.ActivityID, error)
+		amount *big.Int) (common.ActivityID, error)
 
 	CancelOrder(id common.ActivityID, exchange common.Exchange) error
 

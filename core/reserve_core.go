@@ -26,12 +26,14 @@ const (
 	statusDone      = "done"
 )
 
+// ReserveCore instance
 type ReserveCore struct {
 	blockchain      Blockchain
 	activityStorage ActivityStorage
 	addressConf     *common.ContractAddressConfiguration
 }
 
+// NewReserveCore return reserve core
 func NewReserveCore(
 	blockchain Blockchain,
 	storage ActivityStorage,
@@ -47,6 +49,7 @@ func timebasedID(id string) common.ActivityID {
 	return common.NewActivityID(uint64(time.Now().UnixNano()), id)
 }
 
+// CancelOrder cancel an order on centralized exchanges
 func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange) error {
 	activity, err := rc.activityStorage.GetActivity(id)
 	if err != nil {
@@ -67,6 +70,7 @@ func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange
 	return exchange.CancelOrder(orderID, base, quote)
 }
 
+// Trade token on centralized exchange
 func (rc ReserveCore) Trade(
 	exchange common.Exchange,
 	tradeType string,
@@ -143,6 +147,7 @@ func (rc ReserveCore) Trade(
 	return uid, done, remaining, finished, common.CombineActivityStorageErrs(err, sErr)
 }
 
+// Deposit deposit token into centralized exchange
 func (rc ReserveCore) Deposit(
 	exchange common.Exchange,
 	asset commonv3.Asset,
@@ -242,11 +247,10 @@ func (rc ReserveCore) Deposit(
 	return uidGenerator(tx.Hash().Hex()), common.CombineActivityStorageErrs(err, sErr)
 }
 
-func (rc ReserveCore) Withdraw(
-	exchange common.Exchange, asset commonv3.Asset,
-	amount *big.Int, timepoint uint64) (common.ActivityID, error) {
+// Withdraw token from exchange
+func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) (common.ActivityID, error) {
 	var err error
-
+	timepoint := common.GetTimepoint()
 	activityRecord := func(id, status string, err error) error {
 		uid := timebasedID(id)
 		log.Printf(
@@ -295,7 +299,7 @@ func (rc ReserveCore) Withdraw(
 
 	reserveAddr := rc.addressConf.Reserve
 
-	id, err := exchange.Withdraw(asset, amount, reserveAddr, timepoint)
+	id, err := exchange.Withdraw(asset, amount, reserveAddr)
 	if err != nil {
 		sErr := activityRecord("", statusFailed, err)
 		if sErr != nil {
@@ -356,6 +360,7 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
 
+// GetSetRateResult return result of set rate action
 func (rc ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 	buys, sells, afpMids []*big.Int,
 	block *big.Int) (*types.Transaction, error) {
@@ -431,6 +436,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 	return tx, err
 }
 
+// SetRates to reserve
 func (rc ReserveCore) SetRates(
 	assets []commonv3.Asset,
 	buys []*big.Int,

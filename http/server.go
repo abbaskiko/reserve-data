@@ -294,7 +294,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 		return
 	}
 	log.Printf("Withdraw %s %d from %s\n", request.Amount.Text(10), asset.ID, exchange.ID().String())
-	id, err := s.core.Withdraw(exchange, asset, request.Amount, getTimePoint(c, false))
+	id, err := s.core.Withdraw(exchange, asset, request.Amount)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

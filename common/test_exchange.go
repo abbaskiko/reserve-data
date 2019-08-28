@@ -23,7 +23,7 @@ func (te TestExchange) Address(asset common.Asset) (address ethereum.Address, su
 }
 
 //Withdraw mock function
-func (te TestExchange) Withdraw(asset common.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (te TestExchange) Withdraw(asset common.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	return "withdrawid", nil
 }
 

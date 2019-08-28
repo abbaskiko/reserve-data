@@ -21,7 +21,7 @@ func (bte *BinanceTestExchange) Address(_ commonv3.Asset) (address ethereum.Addr
 	return ethereum.Address{}, true
 }
 
-func (bte *BinanceTestExchange) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (bte *BinanceTestExchange) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	return "withdrawid", nil
 }
 func (bte *BinanceTestExchange) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {

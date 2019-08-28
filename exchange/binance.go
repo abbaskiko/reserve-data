@@ -106,7 +106,7 @@ func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rat
 	return id, done, remaining, finished, err
 }
 
-func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	tx, err := bn.interf.Withdraw(asset, amount, address)
 	return tx, err
 }

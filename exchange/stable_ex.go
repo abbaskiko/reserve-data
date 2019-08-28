@@ -64,7 +64,7 @@ func (se *StableEx) Trade(tradeType string, pair commonv3.TradingPairSymbols, ra
 	return "not supported", 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (se *StableEx) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	// TODO: communicate with dgx connector to withdraw
 	return "not supported", errors.New("not supported")
 }
