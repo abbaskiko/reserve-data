@@ -16,6 +16,9 @@ var (
 
 		"CoinbaseBTC",
 		"GeminiBTC",
+
+		"CoinbaseUSD",
+		"BinanceUSD",
 	}
 	// remove unused feeds
 )
