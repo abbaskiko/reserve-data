@@ -1,7 +1,7 @@
 FROM golang:1.12-stretch AS build-env
 
 COPY . /reserve-data
-WORKDIR /reserve-data/v3/cmd
+WORKDIR /reserve-data/reservesetting/cmd
 RUN go build -v -mod=vendor -o /setting
 
 FROM debian:stretch
