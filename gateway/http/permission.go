@@ -33,7 +33,12 @@ p, %[1]s, /v3/setting-change-update-exchange/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-target/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-pwis/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-rbquadratic/:id, (PUT)|(DELETE)
-p, %[1]s, /v3/setting-change-main/:id, (PUT)|(DELETE)`, key)
+p, %[1]s, /v3/setting-change-main/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/hold-rebalance, POST
+p, %[1]s, /v3/enable-rebalance, POST
+p, %[1]s, /v3/hold-set-rate, POST
+p, %[1]s, /v3/enable-set-rate, POST
+p, %[1]s, /v3/set-feed-configuration, POST`, key)
 }
 
 func addKeyRebalancePolicy(key string) string {
@@ -44,11 +49,7 @@ p, %[1]s, /cancelorder/:exchangeid, POST
 p, %[1]s, /deposit/:exchangeid, POST
 p, %[1]s, /withdraw/:exchangeid, POST
 p, %[1]s, /trade, POST
-p, %[1]s, /setrates, POST
-p, %[1]s, /holdrebalance, POST
-p, %[1]s, /enablesetrate, POST
-p, %[1]s, /holdsetrate, POST
-p, %[1]s, /enablesetrate, POST`, key)
+p, %[1]s, /setrates, POST`, key)
 }
 
 //NewPermissioner creates a gin Handle Func to controll permission

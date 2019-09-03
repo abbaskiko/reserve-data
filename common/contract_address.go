@@ -6,7 +6,9 @@ import (
 
 // ContractAddressConfiguration contains the smart contract addresses.
 type ContractAddressConfiguration struct {
-	Reserve ethereum.Address
-	Wrapper ethereum.Address
-	Pricing ethereum.Address
+	Reserve         ethereum.Address
+	Wrapper         ethereum.Address
+	Pricing         ethereum.Address
+	InternalNetwork ethereum.Address
+	Network         ethereum.Address
 }

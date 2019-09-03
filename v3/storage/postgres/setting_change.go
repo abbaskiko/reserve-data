@@ -342,5 +342,6 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 		log.Printf("setting change has been confirmed successfully, id=%d\n", id)
 		return nil
 	}
+	log.Printf("setting change will be reverted due commit=false, id=%d\n", id)
 	return nil
 }

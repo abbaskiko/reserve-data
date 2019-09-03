@@ -34,14 +34,6 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 
 		g.GET("/timeserver", coreProxyMW)
 
-		g.GET("/rebalancestatus", coreProxyMW)
-		g.POST("/holdrebalance", coreProxyMW)
-		g.POST("/enablerebalance", coreProxyMW)
-
-		g.GET("/setratestatus", coreProxyMW)
-		g.POST("/holdsetrate", coreProxyMW)
-		g.POST("/enablesetrate", coreProxyMW)
-
 		g.POST("/set-stable-token-params", coreProxyMW)
 		g.POST("/confirm-stable-token-params", coreProxyMW)
 		g.POST("/reject-stable-token-params", coreProxyMW)
@@ -108,6 +100,14 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 		g.POST("/setting-change-update-exchange", settingProxyMW)
 		g.PUT("/setting-change-update-exchange/:id", settingProxyMW)
 		g.DELETE("/setting-change-update-exchange/:id", settingProxyMW)
+
+		g.GET("/rebalance-status", settingProxyMW)
+		g.POST("/hold-rebalance", settingProxyMW)
+		g.POST("/enable-rebalance", settingProxyMW)
+
+		g.GET("/set-rate-status", settingProxyMW)
+		g.POST("/hold-set-rate", settingProxyMW)
+		g.POST("/enable-set-rate", settingProxyMW)
 
 		return nil
 	}

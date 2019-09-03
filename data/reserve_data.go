@@ -191,15 +191,16 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 		for exchangeID, balances := range data.ExchangeBalances {
 			exchangeBalance := common.ExchangeBalance{
 				ExchangeID: exchanges[exchangeID.String()].ID,
+				Name:       exchangeID.String(),
 			}
-			if !balances.Valid {
+			if balances.Error != "" {
 				exchangeBalance.Error = balances.Error
+				tokenBalance.Valid = false
 			}
 			if _, exist := balances.AvailableBalance[tokenSymbol]; exist {
 				exchangeBalance.ExchangeID = exchanges[exchangeID.String()].ID
 				exchangeBalance.Available = balances.AvailableBalance[tokenSymbol]
 				exchangeBalance.Locked = balances.LockedBalance[tokenSymbol]
-				exchangeBalance.Name = exchangeID.String()
 			}
 			exchangeBalances = append(exchangeBalances, exchangeBalance)
 		}

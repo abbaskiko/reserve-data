@@ -175,34 +175,34 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	}
 	for i, o := range settingChange.ChangeList {
 		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
-			msg := fmt.Sprintf("verify change list get error at index %d", i)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
+			msg := fmt.Sprintf("verify change list get error at index %d, err=%s", i, err)
+			httputil.ResponseFailure(c, httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 
 		if err := s.validateChangeEntry(o.Data, o.Type); err != nil {
-			msg := fmt.Sprintf("verify change list get error at index %d", i)
-			httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg), httputil.WithField("failed-at", o))
+			msg := fmt.Sprintf("verify change list get error at index %d, err=%s", i, err)
+			httputil.ResponseFailure(c, httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 	}
 	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
 		msg := fmt.Sprintf("fill trading pair info error=%s", err)
 		log.Println(msg)
-		httputil.ResponseFailure(c, httputil.WithError(err), httputil.WithReason(msg))
+		httputil.ResponseFailure(c, httputil.WithReason(msg))
 		return
 	}
 
 	id, err := s.storage.CreateSettingChange(t, settingChange)
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+		httputil.ResponseFailure(c, httputil.WithError(makeFriendlyMessage(err)))
 		return
 	}
 
 	// test confirm
 	err = s.storage.ConfirmSettingChange(id, false)
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+		httputil.ResponseFailure(c, httputil.WithError(makeFriendlyMessage(err)))
 		// clean up
 		if err = s.storage.RejectSettingChange(id); err != nil {
 			log.Printf("failed to clean up, error")
@@ -297,11 +297,11 @@ func (s *Server) checkCreateTradingPairParams(createEntry common.CreateTradingPa
 	}
 
 	if baseAssetEx, ok = getAssetExchangeByExchangeID(base, createEntry.ExchangeID); !ok {
-		return "", "", errors.Wrap(common.ErrBaseAssetInvalid, "exchange id not found")
+		return "", "", errors.Wrap(common.ErrBaseAssetInvalid, "base asset not config on exchange")
 	}
 
 	if quoteAssetEx, ok = getAssetExchangeByExchangeID(base, createEntry.ExchangeID); !ok {
-		return "", "", errors.Wrap(common.ErrQuoteAssetInvalid, "exchange id not found")
+		return "", "", errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset not config on exchange")
 	}
 	return baseAssetEx.Symbol, quoteAssetEx.Symbol, nil
 }

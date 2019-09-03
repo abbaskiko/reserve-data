@@ -1,12 +1,11 @@
 package http
 
 import (
-	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/sentry"
@@ -22,12 +21,6 @@ import (
 
 const (
 	maxTimespot uint64 = 18446744073709551615
-	maxDataSize int    = 1000000 //1 Megabyte in byte
-)
-
-var (
-	// errDataSizeExceed is returned when the post data is larger than maxDataSize.
-	errDataSizeExceed = errors.New("the data size must be less than 1 MB")
 )
 
 // Server struct for http package
@@ -79,6 +72,7 @@ type price struct {
 	Asks     []common.PriceEntry `json:"asks"`
 }
 
+// AllPrices return prices of all tokens
 func (s *Server) AllPrices(c *gin.Context) {
 	log.Printf("Getting all prices \n")
 	data, err := s.app.GetAllPrices(getTimePoint(c, true))
@@ -94,17 +88,11 @@ func (s *Server) AllPrices(c *gin.Context) {
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
-		for exchangeName, exchangePrice := range onePrice {
-			exchange, err := common.GetExchange(string(exchangeName))
-			if err != nil {
-				httputil.ResponseFailure(c, httputil.WithError(err))
-				return
-			}
-			// TODO: should we check exchangeID.Name() match pair.ExchangeID?
+		for exchangeID, exchangePrice := range onePrice {
 			responseData = append(responseData, price{
 				Base:     pair.Base,
 				Quote:    pair.Quote,
-				Exchange: uint64(exchange.ID()),
+				Exchange: uint64(exchangeID),
 				Bids:     exchangePrice.Bids,
 				Asks:     exchangePrice.Asks,
 			})
@@ -199,51 +187,41 @@ func (s *Server) GetRate(c *gin.Context) {
 	}
 }
 
+// TradeRequest form
+type TradeRequest struct {
+	Pair   uint64  `json:"pair"`
+	Amount float64 `json:"amount"`
+	Rate   float64 `json:"rate"`
+	Type   string  `json:"type"`
+}
+
 // Trade create an order in cexs
 func (s *Server) Trade(c *gin.Context) {
-	postForm := c.Request.Form
-	exchangeParam := c.Param("exchangeid")
-	pairIDParam := c.Param("pair")
-	amountParam := postForm.Get("amount")
-	rateParam := postForm.Get("rate")
-	typeParam := postForm.Get("type")
-
-	pairID, err := strconv.Atoi(pairIDParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("invalid pair id %s err=%s", pairIDParam, err.Error())))
+	var request TradeRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-
-	exchange, err := common.GetExchange(exchangeParam)
+	exchangeName := c.Param("exchange_name")
+	exchange, err := common.GetExchange(exchangeName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	var pair v3common.TradingPairSymbols
-	pair, err = s.settingStorage.GetTradingPair(uint64(pairID))
+	pair, err = s.settingStorage.GetTradingPair(request.Pair)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	amount, err := strconv.ParseFloat(amountParam, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	rate, err := strconv.ParseFloat(rateParam, 64)
-	log.Printf("http server: Trade: rate: %f, raw rate: %s", rate, rateParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	if typeParam != "sell" && typeParam != "buy" {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Trade type of %s is not supported.", typeParam)))
+	if request.Type != "sell" && request.Type != "buy" {
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Trade type of %s is not supported.", request.Type)))
 		return
 	}
 
 	id, done, remaining, finished, err := s.core.Trade(
-		exchange, typeParam, pair, rate, amount, getTimePoint(c, false))
+		exchange, request.Type, pair, request.Rate, request.Amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -256,19 +234,27 @@ func (s *Server) Trade(c *gin.Context) {
 	}))
 }
 
+// CancelOrderRequest type
+type CancelOrderRequest struct {
+	OrderID string `json:"order_id"`
+}
+
 // CancelOrder cancel an order from cexs
 func (s *Server) CancelOrder(c *gin.Context) {
-	postForm := c.Request.Form
-	exchangeParam := c.Param("exchangeid")
-	id := postForm.Get("order_id")
+	var request CancelOrderRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 
-	exchange, err := common.GetExchange(exchangeParam)
+	exchangeName := c.Param("exchange_name")
+	exchange, err := common.GetExchange(exchangeName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Cancel order id: %s from %s\n", id, exchange.ID().String())
-	activityID, err := common.StringToActivityID(id)
+	log.Printf("Cancel order id: %s from %s\n", request.OrderID, exchange.ID().String())
+	activityID, err := common.StringToActivityID(request.OrderID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -281,36 +267,34 @@ func (s *Server) CancelOrder(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// WithdrawRequest type
+type WithdrawRequest struct {
+	Asset  uint64   `json:"asset"`
+	Amount *big.Int `json:"amount"`
+}
+
 // Withdraw asset to reserve from cex
 func (s *Server) Withdraw(c *gin.Context) {
-	postForm := c.Request.Form
-	exchangeParam := c.Param("exchangeid")
-	assetParam := postForm.Get("asset")
-	amountParam := postForm.Get("amount")
-
-	exchange, err := common.GetExchange(exchangeParam)
-	if err != nil {
+	var request WithdrawRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	assetID, err := strconv.Atoi(assetParam)
+	exchangeName := c.Param("exchange_name")
+	exchange, err := common.GetExchange(exchangeName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	asset, err := s.settingStorage.GetAsset(uint64(assetID))
+
+	asset, err := s.settingStorage.GetAsset(request.Asset)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	amount, err := hexutil.DecodeBig(amountParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	log.Printf("Withdraw %s %d from %s\n", amount.Text(10), asset.ID, exchange.ID().String())
-	id, err := s.core.Withdraw(exchange, asset, amount, getTimePoint(c, false))
+	log.Printf("Withdraw %s %d from %s\n", request.Amount.Text(10), asset.ID, exchange.ID().String())
+	id, err := s.core.Withdraw(exchange, asset, request.Amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -318,36 +302,34 @@ func (s *Server) Withdraw(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+// DepositRequest type
+type DepositRequest struct {
+	Amount *big.Int `json:"amount"`
+	Asset  uint64   `json:"asset"`
+}
+
 // Deposit asset into cex
 func (s *Server) Deposit(c *gin.Context) {
-	postForm := c.Request.Form
-	exchangeParam := c.Param("exchangeid")
-	amountParam := postForm.Get("amount")
-	assetIDParam := postForm.Get("asset")
-	assetID, err := strconv.Atoi(assetIDParam)
+	var request DepositRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	exchangeName := c.Param("exchange_name")
+
+	exchange, err := common.GetExchange(exchangeName)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	asset, err := s.settingStorage.GetAsset(request.Asset)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	exchange, err := common.GetExchange(exchangeParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	asset, err := s.settingStorage.GetAsset(uint64(assetID))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	amount, err := hexutil.DecodeBig(amountParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-
-	log.Printf("Depositing %s %d to %s\n", amount.Text(10), asset.ID, exchange.ID().String())
-	id, err := s.core.Deposit(exchange, asset, amount, getTimePoint(c, false))
+	log.Printf("Depositing %s %d to %s\n", request.Amount.Text(10), asset.ID, exchange.ID().String())
+	id, err := s.core.Deposit(exchange, asset, request.Amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -439,10 +421,10 @@ func (s *Server) register() {
 		g.GET("/activities", s.GetActivities)
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
 
-		g.POST("/cancelorder/:exchangeid", s.CancelOrder)
-		g.POST("/deposit/:exchangeid", s.Deposit)
-		g.POST("/withdraw/:exchangeid", s.Withdraw)
-		g.POST("/trade/:exchangeid", s.Trade)
+		g.POST("/cancelorder/:exchange_name", s.CancelOrder)
+		g.POST("/deposit/:exchange_name", s.Deposit)
+		g.POST("/withdraw/:exchange_name", s.Withdraw)
+		g.POST("/trade/:exchange_name", s.Trade)
 		g.POST("/setrates", s.SetRate)
 		g.GET("/tradehistory", s.GetTradeHistory)
 

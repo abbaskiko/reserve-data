@@ -12,6 +12,9 @@ const (
 	pricingOPAddressName      = "pricing_operator"
 	depositOPAddressName      = "deposit_operator"
 	intermediateOPAddressName = "intermediate_operator"
+	wrapper                   = "wrapper"
+	internalNetwork           = "internal_network"
+	network                   = "network"
 )
 
 // GetAddresses get address config from core
@@ -22,6 +25,9 @@ func (s *Server) GetAddresses(c *gin.Context) {
 	addresses[pricingOPAddressName] = s.blockchain.GetPricingOPAddress()
 	addresses[depositOPAddressName] = s.blockchain.GetDepositOPAddress()
 	addresses[intermediateOPAddressName] = s.blockchain.GetIntermediatorOPAddress()
+	addresses[wrapper] = s.blockchain.GetWrapperAddress()
+	addresses[internalNetwork] = s.blockchain.GetInternalNetworkAddress()
+	addresses[network] = s.blockchain.GetNetworkAddress()
 	result := common.NewAddressesResponse(addresses)
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
