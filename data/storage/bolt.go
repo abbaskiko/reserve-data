@@ -16,7 +16,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 

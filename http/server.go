@@ -15,8 +15,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	v3common "github.com/KyberNetwork/reserve-data/v3/common"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	v3common "github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 const (

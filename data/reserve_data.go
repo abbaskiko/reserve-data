@@ -13,8 +13,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/data/datapruner"
-	v3 "github.com/KyberNetwork/reserve-data/v3/common"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	v3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 //ReserveData struct for reserve data

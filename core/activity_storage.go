@@ -2,7 +2,7 @@ package core
 
 import (
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // ActivityStorage is the interface contains all database operations of core.
