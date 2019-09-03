@@ -56,7 +56,7 @@ func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 			return ethereum.Address{}, uErr
 		}
 		result, supported := addrs[tokenID]
-		if !supported {
+		if !supported || commonv3.IsZeroAddress(result) {
 			return result, fmt.Errorf("real deposit address of token %s is not available", tokenID)
 		}
 		return result, nil
