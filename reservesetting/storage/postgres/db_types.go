@@ -5,7 +5,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // assetExchangeCondition is placeholder for namedStmt to select asset exchange
