@@ -56,7 +56,7 @@ func (bn *Binance) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 			return ethereum.Address{}, false
 		}
 		depositAddr, ok := addrs[symbol]
-		return depositAddr, ok && commonv3.IsZeroAddress(depositAddr)
+		return depositAddr, ok && !commonv3.IsZeroAddress(depositAddr)
 	}
 	log.Printf("Got Binance live deposit address for token %d, attempt to update it to current setting", asset.ID)
 	if err = bn.sr.UpdateDepositAddress(
