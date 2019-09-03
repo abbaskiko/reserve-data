@@ -8,11 +8,12 @@ import (
 	"reflect"
 	"strconv"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/settings"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -711,26 +712,6 @@ func (s *Server) GetAddress(c *gin.Context) {
 		return
 	}
 	address, err := s.setting.GetAddress(addrName)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(address))
-}
-
-func (s *Server) GetAddresses(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfigurePermission, ReadOnlyPermission, ConfirmConfPermission})
-	if !ok {
-		return
-	}
-	name := c.Query("name")
-	addressSetNames := settings.AddressSetNameValues()
-	addrSetName, ok := addressSetNames[name]
-	if !ok {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("address set name %s is not avail in this list of valid address set name", name)))
-		return
-	}
-	address, err := s.setting.GetAddresses(addrSetName)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

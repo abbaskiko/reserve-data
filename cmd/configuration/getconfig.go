@@ -4,6 +4,9 @@ import (
 	"log"
 	"path/filepath"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
@@ -11,8 +14,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingstorage "github.com/KyberNetwork/reserve-data/settings/storage"
 	"github.com/KyberNetwork/reserve-data/world"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const (
@@ -71,7 +72,7 @@ func GetConfigPaths(kyberENV string) SettingPaths {
 	return ConfigPaths[common.DevMode]
 }
 
-func GetSetting(setPath SettingPaths, kyberENV string, addressSetting *settings.AddressSetting) (*settings.Settings, error) {
+func GetSetting(kyberENV string, addressSetting *settings.AddressSetting) (*settings.Settings, error) {
 	boltSettingStorage, err := settingstorage.NewBoltSettingStorage(filepath.Join(common.CmdDirLocation(), GetSettingDBName(kyberENV)))
 	if err != nil {
 		return nil, err
@@ -88,10 +89,10 @@ func GetSetting(setPath SettingPaths, kyberENV string, addressSetting *settings.
 		tokenSetting,
 		addressSetting,
 		exchangeSetting,
-		settings.WithHandleEmptyToken(setPath.settingPath),
-		settings.WithHandleEmptyFee(setPath.feePath),
-		settings.WithHandleEmptyMinDeposit(filepath.Join(common.CmdDirLocation(), "min_deposit.json")),
-		settings.WithHandleEmptyDepositAddress(setPath.settingPath),
+		settings.WithHandleEmptyToken(mustGetTokenConfig(kyberENV)),
+		settings.WithHandleEmptyFee(FeeConfigs),
+		settings.WithHandleEmptyMinDeposit(ExchangesMinDepositConfig),
+		settings.WithHandleEmptyDepositAddress(mustGetExchangeConfig(kyberENV)),
 		settings.WithHandleEmptyExchangeInfo())
 	return setting, err
 }
@@ -105,7 +106,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string) *Config {
 	}
 
 	hmac512auth := http.NewKNAuthenticationFromFile(setPath.secretPath)
-	addressSetting, err := settings.NewAddressSetting(setPath.settingPath)
+	addressSetting, err := settings.NewAddressSetting(mustGetAddressesConfig(kyberENV))
 	if err != nil {
 		log.Panicf("cannot init address setting %s", err)
 	}

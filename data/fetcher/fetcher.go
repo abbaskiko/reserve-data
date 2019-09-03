@@ -7,9 +7,10 @@ import (
 	"sync"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/settings"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // maxActivityLifeTime is the longest time of an activity. If the
@@ -103,26 +104,33 @@ func (f *Fetcher) RunGlobalDataFetcher() {
 }
 
 func (f *Fetcher) FetchGlobalData(timepoint uint64) {
-	goldData, err := f.theworld.GetGoldInfo()
-	if err != nil {
-		log.Printf("failed to fetch Gold Info: %s", err.Error())
-		return
-	}
-	goldData.Timestamp = common.GetTimepoint()
-
-	if err = f.globalStorage.StoreGoldInfo(goldData); err != nil {
-		log.Printf("Storing gold info failed: %s", err.Error())
+	if goldData, err := f.theworld.GetGoldInfo(); err != nil {
+		log.Printf("failed to fetch Gold Info: %s\n", err.Error())
+	} else {
+		goldData.Timestamp = common.GetTimepoint()
+		if err = f.globalStorage.StoreGoldInfo(goldData); err != nil {
+			log.Printf("Storing gold info failed: %s\n", err.Error())
+		}
 	}
 
-	btcData, err := f.theworld.GetBTCInfo()
-	if err != nil {
-		log.Printf("failed to fetch BTC Info: %s", err.Error())
-		return
+	if btcData, err := f.theworld.GetBTCInfo(); err != nil {
+		log.Printf("failed to fetch BTC Info: %s\n", err.Error())
+	} else {
+		btcData.Timestamp = common.GetTimepoint()
+		if err = f.globalStorage.StoreBTCInfo(btcData); err != nil {
+			log.Printf("Storing BTC info failed: %s\n", err.Error())
+		}
 	}
-	btcData.Timestamp = common.GetTimepoint()
-	if err = f.globalStorage.StoreBTCInfo(btcData); err != nil {
-		log.Printf("Storing BTC info failed: %s", err.Error())
+
+	if usdData, err := f.theworld.GetUSDInfo(); err != nil {
+		log.Printf("failed to fetch USD info, %v\n", err)
+	} else {
+		usdData.Timestamp = common.GetTimepoint()
+		if err = f.globalStorage.StoreUSDInfo(usdData); err != nil {
+			log.Printf("Store USD info failed, %v\n", err)
+		}
 	}
+
 }
 
 func (f *Fetcher) RunBlockFetcher() {

@@ -2,6 +2,8 @@ package settings
 
 import (
 	"log"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 // Settings contains shared common settings between all components.
@@ -13,7 +15,7 @@ type Settings struct {
 
 // WithHandleEmptyToken will load the token settings from default file if the
 // database is empty.
-func WithHandleEmptyToken(pathJSON string) SettingOption {
+func WithHandleEmptyToken(data map[string]common.Token) SettingOption {
 	return func(setting *Settings) {
 		allToks, err := setting.GetAllTokens()
 		if err != nil || len(allToks) < 1 {
@@ -22,7 +24,7 @@ func WithHandleEmptyToken(pathJSON string) SettingOption {
 			} else {
 				log.Printf("Setting Init: Token DB is empty, attempt to load token from file")
 			}
-			if err = setting.loadTokenFromFile(pathJSON); err != nil {
+			if err = setting.savePreconfigToken(data); err != nil {
 				log.Printf("Setting Init: Can not load Token from file: %s, Token DB is needed to be updated manually", err.Error())
 			}
 		}
@@ -31,9 +33,9 @@ func WithHandleEmptyToken(pathJSON string) SettingOption {
 
 // WithHandleEmptyFee will load the Fee settings from default file
 // if the fee database is empty. It will mutiply the Funding fee value by 2
-func WithHandleEmptyFee(pathJSON string) SettingOption {
+func WithHandleEmptyFee(feeConfig map[string]common.ExchangeFees) SettingOption {
 	return func(setting *Settings) {
-		if err := setting.loadFeeFromFile(pathJSON); err != nil {
+		if err := setting.savePreconfigFee(feeConfig); err != nil {
 			log.Printf("WARNING: Setting Init: cannot load Fee from file: %s, Fee is needed to be updated manually", err.Error())
 		}
 	}
@@ -41,9 +43,9 @@ func WithHandleEmptyFee(pathJSON string) SettingOption {
 
 // WithHandleEmptyMinDeposit will load the MinDeposit setting from fefault file
 // if the Mindeposit database is empty. It will mutiply the MinDeposit value by 2
-func WithHandleEmptyMinDeposit(pathJSON string) SettingOption {
+func WithHandleEmptyMinDeposit(data map[string]common.ExchangesMinDeposit) SettingOption {
 	return func(setting *Settings) {
-		if err := setting.loadMinDepositFromFile(pathJSON); err != nil {
+		if err := setting.savePrecofigMinDeposit(data); err != nil {
 			log.Printf("WARNING: Setting Init: cannot load MinDeposit from file: %s, Fee is needed to be updated manually", err.Error())
 		}
 	}
@@ -51,9 +53,9 @@ func WithHandleEmptyMinDeposit(pathJSON string) SettingOption {
 
 // WithHandleEmptyDepositAddress will load the MinDeposit setting from fefault file
 // if the DepositAddress database is empty
-func WithHandleEmptyDepositAddress(pathJSON string) SettingOption {
+func WithHandleEmptyDepositAddress(data map[common.ExchangeID]common.ExchangeAddresses) SettingOption {
 	return func(setting *Settings) {
-		if err := setting.loadDepositAddressFromFile(pathJSON); err != nil {
+		if err := setting.savePreconfigExchangeDepositAddress(data); err != nil {
 			log.Printf("WARNING: Setting Init: cannot load DepositAddress from file: %s, Fee is needed to be updated manually", err.Error())
 		}
 	}

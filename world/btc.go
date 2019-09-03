@@ -11,10 +11,10 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
-func (tw *TheWorld) getCoinbaseInfo() common.CoinbaseData {
+func (tw *TheWorld) getCoinbaseInfo(ep string) common.CoinbaseData {
 	var (
 		client = &http.Client{Timeout: 30 * time.Second}
-		url    = tw.endpoint.CoinbaseBTCEndpoint()
+		url    = ep
 		result = common.CoinbaseData{}
 	)
 
@@ -105,7 +105,7 @@ func (tw *TheWorld) getGeminiInfo() common.GeminiData {
 
 func (tw *TheWorld) GetBTCInfo() (common.BTCData, error) {
 	return common.BTCData{
-		Coinbase: tw.getCoinbaseInfo(),
+		Coinbase: tw.getCoinbaseInfo(tw.endpoint.CoinbaseBTCEndpoint()),
 		Gemini:   tw.getGeminiInfo(),
 	}, nil
 }

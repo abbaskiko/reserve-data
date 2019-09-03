@@ -16,6 +16,9 @@ var (
 
 		"CoinbaseBTC",
 		"GeminiBTC",
+
+		"CoinbaseUSD",
+		"BinanceUSD",
 	}
 	// remove unused feeds
 )
@@ -36,10 +39,21 @@ type Endpoint interface {
 
 	CoinbaseBTCEndpoint() string
 	GeminiBTCEndpoint() string
+
+	CoinbaseUSDEndpoint() string
+	BinanceUSDEndpoint() string
 }
 
 type RealEndpoint struct {
 	OneForgeKey string `json:"oneforge"`
+}
+
+func (re RealEndpoint) CoinbaseUSDEndpoint() string {
+	return "https://api.pro.coinbase.com/products/eth-usdc/ticker"
+}
+
+func (re RealEndpoint) BinanceUSDEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC"
 }
 
 func (re RealEndpoint) GoldDataEndpoint() string {
@@ -87,6 +101,15 @@ func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
 type SimulatedEndpoint struct {
 }
 
+// TODO: support simulation
+func (se SimulatedEndpoint) CoinbaseUSDEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinanceUSDEndpoint() string {
+	panic("implement me")
+}
+
 func (se SimulatedEndpoint) GoldDataEndpoint() string {
 	return "http://simulator:5400/tick"
 }
@@ -112,9 +135,9 @@ func (se SimulatedEndpoint) GeminiDataEndpoint() string {
 }
 
 func (se SimulatedEndpoint) CoinbaseBTCEndpoint() string {
-	panic("unimplemented")
+	return "http://simulator:5600/products/eth-btc/ticker"
 }
 
 func (se SimulatedEndpoint) GeminiBTCEndpoint() string {
-	panic("unimplemented")
+	return "http://simulator:5800/v1/pubticker/ethbtc"
 }
