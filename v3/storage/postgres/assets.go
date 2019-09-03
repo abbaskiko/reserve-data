@@ -231,9 +231,8 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, updateOpts storage
 		log.Printf("asset_exchange not found in database id=%d", id)
 		return common.ErrNotFound
 	} else if err != nil {
-		return fmt.Errorf("failed to update asset err=%s", err)
+		return fmt.Errorf("failed to update asset_exchange, err=%s", err)
 	}
-	// TODO: check more error
 	return nil
 }
 

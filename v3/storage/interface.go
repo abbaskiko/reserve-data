@@ -13,11 +13,6 @@ type Interface interface {
 	UpdateDepositAddress(assetID, exchangeID uint64, address ethereum.Address) error
 	UpdateTradingPair(id uint64, opts UpdateTradingPairOpts) error
 
-	// TODO method for batch update PWI
-	// TODO method for batch update rebalance quadratic
-	// TODO method for batch update exchange configuration
-	// TODO method for batch update target
-
 	CreateSettingChange(v3.ChangeCatalog, v3.SettingChange) (uint64, error)
 	GetSettingChange(uint64) (v3.SettingChangeResponse, error)
 	GetSettingChanges(catalog v3.ChangeCatalog) ([]v3.SettingChangeResponse, error)
