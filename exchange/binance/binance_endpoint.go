@@ -19,7 +19,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // Endpoint object stand for Binance endpoint

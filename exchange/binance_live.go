@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 //BinanceLive implement live info for binance

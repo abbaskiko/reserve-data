@@ -11,8 +11,8 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 const (

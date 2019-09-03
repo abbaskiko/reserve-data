@@ -10,7 +10,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 type Version uint64
@@ -493,7 +493,7 @@ type ExchangeBalance struct {
 	Error      string  `json:"error"`
 }
 
-// AuthdataBalance is balance for a token in v3 authata
+// AuthdataBalance is balance for a token in reservesetting authata
 type AuthdataBalance struct {
 	Valid        bool              `json:"valid"`
 	AssetID      uint64            `json:"asset_id"`
@@ -510,7 +510,7 @@ type PendingActivities struct {
 	Deposit  []ActivityRecord `json:"deposit"`
 }
 
-// AuthDataResponseV3 is auth data format for v3
+// AuthDataResponseV3 is auth data format for reservesetting
 type AuthDataResponseV3 struct {
 	Balances          []AuthdataBalance `json:"balances"`
 	PendingActivities PendingActivities `json:"pending_activities"`

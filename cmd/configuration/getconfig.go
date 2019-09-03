@@ -12,7 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 	"github.com/KyberNetwork/reserve-data/world"
 )
 

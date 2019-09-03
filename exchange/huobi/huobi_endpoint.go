@@ -18,7 +18,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 const (

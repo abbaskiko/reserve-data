@@ -17,8 +17,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	huobihttp "github.com/KyberNetwork/reserve-data/exchange/huobi/http"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 const (

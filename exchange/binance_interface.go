@@ -5,7 +5,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // BinanceInterface contains the methods to interact with Binance centralized exchange.

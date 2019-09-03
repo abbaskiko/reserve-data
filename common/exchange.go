@@ -6,7 +6,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // ExchangeID is the name of exchanges of which core will use to rebalance.
