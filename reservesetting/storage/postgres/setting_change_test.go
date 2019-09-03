@@ -532,7 +532,7 @@ func TestStorage_GetDepositAddresses(t *testing.T) {
 
 	depositAddr, err := s.GetDepositAddresses(binance)
 	require.NoError(t, err)
-	require.Equal(t, 3, len(depositAddr))
+	require.Equal(t, 2, len(depositAddr))
 	for symbol, addr := range depositAddr {
 		t.Logf("symbol=%v deposit address=%v", symbol, addr.Hex())
 	}
