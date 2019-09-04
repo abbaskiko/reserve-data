@@ -700,10 +700,20 @@ func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
+
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", nil)
+	server := NewServer(s, "", supportedExchanges, nil)
 	const changeAssetAddress = "/v3/setting-change-main"
 	var changeID uint64
 	var tests = []testCase{
@@ -784,10 +794,20 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
+
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", nil)
+	server := NewServer(s, "", supportedExchanges, nil)
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
@@ -855,10 +875,21 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
+
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	//create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
+
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
-	server := NewServer(s, "", nil)
+	server := NewServer(s, "", supportedExchanges, nil)
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
