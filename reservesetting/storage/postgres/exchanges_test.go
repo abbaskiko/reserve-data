@@ -105,7 +105,7 @@ func TestStorage_GetUpdateByName(t *testing.T) {
 	s, err := NewStorage(db)
 	assert.NoError(t, err)
 	initData(t, s)
-	exchangeByID, err := s.GetExchange(1)
+	exchangeByID, err := s.GetExchange(binance)
 	require.NoError(t, err)
 	exchangeByName, err := s.GetExchangeByName(exchangeByID.Name)
 	require.NoError(t, err)
