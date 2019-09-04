@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -817,7 +816,6 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 				}
 				require.Equal(t, http.StatusOK, resp.Code)
 				err = json.Unmarshal(resp.Body.Bytes(), &idResponse)
-				log.Println("idResponse", idResponse)
 				require.NoError(t, err)
 				require.True(t, idResponse.Success)
 				deleteTradingPairID = idResponse.ID
@@ -859,24 +857,24 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 	}()
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-	t.Log(s)
+
 	server := NewServer(s, "", nil)
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
-	const deleteTradingPair = "/v3/setting-change-main"
-	var deleteTradingPairID uint64
+	const deleteAssetExchange = "/v3/setting-change-main"
+	var deleteAssetExchangeID uint64
 	var tests = []testCase{
 		{
-			msg:      "create delete trading pair",
-			endpoint: deleteTradingPair,
+			msg:      "create delete asset exchange",
+			endpoint: deleteAssetExchange,
 			method:   http.MethodPost,
 			data: common.SettingChange{
 				ChangeList: []common.SettingChangeEntry{
 					{
-						Type: common.ChangeTypeDeleteTradingPair,
-						Data: common.DeleteTradingPairEntry{
-							TradingPairID: 1,
+						Type: common.ChangeTypeDeleteAssetExchange,
+						Data: common.DeleteAssetExchangeEntry{
+							AssetExchangeID: 2,
 						},
 					},
 				},
@@ -889,33 +887,37 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 				}
 				require.Equal(t, http.StatusOK, resp.Code)
 				err = json.Unmarshal(resp.Body.Bytes(), &idResponse)
-				log.Println("idResponse", idResponse)
 				require.NoError(t, err)
 				require.True(t, idResponse.Success)
-				deleteTradingPairID = idResponse.ID
+				deleteAssetExchangeID = idResponse.ID
 			},
 		},
 		{
 			msg: "test get pending",
 			endpointExp: func() string {
-				return deleteTradingPair + fmt.Sprintf("/%d", deleteTradingPairID)
+				return deleteAssetExchange + fmt.Sprintf("/%d", deleteAssetExchangeID)
 			},
 			method: http.MethodGet,
 			assert: httputil.ExpectSuccess,
 		},
 		{
-			msg: "confirm delete trading pair",
+			msg: "confirm delete asset exchange",
 			endpointExp: func() string {
-				return deleteTradingPair + fmt.Sprintf("/%d", deleteTradingPairID)
+				return deleteAssetExchange + fmt.Sprintf("/%d", deleteAssetExchangeID)
 			},
 			method: http.MethodPut,
-			assert: httputil.ExpectSuccess,
-		},
-		{
-			msg:      "get trading pair",
-			endpoint: fmt.Sprintf("/v3/trading-pair/%d", 1),
-			method:   http.MethodGet,
-			assert:   httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var response struct {
+					Success bool   `json:"success"`
+					Reason  string `json:"reason"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &response)
+				require.NoError(t, err)
+				require.Equal(t, true, response.Success)
+				_, err := s.GetAssetExchange(2)
+				require.Equal(t, common.ErrNotFound, err)
+			},
 		},
 	}
 	for _, tc := range tests {

@@ -95,3 +95,19 @@ func TestStorage_UpdateExchange(t *testing.T) {
 	assert.Equal(t, 0.02, huobiExchange.TradingFeeTaker)
 	assert.False(t, huobiExchange.Disable)
 }
+
+func TestStorage_GetUpdateByName(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	assert.NoError(t, err)
+	initData(t, s)
+	exchangeByID, err := s.GetExchange(1)
+	require.NoError(t, err)
+	exchangeByName, err := s.GetExchangeByName(exchangeByID.Name)
+	require.NoError(t, err)
+	require.Equal(t, exchangeByID, exchangeByName)
+}

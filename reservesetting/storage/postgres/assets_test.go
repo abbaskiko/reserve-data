@@ -119,3 +119,20 @@ func TestUpdateAsset(t *testing.T) {
 		tc.assertFn(t, asset, err)
 	}
 }
+
+func TestGetAssetBySymbol(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := NewStorage(db)
+	assert.NoError(t, err)
+	initData(t, s)
+	assetByID, err := s.GetAsset(3)
+	require.NoError(t, err)
+	assetBySymbol, err := s.GetAssetBySymbol(assetByID.Symbol)
+	require.NoError(t, err)
+	require.Equal(t, assetByID.ID, assetBySymbol.ID)
+	require.Equal(t, assetByID.Decimals, assetBySymbol.Decimals)
+}
