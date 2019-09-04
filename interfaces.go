@@ -48,8 +48,7 @@ type Core interface {
 		tradeType string,
 		pair commonv3.TradingPairSymbols,
 		rate float64,
-		amount float64,
-		timestamp uint64) (id common.ActivityID, done float64, remaining float64, finished bool, err error)
+		amount float64) (id common.ActivityID, done float64, remaining float64, finished bool, err error)
 
 	Deposit(
 		exchange common.Exchange,
@@ -60,8 +59,7 @@ type Core interface {
 	Withdraw(
 		exchange common.Exchange,
 		token commonv3.Asset,
-		amount *big.Int,
-		timestamp uint64) (common.ActivityID, error)
+		amount *big.Int) (common.ActivityID, error)
 
 	CancelOrder(id common.ActivityID, exchange common.Exchange) error
 

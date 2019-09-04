@@ -28,8 +28,7 @@ type HuobiInterface interface {
 	Trade(
 		tradeType string,
 		pair commonv3.TradingPairSymbols,
-		rate, amount float64,
-		timepoint uint64) (HuobiTrade, error)
+		rate, amount float64) (HuobiTrade, error)
 
 	CancelOrder(symbol string, id uint64) (HuobiCancel, error)
 
