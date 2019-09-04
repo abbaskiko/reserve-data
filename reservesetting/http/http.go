@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
-	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
 )
 
 // Server is the HTTP server of token V3.
@@ -22,7 +22,7 @@ type Server struct {
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
-func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange) *Server {
+func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange, blockchain *blockchain.Blockchain) *Server {
 	r := gin.Default()
 	server := &Server{
 		storage:            storage,

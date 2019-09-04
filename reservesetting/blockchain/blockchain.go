@@ -5,7 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"github.com/KyberNetwork/reserve-data/v3/blockchain/contracts"
+	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain/contracts"
 )
 
 // Blockchain to interact with blockchain

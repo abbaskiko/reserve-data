@@ -8,7 +8,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
-	"github.com/KyberNetwork/reserve-data/v3/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 const (
