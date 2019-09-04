@@ -15,10 +15,16 @@ const (
 
 	infuraProjectID = "/v3/59d9e06a1abe487e8e74664c06b337f9"
 
-	alchemyapiMainnetEndpoint = "https://eth-mainnet.alchemyapi.io/jsonrpc/V1GjKybGLx6rzSu517KSWpSrTSIIXmV7"
-	infuraMainnetEndpoint     = "https://mainnet.infura.io" + infuraProjectID
-	infuraKovanEndpoint       = "https://kovan.infura.io" + infuraProjectID
-	infuraRopstenEndpoint     = "https://ropsten.infura.io" + infuraProjectID
+	// AlchemyapiMainnetEndpoint exported for reserve setting
+	AlchemyapiMainnetEndpoint = "https://eth-mainnet.alchemyapi.io/jsonrpc/V1GjKybGLx6rzSu517KSWpSrTSIIXmV7"
+
+	// InfuraMainnetEndpoint exported to use in reserve setting
+	InfuraMainnetEndpoint = "https://mainnet.infura.io" + infuraProjectID
+	// InfuraKovanEndpoint exported to use in reserve setting
+	InfuraKovanEndpoint = "https://kovan.infura.io" + infuraProjectID
+	// InfuraRopstenEndpoint exported to use in reserve setting
+	InfuraRopstenEndpoint = "https://ropsten.infura.io" + infuraProjectID
+
 	myEtherAPIMainnetEndpoint = "https://api.myetherwallet.com/eth"
 	myEtherAPIRopstenEndpoint = "https://api.myetherwallet.com/rop"
 	semidNodeKyberEndpoint    = "https://semi-node.kyber.network"
@@ -30,23 +36,23 @@ const (
 
 var defaultEthereumNodes = map[deployment.Deployment]*EthereumNodeConfiguration{
 	deployment.Development: NewEthereumNodeConfiguration(
-		infuraMainnetEndpoint,
+		InfuraMainnetEndpoint,
 		[]string{
 			semidNodeKyberEndpoint,
-			infuraMainnetEndpoint,
+			InfuraMainnetEndpoint,
 			myCryptoAPIEndpoint,
 			myEtherAPIMainnetEndpoint,
 		},
 	),
 	deployment.Kovan: NewEthereumNodeConfiguration(
-		infuraKovanEndpoint,
+		InfuraKovanEndpoint,
 		[]string{},
 	),
 	deployment.Production: NewEthereumNodeConfiguration(
-		alchemyapiMainnetEndpoint,
+		AlchemyapiMainnetEndpoint,
 		[]string{
-			alchemyapiMainnetEndpoint,
-			infuraMainnetEndpoint,
+			AlchemyapiMainnetEndpoint,
+			InfuraMainnetEndpoint,
 			semidNodeKyberEndpoint,
 			myCryptoAPIEndpoint,
 			myEtherAPIMainnetEndpoint,
@@ -54,10 +60,10 @@ var defaultEthereumNodes = map[deployment.Deployment]*EthereumNodeConfiguration{
 		},
 	),
 	deployment.Staging: NewEthereumNodeConfiguration(
-		alchemyapiMainnetEndpoint,
+		AlchemyapiMainnetEndpoint,
 		[]string{
-			alchemyapiMainnetEndpoint,
-			infuraMainnetEndpoint,
+			AlchemyapiMainnetEndpoint,
+			InfuraMainnetEndpoint,
 			semidNodeKyberEndpoint,
 			myCryptoAPIEndpoint,
 			myEtherAPIMainnetEndpoint,
@@ -71,7 +77,7 @@ var defaultEthereumNodes = map[deployment.Deployment]*EthereumNodeConfiguration{
 		},
 	),
 	deployment.Ropsten: NewEthereumNodeConfiguration(
-		infuraRopstenEndpoint,
+		InfuraRopstenEndpoint,
 		[]string{
 			myEtherAPIRopstenEndpoint,
 		},
@@ -84,7 +90,7 @@ var defaultEthereumNodes = map[deployment.Deployment]*EthereumNodeConfiguration{
 	),
 }
 
-// NewEthereumNodesCliFlag returns new cli flag for config ethereum nodes.
+// NewEthereumNodesCliFlags returns new cli flag for config ethereum nodes.
 func NewEthereumNodesCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{

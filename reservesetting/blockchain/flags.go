@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 
+	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
@@ -31,10 +32,10 @@ var (
 		deployment.Production:  "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B",
 	}
 	defaultNodeEndpoint = map[deployment.Deployment]string{
-		deployment.Development: "https://mainnet.infura.io/",
-		deployment.Ropsten:     "https://ropsten.infura.io/",
-		deployment.Staging:     "https://mainnet.infura.io/",
-		deployment.Production:  "https://mainnet.infura.io/",
+		deployment.Development: configuration.InfuraMainnetEndpoint,
+		deployment.Ropsten:     configuration.InfuraRopstenEndpoint,
+		deployment.Staging:     configuration.InfuraMainnetEndpoint,
+		deployment.Production:  configuration.AlchemyapiMainnetEndpoint,
 	}
 )
 
