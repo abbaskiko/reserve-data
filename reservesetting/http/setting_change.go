@@ -54,14 +54,14 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 		return err
 	}
 
-	for _, o := range settingChange.ChangeList {
+	for i, o := range settingChange.ChangeList {
 		switch o.Type {
 		case common.ChangeTypeCreateAsset:
 			asset := o.Data.(*common.CreateAssetEntry)
 			for _, assetExchange := range asset.Exchanges {
 				err = s.fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
 				if err != nil {
-					return err
+					return fmt.Errorf("position %d, error: %v", i, err)
 				}
 			}
 		case common.ChangeTypeCreateTradingPair:
@@ -77,11 +77,11 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			exhID := v1common.ExchangeID(entry.ExchangeID)
 			centralExh, ok := s.supportedExchanges[exhID]
 			if !ok {
-				return errors.Errorf("exchange %s not supported", exhID)
+				return errors.Errorf("position %d, exchange %s not supported", i, exhID)
 			}
 			exchangeInfo, err := centralExh.GetLiveExchangeInfos([]common.TradingPairSymbols{tradingPairSymbol})
 			if err != nil {
-				return err
+				return fmt.Errorf("position %d, error: %v", i, err)
 			}
 			info := exchangeInfo[1]
 			entry.MinNotional = info.MinNotional
@@ -95,7 +95,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			assetExchange := o.Data.(*common.CreateAssetExchangeEntry)
 			err = s.fillLiveInfoAssetExchange(assets, assetExchange.ExchangeID, assetExchange.TradingPairs, assetExchange.Symbol, assetExchange.AssetID)
 			if err != nil {
-				return err
+				return fmt.Errorf("position %d, error: %v", i, err)
 			}
 		}
 	}
@@ -140,7 +140,7 @@ func (s *Server) fillLiveInfoAssetExchange(assets []common.Asset, exchangeID uin
 	}
 	exchangeInfo, err := centralExh.GetLiveExchangeInfos(tps)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get live exchange info, exchange=%v, symbol=%+v", exhID, tps)
+		return err
 	}
 	tradingPairID := uint64(1)
 	for idx := range tradingPairs {
@@ -175,19 +175,19 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	}
 	for i, o := range settingChange.ChangeList {
 		if err := binding.Validator.ValidateStruct(o.Data); err != nil {
-			msg := fmt.Sprintf("verify change list get error at index %d, err=%s", i, err)
+			msg := fmt.Sprintf("verify change list failed, position %d, err=%s", i, err)
 			httputil.ResponseFailure(c, httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 
 		if err := s.validateChangeEntry(o.Data, o.Type); err != nil {
-			msg := fmt.Sprintf("verify change list get error at index %d, err=%s", i, err)
+			msg := fmt.Sprintf("verify change list failed, postision %d, err=%s", i, err)
 			httputil.ResponseFailure(c, httputil.WithReason(msg), httputil.WithField("failed-at", o))
 			return
 		}
 	}
 	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
-		msg := fmt.Sprintf("fill trading pair info error=%s", err)
+		msg := fmt.Sprintf("validate trading pair info failed, %s", err)
 		log.Println(msg)
 		httputil.ResponseFailure(c, httputil.WithReason(msg))
 		return
