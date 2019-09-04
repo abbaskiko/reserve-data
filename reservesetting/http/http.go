@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -16,16 +17,18 @@ type Server struct {
 	storage            storage.Interface
 	r                  *gin.Engine
 	host               string
+	blockchain         *blockchain.Blockchain
 	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
-func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange) *Server {
+func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange, blockchain *blockchain.Blockchain) *Server {
 	r := gin.Default()
 	server := &Server{
 		storage:            storage,
 		r:                  r,
 		host:               host,
+		blockchain:         blockchain,
 		supportedExchanges: supportedExchanges,
 	}
 	g := r.Group("/v3")

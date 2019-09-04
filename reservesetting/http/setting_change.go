@@ -440,6 +440,14 @@ func getAssetExchange(assets []common.Asset, assetID, exchangeID uint64) (common
 }
 
 func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) error {
+	if createEntry.Transferable {
+		if s.blockchain == nil {
+			return common.ErrBlockchainHaveNotInitiated
+		}
+		if err := s.blockchain.CheckTokenIndices(createEntry.Address); err != nil {
+			return common.ErrAssetAddressIsNotIndexInContract
+		}
+	}
 	if createEntry.Rebalance && createEntry.RebalanceQuadratic == nil {
 		return common.ErrRebalanceQuadraticMissing
 	}
