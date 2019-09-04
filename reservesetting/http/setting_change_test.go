@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -689,6 +690,234 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 		},
 	}
 
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	t.Log(s)
+	server := NewServer(s, "", nil)
+	const changeAssetAddress = "/v3/setting-change-main"
+	var changeID uint64
+	var tests = []testCase{
+		{
+			msg:      "create change asset address",
+			endpoint: changeAssetAddress,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeChangeAssetAddr,
+						Data: common.ChangeAssetAddressEntry{
+							ID:      1,
+							Address: eth.HexToAddress("0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5"),
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					ID      uint64 `json:"id"`
+					Success bool   `json:"success"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &idResponse)
+				require.NoError(t, err)
+				require.True(t, idResponse.Success)
+				changeID = idResponse.ID
+			},
+		},
+		{
+			msg: "test get pending",
+			endpointExp: func() string {
+				return changeAssetAddress + fmt.Sprintf("/%d", changeID)
+			},
+			method: http.MethodGet,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "test get pending objs",
+			endpoint: changeAssetAddress,
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
+		},
+		{
+			msg: "confirm update exchange",
+			endpointExp: func() string {
+				return changeAssetAddress + fmt.Sprintf("/%d", changeID)
+			},
+			method: http.MethodPut,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "get exchange",
+			endpoint: fmt.Sprintf("/v3/asset/%d", 1),
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var response struct {
+					Success bool         `json:"success"`
+					Data    common.Asset `json:"data"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &response)
+				require.NoError(t, err)
+				assert.True(t, response.Success)
+				assert.Equal(t, eth.HexToAddress("0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5"), response.Data.Address)
+			},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestHTTPServer_DeleteTradingPair(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	t.Log(s)
+	server := NewServer(s, "", nil)
+	_, err = createSampleAsset(s)
+	require.NoError(t, err)
+
+	const deleteTradingPair = "/v3/setting-change-main"
+	var deleteTradingPairID uint64
+	var tests = []testCase{
+		{
+			msg:      "create delete trading pair",
+			endpoint: deleteTradingPair,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeDeleteTradingPair,
+						Data: common.DeleteTradingPairEntry{
+							TradingPairID: 1,
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					ID      uint64 `json:"id"`
+					Success bool   `json:"success"`
+					Reason  string `json:"reason"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &idResponse)
+				log.Println("idResponse", idResponse)
+				require.NoError(t, err)
+				require.True(t, idResponse.Success)
+				deleteTradingPairID = idResponse.ID
+			},
+		},
+		{
+			msg: "test get pending",
+			endpointExp: func() string {
+				return deleteTradingPair + fmt.Sprintf("/%d", deleteTradingPairID)
+			},
+			method: http.MethodGet,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg: "confirm delete trading pair",
+			endpointExp: func() string {
+				return deleteTradingPair + fmt.Sprintf("/%d", deleteTradingPairID)
+			},
+			method: http.MethodPut,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "get trading pair",
+			endpoint: fmt.Sprintf("/v3/trading-pair/%d", 1),
+			method:   http.MethodGet,
+			assert:   httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
+}
+
+func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	t.Log(s)
+	server := NewServer(s, "", nil)
+	_, err = createSampleAsset(s)
+	require.NoError(t, err)
+
+	const deleteTradingPair = "/v3/setting-change-main"
+	var deleteTradingPairID uint64
+	var tests = []testCase{
+		{
+			msg:      "create delete trading pair",
+			endpoint: deleteTradingPair,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeDeleteTradingPair,
+						Data: common.DeleteTradingPairEntry{
+							TradingPairID: 1,
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					ID      uint64 `json:"id"`
+					Success bool   `json:"success"`
+					Reason  string `json:"reason"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &idResponse)
+				log.Println("idResponse", idResponse)
+				require.NoError(t, err)
+				require.True(t, idResponse.Success)
+				deleteTradingPairID = idResponse.ID
+			},
+		},
+		{
+			msg: "test get pending",
+			endpointExp: func() string {
+				return deleteTradingPair + fmt.Sprintf("/%d", deleteTradingPairID)
+			},
+			method: http.MethodGet,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg: "confirm delete trading pair",
+			endpointExp: func() string {
+				return deleteTradingPair + fmt.Sprintf("/%d", deleteTradingPairID)
+			},
+			method: http.MethodPut,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "get trading pair",
+			endpoint: fmt.Sprintf("/v3/trading-pair/%d", 1),
+			method:   http.MethodGet,
+			assert:   httputil.ExpectFailureWithReason(common.ErrNotFound.Error()),
+		},
+	}
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
