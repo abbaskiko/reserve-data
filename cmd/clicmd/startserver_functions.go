@@ -105,7 +105,7 @@ func GetConfigFromENV(kyberENV string) *configuration.Config {
 	log.Printf("Running in %s mode \n", kyberENV)
 	config := configuration.GetConfig(kyberENV,
 		!noAuthEnable,
-		endpointOW)
+		endpointOW, cliAddress)
 	return config
 }
 

@@ -28,6 +28,8 @@ var (
 	baseURL      string
 	stdoutLog    bool
 	dryRun       bool
+
+	cliAddress common.AddressConfig
 )
 
 func serverStart(_ *cobra.Command, _ []string) {
