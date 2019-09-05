@@ -36,7 +36,7 @@ Allow overwriting some parameter`,
 		runMode = common.MainnetMode
 	}
 
-	defaultValue, _ := configuration.AddressConfigs[runMode]
+	defaultValue := configuration.AddressConfigs[runMode]
 
 	// start server flags.
 	startServer.Flags().BoolVarP(&noAuthEnable, "noauth", "", false, "disable authentication")
