@@ -44,12 +44,12 @@ p, %[1]s, /v3/set-feed-configuration, POST`, key)
 func addKeyRebalancePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
-p, %[1]s, /price-factor, POST,
-p, %[1]s, /cancelorder/:exchangeid, POST
-p, %[1]s, /deposit/:exchangeid, POST
-p, %[1]s, /withdraw/:exchangeid, POST
-p, %[1]s, /trade, POST
-p, %[1]s, /setrates, POST`, key)
+p, %[1]s, /v3/price-factor, POST
+p, %[1]s, /v3/cancelorder/:exchangeid, POST
+p, %[1]s, /v3/deposit/:exchangeid, POST
+p, %[1]s, /v3/withdraw/:exchangeid, POST
+p, %[1]s, /v3/trade, POST
+p, %[1]s, /v3/setrates, POST`, key)
 }
 
 //NewPermissioner creates a gin Handle Func to controll permission
