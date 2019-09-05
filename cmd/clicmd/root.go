@@ -45,11 +45,11 @@ Allow overwriting some parameter`,
 	startServer.PersistentFlags().StringVar(&baseURL, "base_url", defaultBaseURL, "base_url for authenticated enpoint")
 	startServer.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
 	startServer.Flags().BoolVarP(&dryRun, "dryrun", "", false, "only test if all the configs are set correctly, will not actually run core")
-	startServer.Flags().StringVar(&reserveContractAddr, "reserve-addr", defaultValue.Reserve, "reserve contract address")
-	startServer.Flags().StringVar(&wrapperContractAddr, "wrapper-addr", defaultValue.Wrapper, "wrapper contract address")
-	startServer.Flags().StringVar(&pricingContractAddr, "pricing-addr", defaultValue.Pricing, "pricing contract address")
-	startServer.Flags().StringVar(&networkContractAddr, "network-addr", defaultValue.Network, "network contract address")
-	startServer.Flags().StringVar(&internalNetworkContractAddr, "internal-network-addr", defaultValue.InternalNetwork, "internal network contract address")
+	startServer.Flags().StringVar(&cliAddress.Reserve, "reserve-addr", defaultValue.Reserve, "reserve contract address")
+	startServer.Flags().StringVar(&cliAddress.Wrapper, "wrapper-addr", defaultValue.Wrapper, "wrapper contract address")
+	startServer.Flags().StringVar(&cliAddress.Pricing, "pricing-addr", defaultValue.Pricing, "pricing contract address")
+	startServer.Flags().StringVar(&cliAddress.Network, "network-addr", defaultValue.Network, "network contract address")
+	startServer.Flags().StringVar(&cliAddress.InternalNetwork, "internal-network-addr", defaultValue.InternalNetwork, "internal network contract address")
 	RootCmd.AddCommand(startServer)
 
 	var versionCmd = &cobra.Command{
