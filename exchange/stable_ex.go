@@ -9,7 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 type StableEx struct {
@@ -59,12 +59,12 @@ func (se *StableEx) QueryOrder(symbol string, id uint64) (done float64, remainin
 	return 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (se *StableEx) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	// TODO: communicate with dgx connector to do the trade
 	return "not supported", 0, 0, false, errors.New("not supported")
 }
 
-func (se *StableEx) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (se *StableEx) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	// TODO: communicate with dgx connector to withdraw
 	return "not supported", errors.New("not supported")
 }

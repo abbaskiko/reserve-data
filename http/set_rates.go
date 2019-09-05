@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	v3common "github.com/KyberNetwork/reserve-data/v3/common"
+	v3common "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // RateRequest is request for a rate

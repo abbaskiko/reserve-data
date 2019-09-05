@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 //BinanceLive implement live info for binance
@@ -34,7 +34,8 @@ func (bl *BinanceLive) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols)
 	for _, pair := range pairs {
 		exchangePrecisionLimit, ok := bl.getPrecisionLimitFromSymbols(pair, symbols)
 		if !ok {
-			return result, fmt.Errorf("binance Exchange Info reply doesn't contain token pair %d, base %s, quote: %s", pair.ID, pair.BaseSymbol, pair.QuoteSymbol)
+			return result, fmt.Errorf("binance exchange reply doesn't contain token pair '%s'",
+				strings.ToUpper(fmt.Sprintf("%s%s", pair.BaseSymbol, pair.QuoteSymbol)))
 		}
 		result[pair.ID] = exchangePrecisionLimit
 	}

@@ -15,8 +15,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
-	v3common "github.com/KyberNetwork/reserve-data/v3/common"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	v3common "github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 const (
@@ -221,7 +221,7 @@ func (s *Server) Trade(c *gin.Context) {
 	}
 
 	id, done, remaining, finished, err := s.core.Trade(
-		exchange, request.Type, pair, request.Rate, request.Amount, getTimePoint(c, false))
+		exchange, request.Type, pair, request.Rate, request.Amount)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -294,7 +294,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 		return
 	}
 	log.Printf("Withdraw %s %d from %s\n", request.Amount.Text(10), asset.ID, exchange.ID().String())
-	id, err := s.core.Withdraw(exchange, asset, request.Amount, getTimePoint(c, false))
+	id, err := s.core.Withdraw(exchange, asset, request.Amount)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

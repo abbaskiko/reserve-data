@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // HuobiLive is LiveExchange for huobi
@@ -31,7 +31,8 @@ func (hl *HuobiLive) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (
 	for _, pair := range pairs {
 		exchangePrecisionLimit, ok := hl.getPrecisionLimitFromSymbols(pair, exchangeInfo)
 		if !ok {
-			return result, fmt.Errorf("huobi Exchange Info reply doesn't contain token pair %d, base: %s, quote: %s", pair.ID, pair.BaseSymbol, pair.QuoteSymbol)
+			return result, fmt.Errorf("huobi exchange reply doesn't contain token pair %s",
+				strings.ToUpper(fmt.Sprintf("%s%s", pair.BaseSymbol, pair.QuoteSymbol)))
 		}
 		result[pair.ID] = exchangePrecisionLimit
 	}

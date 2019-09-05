@@ -16,7 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 type ExchangePool struct {

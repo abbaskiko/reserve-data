@@ -11,8 +11,8 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
-	"github.com/KyberNetwork/reserve-data/v3/storage"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 const (
@@ -56,7 +56,7 @@ func (bn *Binance) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 			return ethereum.Address{}, false
 		}
 		depositAddr, ok := addrs[symbol]
-		return depositAddr, ok
+		return depositAddr, ok && !commonv3.IsZeroAddress(depositAddr)
 	}
 	log.Printf("Got Binance live deposit address for token %d, attempt to update it to current setting", asset.ID)
 	if err = bn.sr.UpdateDepositAddress(
@@ -93,7 +93,7 @@ func (bn *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining
 	return done, total - done, total-done < binanceEpsilon, nil
 }
 
-func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
+func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	result, err := bn.interf.Trade(tradeType, pair, rate, amount)
 	if err != nil {
 		return "", 0, 0, false, err
@@ -106,7 +106,7 @@ func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rat
 	return id, done, remaining, finished, err
 }
 
-func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error) {
+func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	tx, err := bn.interf.Withdraw(asset, amount, address)
 	return tx, err
 }

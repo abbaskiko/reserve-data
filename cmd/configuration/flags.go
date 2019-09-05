@@ -17,7 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
-	"github.com/KyberNetwork/reserve-data/v3/storage/postgres"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
 )
 
 const (

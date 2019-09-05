@@ -18,7 +18,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
-	commonv3 "github.com/KyberNetwork/reserve-data/v3/common"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 const (
@@ -148,7 +148,8 @@ func (ep *Endpoint) GetDepthOnePair(
 	return respData, err
 }
 
-func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate, amount float64, timepoint uint64) (exchange.HuobiTrade, error) {
+// Trade on Huobi
+func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate, amount float64) (exchange.HuobiTrade, error) {
 	result := exchange.HuobiTrade{}
 	symbol := strings.ToLower(pair.BaseSymbol) + strings.ToLower(pair.QuoteSymbol)
 	orderType := tradeType + "-limit"
