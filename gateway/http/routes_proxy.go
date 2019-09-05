@@ -22,8 +22,6 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.GET("/authdata", coreProxyMW)
 		g.GET("/activities", coreProxyMW)
 		g.GET("/immediate-pending-activities", coreProxyMW)
-		g.GET("/price-factor", coreProxyMW)
-		g.POST("/price-factor", coreProxyMW)
 
 		g.POST("/cancelorder/:exchangeid", coreProxyMW)
 		g.POST("/deposit/:exchangeid", coreProxyMW)
@@ -33,12 +31,6 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.GET("/tradehistory", coreProxyMW)
 
 		g.GET("/timeserver", coreProxyMW)
-
-		g.POST("/set-stable-token-params", coreProxyMW)
-		g.POST("/confirm-stable-token-params", coreProxyMW)
-		g.POST("/reject-stable-token-params", coreProxyMW)
-		g.GET("/pending-stable-token-params", coreProxyMW)
-		g.GET("/stable-token-params", coreProxyMW)
 
 		g.GET("/gold-feed", coreProxyMW)
 		g.GET("/btc-feed", coreProxyMW)
@@ -64,6 +56,8 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 		g.GET("/asset", settingProxyMW)
 		g.GET("/exchange/:id", settingProxyMW)
 		g.GET("/exchange", settingProxyMW)
+		g.GET("trading-pair/:id", settingProxyMW)
+		g.GET("/stable-token-params", settingProxyMW)
 
 		g.GET("/setting-change-main", settingProxyMW)
 		g.GET("setting-change-main/:id", settingProxyMW)
@@ -108,6 +102,9 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 		g.GET("/set-rate-status", settingProxyMW)
 		g.POST("/hold-set-rate", settingProxyMW)
 		g.POST("/enable-set-rate", settingProxyMW)
+
+		g.GET("/price-factor", settingProxyMW)
+		g.POST("/price-factor", settingProxyMW)
 
 		return nil
 	}
