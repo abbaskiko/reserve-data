@@ -39,7 +39,7 @@ func serverStart(_ *cobra.Command, _ []string) {
 	//get configuration from ENV variable
 	kyberENV := common.RunningMode()
 	InitInterface()
-	config := GetConfigFromENV(kyberENV, cliAddress)
+	config := GetConfigFromENV(kyberENV)
 	//backup other log daily
 	backupLog(config.Archive, "@daily", "core.+\\.log")
 	//backup core.log every 2 hour
