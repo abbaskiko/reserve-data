@@ -21,13 +21,18 @@ const (
 
 var (
 	// logDir is located at base of this repository.
-	logDir       = filepath.Join(filepath.Dir(filepath.Dir(common.CurrentDir())), "log")
-	noAuthEnable bool
-	servPort     = 8000
-	endpointOW   string
-	baseURL      string
-	stdoutLog    bool
-	dryRun       bool
+	logDir                      = filepath.Join(filepath.Dir(filepath.Dir(common.CurrentDir())), "log")
+	noAuthEnable                bool
+	servPort                    = 8000
+	endpointOW                  string
+	baseURL                     string
+	stdoutLog                   bool
+	dryRun                      bool
+	reserveContractAddr         string
+	wrapperContractAddr         string
+	pricingContractAddr         string
+	networkContractAddr         string
+	internalNetworkContractAddr string
 )
 
 func serverStart(_ *cobra.Command, _ []string) {
@@ -37,7 +42,13 @@ func serverStart(_ *cobra.Command, _ []string) {
 	//get configuration from ENV variable
 	kyberENV := common.RunningMode()
 	InitInterface()
-	config := GetConfigFromENV(kyberENV)
+	config := GetConfigFromENV(kyberENV, common.AddressConfig{
+		Reserve:         reserveContractAddr,
+		Wrapper:         wrapperContractAddr,
+		Pricing:         pricingContractAddr,
+		Network:         networkContractAddr,
+		InternalNetwork: internalNetworkContractAddr,
+	})
 	//backup other log daily
 	backupLog(config.Archive, "@daily", "core.+\\.log")
 	//backup core.log every 2 hour

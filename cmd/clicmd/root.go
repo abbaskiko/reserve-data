@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/KyberNetwork/reserve-data"
+	"github.com/KyberNetwork/reserve-data/cmd/configuration"
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -29,6 +31,12 @@ Allow overwriting some parameter`,
 		Example: "KYBER_ENV=dev KYBER_EXCHANGES=binance ./cmd server --noauth -p 8000",
 		Run:     serverStart,
 	}
+	runMode := common.RunningMode()
+	if runMode == common.ProductionMode {
+		runMode = common.MainnetMode
+	}
+
+	defaultValue, _ := configuration.AddressConfigs[runMode]
 
 	// start server flags.
 	startServer.Flags().BoolVarP(&noAuthEnable, "noauth", "", false, "disable authentication")
@@ -37,6 +45,11 @@ Allow overwriting some parameter`,
 	startServer.PersistentFlags().StringVar(&baseURL, "base_url", defaultBaseURL, "base_url for authenticated enpoint")
 	startServer.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
 	startServer.Flags().BoolVarP(&dryRun, "dryrun", "", false, "only test if all the configs are set correctly, will not actually run core")
+	startServer.Flags().StringVar(&reserveContractAddr, "reserve-addr", defaultValue.Reserve, "reserve contract address")
+	startServer.Flags().StringVar(&wrapperContractAddr, "wrapper-addr", defaultValue.Wrapper, "wrapper contract address")
+	startServer.Flags().StringVar(&pricingContractAddr, "pricing-addr", defaultValue.Pricing, "pricing contract address")
+	startServer.Flags().StringVar(&networkContractAddr, "network-addr", defaultValue.Network, "network contract address")
+	startServer.Flags().StringVar(&internalNetworkContractAddr, "internal-network-addr", defaultValue.InternalNetwork, "internal network contract address")
 	RootCmd.AddCommand(startServer)
 
 	var versionCmd = &cobra.Command{

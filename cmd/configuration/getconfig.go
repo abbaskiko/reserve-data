@@ -97,7 +97,7 @@ func GetSetting(kyberENV string, addressSetting *settings.AddressSetting) (*sett
 	return setting, err
 }
 
-func GetConfig(kyberENV string, authEnbl bool, endpointOW string) *Config {
+func GetConfig(kyberENV string, authEnbl bool, endpointOW string, cliAddress common.AddressConfig) *Config {
 	setPath := GetConfigPaths(kyberENV)
 
 	theWorld, err := world.NewTheWorld(kyberENV, setPath.secretPath)
@@ -106,7 +106,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string) *Config {
 	}
 
 	hmac512auth := http.NewKNAuthenticationFromFile(setPath.secretPath)
-	addressSetting, err := settings.NewAddressSetting(mustGetAddressesConfig(kyberENV))
+	addressSetting, err := settings.NewAddressSetting(mustGetAddressesConfig(kyberENV, cliAddress))
 	if err != nil {
 		log.Panicf("cannot init address setting %s", err)
 	}

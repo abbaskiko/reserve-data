@@ -101,11 +101,11 @@ func InitInterface() {
 }
 
 // GetConfigFromENV: From ENV variable and overwriting instruction, build the config
-func GetConfigFromENV(kyberENV string) *configuration.Config {
+func GetConfigFromENV(kyberENV string, cliAddress common.AddressConfig) *configuration.Config {
 	log.Printf("Running in %s mode \n", kyberENV)
 	config := configuration.GetConfig(kyberENV,
 		!noAuthEnable,
-		endpointOW)
+		endpointOW, cliAddress)
 	return config
 }
 
