@@ -28,9 +28,9 @@ func (s *Server) updateInternalTokensIndices(tokenUpdates map[string]common.Toke
 	if err != nil {
 		return err
 	}
-	for _, tokenUpdate := range tokenUpdates {
+	for tokenSymbol, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
-		if token.Internal {
+		if token.Internal && tokenSymbol != "ETH" {
 			tokens = append(tokens, token)
 		}
 	}
@@ -234,9 +234,9 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 		return
 	}
 	var (
-		pws    common.PWIEquationRequestV2
-		tarQty common.TokenTargetQtyV2
-		quadEq common.RebalanceQuadraticRequest
+		pws    = make(common.PWIEquationRequestV2)
+		tarQty = make(common.TokenTargetQtyV2)
+		quadEq = make(common.RebalanceQuadraticRequest)
 		err    error
 	)
 	hasInternal := thereIsInternal(tokenUpdates)
@@ -273,6 +273,7 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 	preparedToken := []common.Token{}
 	for tokenID, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
+		token.ID = tokenID
 		token.LastActivationChange = common.GetTimepoint()
 		preparedToken = append(preparedToken, token)
 		if token.Internal {
