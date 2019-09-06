@@ -189,10 +189,11 @@ func (s *Server) GetRate(c *gin.Context) {
 
 // TradeRequest form
 type TradeRequest struct {
-	Pair   uint64  `json:"pair"`
-	Amount float64 `json:"amount"`
-	Rate   float64 `json:"rate"`
-	Type   string  `json:"type"`
+	Exchange string  `json:"exchange"`
+	Pair     uint64  `json:"pair"`
+	Amount   float64 `json:"amount"`
+	Rate     float64 `json:"rate"`
+	Type     string  `json:"type"`
 }
 
 // Trade create an order in cexs
@@ -202,8 +203,7 @@ func (s *Server) Trade(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	exchangeName := c.Param("exchange_name")
-	exchange, err := common.GetExchange(exchangeName)
+	exchange, err := common.GetExchange(request.Exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -236,7 +236,8 @@ func (s *Server) Trade(c *gin.Context) {
 
 // CancelOrderRequest type
 type CancelOrderRequest struct {
-	OrderID string `json:"order_id"`
+	Exchange string `json:"exchange"`
+	OrderID  string `json:"order_id"`
 }
 
 // CancelOrder cancel an order from cexs
@@ -247,8 +248,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	exchangeName := c.Param("exchange_name")
-	exchange, err := common.GetExchange(exchangeName)
+	exchange, err := common.GetExchange(request.Exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -269,8 +269,9 @@ func (s *Server) CancelOrder(c *gin.Context) {
 
 // WithdrawRequest type
 type WithdrawRequest struct {
-	Asset  uint64   `json:"asset"`
-	Amount *big.Int `json:"amount"`
+	Exchange string   `json:"exchange"`
+	Asset    uint64   `json:"asset"`
+	Amount   *big.Int `json:"amount"`
 }
 
 // Withdraw asset to reserve from cex
@@ -281,8 +282,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 		return
 	}
 
-	exchangeName := c.Param("exchange_name")
-	exchange, err := common.GetExchange(exchangeName)
+	exchange, err := common.GetExchange(request.Exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -304,8 +304,9 @@ func (s *Server) Withdraw(c *gin.Context) {
 
 // DepositRequest type
 type DepositRequest struct {
-	Amount *big.Int `json:"amount"`
-	Asset  uint64   `json:"asset"`
+	Exchange string   `json:"string"`
+	Amount   *big.Int `json:"amount"`
+	Asset    uint64   `json:"asset"`
 }
 
 // Deposit asset into cex
@@ -315,9 +316,7 @@ func (s *Server) Deposit(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	exchangeName := c.Param("exchange_name")
-
-	exchange, err := common.GetExchange(exchangeName)
+	exchange, err := common.GetExchange(request.Exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -421,10 +420,10 @@ func (s *Server) register() {
 		g.GET("/activities", s.GetActivities)
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
 
-		g.POST("/cancelorder/:exchange_name", s.CancelOrder)
-		g.POST("/deposit/:exchange_name", s.Deposit)
-		g.POST("/withdraw/:exchange_name", s.Withdraw)
-		g.POST("/trade/:exchange_name", s.Trade)
+		g.POST("/cancelorder", s.CancelOrder)
+		g.POST("/deposit", s.Deposit)
+		g.POST("/withdraw", s.Withdraw)
+		g.POST("/trade", s.Trade)
 		g.POST("/setrates", s.SetRate)
 		g.GET("/tradehistory", s.GetTradeHistory)
 
