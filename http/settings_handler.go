@@ -21,6 +21,7 @@ const (
 	depositOPAddressName      = "deposit_operator"
 	intermediateOPAddressName = "intermediate_operator"
 	validAddressLength        = 42
+	ETHID                     = "ETH"
 )
 
 func (s *Server) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
@@ -30,7 +31,8 @@ func (s *Server) updateInternalTokensIndices(tokenUpdates map[string]common.Toke
 	}
 	for tokenSymbol, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
-		if token.Internal && tokenSymbol != "ETH" {
+		// No need to load and set for ETH
+		if token.Internal && tokenSymbol != ETHID {
 			tokens = append(tokens, token)
 		}
 	}
@@ -173,13 +175,13 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 				return
 			}
 			//skip ETH for fill pair ETH-ETH
-			if token.IsETH() {
+			if tokenID == ETHID {
 				continue
 			}
 
 			for ex, tokExSett := range tokenUpdate.Exchanges {
 				//query exchangeprecisionlimit from exchange for the pair token-ETH
-				pairID := common.NewTokenPairID(token.ID, "ETH")
+				pairID := common.NewTokenPairID(token.ID, ETHID)
 				// If the pair is not in current token listing request, get its result from exchange
 				_, ok1 := tokExSett.Info[pairID]
 				if !ok1 {
@@ -339,10 +341,10 @@ func (s *Server) RejectTokenUpdate(c *gin.Context) {
 // getInfosFromExchangeEndPoint assembles a map of exchange to lists of PairIDs and
 // query their exchange Info in one go
 func (s *Server) getInfosFromExchangeEndPoint(tokenUpdates map[string]common.TokenUpdate) (map[string]common.ExchangeInfo, error) {
-	const ETHID = "ETH"
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, tokenUpdate := range tokenUpdates {
+		// ETH-ETH pair is not exist
 		if tokenUpdate.Token.Internal && tokenID != ETHID {
 			for ex, exSetting := range tokenUpdate.Exchanges {
 				_, err := s.ensureRunningExchange(ex)
@@ -404,7 +406,7 @@ func thereIsInternal(tokenUpdates map[string]common.TokenUpdate) bool {
 
 func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 	token := tokenUpdate.Token
-	if !token.IsETH() {
+	if !token.IsETH() { // TokenIndices doesn't contains ETH
 		if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
 			return fmt.Errorf("cannot get token indice from smart contract (%s) ", uErr.Error())
 		}
