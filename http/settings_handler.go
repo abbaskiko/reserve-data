@@ -156,8 +156,8 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 	}
 	// prepare each tokenUpdate instance for individual token
 	for tokenID, tokenUpdate := range tokenUpdates {
+		tokenUpdate.Token.ID = tokenID
 		token := tokenUpdate.Token
-		token.ID = tokenID
 		if len(token.Address) != validAddressLength {
 			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s's address is invalid length. Token field in token request might be empty ", tokenID)))
 			return
@@ -171,6 +171,10 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 			if uErr := s.ensureInternalSetting(tokenUpdate); uErr != nil {
 				httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is internal, required more setting (%s)", token.ID, uErr.Error())))
 				return
+			}
+			//skip ETH for
+			if tokenID == "ETH" {
+				continue
 			}
 
 			for ex, tokExSett := range tokenUpdate.Exchanges {
@@ -338,7 +342,7 @@ func (s *Server) getInfosFromExchangeEndPoint(tokenUpdates map[string]common.Tok
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, tokenUpdate := range tokenUpdates {
-		if tokenUpdate.Token.Internal {
+		if tokenUpdate.Token.Internal && tokenID != "ETH" {
 			for ex, exSetting := range tokenUpdate.Exchanges {
 				_, err := s.ensureRunningExchange(ex)
 				if err != nil {
@@ -399,8 +403,10 @@ func thereIsInternal(tokenUpdates map[string]common.TokenUpdate) bool {
 
 func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 	token := tokenUpdate.Token
-	if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
-		return fmt.Errorf("cannot get token indice from smart contract (%s) ", uErr.Error())
+	if !token.IsETH() {
+		if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
+			return fmt.Errorf("cannot get token indice from smart contract (%s) ", uErr.Error())
+		}
 	}
 	if tokenUpdate.Exchanges == nil {
 		return errors.New("there is no exchange setting")
