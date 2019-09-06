@@ -172,8 +172,8 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 				httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is internal, required more setting (%s)", token.ID, uErr.Error())))
 				return
 			}
-			//skip ETH for
-			if tokenID == "ETH" {
+			//skip ETH for fill pair ETH-ETH
+			if token.IsETH() {
 				continue
 			}
 
@@ -342,7 +342,7 @@ func (s *Server) getInfosFromExchangeEndPoint(tokenUpdates map[string]common.Tok
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, tokenUpdate := range tokenUpdates {
-		if tokenUpdate.Token.Internal && tokenID != "ETH" {
+		if tokenUpdate.Token.Internal && tokenID != ETHID {
 			for ex, exSetting := range tokenUpdate.Exchanges {
 				_, err := s.ensureRunningExchange(ex)
 				if err != nil {
