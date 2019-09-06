@@ -73,7 +73,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			tradingPairSymbol := common.TradingPairSymbols{TradingPair: entry.TradingPair}
 			tradingPairSymbol.BaseSymbol = baseSymbol
 			tradingPairSymbol.QuoteSymbol = quoteSymbol
-			tradingPairSymbol.ID = uint64(1)
+			tradingPairSymbol.ID = uint64(1) // mock one
 			exhID := v1common.ExchangeID(entry.ExchangeID)
 			centralExh, ok := s.supportedExchanges[exhID]
 			if !ok {
@@ -83,7 +83,7 @@ func (s *Server) fillLiveInfoSettingChange(settingChange *common.SettingChange) 
 			if err != nil {
 				return fmt.Errorf("position %d, error: %v", i, err)
 			}
-			info := exchangeInfo[1]
+			info := exchangeInfo[tradingPairSymbol.ID]
 			entry.MinNotional = info.MinNotional
 			entry.AmountLimitMax = info.AmountLimit.Max
 			entry.AmountLimitMin = info.AmountLimit.Min
@@ -300,7 +300,7 @@ func (s *Server) checkCreateTradingPairParams(createEntry common.CreateTradingPa
 		return "", "", errors.Wrap(common.ErrBaseAssetInvalid, "base asset not config on exchange")
 	}
 
-	if quoteAssetEx, ok = getAssetExchangeByExchangeID(base, createEntry.ExchangeID); !ok {
+	if quoteAssetEx, ok = getAssetExchangeByExchangeID(quote, createEntry.ExchangeID); !ok {
 		return "", "", errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset not config on exchange")
 	}
 	return baseAssetEx.Symbol, quoteAssetEx.Symbol, nil
