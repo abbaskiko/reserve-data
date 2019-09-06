@@ -344,7 +344,7 @@ func (s *Server) getInfosFromExchangeEndPoint(tokenUpdates map[string]common.Tok
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, tokenUpdate := range tokenUpdates {
-		// ETH-ETH pair is not exist
+		// ETH-ETH pair does not exist
 		if tokenUpdate.Token.Internal && tokenID != ETHID {
 			for ex, exSetting := range tokenUpdate.Exchanges {
 				_, err := s.ensureRunningExchange(ex)
