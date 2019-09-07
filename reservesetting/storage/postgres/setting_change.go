@@ -178,29 +178,11 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			return errors.Wrap(err, msg)
 		}
 		_, err = s.createAssetExchange(tx, a.ExchangeID, a.AssetID, a.Symbol, a.DepositAddress, a.MinDeposit,
-			a.WithdrawFee, a.TargetRecommended, a.TargetRatio)
+			a.WithdrawFee, a.TargetRecommended, a.TargetRatio, a.TradingPairs)
 		if err != nil {
 			msg := fmt.Sprintf("create asset exchange %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
-		}
-		for _, tradingPair := range a.TradingPairs {
-			_, errTP := s.createTradingPair(tx, a.ExchangeID,
-				tradingPair.Base,
-				tradingPair.Quote,
-				tradingPair.PricePrecision,
-				tradingPair.AmountPrecision,
-				tradingPair.AmountLimitMin,
-				tradingPair.AmountLimitMax,
-				tradingPair.PriceLimitMin,
-				tradingPair.PriceLimitMax,
-				tradingPair.MinNotional,
-			)
-			if errTP != nil {
-				msg := fmt.Sprintf("failed to create trading pair, err=%v\n", err)
-				log.Println(msg)
-				return errTP
-			}
 		}
 
 	case common.ChangeTypeCreateTradingBy:
@@ -223,10 +205,17 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return errors.Wrap(err, msg)
 		}
-		_, err = s.createTradingPair(tx, a.ExchangeID, a.Base, a.Quote, a.PricePrecision, a.AmountPrecision, a.AmountLimitMin,
+		pairID, err := s.createTradingPair(tx, a.ExchangeID, a.Base, a.Quote, a.PricePrecision, a.AmountPrecision, a.AmountLimitMin,
 			a.AmountLimitMax, a.PriceLimitMin, a.PriceLimitMax, a.MinNotional)
 		if err != nil {
 			msg := fmt.Sprintf("create trading pair %d, err=%v\n", i, err)
+			log.Println(msg)
+			return err
+		}
+		// TODO: should we move create trading by into createTradingPair
+		_, err = s.createTradingBy(tx, a.AssetID, pairID)
+		if err != nil {
+			msg := fmt.Sprintf("create trading by at position %d failed, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}

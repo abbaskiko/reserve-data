@@ -100,7 +100,7 @@ func (s *Storage) CreateAsset(
 
 // CreateAssetExchange create a new asset exchange (asset support by exchange)
 func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string, depositAddress ethereum.Address,
-	minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error) {
+	minDeposit, withdrawFee, targetRecommended, targetRatio float64, tps []common.TradingPair) (uint64, error) {
 
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -108,7 +108,7 @@ func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string,
 	}
 	defer rollbackUnlessCommitted(tx)
 	id, err := s.createAssetExchange(tx, exchangeID, assetID, symbol, depositAddress, minDeposit, withdrawFee,
-		targetRecommended, targetRatio)
+		targetRecommended, targetRatio, tps)
 	if err != nil {
 		return 0, err
 	}
@@ -121,7 +121,7 @@ func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string,
 }
 
 func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, symbol string,
-	depositAddress ethereum.Address, minDeposit, withdrawFee, targetRecommended, targetRatio float64) (uint64, error) {
+	depositAddress ethereum.Address, minDeposit, withdrawFee, targetRecommended, targetRatio float64, tps []common.TradingPair) (uint64, error) {
 	var assetExchangeID uint64
 	var depositAddressParam *string
 
@@ -169,6 +169,28 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 			if pErr.Constraint == exchangeAssetUniqueConstraint {
 				return 0, common.ErrAssetExchangeAlreadyExist
 			}
+		}
+	}
+	for _, tradingPair := range tps {
+		pairID, err := s.createTradingPair(tx, exchangeID,
+			tradingPair.Base,
+			tradingPair.Quote,
+			tradingPair.PricePrecision,
+			tradingPair.AmountPrecision,
+			tradingPair.AmountLimitMin,
+			tradingPair.AmountLimitMax,
+			tradingPair.PriceLimitMin,
+			tradingPair.PriceLimitMax,
+			tradingPair.MinNotional,
+		)
+		if err != nil {
+			log.Printf("failed to create trading pair, err=%v\n", err)
+			return 0, err
+		}
+		_, err = s.createTradingBy(tx, assetID, pairID)
+		if err != nil {
+			log.Printf("failed to create trading by, err=%v\n", err)
+			return 0, err
 		}
 	}
 	return assetExchangeID, err

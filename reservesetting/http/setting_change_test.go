@@ -21,7 +21,7 @@ import (
 
 func createSampleAsset(store *postgres.Storage) (uint64, error) {
 	_, err := store.CreateAssetExchange(binance, 1, "ETH", eth.HexToAddress("0x00"), 10,
-		0.2, 5.0, 0.3)
+		0.2, 5.0, 0.3, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -35,7 +35,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 	}
 
 	_, err = store.CreateAssetExchange(stable, 1, "ETH", eth.HexToAddress("0x00"), 10,
-		0.2, 5.0, 0.3)
+		0.2, 5.0, 0.3, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -307,7 +307,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 		0.001,
 		0.001,
 		0.001,
-		0.001,
+		0.001, nil,
 	)
 	require.NoError(t, err)
 
@@ -555,6 +555,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 					{
 						Type: common.ChangeTypeCreateTradingPair,
 						Data: common.CreateTradingPairEntry{
+							AssetID: assetID,
 							TradingPair: common.TradingPair{
 								Base:  assetID, // ABC asset
 								Quote: 1,       // ETH
@@ -564,6 +565,13 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			msg:      "confirm create trading pair successfully",
+			endpoint: settingChangePath + "/3",
+			method:   http.MethodPut,
+			assert:   httputil.ExpectSuccess,
+			data:     nil,
 		},
 	}
 
@@ -955,4 +963,59 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 		tc := tc
 		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
 	}
+}
+
+func TestCreateTradingPair(t *testing.T) {
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	// create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance, v1common.Huobi, v1common.StableExchange} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	id, err := createSampleAsset(s)
+	require.NoError(t, err)
+	server := NewServer(s, "", supportedExchanges, nil)
+	c := apiClient{s: server}
+	quote := uint64(1) // ETH
+	postRes, err := c.createSettingChange(common.SettingChange{ChangeList: []common.SettingChangeEntry{
+		{
+			Type: common.ChangeTypeCreateTradingPair,
+			Data: common.CreateTradingPairEntry{
+				TradingPair: common.TradingPair{
+					Base:  id,
+					Quote: quote, // ETH
+				},
+				AssetID:    id,
+				ExchangeID: binance,
+			},
+		},
+	}})
+	require.NoError(t, err)
+	_, err = c.confirmSettingChange(postRes.ID)
+	require.NoError(t, err)
+	assetResp, err := c.getAsset(id)
+	require.NoError(t, err)
+	found := false
+	for _, ex := range assetResp.Asset.Exchanges {
+		if ex.ExchangeID == binance {
+			for _, tp := range ex.TradingPairs {
+				if tp.Quote == quote && tp.Base == id {
+					found = true
+					break
+				}
+			}
+		}
+	}
+	assert.Equal(t, true, found)
 }

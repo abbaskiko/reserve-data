@@ -228,6 +228,7 @@ type UpdateExchangeEntry struct {
 type CreateTradingPairEntry struct {
 	settingChangeMarker
 	TradingPair
+	AssetID    uint64 `json:"asset_id"`
 	ExchangeID uint64 `json:"exchange_id"`
 }
 
