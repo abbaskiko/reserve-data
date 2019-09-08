@@ -284,8 +284,6 @@ const (
 	ChangeTypeDeleteTradingPair // delete_trading_pair
 	// ChangeTypeDeleteAssetExchange is used in present delete asset exchange object.
 	ChangeTypeDeleteAssetExchange // delete_asset_exchange
-	// ChangeTypeDeleteTradingBy is used in present delete trading_by object.
-	ChangeTypeDeleteTradingBy // delete_trading_by
 	// ChangeTypeUpdateStableTokenParams is used in present update stable token params
 	ChangeTypeUpdateStableTokenParams // update_stable_token_params
 )

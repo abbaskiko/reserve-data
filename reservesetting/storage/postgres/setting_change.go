@@ -142,162 +142,98 @@ func (s *Storage) RejectSettingChange(id uint64) error {
 
 func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntry) error {
 	var err error
-	switch entry.Type {
-	case common.ChangeTypeChangeAssetAddr:
-		u, ok := entry.Data.(*common.ChangeAssetAddressEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeChangeAssetAddr)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		err = s.changeAssetAddress(tx, u.ID, u.Address)
+	switch e := entry.Data.(type) {
+	case *common.ChangeAssetAddressEntry:
+		err = s.changeAssetAddress(tx, e.ID, e.Address)
 		if err != nil {
 			msg := fmt.Sprintf("change asset address %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeCreateAsset:
-		a, ok := entry.Data.(*common.CreateAssetEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeCreateAsset)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		_, err = s.createAsset(tx, a.Symbol, a.Name, a.Address, a.Decimals, a.Transferable, a.SetRate, a.Rebalance,
-			a.IsQuote, a.PWI, a.RebalanceQuadratic, a.Exchanges, a.Target)
+	case *common.CreateAssetEntry:
+		_, err = s.createAsset(tx, e.Symbol, e.Name, e.Address, e.Decimals, e.Transferable, e.SetRate, e.Rebalance,
+			e.IsQuote, e.PWI, e.RebalanceQuadratic, e.Exchanges, e.Target)
 		if err != nil {
 			msg := fmt.Sprintf("create asset %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeCreateAssetExchange:
-		a, ok := entry.Data.(*common.CreateAssetExchangeEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeCreateAssetExchange)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		_, err = s.createAssetExchange(tx, a.ExchangeID, a.AssetID, a.Symbol, a.DepositAddress, a.MinDeposit,
-			a.WithdrawFee, a.TargetRecommended, a.TargetRatio, a.TradingPairs)
+	case *common.CreateAssetExchangeEntry:
+		_, err = s.createAssetExchange(tx, e.ExchangeID, e.AssetID, e.Symbol, e.DepositAddress, e.MinDeposit,
+			e.WithdrawFee, e.TargetRecommended, e.TargetRatio, e.TradingPairs)
 		if err != nil {
 			msg := fmt.Sprintf("create asset exchange %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
 
-	case common.ChangeTypeCreateTradingBy:
-		a, ok := entry.Data.(*common.CreateTradingByEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeCreateTradingBy)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		_, err = s.createTradingBy(tx, a.AssetID, a.TradingPairID)
+	case *common.CreateTradingByEntry:
+		_, err = s.createTradingBy(tx, e.AssetID, e.TradingPairID)
 		if err != nil {
 			msg := fmt.Sprintf("create trading by %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeCreateTradingPair:
-		a, ok := entry.Data.(*common.CreateTradingPairEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeCreateTradingPair)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		pairID, err := s.createTradingPair(tx, a.ExchangeID, a.Base, a.Quote, a.PricePrecision, a.AmountPrecision, a.AmountLimitMin,
-			a.AmountLimitMax, a.PriceLimitMin, a.PriceLimitMax, a.MinNotional)
+	case *common.CreateTradingPairEntry:
+		pairID, err := s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
+			e.AmountLimitMax, e.PriceLimitMin, e.PriceLimitMax, e.MinNotional)
 		if err != nil {
 			msg := fmt.Sprintf("create trading pair %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
 		// TODO: should we move create trading by into createTradingPair
-		_, err = s.createTradingBy(tx, a.AssetID, pairID)
+		_, err = s.createTradingBy(tx, e.AssetID, pairID)
 		if err != nil {
 			msg := fmt.Sprintf("create trading by at position %d failed, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeUpdateAsset:
-		a, ok := entry.Data.(*common.UpdateAssetEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateAsset)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		err = s.updateAsset(tx, a.AssetID, *a)
+	case *common.UpdateAssetEntry:
+		err = s.updateAsset(tx, e.AssetID, *e)
 		if err != nil {
 			msg := fmt.Sprintf("update asset %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeUpdateAssetExchange:
-		a, ok := entry.Data.(*common.UpdateAssetExchangeEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateAssetExchange)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		err = s.updateAssetExchange(tx, a.ID, *a)
+	case *common.UpdateAssetExchangeEntry:
+		err = s.updateAssetExchange(tx, e.ID, *e)
 		if err != nil {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateAssetExchange)
+			msg := fmt.Sprintf("update asset exchange at %d failed, err = %v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeUpdateExchange:
-		a, ok := entry.Data.(*common.UpdateExchangeEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateExchange)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		err = s.updateExchange(tx, a.ExchangeID, *a)
+	case *common.UpdateExchangeEntry:
+		err = s.updateExchange(tx, e.ExchangeID, *e)
 		if err != nil {
 			msg := fmt.Sprintf("update exchange %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeDeleteAssetExchange:
-		a, ok := entry.Data.(*common.DeleteAssetExchangeEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeDeleteAssetExchange)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		err = s.deleteAssetExchange(tx, a.AssetExchangeID)
+	case *common.DeleteAssetExchangeEntry:
+		err = s.deleteAssetExchange(tx, e.AssetExchangeID)
 		if err != nil {
 			msg := fmt.Sprintf("delete asset exchange id=%d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeDeleteTradingBy:
-	case common.ChangeTypeDeleteTradingPair:
-		a, ok := entry.Data.(*common.DeleteTradingPairEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateExchange)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		err = s.deleteTradingPair(tx, a.TradingPairID)
+	// case common.ChangeTypeDeleteTradingBy:
+	case *common.DeleteTradingPairEntry:
+		err = s.deleteTradingPair(tx, e.TradingPairID)
 		if err != nil {
 			msg := fmt.Sprintf("delete trading pair %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
-	case common.ChangeTypeUpdateStableTokenParams:
-		a, ok := entry.Data.(*common.UpdateStableTokenParamsEntry)
-		if !ok {
-			msg := fmt.Sprintf("bad cast at %d to %s\n", i, common.ChangeTypeUpdateStableTokenParams)
-			log.Println(msg)
-			return errors.Wrap(err, msg)
-		}
-		err = s.updateStableTokenParams(tx, a.Params)
+	case *common.UpdateStableTokenParamsEntry:
+		err = s.updateStableTokenParams(tx, e.Params)
 		if err != nil {
 			msg := fmt.Sprintf("update stable token params %d, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
+	default:
+		return fmt.Errorf("unexpected change object %+v", e)
 	}
 	return nil
 }
