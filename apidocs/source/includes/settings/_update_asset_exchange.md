@@ -1,13 +1,12 @@
-# Update asset exchange
-
-## Create update asset exchange 
+## Pending update asset exchange
 
 ```shell
-curl -X POST "https://gateway.local/v3/update-asset-exchange" \
+curl -X POST "https://gateway.local/v3/setting-change-main" \
 -H 'Content-Type: application/json' \
 -d '{
-    "asset_exchanges": [
-        {
+    "change_list": [{
+        "type": "update_asset_exchange",
+        "data": {
             "id": 1,
             "symbol": "KNC",
             "deposit_address": "0xC5094e852F71346dF9eD6795Be6F014994C43e09",
@@ -16,7 +15,7 @@ curl -X POST "https://gateway.local/v3/update-asset-exchange" \
             "target_recommended": 0,
             "target_ratio": 0
         }
-    ]
+    }]
 }'
 ```
 
@@ -31,84 +30,22 @@ curl -X POST "https://gateway.local/v3/update-asset-exchange" \
 
 ### HTTP Request
 
-`POST https://gateway.local/v3/update-asset-exchange`
+`POST https://gateway.local/v3/setting-change-main`
+<aside class="notice">Write key is required</aside>
+<aside class="warning">
+Constraints:<br>
+- if asset has "transferable" = true => "deposit_address" != nil<br>
+- "trading_pairs" child obj must be valid with trading pair contraints<br>
+</aside>
+
+### Data fields:
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
-asset_exchanges | arrays of asset exchange | true | nil | array of asset exchanges
-
-## Get pending update asset exchange
-
-
-```shell
-curl -X GET "https://gateway.local/v3/update-asset-exchange"
-```
-
-> sample response
-
-```json
-{
-  "data": [
-    {
-      "id": 3,
-      "created": "2019-08-13T06:40:08.17648Z",
-      "data": {
-        "asset_exchanges": [
-          {
-            "id": 1,
-            "symbol": "KNC",
-            "deposit_address": "0xc5094e852f71346df9ed6795be6f014994c43e09",
-            "min_deposit": 0,
-            "withdraw_fee": 0,
-            "target_recommended": 0,
-            "target_ratio": 0
-          }
-        ]
-      }
-    }
-  ],
-  "success": true
-}
-```
-
-### HTTP Request
-
-`GET https://gateway.local/v3/update-asset-exchange`
-
-
-## Confirm pending update asset exchange
-
-```shell
-curl -X PUT "https://gateway.local/v3/update-asset-exchange/1"
-```
-
-> sample response
-
-```json
-{
-    "success": true
-}
-```
-
-### HTTP Request
-
-`PUT https://gateway.local/v3/update-asset-exchange/:update_asset_exchange_id`
-
-
-## Reject pending update asset exchange 
-
-```shell
-curl -X DELETE "https://gateway.local/v3/update-asset-exchange/1"
-```
-
-> sample response
-
-```json
-{
-    "success":true
-}
-```
-
-### HTTP Request
-
-`DELETE https://gateway.local/v3/update-asset-exchange/:update_asset_exchange_id`
+id | int | true | nil | id of asset exchange will be updated
+symbol | string | false | nil |
+deposit_address | string | false | nil |
+min_deposit | float64 | false | nil |
+withdraw_fee | float64 | false | nil |
+target_recommended | float64 | false | nil |
+target_ratio | float64 | false | nil |

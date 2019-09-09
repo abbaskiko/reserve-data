@@ -1,25 +1,18 @@
-# Create trading pair
-
-## Create trading pair 
+## Pending create trading pair
 
 ```shell
-curl -X POST "https://gateway.local/v3/create-trading-pair" \
+curl -X POST "https://gateway.local/v3/setting-change-main" \
 -H 'Content-Type: application/json' \
 -d '{
-    "trading_pairs": [
-        {
+    "change_list": [{
+        "type": "create_trading_pair",
+        "data": {
             "base": 1,
             "quote": 3,
-            "price_precision": 10,
-            "amount_precision": 10,
-            "amount_limit_min": 1,
-            "amount_limit_max": 20,
-            "price_limit_min": 1,
-            "price_limit_max": 1000,
-            "min_notional": 0.23132,
+            "asset_id": 1,
             "exchange_id": 1
         }
-    ]
+    }]
 }'
 ```
 
@@ -28,68 +21,26 @@ curl -X POST "https://gateway.local/v3/create-trading-pair" \
 ```json
 {
     "id": 1,
-    "success": true,
-}
-```
-
-### HTTP Request
-
-`POST https://gateway.local/v3/create-trading-pair`
-
-
-## Get pending trading pair 
-
-
-```shell
-curl -X GET "https://gateway.local/v3/create-trading-pair"
-```
-
-> sample response
-
-```json
-{
     "success": true
 }
 ```
 
 ### HTTP Request
 
-`GET https://gateway.local/v3/create-trading-pair`
+`POST https://gateway.local/v3/setting-change-main`
+<aside class="notice">Write key is required</aside>
+<aside class="warning">
+Constraints:<br>
+- quote asset must have field "is_quote" = true<br>
+- quote and base asset must have asset_exchange with correspond exchange_id<br>
+- trading by asset must be ether base asset or quote asset<br>
+</aside>
 
+### Data fields:
 
-## Confirm pending trading pair 
-
-```shell
-curl -X PUT "https://gateway.local/v3/create-trading-pair/1"
-```
-
-> sample response
-
-```json
-{
-    "success": true
-}
-```
-
-### HTTP Request
-
-`PUT https://gateway.local/v3/create-trading-pair/:trading_pair_id`
-
-
-## Reject pending trading pair 
-
-```shell
-curl -X DELETE "https://gateway.local/v3/create-trading-pair/1"
-```
-
-> sample response
-
-```json
-{
-    "success": true
-}
-```
-
-### HTTP Request
-
-`DELETE https://gateway.local/v3/create-trading-pair/:trading_pair_id`
+Params | Type | Required | Default | Description
+------ | ---- | -------- | ------- | -----------
+exchange_id | int | true | nil | id of exchange
+base | int | true | nil | id of base asset
+quote | int | true | nil | id of quote asset
+asset_id | int | true | nil | id of trading by asset 
