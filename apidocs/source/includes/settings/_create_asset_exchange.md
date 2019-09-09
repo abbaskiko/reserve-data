@@ -1,13 +1,12 @@
-# Create asset exchange
-
-## Create asset exchange
+##Pending create asset exchange
 
 ```shell
-curl -X POST "https://gateway.local/v3/create-asset-exchange" \
+curl -X POST "https://gateway.local/v3/setting-change-main" \
 -H 'Content-Type: application/json' \
 -d '{
-    "asset_exchanges": [
-        {
+    "change_list": [{
+        "type": "create_asset_exchange",
+        "data": {
             "asset_id": 3,
             "exchange_id": 1,
             "symbol": "KNC",
@@ -15,9 +14,14 @@ curl -X POST "https://gateway.local/v3/create-asset-exchange" \
             "min_deposit": 0,
             "withdraw_fee": 0,
             "target_recommended": 0,
-            "target_ratio": 0
+            "target_ratio": 0,
+            "trading_pairs" : [{
+                "id": 2,
+                "base": 1,
+                "quote": 3
+            }]
         }
-    ]
+    }]
 }'
 ```
 
@@ -32,82 +36,10 @@ curl -X POST "https://gateway.local/v3/create-asset-exchange" \
 
 ### HTTP Request
 
-`POST https://gateway.local/v3/create-asset-exchange`
-
-
-## Get pending asset exchange
-
-
-```shell
-curl -X GET "https://gateway.local/v3/create-asset-exchange"
-```
-
-> sample response
-
-```json
-{
-  "data": [
-    {
-      "id": 5,
-      "created": "2019-08-13T06:52:42.069694Z",
-      "data": {
-        "asset_exchanges": [
-          {
-            "asset_id": 3,
-            "exchange_id": 1,
-            "symbol": "KNC",
-            "deposit_address": "0xc5094e852f71346df9ed6795be6f014994c43e09",
-            "min_deposit": 0,
-            "withdraw_fee": 0,
-            "target_recommended": 0,
-            "target_ratio": 0
-          }
-        ]
-      }
-    }
-  ],
-  "success": true
-}
-```
-
-### HTTP Request
-
-`GET https://gateway.local/v3/create-asset-exchange`
-
-
-## Confirm pending asset exchange
-
-```shell
-curl -X PUT "https://gateway.local/v3/create-asset-exchange/1"
-```
-
-> sample response
-
-```json
-{
-    "success": true
-}
-```
-
-### HTTP Request
-
-`PUT https://gateway.local/v3/create-asset-exchange/:asset_exchange_id`
-
-
-## Reject pending asset exchange
-
-```shell
-curl -X DELETE "https://gateway.local/v3/create-asset-exchange/1"
-```
-
-> sample response
-
-```json
-{
-    "success": true
-}
-```
-
-### HTTP Request
-
-`DELETE https://gateway.local/v3/create-asset-exchange/:asset_exchange_id`
+`POST https://gateway.local/v3/setting-change-main`
+<aside class="notice">Write key is required</aside>
+<aside class="warning">
+Constraints:<br>
+- if asset has "transferable" = true => "deposit_address" != nil<br>
+- "trading_pairs" child obj must be valid with trading pair contraints<br>
+</aside>

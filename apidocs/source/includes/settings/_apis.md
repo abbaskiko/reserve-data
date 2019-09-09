@@ -1,4 +1,4 @@
-# Settings APIs
+#  Settings Read APIs
 
 ## Get asset by id
 
