@@ -1,10 +1,10 @@
 package common
 
-// USDData data return by /usd-feed
-type USDData struct {
+// USDCData data return by /usd-feed
+type USDCData struct {
 	Timestamp uint64
-	Coinbase  CoinbaseData `json:"CoinbaseUSD"`
-	Binance   BinanceData  `json:"BinanceUSD"`
+	Coinbase  CoinbaseData `json:"CoinbaseUSDC"`
+	Binance   BinanceData  `json:"BinanceUSDC"`
 }
 
 // BinanceData data return by https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC
