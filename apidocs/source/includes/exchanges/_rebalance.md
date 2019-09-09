@@ -4,39 +4,25 @@
 Get rebalance status, if reponse is *true* then rebalance is enable, the analytic can perform rebalance, else reponse is *false*, the analytic hold rebalance ability.
 
 ```shell
-curl -X GET "http://gateway.local/rebalancestatus"
+curl -X GET "http://gateway.local/v3/rebalance-status"
 ```
 
 > sample response
 
 ```json
   {
-    "success": true,
+    "success": true
   }
 ```
 
 ### HTTP Request
 
-`GET http://gateway.local/rebalancestatus`
+`GET http://gateway.local/v3/rebalance-status`
 
 ## Hold rebalance
 
 ```shell
-curl -X POST "https://gateway.local/holdrebalance"
-```
-
-> sample response
-
-```json
-  {
-    "success": true
-  }
-```
-
-## Enable rebalance
-
-```shell
-curl -X POST "https://gateway.local/enablerebalance"
+curl -X POST "https://gateway.local/v3/hold-rebalance"
 ```
 
 > sample response
@@ -49,28 +35,47 @@ curl -X POST "https://gateway.local/enablerebalance"
 
 ### HTTP Request
 
-`POST http://gateway.local/enablerebalance`
+`POST http://gateway.local/v3/hold-rebalance`
+<aside class="notice">Confirm key is required</aside>
 
-## Get setrate status
-Get setrate status, if reponse is *true* then setrate is enable, the analytic can perform setrate, else reponse is *false*, the analytic hold setrate ability.
+## Enable rebalance
 
 ```shell
-curl -X -GET "https://gateway.local/setratestatus"
+curl -X POST "https://gateway.local/v3/enable-rebalance"
 ```
 
-> sammple response
+> sample response
 
 ```json
   {
-    "success": true,
-    "data": true
+    "success": true
   }
 ```
 
-### Hold setrate
+### HTTP Request
+
+`POST http://gateway.local/v3/enable-rebalance`
+<aside class="notice">Confirm key is required</aside>
+
+## Get set-rate status
+Get set-rate status, if response is *true* then set-rate is enable, the analytic can perform set-rate, else response is *false*, the analytic hold set-rate ability.
 
 ```shell
-curl -X POST "https://gateway.local/holdsetrate"
+curl -X -GET "https://gateway.local/set-rate-status"
+```
+
+> sample response
+
+```json
+  {
+    "success": true
+  }
+```
+
+## Hold set-rate
+
+```shell
+curl -X POST "https://gateway.local/v3/hold-set-rate"
 ```
 
 > sample response
@@ -80,11 +85,16 @@ curl -X POST "https://gateway.local/holdsetrate"
     "success": true
 }
 ```
+
+### HTTP Request
+
+`POST http://gateway.local/v3/hold-set-rate`
+<aside class="notice">Confirm key is required</aside>
 
 ## Enable setrate
 
 ```shell
-curl -X POST "https://gateway.local/enablesetrate"
+curl -X POST "https://gateway.local/v3/enable-set-rate"
 ```
 
 > sample response
@@ -94,3 +104,8 @@ curl -X POST "https://gateway.local/enablesetrate"
     "success": true
 }
 ```
+
+### HTTP Request
+
+`POST http://gateway.local/v3/enable-set-rate`
+<aside class="notice">Confirm key is required</aside>
