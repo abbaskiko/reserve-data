@@ -123,14 +123,22 @@ func (f *Fetcher) FetchGlobalData(timepoint uint64) {
 	}
 
 	if usdcData, err := f.theworld.GetUSDCInfo(); err != nil {
-		log.Printf("failed to fetch USD info, %v\n", err)
+		log.Printf("failed to fetch USDC info, %v\n", err)
 	} else {
 		usdcData.Timestamp = common.GetTimepoint()
 		if err = f.globalStorage.StoreUSDCInfo(usdcData); err != nil {
-			log.Printf("Store USD info failed, %v\n", err)
+			log.Printf("Store USDC info failed, %v\n", err)
 		}
 	}
 
+	if usdData, err := f.theworld.GetUSDInfo(); err != nil {
+		log.Printf("failed to fetch USD info, %v\n", err)
+	} else {
+		usdData.Timestamp = common.GetTimepoint()
+		if err = f.globalStorage.StoreUSDInfo(usdData); err != nil {
+			log.Printf("Store USD info failed, %v\n", err)
+		}
+	}
 }
 
 func (f *Fetcher) RunBlockFetcher() {

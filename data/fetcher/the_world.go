@@ -10,4 +10,5 @@ type TheWorld interface {
 	GetGoldInfo() (common.GoldData, error)
 	GetBTCInfo() (common.BTCData, error)
 	GetUSDCInfo() (common.USDCData, error)
+	GetUSDInfo() (common.USDData, error)
 }
