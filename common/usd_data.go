@@ -1,6 +1,6 @@
 package common
 
-// USData data return by /usd-feed
+// USDData data return by /usd-feed
 type USDData struct {
 	Timestamp uint64
 	Coinbase  CoinbaseData `json:"CoinbaseUSD"`
