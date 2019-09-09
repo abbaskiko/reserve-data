@@ -45,9 +45,9 @@ func addKeyRebalancePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
 p, %[1]s, /v3/price-factor, POST
-p, %[1]s, /v3/cancelorder/:exchangeid, POST
-p, %[1]s, /v3/deposit/:exchangeid, POST
-p, %[1]s, /v3/withdraw/:exchangeid, POST
+p, %[1]s, /v3/cancelorder, POST
+p, %[1]s, /v3/deposit, POST
+p, %[1]s, /v3/withdraw, POST
 p, %[1]s, /v3/trade, POST
 p, %[1]s, /v3/setrates, POST`, key)
 }
