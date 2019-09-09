@@ -31,6 +31,10 @@ func (rd ReserveData) CurrentBTCInfoVersion(timepoint uint64) (common.Version, e
 	return rd.globalStorage.CurrentBTCInfoVersion(timepoint)
 }
 
+func (rd ReserveData) CurrentUSDCInfoVersion(timepoint uint64) (common.Version, error) {
+	return rd.globalStorage.CurrentUSDCInfoVersion(timepoint)
+}
+
 func (rd ReserveData) CurrentUSDInfoVersion(timepoint uint64) (common.Version, error) {
 	return rd.globalStorage.CurrentUSDInfoVersion(timepoint)
 }
@@ -49,6 +53,14 @@ func (rd ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
 		return common.BTCData{}, nil
 	}
 	return rd.globalStorage.GetBTCInfo(version)
+}
+
+func (rd ReserveData) GetUSDCData(timestamp uint64) (common.USDCData, error) {
+	version, err := rd.CurrentUSDCInfoVersion(timestamp)
+	if err != nil {
+		return common.USDCData{}, nil
+	}
+	return rd.globalStorage.GetUSDCInfo(version)
 }
 
 func (rd ReserveData) GetUSDData(timestamp uint64) (common.USDData, error) {
