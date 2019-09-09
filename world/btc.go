@@ -57,10 +57,9 @@ func (tw *TheWorld) getCoinbaseInfo(ep string) common.CoinbaseData {
 	return result
 }
 
-func (tw *TheWorld) getGeminiInfo() common.GeminiData {
+func (tw *TheWorld) getGeminiInfo(url string) common.GeminiData {
 	var (
 		client = &http.Client{Timeout: 30 * time.Second}
-		url    = tw.endpoint.GeminiBTCEndpoint()
 		result = common.GeminiData{}
 	)
 
@@ -106,6 +105,6 @@ func (tw *TheWorld) getGeminiInfo() common.GeminiData {
 func (tw *TheWorld) GetBTCInfo() (common.BTCData, error) {
 	return common.BTCData{
 		Coinbase: tw.getCoinbaseInfo(tw.endpoint.CoinbaseBTCEndpoint()),
-		Gemini:   tw.getGeminiInfo(),
+		Gemini:   tw.getGeminiInfo(tw.endpoint.GeminiBTCEndpoint()),
 	}, nil
 }

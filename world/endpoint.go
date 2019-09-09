@@ -40,8 +40,11 @@ type Endpoint interface {
 	CoinbaseBTCEndpoint() string
 	GeminiBTCEndpoint() string
 
+	CoinbaseUSDCEndpoint() string
+	BinanceUSDCEndpoint() string
+
+	GeminiUSDEndpoint() string
 	CoinbaseUSDEndpoint() string
-	BinanceUSDEndpoint() string
 }
 
 type RealEndpoint struct {
@@ -49,10 +52,18 @@ type RealEndpoint struct {
 }
 
 func (re RealEndpoint) CoinbaseUSDEndpoint() string {
+	return "https://api.pro.coinbase.com/products/eth-usd/ticker"
+}
+
+func (re RealEndpoint) GeminiUSDEndpoint() string {
+	return "https://api.gemini.com/v1/pubticker/ethusd"
+}
+
+func (re RealEndpoint) CoinbaseUSDCEndpoint() string {
 	return "https://api.pro.coinbase.com/products/eth-usdc/ticker"
 }
 
-func (re RealEndpoint) BinanceUSDEndpoint() string {
+func (re RealEndpoint) BinanceUSDCEndpoint() string {
 	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC"
 }
 
@@ -101,12 +112,20 @@ func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
 type SimulatedEndpoint struct {
 }
 
-// TODO: support simulation
+func (se SimulatedEndpoint) GeminiUSDEndpoint() string {
+	panic("implement me")
+}
+
 func (se SimulatedEndpoint) CoinbaseUSDEndpoint() string {
 	panic("implement me")
 }
 
-func (se SimulatedEndpoint) BinanceUSDEndpoint() string {
+// TODO: support simulation
+func (se SimulatedEndpoint) CoinbaseUSDCEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinanceUSDCEndpoint() string {
 	panic("implement me")
 }
 
