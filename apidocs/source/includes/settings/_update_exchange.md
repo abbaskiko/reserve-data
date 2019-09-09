@@ -92,7 +92,7 @@ curl -X PUT "https://gateway.local/v3/setting-change-update-exchange/1"
 
 ### HTTP Request
 
-`PUT https://gateway.local/v3/setting-change-update-exchange/:exchange_id`
+`PUT https://gateway.local/v3/setting-change-update-exchange/:change_id`
 <aside class="notice">Confirm key is required</aside>
 
 ## Reject pending update exchange 
@@ -111,5 +111,5 @@ curl -X DELETE "https://gateway.local/v3/setting-change-update-exchange/1"
 
 ### HTTP Request
 
-`DELETE https://gateway.local/v3/setting-change-update-exchange/:exchange_id`
+`DELETE https://gateway.local/v3/setting-change-update-exchange/:change_id`
 <aside class="notice">Confirm key is required</aside>
