@@ -17,15 +17,15 @@ const (
 )
 
 var (
-	//ErrCouldNotGetKeyID error when could not get key id in header
+	// ErrCouldNotGetKeyID error when could not get key id in header
 	ErrCouldNotGetKeyID = errors.New("could not get key id in header")
-	//ErrNotPermit not having permission
+	// ErrNotPermit not having permission
 	ErrNotPermit = errors.New("you don't have permission for the request")
-	//kvRegex is the regex to find key-value in a string
+	// kvRegex is the regex to find key-value in a string
 	kvRegex = regexp.MustCompile(`(\w+)="([^"]*)"`)
 )
 
-//KeyID is the abstract key needed for authentication
+// KeyID is the abstract key needed for authentication
 type KeyID string
 
 // Permissioner is struct for control permission
@@ -38,7 +38,8 @@ func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 	p := &Permissioner{enforcer: e}
 	return func(c *gin.Context) {
 		if !p.checkPermission(c.Request) {
-			err := c.AbortWithError(http.StatusUnauthorized, ErrNotPermit)
+			err := ErrNotPermit
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"reason": err.Error()})
 			log.Printf("Abort with error get error: %s", err.Error())
 			return
 		}
