@@ -23,10 +23,10 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.GET("/activities", coreProxyMW)
 		g.GET("/immediate-pending-activities", coreProxyMW)
 
-		g.POST("/cancelorder/:exchangeid", coreProxyMW)
-		g.POST("/deposit/:exchangeid", coreProxyMW)
-		g.POST("/withdraw/:exchangeid", coreProxyMW)
-		g.POST("/trade/:exchangeid", coreProxyMW)
+		g.POST("/cancelorder", coreProxyMW)
+		g.POST("/deposit", coreProxyMW)
+		g.POST("/withdraw", coreProxyMW)
+		g.POST("/trade", coreProxyMW)
 		g.POST("/setrates", coreProxyMW)
 		g.GET("/tradehistory", coreProxyMW)
 
