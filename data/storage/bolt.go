@@ -160,7 +160,7 @@ func (bs *BoltStorage) CurrentGoldInfoVersion(timepoint uint64) (common.Version,
 	err = bs.db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte(goldBucket)).Cursor()
 		result, err = reverseSeek(timepoint, c)
-		return nil
+		return err
 	})
 	return common.Version(result), err
 }
@@ -206,7 +206,7 @@ func (bs *BoltStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, 
 	err = bs.db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte(btcBucket)).Cursor()
 		result, err = reverseSeek(timepoint, c)
-		return nil
+		return err
 	})
 	return common.Version(result), err
 }
@@ -219,7 +219,7 @@ func (bs *BoltStorage) CurrentUSDCInfoVersion(timepoint uint64) (common.Version,
 	err = bs.db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte(usdcBucket)).Cursor()
 		result, err = reverseSeek(timepoint, c)
-		return nil
+		return err
 	})
 	return common.Version(result), err
 }
@@ -232,7 +232,7 @@ func (bs *BoltStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Version, 
 	err = bs.db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte(usdBucket)).Cursor()
 		result, err = reverseSeek(timepoint, c)
-		return nil
+		return err
 	})
 	return common.Version(result), err
 }
