@@ -30,6 +30,8 @@ github.com/deckarep/golang-set v1.7.1 h1:SCQV0S6gTtp6itiFrTqI+pfmJ4LN85S1YzhDf9r
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
 github.com/edsrzf/mmap-go v1.0.0 h1:CEBF7HpRnUCSJgGUb5h1Gm7e3VkmVDrR8lvWVLtrOFw=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
+github.com/ethereum/go-ethereum v0.0.0-20171018091612-eea996e4e182 h1:gDN0rcKlkwV5EOELOgcosck6MYLmc0o8QTv5hNb3nbc=
+github.com/ethereum/go-ethereum v0.0.0-20171018091612-eea996e4e182/go.mod h1:PwpWDrCLZrV+tfrhqqF6kPknbISMHaJv9Ln3kPCZLwY=
 github.com/favadi/go-ethereum v1.8.16-fork h1:ASa5GemfLDtin5vqCqJk7F8mrBJAs7aj08SIGltAn4w=
 github.com/favadi/go-ethereum v1.8.16-fork/go.mod h1:RXg+C0ufsFEtlGWtMKri6DcnB9Jz4Y9SHpdVtFX2Njs=
 github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a h1:1znxn4+q2MrEdTk1eCk6KIV3muTYVclBIB6CTVR/zBc=

@@ -28,7 +28,7 @@ var (
 	baseURL        string
 	stdoutLog      bool
 	dryRun         bool
-	profilerEnable bool
+	profilerPrefix string
 
 	cliAddress common.AddressConfig
 )
@@ -82,7 +82,7 @@ func serverStart(_ *cobra.Command, _ []string) {
 		config.MetricStorage,
 		servPortStr,
 		config.EnableAuthentication,
-		profilerEnable,
+		profilerPrefix,
 		config.AuthEngine,
 		kyberENV,
 		bc, config.Setting,

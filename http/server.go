@@ -35,16 +35,16 @@ var (
 )
 
 type Server struct {
-	app             reserve.Data
-	core            reserve.Core
-	metric          metric.Storage
-	host            string
-	authEnabled     bool
-	auth            Authentication
-	profilerEnabled bool
-	r               *gin.Engine
-	blockchain      Blockchain
-	setting         Setting
+	app            reserve.Data
+	core           reserve.Core
+	metric         metric.Storage
+	host           string
+	authEnabled    bool
+	auth           Authentication
+	profilerPrefix string
+	r              *gin.Engine
+	blockchain     Blockchain
+	setting        Setting
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -1124,8 +1124,8 @@ func (s *Server) register() {
 
 func (s *Server) Run() {
 	s.register()
-	if s.profilerEnabled {
-		pprof.Register(s.r)
+	if len(s.profilerPrefix) != 0 {
+		pprof.Register(s.r, s.profilerPrefix)
 	}
 	if err := s.r.Run(s.host); err != nil {
 		log.Panic(err)
@@ -1138,7 +1138,7 @@ func NewHTTPServer(
 	metric metric.Storage,
 	host string,
 	enableAuth bool,
-	enableProfiler bool,
+	profilerPrefix string,
 	authEngine Authentication,
 	env string,
 	bc Blockchain,
@@ -1164,6 +1164,6 @@ func NewHTTPServer(
 	r.Use(cors.New(corsConfig))
 
 	return &Server{
-		app, core, metric, host, enableAuth, authEngine, enableProfiler, r, bc, setting,
+		app, core, metric, host, enableAuth, authEngine, profilerPrefix, r, bc, setting,
 	}
 }
