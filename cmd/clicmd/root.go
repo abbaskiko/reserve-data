@@ -50,7 +50,7 @@ Allow overwriting some parameter`,
 	startServer.Flags().StringVar(&cliAddress.Pricing, "pricing-addr", defaultValue.Pricing, "pricing contract address")
 	startServer.Flags().StringVar(&cliAddress.Network, "network-addr", defaultValue.Network, "network contract address")
 	startServer.Flags().StringVar(&cliAddress.InternalNetwork, "internal-network-addr", defaultValue.InternalNetwork, "internal network contract address")
-	startServer.Flags().StringVar(&profilerPrefix, "profiler-prefix", "", "profiler prefix (disable profiler if empty)")
+	startServer.Flags().StringVar(&profilerPrefix, "profiler-prefix", "", "set prefix for pprof http handler, eg: \"/debug/pprof\", profiler will be disabled if this flag value is empty. A secure token can be put into profiler-prefix to limit access")
 	RootCmd.AddCommand(startServer)
 
 	var versionCmd = &cobra.Command{
