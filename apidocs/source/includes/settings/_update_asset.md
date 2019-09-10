@@ -1,20 +1,19 @@
-# Update asset
-
-## Create update asset 
+## Pending update asset
 
 ```shell
-curl -X POST "https://gateway.local/v3/update-asset" \
+curl -X POST "https://gateway.local/v3/setting-change-main" \
 -H 'Content-Type: application/json' \
 -d '{
-    "assets": [
-        {
+    "change_list":[{
+        "type": "update_asset",
+        "data": {
             "asset_id": 3,
             "symbol": "KNC",
             "name": "Kyber Network Crystal",
             "address": "",
             "decimals": 18,
             "transferable": true,
-            "set_rate": "exchange_fee",
+            "set_rate": "exchange_feed",
             "rebalance": true,
             "is_quote": true,
             "pwi": {
@@ -45,7 +44,7 @@ curl -X POST "https://gateway.local/v3/update-asset" \
                 "transfer_threshold": 4353.4353
             }
         }
-    ]
+    }]
 }'
 ```
 
@@ -60,101 +59,12 @@ curl -X POST "https://gateway.local/v3/update-asset" \
 
 ### HTTP Request
 
-`POST https://gateway.local/v3/update-asset`
-
-
-## Get pending update asset exchange
-
-
-```shell
-curl -X GET "https://gateway.local/v3/update-asset"
-```
-
-> sample response
-
-```json
-{
-    "assets": [
-        {
-            "asset_id": 3,
-            "symbol": "KNC",
-            "name": "Kyber Network Crystal",
-            "address": "",
-            "decimals": 18,
-            "transferable": true,
-            "set_rate": "exchange_fee",
-            "rebalance": true,
-            "is_quote": true,
-            "pwi": {
-                "ask": {
-                    "a": 0.3241,
-                    "b": 0.342472,
-                    "c": 0.3414,
-                    "min_min_spread": 0.34241,
-                    "price_multiply_factor": 0.43141
-                },
-                "bid": {
-                    "a": 0.3241,
-                    "b": 0.342472,
-                    "c": 0.3414,
-                    "min_min_spread": 0.34241,
-                    "price_multiply_factor": 0.43141
-                }
-            },
-            "rebalance_quadratic": {
-                    "a": 0.3241,
-                    "b": 0.342472,
-                    "c": 0.3414
-            },
-            "target": {
-                "total": 4134242.432,
-                "reserve": 34535,
-                "rebalance_threshold": 343.43,
-                "transfer_threshold": 4353.4353
-            }
-        }
-    ]
-}
-```
-
-### HTTP Request
-
-`GET https://gateway.local/v3/update-asset`
-
-
-## Confirm pending update asset 
-
-```shell
-curl -X PUT "https://gateway.local/v3/update-asset/1"
-```
-
-> sample response
-
-```json
-{
-    "success": true
-}
-```
-
-### HTTP Request
-
-`PUT https://gateway.local/v3/update-asset/:asset_id`
-
-
-## Reject pending update asset
-
-```shell
-curl -X DELETE "https://gateway.local/v3/update-asset/1"
-```
-
-> sample response
-
-```json
-{
-    "success": true
-}
-```
-
-### HTTP Request
-
-`DELETE https://gateway.local/v3/update-asset/:asset_id`
+`POST https://gateway.local/v3/setting-change-main`
+<aside class="notice">Write key is required</aside>
+<aside class="warning">
+Constraints:<br>
+- "asset_id": required
+- "rebalance": true => "rebalance_quadratic": required or this asset already has rebalance_quadratic config<br>
+- "rebalance": true => "target": required or this asset already has target config<br>
+- "set_rate" is not null => "pwi": required or this asset already has set_rate config<br>
+</aside>

@@ -3,26 +3,41 @@
 ## Set stable token params
 
 ```shell
-curl -X POST "https://gateway.local/set-stable-token-params"
+curl -X POST "https://gateway.local/v3/setting-change-stable"
 -H 'Content-Type: application/x-www-form-urlencoded'
+-d '{
+    "change_list": [{
+      "type": "update_stable_token_params",
+      "data": {
+        "params": {
+          "DGX": {
+            "AskSpread": 50,
+            "BidSpread": 50,
+            "PriceUpdateThreshold": 0.1
+          }
+        }
+      }
+    }]
+}'
 ```
 
 > sample response
 
 ```json
 {
+    "id": 1,
     "success": true
 }
 ```
 
 ### HTTP request
 
-`POST https://gateway.local/set-stable-token-params`
+`POST https://gateway.local/v3/setting-change-stable`
 
 ## Confirm stable token params
 
 ```shell
-curl -X POST "https://gateway.local/confirm-stable-token-params"
+curl -X PUT "https://gateway.local/v3/setting-change-stable/16"
 ```
 
 > sample response
@@ -35,12 +50,12 @@ curl -X POST "https://gateway.local/confirm-stable-token-params"
 
 ### HTTP Request
 
-`POST https://gateway.local/confirm-stable-token-params`
+`POST https://gateway.local/v3/setting-change-stable/:change_id`
 
 ## Reject stable token params
 
 ```shell
-curl -X POST "https://gateway.local/reject-stable-token-params"
+curl -X DELETE "https://gateway.local/v3/setting-change-stable/16"
 ```
 
 > sample response
@@ -53,37 +68,46 @@ curl -X POST "https://gateway.local/reject-stable-token-params"
 
 ### HTTP Request
 
-`POST https://gateway.local/reject-stable-token-params`
+`DELETE https://gateway.local/v3/setting-change-stable/:change_id`
 
 ## Get pending stable token params
 
 ```shell
-curl -X GET "https://gateway.local/pending-stable-token-params"
+curl -X GET "https://gateway.local/v3/setting-change-stable"
 ```
 
 > sample response
 
 ```json
 {
-  "data": {
-    "DGX": {
-      "AskSpread": 50,
-      "BidSpread": 50,
-      "PriceUpdateThreshold": 0.1
-    }
-  },
-  "success": true
+    "data": [{
+        "id": 24,
+        "created": "2019-09-09T10:16:17.768309Z",
+        "change_list": [{
+            "type": "update_stable_token_params",
+            "data": {
+                "params": {
+                    "DGX": {
+                        "AskSpread": 50,
+                        "BidSpread": 50,
+                        "PriceUpdateThreshold": 0.1
+                    }
+                }
+            }
+        }]
+    }],
+    "success": true
 }
 ```
 
 ### HTTP Request
 
-`GET https://gateaway.local/pending-stable-token-params`
+`GET https://gateaway.local/v3/setting-change-stable`
 
 ## Get stable token params
 
 ```shell
-curl -X GET "https://gateway.local/stable-token-params"
+curl -X GET "https://gateway.local/v3/stable-token-params"
 ```
 
 > sample response

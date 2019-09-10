@@ -1,4 +1,4 @@
-# Settings APIs
+#  Settings Read APIs
 
 ## Get asset by id
 
@@ -256,7 +256,7 @@ curl -X GET "https://gateway.local/v3/asset"
             },
             "created": "2019-07-31T08:53:33.653734Z",
             "updated": "2019-07-31T08:53:33.653734Z"
-        },
+        }
     ],
     "success": true
 }
