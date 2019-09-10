@@ -50,6 +50,7 @@ Allow overwriting some parameter`,
 	startServer.Flags().StringVar(&cliAddress.Pricing, "pricing-addr", defaultValue.Pricing, "pricing contract address")
 	startServer.Flags().StringVar(&cliAddress.Network, "network-addr", defaultValue.Network, "network contract address")
 	startServer.Flags().StringVar(&cliAddress.InternalNetwork, "internal-network-addr", defaultValue.InternalNetwork, "internal network contract address")
+	startServer.Flags().BoolVarP(&profilerEnable, "enable-profiler", "", false, "enable profile")
 	RootCmd.AddCommand(startServer)
 
 	var versionCmd = &cobra.Command{

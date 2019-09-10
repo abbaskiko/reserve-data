@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
 
@@ -34,15 +35,16 @@ var (
 )
 
 type Server struct {
-	app         reserve.Data
-	core        reserve.Core
-	metric      metric.Storage
-	host        string
-	authEnabled bool
-	auth        Authentication
-	r           *gin.Engine
-	blockchain  Blockchain
-	setting     Setting
+	app             reserve.Data
+	core            reserve.Core
+	metric          metric.Storage
+	host            string
+	authEnabled     bool
+	auth            Authentication
+	profilerEnabled bool
+	r               *gin.Engine
+	blockchain      Blockchain
+	setting         Setting
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -1122,6 +1124,9 @@ func (s *Server) register() {
 
 func (s *Server) Run() {
 	s.register()
+	if s.profilerEnabled {
+		pprof.Register(s.r)
+	}
 	if err := s.r.Run(s.host); err != nil {
 		log.Panic(err)
 	}
@@ -1133,6 +1138,7 @@ func NewHTTPServer(
 	metric metric.Storage,
 	host string,
 	enableAuth bool,
+	enableProfiler bool,
 	authEngine Authentication,
 	env string,
 	bc Blockchain,
@@ -1158,6 +1164,6 @@ func NewHTTPServer(
 	r.Use(cors.New(corsConfig))
 
 	return &Server{
-		app, core, metric, host, enableAuth, authEngine, r, bc, setting,
+		app, core, metric, host, enableAuth, authEngine, enableProfiler, r, bc, setting,
 	}
 }
