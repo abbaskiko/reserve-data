@@ -42,7 +42,7 @@ func (rd ReserveData) CurrentUSDInfoVersion(timepoint uint64) (common.Version, e
 func (rd ReserveData) GetGoldData(timestamp uint64) (common.GoldData, error) {
 	version, err := rd.CurrentGoldInfoVersion(timestamp)
 	if err != nil {
-		return common.GoldData{}, nil
+		return common.GoldData{}, err
 	}
 	return rd.globalStorage.GetGoldInfo(version)
 }
@@ -50,7 +50,7 @@ func (rd ReserveData) GetGoldData(timestamp uint64) (common.GoldData, error) {
 func (rd ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
 	version, err := rd.CurrentBTCInfoVersion(timestamp)
 	if err != nil {
-		return common.BTCData{}, nil
+		return common.BTCData{}, err
 	}
 	return rd.globalStorage.GetBTCInfo(version)
 }
@@ -58,7 +58,7 @@ func (rd ReserveData) GetBTCData(timestamp uint64) (common.BTCData, error) {
 func (rd ReserveData) GetUSDCData(timestamp uint64) (common.USDCData, error) {
 	version, err := rd.CurrentUSDCInfoVersion(timestamp)
 	if err != nil {
-		return common.USDCData{}, nil
+		return common.USDCData{}, err
 	}
 	return rd.globalStorage.GetUSDCInfo(version)
 }
@@ -66,7 +66,7 @@ func (rd ReserveData) GetUSDCData(timestamp uint64) (common.USDCData, error) {
 func (rd ReserveData) GetUSDData(timestamp uint64) (common.USDData, error) {
 	version, err := rd.CurrentUSDInfoVersion(timestamp)
 	if err != nil {
-		return common.USDData{}, nil
+		return common.USDData{}, err
 	}
 	return rd.globalStorage.GetUSDInfo(version)
 }
