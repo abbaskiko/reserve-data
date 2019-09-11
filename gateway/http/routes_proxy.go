@@ -24,6 +24,7 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.GET("/immediate-pending-activities", coreProxyMW)
 
 		g.POST("/cancelorder", coreProxyMW)
+		g.POST("/cancel-all-orders", coreProxyMW)
 		g.POST("/deposit", coreProxyMW)
 		g.POST("/withdraw", coreProxyMW)
 		g.POST("/trade", coreProxyMW)

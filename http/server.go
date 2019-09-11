@@ -421,7 +421,7 @@ func (s *Server) register() {
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
 
 		g.POST("/cancelorder", s.CancelOrder)
-		g.POST("/cancel-all-order", s.CancelAllOrders)
+		g.POST("/cancel-all-orders", s.CancelAllOrders)
 		g.POST("/deposit", s.Deposit)
 		g.POST("/withdraw", s.Withdraw)
 		g.POST("/trade", s.Trade)
