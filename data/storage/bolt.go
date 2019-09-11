@@ -1075,17 +1075,26 @@ func (bs *BoltStorage) GetTokenTargetQty() (common.TokenTargetQty, error) {
 func (bs *BoltStorage) GetRebalanceControl() (common.RebalanceControl, error) {
 	var err error
 	var result common.RebalanceControl
+	var setDefault = false
 	err = bs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(enableRebalance))
 		_, data := b.Cursor().First()
+		// if data == nil set default value in bolt db
 		if data == nil {
 			result = common.RebalanceControl{
 				Status: false,
 			}
-			return bs.StoreRebalanceControl(false)
+			setDefault = true
+			return nil
 		}
 		return json.Unmarshal(data, &result)
 	})
+	if err != nil {
+		return result, err
+	}
+	if setDefault {
+		err = bs.StoreRebalanceControl(false)
+	}
 	return result, err
 }
 
@@ -1121,17 +1130,26 @@ func (bs *BoltStorage) StoreRebalanceControl(status bool) error {
 func (bs *BoltStorage) GetSetrateControl() (common.SetrateControl, error) {
 	var err error
 	var result common.SetrateControl
+	var setDefault = false
 	err = bs.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(setrateControl))
 		_, data := b.Cursor().First()
+		// if data == nil set default value in bolt db
 		if data == nil {
 			result = common.SetrateControl{
 				Status: false,
 			}
-			return bs.StoreSetrateControl(false)
+			setDefault = true
+			return nil
 		}
 		return json.Unmarshal(data, &result)
 	})
+	if err != nil {
+		return result, err
+	}
+	if setDefault {
+		err = bs.StoreSetrateControl(false)
+	}
 	return result, err
 }
 
