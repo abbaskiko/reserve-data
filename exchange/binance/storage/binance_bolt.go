@@ -1,4 +1,4 @@
-package binance
+package storage
 
 import (
 	"bytes"
@@ -26,6 +26,7 @@ type Storage struct {
 	db *bolt.DB
 }
 
+// Deprecated: using postgres instead of bolt db
 //NewBoltStorage create database and related bucket for binance storage
 func NewBoltStorage(path string) (*Storage, error) {
 	// init instance

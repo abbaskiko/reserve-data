@@ -1,4 +1,4 @@
-package huobi
+package storage
 
 import (
 	"io/ioutil"
@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
+// Deprecated
 func TestHuobiStoreTradeHistory(t *testing.T) {
 	boltFile := "test_huobi_storage.db"
 	tmpDir, err := ioutil.TempDir("", "huobi_storage")
@@ -58,6 +59,7 @@ func TestHuobiStoreTradeHistory(t *testing.T) {
 
 }
 
+// Deprecated
 func TestHuobiStoreDepositActivity(t *testing.T) {
 	boltFile := "test_huobi_storage.db"
 	tmpDir, err := ioutil.TempDir("", "huobi_storage")

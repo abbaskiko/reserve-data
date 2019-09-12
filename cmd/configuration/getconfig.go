@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -41,6 +42,7 @@ func GetChainType(dpl deployment.Deployment) string {
 }
 
 func GetConfig(
+	cliCtx *cli.Context,
 	dpl deployment.Deployment,
 	nodeConf *EthereumNodeConfiguration,
 	bi binance.Interface,
@@ -48,7 +50,6 @@ func GetConfig(
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
 	secretConfigFile string,
-	enabledExchanges []common.ExchangeID,
 	settingStorage storage.Interface,
 ) (*Config, error) {
 	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
@@ -104,7 +105,7 @@ func GetConfig(
 	}
 
 	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, enabledExchanges, settingStorage); err != nil {
+	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
 		return nil, err
 	}
 	return config, nil
