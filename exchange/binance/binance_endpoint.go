@@ -104,7 +104,7 @@ func (ep *Endpoint) GetResponse(
 		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
 	if err != nil || len(respBody) == 0 {
-		log.Printf("request to %s, got response from binance: %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
+		log.Printf("request to %s, got response from binance: %s, err: %v", req.URL, common.TruncStr(respBody), err)
 	}
 	return respBody, err
 }
@@ -338,7 +338,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 		}
 		return result.ID, nil
 	}
-	return "", fmt.Errorf("withdraw rejected by Binnace: %s", common.ErrorToString(err))
+	return "", fmt.Errorf("withdraw rejected by Binnace: %v", err)
 }
 
 func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {

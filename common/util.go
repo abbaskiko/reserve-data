@@ -34,14 +34,6 @@ func CmdDirLocation() string {
 	return filepath.Join(filepath.Dir(filepath.Dir(fileName)), "cmd")
 }
 
-// ErrorToString returns error as string and an empty string if the error is nil
-func ErrorToString(err error) string {
-	if err == nil {
-		return ""
-	}
-	return err.Error()
-}
-
 // FloatToBigInt converts a float to a big int with specific decimal
 // Example:
 // - FloatToBigInt(1, 4) = 10000
@@ -91,7 +83,7 @@ func CombineActivityStorageErrs(err, sErr error) error {
 	if err == nil && sErr != nil {
 		return sErr
 	}
-	return fmt.Errorf("action error: %s, storage error: %s", ErrorToString(err), ErrorToString(sErr))
+	return fmt.Errorf("action error: %v, storage error: %v", err, sErr)
 }
 
 // IsEthereumAddress returns true if the given address is ethereum.
