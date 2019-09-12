@@ -82,62 +82,57 @@ func NewPostgresStorage(db *sqlx.DB) (exchange.HuobiStorage, error) {
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("failed to intialize database schema err=%s", err.Error())
 	}
+	storage := &postgresStorage{
+		db: db,
+	}
+	err := storage.initStmts()
+	return storage, err
+}
 
+func (s *postgresStorage) initStmts() error {
+	var err error
 	// history stmts
-	storeHistoryStmt, err := db.PrepareNamed(`INSERT INTO "huobi_trade_history"
+	s.stmts.storeHistoryStmt, err = s.db.PrepareNamed(`INSERT INTO "huobi_trade_history"
 		(pair_id, trade_id, price, qty, type, time)
 		VALUES(:pair_id, :trade_id, :price, :qty, :type, :time)`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	getHistoryStmt, err := db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time 
+	s.stmts.getHistoryStmt, err = s.db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time 
 		FROM "huobi_trade_history"
 		WHERE time >= $1 AND time <= $2`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	getLastIDHistoryStmt, err := db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time FROM "huobi_trade_history"
+	s.stmts.getLastIDHistoryStmt, err = s.db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time FROM "huobi_trade_history"
 											WHERE pair_id = $1 
 											ORDER BY time DESC, trade_id DESC;`)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// pending stmts
-	storePendingTxStmt, err := db.Preparex(`INSERT INTO "huobi_pending_intermediate_tx"
+	s.stmts.storePendingTxStmt, err = s.db.Preparex(`INSERT INTO "huobi_pending_intermediate_tx"
 		(timepoint, eid, data)
 		VALUES ($1, $2, $3);`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	getPendingTxStmt, err := db.Preparex(`SELECT timepoint, eid, data 
+	s.stmts.getPendingTxStmt, err = s.db.Preparex(`SELECT timepoint, eid, data 
 		FROM "huobi_pending_intermediate_tx";`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	storeTxStmt, err := db.Preparex(`SELECT NULL FROM new_intermediate_tx($1, $2, $3)`)
+	s.stmts.storeIntermediateTxStmt, err = s.db.Preparex(`SELECT NULL FROM new_intermediate_tx($1, $2, $3)`)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	getTxStmt, err := db.Preparex(
-		`SELECT data FROM "huobi_intermediate_tx"
+	s.stmts.getIntermediateTxStmt, err = s.db.Preparex(`SELECT data FROM "huobi_intermediate_tx"
 				WHERE timepoint = $1 and eid =$2`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	storage := &postgresStorage{
-		db: db,
-		stmts: preparedStmt{
-			storeHistoryStmt:        storeHistoryStmt,
-			getHistoryStmt:          getHistoryStmt,
-			getLastIDHistoryStmt:    getLastIDHistoryStmt,
-			storePendingTxStmt:      storePendingTxStmt,
-			getPendingTxStmt:        getPendingTxStmt,
-			storeIntermediateTxStmt: storeTxStmt,
-			getIntermediateTxStmt:   getTxStmt,
-		},
-	}
-	return storage, nil
+	return nil
 }
 
 type exchangeTradeHistoryDB struct {
@@ -157,6 +152,7 @@ type TxDB struct {
 
 // StoreTradeHistory implements exchange.HuobiStorage and store trade history
 func (s *postgresStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
+	// TODO: change this code when jmoiron/sqlx releases bulk request feature
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return err

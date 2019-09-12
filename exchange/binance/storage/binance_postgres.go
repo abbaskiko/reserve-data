@@ -42,34 +42,35 @@ func NewPostgresStorage(db *sqlx.DB) (exchange.BinanceStorage, error) {
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("failed to intialize database schema err=%s", err.Error())
 	}
-	storeHistoryStmt, err := db.PrepareNamed(`INSERT INTO "binance_trade_history"
+
+	storage := &postgresStorage{
+		db: db,
+	}
+	err := storage.prepareStmts()
+	return storage, err
+}
+
+func (s *postgresStorage) prepareStmts() error {
+	var err error
+	s.stmts.storeHistoryStmt, err = s.db.PrepareNamed(`INSERT INTO "binance_trade_history"
 		(pair_id, trade_id, price, qty, type, time)
 		VALUES(:pair_id, :trade_id, :price, :qty, :type, :time)`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	getHistoryStmt, err := db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time 
+	s.stmts.getHistoryStmt, err = s.db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time 
 		FROM "binance_trade_history"
 		WHERE time >= $1 AND time <= $2`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	getLastIDHistoryStmt, err := db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time FROM "binance_trade_history"
+	s.stmts.getLastIDHistoryStmt, err = s.db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time FROM "binance_trade_history"
 											WHERE pair_id = $1 
 											ORDER BY time DESC, trade_id DESC;`)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	storage := &postgresStorage{
-		db: db,
-		stmts: preparedStmt{
-			storeHistoryStmt:     storeHistoryStmt,
-			getHistoryStmt:       getHistoryStmt,
-			getLastIDHistoryStmt: getLastIDHistoryStmt,
-		},
-	}
-	return storage, nil
+	return nil
 }
 
 type exchangeTradeHistoryDB struct {
@@ -83,6 +84,7 @@ type exchangeTradeHistoryDB struct {
 
 // StoreTradeHistory implements exchange.BinanceStorage and store trade history
 func (s *postgresStorage) StoreTradeHistory(data common.ExchangeTradeHistory) error {
+	// TODO: change this code when jmoiron/sqlx releases bulk request feature
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return err

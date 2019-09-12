@@ -161,6 +161,11 @@ func NewExchangePool(
 		return nil, err
 	}
 
+	db, err := NewDBFromContext(c)
+	if err != nil {
+		return nil, fmt.Errorf("can init postgres storage: (%s)", err.Error())
+	}
+
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.StableExchange:
@@ -172,10 +177,6 @@ func NewExchangePool(
 		case common.Binance:
 			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
 			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
-			db, err := NewDBFromContext(c)
-			if err != nil {
-				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
-			}
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
@@ -191,10 +192,6 @@ func NewExchangePool(
 		case common.Huobi:
 			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
 			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
-			db, err := NewDBFromContext(c)
-			if err != nil {
-				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
-			}
 			huobistorage, err := huobiStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
