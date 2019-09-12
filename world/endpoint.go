@@ -72,11 +72,11 @@ func (re RealEndpoint) GoldDataEndpoint() string {
 }
 
 func (re RealEndpoint) OneForgeGoldETHDataEndpoint() string {
-	return "https://forex.1forge.com/1.0.3/convert?from=XAU&to=ETH&quantity=1&api_key=" + re.OneForgeKey
+	return "https://api.1forge.com/convert?from=XAU&to=ETH&quantity=1&api_key=" + re.OneForgeKey
 }
 
 func (re RealEndpoint) OneForgeGoldUSDDataEndpoint() string {
-	return "https://forex.1forge.com/1.0.3/convert?from=XAU&to=USD&quantity=1&api_key=" + re.OneForgeKey
+	return "https://api.1forge.com/convert?from=XAU&to=USD&quantity=1&api_key=" + re.OneForgeKey
 }
 
 func (re RealEndpoint) GDAXDataEndpoint() string {
