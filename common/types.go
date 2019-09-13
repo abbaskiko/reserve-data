@@ -13,9 +13,13 @@ import (
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
+// Version indicate fetched data version
 type Version uint64
+
+// Timestamp is data fetched timestamp
 type Timestamp string
 
+// MustToUint64 return uint64 of timestamp
 func (ts Timestamp) MustToUint64() uint64 {
 	res, err := strconv.ParseUint(string(ts), 10, 64)
 	//  this should never happen. Timestamp is never manually entered.
@@ -25,21 +29,25 @@ func (ts Timestamp) MustToUint64() uint64 {
 	return res
 }
 
+// GetTimestamp return timestamp
 func GetTimestamp() Timestamp {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	return Timestamp(strconv.Itoa(int(timestamp)))
 }
 
+// GetTimepoint return time by millisecond
 func GetTimepoint() uint64 {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	return uint64(timestamp)
 }
 
+// TimeToTimepoint convert timestamp from time.Time to milliseoncd (timepoint)
 func TimeToTimepoint(t time.Time) uint64 {
 	timestamp := t.UnixNano() / int64(time.Millisecond)
 	return uint64(timestamp)
 }
 
+// TimepointToTime convert timepoint (millisecond) to time.Time
 func TimepointToTime(t uint64) time.Time {
 	return time.Unix(0, int64(t)*int64(time.Millisecond))
 }
@@ -206,7 +214,7 @@ func StringToActivityID(id string) (ActivityID, error) {
 	return result, nil
 }
 
-// NewActivityStatus creates new Activity ID.
+// NewActivityID creates new Activity ID.
 func NewActivityID(timepoint uint64, eid string) ActivityID {
 	return ActivityID{
 		Timepoint: timepoint,
@@ -214,18 +222,19 @@ func NewActivityID(timepoint uint64, eid string) ActivityID {
 	}
 }
 
+// ActivityRecord object
 type ActivityRecord struct {
-	Action         string
-	ID             ActivityID
-	Destination    string
-	Params         map[string]interface{}
-	Result         map[string]interface{}
-	ExchangeStatus string
-	MiningStatus   string
-	Timestamp      Timestamp
+	Action         string                 `json:"Action,omitempty"`
+	ID             ActivityID             `json:"ID,omitempty"`
+	Destination    string                 `json:"Destination,omitempty"`
+	Params         map[string]interface{} `json:"Params,omitempty"`
+	Result         map[string]interface{} `json:"Result,omitempty"`
+	ExchangeStatus string                 `json:"ExchangeStatus,omitempty"`
+	MiningStatus   string                 `json:"MiningStatus,omitempty"`
+	Timestamp      Timestamp              `json:"Timestamp,omitempty"`
 }
 
-//New ActivityRecord return an activity record with params["assets"] only as asset.ID
+//NewActivityRecord return an activity record with params["assets"] only as asset.ID
 func NewActivityRecord(action string, id ActivityID, destination string, params, result map[string]interface{}, exStatus, miStatus string, timestamp Timestamp) ActivityRecord {
 	//if any params is an asset, save it ID instead of whole struct
 	for k, v := range params {
@@ -253,6 +262,7 @@ func NewActivityRecord(action string, id ActivityID, destination string, params,
 	}
 }
 
+// IsExchangePending return true if activity is pending on centralized exchange
 func (ar ActivityRecord) IsExchangePending() bool {
 	switch ar.Action {
 	case ActionWithdraw:
@@ -267,6 +277,7 @@ func (ar ActivityRecord) IsExchangePending() bool {
 	return true
 }
 
+// IsBlockchainPending return true if activity is pending on blockchain
 func (ar ActivityRecord) IsBlockchainPending() bool {
 	switch ar.Action {
 	case ActionWithdraw, ActionDeposit, ActionSetRate:
@@ -275,6 +286,7 @@ func (ar ActivityRecord) IsBlockchainPending() bool {
 	return true
 }
 
+// IsPending return true if activity is pending
 func (ar ActivityRecord) IsPending() bool {
 	switch ar.Action {
 	case ActionWithdraw:
@@ -460,15 +472,16 @@ type AllEBalanceResponse struct {
 	Data       map[ExchangeID]EBalanceEntry
 }
 
+// AuthDataSnapshot object
 type AuthDataSnapshot struct {
-	Valid             bool
-	Error             string
-	Timestamp         Timestamp
-	ReturnTime        Timestamp
-	ExchangeBalances  map[ExchangeID]EBalanceEntry
-	ReserveBalances   map[string]BalanceEntry
-	PendingActivities []ActivityRecord
-	Block             uint64
+	Valid             bool                         `json:"Valid,omitempty"`
+	Error             string                       `json:"Error,omitempty"`
+	Timestamp         Timestamp                    `json:"Timestamp,omitempty"`
+	ReturnTime        Timestamp                    `json:"ReturnTime,omitempty"`
+	ExchangeBalances  map[ExchangeID]EBalanceEntry `json:"ExchangeBalances,omitempty"`
+	ReserveBalances   map[string]BalanceEntry      `json:"ReserveBalances,omitempty"`
+	PendingActivities []ActivityRecord             `json:"PendingActivities,omitempty"`
+	Block             uint64                       `json:"Block,omitempty"`
 }
 
 type AuthDataRecord struct {
@@ -621,21 +634,6 @@ type ExStatus struct {
 	Timestamp uint64 `json:"timestamp"`
 	Status    bool   `json:"status"`
 }
-
-type ExchangesStatus map[string]ExStatus
-
-type ExchangeNotiContent struct {
-	FromTime  uint64 `json:"fromTime"`
-	ToTime    uint64 `json:"toTime"`
-	IsWarning bool   `json:"isWarning"`
-	Message   string `json:"msg"`
-}
-
-type ExchangeTokenNoti map[string]ExchangeNotiContent
-
-type ExchangeActionNoti map[string]ExchangeTokenNoti
-
-type ExchangeNotifications map[string]ExchangeActionNoti
 
 type AddressesResponse struct {
 	Addresses map[string]ethereum.Address `json:"addresses"`

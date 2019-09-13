@@ -26,12 +26,8 @@ const (
 	activityBucket                  string = "activities"
 	authDataBucket                  string = "auth_data"
 	pendingActivityBucket           string = "pending_activities"
-	metricTargetQuantity            string = "target_quantity"
 	enableRebalance                 string = "enable_rebalance"
 	setrateControl                  string = "setrate_control"
-	pwiEquation                     string = "pwi_equation"
-	exchangeStatus                  string = "exchange_status"
-	exchangeNotifications           string = "exchange_notifications"
 	maxNumberVersion                int    = 1000
 	maxGetRatesPeriod               uint64 = 86400000      //1 days in milisec
 	authDataExpiredDuration         uint64 = 10 * 86400000 //10day in milisec
@@ -40,22 +36,6 @@ const (
 	goldBucket                      string = "gold_feeds"
 	btcBucket                       string = "btc_feeds"
 	disabledFeedsBucket             string = "disabled_feeds"
-
-	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
-	pendingTargetQuantityV2 string = "pending_target_qty_v2"
-	// targetQuantityV2 constant for bucet name for target quantity v2
-	targetQuantityV2 string = "target_quantity_v2"
-
-	// pendingPWIEquationV2 is the bucket name for storing pending
-	// pwi equation for later approval.
-	pendingPWIEquationV2 string = "pending_pwi_equation_v2"
-	// pwiEquationV2 stores the PWI equations after confirmed.
-	pwiEquationV2 string = "pwi_equation_v2"
-
-	// pendingRebalanceQuadratic stores pending rebalance quadratic equation
-	pendingRebalanceQuadratic = "pending_rebalance_quadratic"
-	// rebalanceQuadratic stores rebalance quadratic equation
-	rebalanceQuadratic = "rebalance_quadratic"
 
 	//btcFetcherConfiguration stores configuration for btc fetcher
 	fetcherConfigurationBucket = "btc_fetcher_configuration"
@@ -89,20 +69,10 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			activityBucket,
 			pendingActivityBucket,
 			authDataBucket,
-			metricTargetQuantity,
 			enableRebalance,
 			setrateControl,
-			pwiEquation,
-			exchangeStatus,
-			exchangeNotifications,
 			pendingStatbleTokenParamsBucket,
 			stableTokenParamsBucket,
-			pendingTargetQuantityV2,
-			targetQuantityV2,
-			pendingPWIEquationV2,
-			pwiEquationV2,
-			pendingRebalanceQuadratic,
-			rebalanceQuadratic,
 			fetcherConfigurationBucket,
 		}
 
@@ -241,6 +211,7 @@ func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error 
 	})
 }
 
+// GetFeedConfiguration return feed configuration
 func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
 	var (
 		err      error
@@ -889,127 +860,6 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 				if uint64(assetID) == asset.ID && record.Destination == exchange.ID().String() {
 					result = true
 				}
-			}
-		}
-		return nil
-	})
-	return result, err
-}
-
-//GetTokenTargetQty get target quantity
-func (bs *BoltStorage) GetTokenTargetQty() (common.TokenTargetQty, error) {
-	var (
-		tokenTargetQty = common.TokenTargetQty{}
-		err            error
-	)
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(metricTargetQuantity))
-		c := b.Cursor()
-		result, vErr := reverseSeek(common.GetTimepoint(), c)
-		if vErr != nil {
-			return vErr
-		}
-		data := b.Get(boltutil.Uint64ToBytes(result))
-		// be defensive, but this should never happen
-		if data == nil {
-			return fmt.Errorf("version %d doesn't exist", result)
-		}
-		return json.Unmarshal(data, &tokenTargetQty)
-	})
-	return tokenTargetQty, err
-}
-
-// GetExchangeStatus get exchange status to dashboard and analytics
-func (bs *BoltStorage) GetExchangeStatus() (common.ExchangesStatus, error) {
-	result := make(common.ExchangesStatus)
-	err := bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(exchangeStatus))
-		c := b.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var exstat common.ExStatus
-			if _, vErr := common.GetExchange(strings.ToLower(string(k))); vErr != nil {
-				continue
-			}
-			if vErr := json.Unmarshal(v, &exstat); vErr != nil {
-				return vErr
-			}
-			result[string(k)] = exstat
-		}
-		return nil
-	})
-	return result, err
-}
-
-func (bs *BoltStorage) UpdateExchangeStatus(data common.ExchangesStatus) error {
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(exchangeStatus))
-		for k, v := range data {
-			dataJSON, uErr := json.Marshal(v)
-			if uErr != nil {
-				return uErr
-			}
-			if uErr := b.Put([]byte(k), dataJSON); uErr != nil {
-				return uErr
-			}
-		}
-		return nil
-	})
-	return err
-}
-
-func (bs *BoltStorage) UpdateExchangeNotification(
-	exchange, action, token string, fromTime, toTime uint64, isWarning bool, msg string) error {
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		exchangeBk := tx.Bucket([]byte(exchangeNotifications))
-		b, uErr := exchangeBk.CreateBucketIfNotExists([]byte(exchange))
-		if uErr != nil {
-			return uErr
-		}
-		key := fmt.Sprintf("%s_%s", action, token)
-		noti := common.ExchangeNotiContent{
-			FromTime:  fromTime,
-			ToTime:    toTime,
-			IsWarning: isWarning,
-			Message:   msg,
-		}
-
-		// update new value
-		dataJSON, uErr := json.Marshal(noti)
-		if uErr != nil {
-			return uErr
-		}
-		return b.Put([]byte(key), dataJSON)
-	})
-	return err
-}
-
-func (bs *BoltStorage) GetExchangeNotifications() (common.ExchangeNotifications, error) {
-	result := common.ExchangeNotifications{}
-	err := bs.db.View(func(tx *bolt.Tx) error {
-		exchangeBks := tx.Bucket([]byte(exchangeNotifications))
-		c := exchangeBks.Cursor()
-		for name, bucket := c.First(); name != nil; name, bucket = c.Next() {
-			// if bucket == nil, then name is a child bucket name (according to bolt docs)
-			if bucket == nil {
-				b := exchangeBks.Bucket(name)
-				c := b.Cursor()
-				actionContent := common.ExchangeActionNoti{}
-				for k, v := c.First(); k != nil; k, v = c.Next() {
-					actionToken := strings.Split(string(k), "_")
-					action := actionToken[0]
-					token := actionToken[1]
-					notiContent := common.ExchangeNotiContent{}
-					if uErr := json.Unmarshal(v, &notiContent); uErr != nil {
-						return uErr
-					}
-					tokenContent, exist := actionContent[action]
-					if !exist {
-						tokenContent = common.ExchangeTokenNoti{}
-					}
-					tokenContent[token] = notiContent
-					actionContent[action] = tokenContent
-				}
-				result[string(name)] = actionContent
 			}
 		}
 		return nil

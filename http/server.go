@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	maxTimespot uint64 = 18446744073709551615
+	maxTimespot uint64 = 4124425154000
 )
 
 // Server struct for http package

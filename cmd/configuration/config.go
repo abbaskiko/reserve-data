@@ -22,6 +22,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
+// Config config for core
 type Config struct {
 	ActivityStorage      core.ActivityStorage
 	DataStorage          data.Storage
@@ -46,6 +47,7 @@ type Config struct {
 	ContractAddresses *common.ContractAddressConfiguration
 }
 
+// AddCoreConfig add config for core
 func (c *Config) AddCoreConfig(
 	cliCtx *cli.Context,
 	secretConfigFile string,
@@ -56,9 +58,13 @@ func (c *Config) AddCoreConfig(
 	dataFile string,
 	settingStore storagev3.Interface,
 ) error {
-	dataStorage, err := storage.NewBoltStorage(dataFile)
+	db, err := NewDBFromContext(cliCtx)
 	if err != nil {
-		log.Printf("failed create new data storage database err=%s", err.Error())
+		return nil, err
+	}
+	dataStorage, err := storage.NewPostgresStorage(db)
+	if err != nil {
+		log.Printf("failed to create new data storage databse err=%s", err.Error())
 		return err
 	}
 

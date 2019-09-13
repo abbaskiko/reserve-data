@@ -22,6 +22,7 @@ const (
 	homesteadChainType = "homestead"
 )
 
+// GetChainType return chain type
 func GetChainType(dpl deployment.Deployment) string {
 	switch dpl {
 	case deployment.Production:
@@ -41,6 +42,7 @@ func GetChainType(dpl deployment.Deployment) string {
 	}
 }
 
+// GetConfig return config for core
 func GetConfig(
 	cliCtx *cli.Context,
 	dpl deployment.Deployment,
