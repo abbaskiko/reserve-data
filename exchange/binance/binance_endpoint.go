@@ -86,15 +86,15 @@ func (ep *Endpoint) GetResponse(
 		}
 	}()
 	switch resp.StatusCode {
-	case 429:
+	case http.StatusTooManyRequests:
 		err = errors.New("breaking binance request rate limit")
-	case 418:
+	case http.StatusTeapot:
 		err = errors.New("ip has been auto-banned by binance for continuing to send requests after receiving 429 codes")
-	case 500:
+	case http.StatusInternalServerError:
 		err = errors.New("500 from Binance, its fault")
-	case 401:
+	case http.StatusUnauthorized:
 		err = errors.New("binance api key not valid")
-	case 200:
+	case http.StatusOK:
 		respBody, err = ioutil.ReadAll(resp.Body)
 	default:
 		var response exchange.Binaresp
