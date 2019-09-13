@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
+	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -35,7 +36,7 @@ func (s *Storage) CreateTradingBy(assetID, tradingPairID uint64) (uint64, error)
 	if err != nil {
 		return 0, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 	id, err := s.createTradingBy(tx, assetID, tradingPairID)
 	if err != nil {
 		return 0, err
@@ -55,7 +56,7 @@ func (s *Storage) DeleteTradingBy(tradingByID uint64) error {
 	if err != nil {
 		return err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	err = tx.Stmtx(s.stmts.deleteTradingBy).Get(&returningTradingByID, tradingByID)
 	if err != nil {

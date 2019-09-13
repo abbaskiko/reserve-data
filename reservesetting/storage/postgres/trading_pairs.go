@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
+	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -75,7 +76,7 @@ func (s *Storage) UpdateTradingPair(id uint64, updateOpts storage.UpdateTradingP
 	if err != nil {
 		return err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	err = s.updateTradingPair(tx, id, updateOpts)
 	if err != nil {

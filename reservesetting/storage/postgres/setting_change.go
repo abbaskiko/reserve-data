@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -29,7 +30,7 @@ func (s *Storage) CreateSettingChange(cat common.ChangeCatalog, obj common.Setti
 	if err != nil {
 		return 0, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	if err = tx.Stmtx(s.stmts.newSettingChange).Get(&id, cat.String(), jsonData); err != nil {
 		pErr, ok := err.(*pq.Error)
@@ -124,7 +125,7 @@ func (s *Storage) RejectSettingChange(id uint64) error {
 	if err != nil {
 		return err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 	err = tx.Stmtx(s.stmts.deleteSettingChange).Get(&returnedID, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -244,7 +245,7 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 	if err != nil {
 		return errors.Wrap(err, "create transaction error")
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 	changeObj, err := s.getSettingChange(tx, id)
 	if err != nil {
 		return errors.Wrap(err, "get setting change error")

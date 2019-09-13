@@ -11,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
+	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -70,7 +71,7 @@ func (s *Storage) CreateAsset(
 	if err != nil {
 		return 0, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	id, err := s.createAsset(
 		tx,
@@ -106,7 +107,7 @@ func (s *Storage) CreateAssetExchange(exchangeID, assetID uint64, symbol string,
 	if err != nil {
 		return 0, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 	id, err := s.createAssetExchange(tx, exchangeID, assetID, symbol, depositAddress, minDeposit, withdrawFee,
 		targetRecommended, targetRatio, tps)
 	if err != nil {
@@ -682,7 +683,7 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	if err := tx.Stmtx(s.stmts.getAsset).Select(&allAssetDBs, nil, transferable); err != nil {
 		return nil, err
@@ -741,7 +742,7 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 	if err != nil {
 		return common.Asset{}, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	if err := tx.NamedStmt(s.stmts.getAssetExchange).Select(&assetExchangeResults, assetExchangeCondition{
 		AssetID: &id,
@@ -793,7 +794,7 @@ func (s *Storage) GetAssetBySymbol(symbol string) (common.Asset, error) {
 	if err != nil {
 		return result, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	log.Printf("getting asset symbol=%s", symbol)
 	err = tx.Stmtx(s.stmts.getAssetBySymbol).Get(&result, symbol)
