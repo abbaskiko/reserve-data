@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 
 	"github.com/jmoiron/sqlx"
@@ -187,14 +190,57 @@ func (ps *PostgresStorage) GetAuthData(v common.Version) (common.AuthDataSnapsho
 
 // ExportExpiredAuthData export data to store on s3 storage
 func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath string) (uint64, error) {
-	// TODO
-	return 0, nil
+	var (
+		data [][]byte
+	)
+	// Get expire data
+	timepointExpireData := timepoint - authDataExpiredDuration
+	timestampExpire := common.TimepointToTime(timepointExpireData)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created > $2`, dataTableName)
+	if err := ps.db.Select(&data, query, authDataType, timestampExpire); err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	// create export file
+	outFile, err := os.Create(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if cErr := outFile.Close(); cErr != nil {
+			log.Printf("Close file error: %s", cErr.Error())
+		}
+	}()
+
+	for _, dataByte := range data {
+		_, err := outFile.WriteString(string(dataByte) + "\n")
+		if err != nil {
+			return 0, err
+		}
+	}
+	return uint64(len(data)), nil
 }
 
 // PruneExpiredAuthData remove expire auth data from database
 func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error) {
-	// TODO
-	return 0, nil
+	var (
+		count uint64
+	)
+	// Get expire data
+	timepointExpireData := timepoint - authDataExpiredDuration
+	timestampExpire := common.TimepointToTime(timepointExpireData)
+	query := fmt.Sprintf(`WITH deleted AS 
+	(DELETE FROM "%s" WHERE type = $1 AND created > $2 RETURNING *) SELECT count(*) FROM deleted`, dataTableName)
+	if err := ps.db.Select(&count, query, authDataType, timestampExpire); err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return count, nil
 }
 
 // StoreRate store rate
@@ -270,14 +316,42 @@ func (ps *PostgresStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Acti
 func (ps *PostgresStorage) GetPendingActivities() ([]common.ActivityRecord, error) {
 	var (
 		pendingActivities []common.ActivityRecord
+		data              [][]byte
 	)
-	// TODO
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE is_pending IS TRUE`, activityTable)
+	if err := ps.db.Select(&data, query); err != nil {
+		return []common.ActivityRecord{}, err
+	}
+	for _, dataByte := range data {
+		var activity common.ActivityRecord
+		if err := json.Unmarshal(dataByte, &activity); err != nil {
+			return []common.ActivityRecord{}, err
+		}
+		pendingActivities = append(pendingActivities, activity)
+	}
 	return pendingActivities, nil
 }
 
 // UpdateActivity update activity to finished if it is finished
 func (ps *PostgresStorage) UpdateActivity(id common.ActivityID, act common.ActivityRecord) error {
-	// TODO
+	var (
+		activity common.ActivityRecord
+	)
+	// get activity from db
+	getQuery := fmt.Sprintf(`SELECT data FROM "%s" WHERE id = $1`, activityTable)
+	if err := ps.db.Get(&activity, getQuery, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+	// check if activity is not pending anymore update it
+	updateQuery := fmt.Sprintf(`UPDATE "%s" SET is_pending = $1`, activityTable)
+	if !act.IsPending() {
+		if _, err := ps.db.Exec(updateQuery, false); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -299,13 +373,25 @@ func (ps *PostgresStorage) GetActivity(id common.ActivityID) (common.ActivityRec
 
 // PendingSetRate return pending set rate activity
 func (ps *PostgresStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
-	// TODO
+	// TODO: apply get first mined nonce logic
 	return nil, 0, nil
 }
 
 // HasPendingDeposit return true if there is any pending deposit for a token
 func (ps *PostgresStorage) HasPendingDeposit(token commonv3.Asset, exchange common.Exchange) (bool, error) {
-	// TODO: has to implement this
+	var (
+		data [][]byte
+	)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE is_pending IS TRUE AND data->>'Action' = $1`, activityTable)
+	if err := ps.db.Select(&data, query, common.ActionDeposit); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	if len(data) > 0 {
+		return true, nil
+	}
 	return false, nil
 }
 

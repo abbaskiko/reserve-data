@@ -175,6 +175,7 @@ func (bs *BoltStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, 
 	return common.Version(result), err
 }
 
+// UpdateFeedConfiguration upate feed configuration
 func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error {
 	const disableValue = "disabled"
 	var (
@@ -274,6 +275,7 @@ func (bs *BoltStorage) StoreBTCInfo(data common.BTCData) error {
 	return err
 }
 
+// ExportExpiredAuthData export to back it up
 func (bs *BoltStorage) ExportExpiredAuthData(currentTime uint64, fileName string) (nRecord uint64, err error) {
 	expiredTimestampByte := boltutil.Uint64ToBytes(currentTime - authDataExpiredDuration)
 	outFile, err := os.Create(fileName)
@@ -321,6 +323,7 @@ func (bs *BoltStorage) ExportExpiredAuthData(currentTime uint64, fileName string
 	return nRecord, err
 }
 
+// PruneExpiredAuthData from database
 func (bs *BoltStorage) PruneExpiredAuthData(currentTime uint64) (nRecord uint64, err error) {
 	expiredTimestampByte := boltutil.Uint64ToBytes(currentTime - authDataExpiredDuration)
 
