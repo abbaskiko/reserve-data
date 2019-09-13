@@ -19,6 +19,12 @@ var (
 
 		"CoinbaseUSD",
 		"BinanceUSD",
+
+		"CoinbaseUSDC",
+		"BinanceUSDC",
+
+		"CoinbaseDAI",
+		"HitDAI",
 	}
 	// remove unused feeds
 )
@@ -45,10 +51,21 @@ type Endpoint interface {
 
 	GeminiUSDEndpoint() string
 	CoinbaseUSDEndpoint() string
+
+	CoinbaseDAIEndpoint() string
+	HitDaiEndpoint() string
 }
 
 type RealEndpoint struct {
 	OneForgeKey string `json:"oneforge"`
+}
+
+func (re RealEndpoint) CoinbaseDAIEndpoint() string {
+	return "https://api.pro.coinbase.com/products/eth-dai/ticker"
+}
+
+func (re RealEndpoint) HitDaiEndpoint() string {
+	return "https://api.hitbtc.com/api/2/public/ticker/ETHDAI"
 }
 
 func (re RealEndpoint) CoinbaseUSDEndpoint() string {
@@ -110,6 +127,14 @@ func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
 }
 
 type SimulatedEndpoint struct {
+}
+
+func (se SimulatedEndpoint) CoinbaseDAIEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) HitDaiEndpoint() string {
+	panic("implement me")
 }
 
 func (se SimulatedEndpoint) GeminiUSDEndpoint() string {
