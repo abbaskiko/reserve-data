@@ -65,7 +65,6 @@ func SettingChangeFromType(t ChangeType) (SettingChangeType, error) {
 		i = &DeleteTradingPairEntry{}
 	case ChangeTypeDeleteAssetExchange:
 		i = &DeleteAssetExchangeEntry{}
-	case ChangeTypeDeleteTradingBy:
 	case ChangeTypeUpdateStableTokenParams:
 		i = &UpdateStableTokenParamsEntry{}
 	}

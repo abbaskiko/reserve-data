@@ -248,12 +248,8 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 
 	secretConfigFile := NewSecretConfigFileFromContext(c)
 
-	enabledExchanges, err := NewExchangesFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-
 	config, err := GetConfig(
+		c,
 		dpl,
 		ethereumNodeConf,
 		bi,
@@ -261,7 +257,6 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 		contractAddressConf,
 		dataFile,
 		secretConfigFile,
-		enabledExchanges,
 		sr,
 	)
 	if err != nil {

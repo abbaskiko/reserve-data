@@ -1,4 +1,4 @@
-package huobi
+package storage
 
 import (
 	"bytes"
@@ -28,6 +28,7 @@ type BoltStorage struct {
 	db *bolt.DB
 }
 
+// Deprecated: Using postgres instead of bolt
 //NewBoltStorage return new storage instance
 func NewBoltStorage(path string) (*BoltStorage, error) {
 	// init instance

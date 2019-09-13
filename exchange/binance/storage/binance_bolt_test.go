@@ -1,4 +1,4 @@
-package binance
+package storage
 
 import (
 	"io/ioutil"
@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
+// Deprecated
 func TestBinanceStorage(t *testing.T) {
 	boltFile := "test_binance_bolt.db"
 	tmpDir, err := ioutil.TempDir("", "binance_storage")

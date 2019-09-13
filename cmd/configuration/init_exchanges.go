@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"path/filepath"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -15,7 +15,9 @@ import (
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
+	binanceStorage "github.com/KyberNetwork/reserve-data/exchange/binance/storage"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
+	huobiStorage "github.com/KyberNetwork/reserve-data/exchange/huobi/storage"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
@@ -139,12 +141,12 @@ func updateDepositAddress(
 }
 
 func NewExchangePool(
+	c *cli.Context,
 	secretConfigFile string,
 	blockchain *blockchain.BaseBlockchain,
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
-	enabledExchanges []common.ExchangeID,
 	assetStorage storage.Interface,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
@@ -153,6 +155,17 @@ func NewExchangePool(
 		he      exchange.HuobiInterface
 		bin, hb common.Exchange
 	)
+
+	enabledExchanges, err := NewExchangesFromContext(c)
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := NewDBFromContext(c)
+	if err != nil {
+		return nil, fmt.Errorf("can init postgres storage: (%s)", err.Error())
+	}
+
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.StableExchange:
@@ -164,13 +177,13 @@ func NewExchangePool(
 		case common.Binance:
 			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
 			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
-			binanceStorage, err := binance.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "binance.db"))
+			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
 			bin, err = exchange.NewBinance(
 				be,
-				binanceStorage,
+				binancestorage,
 				assetStorage)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Binance: (%s)", err.Error())
@@ -179,9 +192,9 @@ func NewExchangePool(
 		case common.Huobi:
 			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
 			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
-			huobiStorage, err := huobi.NewBoltStorage(filepath.Join(common.CmdDirLocation(), "huobi.db"))
+			huobistorage, err := huobiStorage.NewPostgresStorage(db)
 			if err != nil {
-				return nil, fmt.Errorf("can not create Huobi storage: (%s)", err.Error())
+				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
 			intermediatorSigner, err := HuobiIntermediatorSignerFromFile(secretConfigFile)
 			if err != nil {
@@ -194,7 +207,7 @@ func NewExchangePool(
 				blockchain,
 				intermediatorSigner,
 				intermediatorNonce,
-				huobiStorage,
+				huobistorage,
 				assetStorage,
 			)
 			if err != nil {

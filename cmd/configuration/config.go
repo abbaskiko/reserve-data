@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
@@ -45,13 +47,13 @@ type Config struct {
 }
 
 func (c *Config) AddCoreConfig(
+	cliCtx *cli.Context,
 	secretConfigFile string,
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
-	enabledExchanges []common.ExchangeID,
 	settingStore storagev3.Interface,
 ) error {
 	dataStorage, err := storage.NewBoltStorage(dataFile)
@@ -101,12 +103,12 @@ func (c *Config) AddCoreConfig(
 
 	// create Exchange pool
 	exchangePool, err := NewExchangePool(
+		cliCtx,
 		secretConfigFile,
 		c.Blockchain,
 		dpl,
 		bi,
 		hi,
-		enabledExchanges,
 		settingStore,
 	)
 	if err != nil {

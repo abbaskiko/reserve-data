@@ -23,7 +23,8 @@ p, %[1]s, /v3/setting-change-update-exchange, POST
 p, %[1]s, /v3/setting-change-target, POST
 p, %[1]s, /v3/setting-change-pwis, POST
 p, %[1]s, /v3/setting-change-rbquadratic, POST
-p, %[1]s, /v3/setting-change-main, POST`, key)
+p, %[1]s, /v3/setting-change-main, POST
+p, %[1]s, /v3/setting-change-stable, POST`, key)
 }
 
 func addKeyConfirmPolicy(key string) string {
@@ -34,6 +35,7 @@ p, %[1]s, /v3/setting-change-target/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-pwis/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-rbquadratic/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/setting-change-main/:id, (PUT)|(DELETE)
+p, %[1]s, /v3/setting-change-stable/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/hold-rebalance, POST
 p, %[1]s, /v3/enable-rebalance, POST
 p, %[1]s, /v3/hold-set-rate, POST
@@ -45,9 +47,10 @@ func addKeyRebalancePolicy(key string) string {
 	return fmt.Sprintf(`
 p, %[1]s, /*, GET
 p, %[1]s, /v3/price-factor, POST
-p, %[1]s, /v3/cancelorder/:exchangeid, POST
-p, %[1]s, /v3/deposit/:exchangeid, POST
-p, %[1]s, /v3/withdraw/:exchangeid, POST
+p, %[1]s, /v3/cancelorder, POST
+p, %[1]s, /v3/cancel-all-orders, POST
+p, %[1]s, /v3/deposit, POST
+p, %[1]s, /v3/withdraw, POST
 p, %[1]s, /v3/trade, POST
 p, %[1]s, /v3/setrates, POST`, key)
 }

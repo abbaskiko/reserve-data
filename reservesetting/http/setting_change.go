@@ -283,6 +283,11 @@ func (s *Server) checkCreateTradingPairParams(createEntry common.CreateTradingPa
 		baseAssetEx  common.AssetExchange
 	)
 
+	if createEntry.AssetID != createEntry.Quote && createEntry.AssetID != createEntry.Base {
+		// assetID must be quote or base
+		return "", "", errors.Wrapf(common.ErrBadTradingPairConfiguration, "asset_id must is base or quote")
+	}
+
 	base, err := s.storage.GetAsset(createEntry.Base)
 	if err != nil {
 		return "", "", errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", createEntry.Base)
