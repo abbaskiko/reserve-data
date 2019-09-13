@@ -163,7 +163,7 @@ func NewExchangePool(
 
 	db, err := NewDBFromContext(c)
 	if err != nil {
-		return nil, fmt.Errorf("can init postgres storage: (%s)", err.Error())
+		return nil, fmt.Errorf("can not init postgres storage: (%s)", err.Error())
 	}
 
 	for _, exparam := range enabledExchanges {
