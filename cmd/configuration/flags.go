@@ -259,7 +259,6 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 		dataFile,
 		secretConfigFile,
 		sr,
-		db,
 	)
 	if err != nil {
 		return nil, err

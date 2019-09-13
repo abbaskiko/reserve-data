@@ -60,7 +60,7 @@ func (c *Config) AddCoreConfig(
 ) error {
 	db, err := NewDBFromContext(cliCtx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	dataStorage, err := storage.NewPostgresStorage(db)
 	if err != nil {
