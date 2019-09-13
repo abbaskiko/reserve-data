@@ -28,7 +28,6 @@ type Data interface {
 
 	GetBTCData(timepoint uint64) (common.BTCData, error)
 
-	GetUSDCData(timestamp uint64) (common.USDCData, error)
 	GetUSDData(timestamp uint64) (common.USDData, error)
 
 	UpdateFeedConfiguration(string, bool) error

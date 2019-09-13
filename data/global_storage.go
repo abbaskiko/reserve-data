@@ -11,10 +11,8 @@ type GlobalStorage interface {
 	CurrentGoldInfoVersion(timepoint uint64) (common.Version, error)
 
 	GetBTCInfo(version common.Version) (common.BTCData, error)
-	GetUSDCInfo(version common.Version) (common.USDCData, error)
 	GetUSDInfo(version common.Version) (common.USDData, error)
 	CurrentBTCInfoVersion(timepoint uint64) (common.Version, error)
-	CurrentUSDCInfoVersion(timepoint uint64) (common.Version, error)
 	CurrentUSDInfoVersion(timepoint uint64) (common.Version, error)
 
 	UpdateFeedConfiguration(string, bool) error

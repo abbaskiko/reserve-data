@@ -30,15 +30,6 @@ func (s *Server) GetBTCData(c *gin.Context) {
 	}
 }
 
-func (s *Server) GetUSDCData(c *gin.Context) {
-	data, err := s.app.GetUSDCData(getTimePoint(c, true))
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
-	}
-}
-
 func (s *Server) GetUSDData(c *gin.Context) {
 	data, err := s.app.GetUSDData(getTimePoint(c, true))
 	if err != nil {

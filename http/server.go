@@ -1112,7 +1112,6 @@ func (s *Server) register() {
 
 		s.r.GET("/gold-feed", s.GetGoldData)
 		s.r.GET("/btc-feed", s.GetBTCData)
-		s.r.GET("/usdc-feed", s.GetUSDCData)
 		s.r.GET("/usd-feed", s.GetUSDData)
 		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
