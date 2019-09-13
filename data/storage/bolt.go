@@ -40,7 +40,6 @@ const (
 	pendingStatbleTokenParamsBucket string = "pending-stable-token-params"
 	goldBucket                      string = "gold_feeds"
 	btcBucket                       string = "btc_feeds"
-	usdcBucket                      string = "usdc_feeds"
 	usdBucket                       string = "usd_feeds"
 	disabledFeedsBucket             string = "disabled_feeds"
 
@@ -87,7 +86,6 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			goldBucket,
 			btcBucket,
 			usdBucket,
-			usdcBucket,
 			disabledFeedsBucket,
 			priceBucket,
 			rateBucket,
@@ -211,19 +209,6 @@ func (bs *BoltStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, 
 	return common.Version(result), err
 }
 
-// CurrentUSDCInfoVersion returns the most recent time point of gold info record.
-// It implements data.GlobalStorage interface.
-func (bs *BoltStorage) CurrentUSDCInfoVersion(timepoint uint64) (common.Version, error) {
-	var result uint64
-	var err error
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket([]byte(usdcBucket)).Cursor()
-		result, err = reverseSeek(timepoint, c)
-		return err
-	})
-	return common.Version(result), err
-}
-
 // CurrentUSDInfoVersion returns the most recent time point of gold info record.
 // It implements data.GlobalStorage interface.
 func (bs *BoltStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Version, error) {
@@ -317,23 +302,6 @@ func (bs *BoltStorage) GetBTCInfo(version common.Version) (common.BTCData, error
 	return result, err
 }
 
-// GetUSDCInfo returns USDC info at given time point. It implements data.GlobalStorage interface.
-func (bs *BoltStorage) GetUSDCInfo(version common.Version) (common.USDCData, error) {
-	var (
-		err    error
-		result = common.USDCData{}
-	)
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(usdcBucket))
-		data := b.Get(boltutil.Uint64ToBytes(uint64(version)))
-		if data == nil {
-			return fmt.Errorf("version %s doesn't exist", string(version))
-		}
-		return json.Unmarshal(data, &result)
-	})
-	return result, err
-}
-
 // GetUSDInfo returns USD info at given time point. It implements data.GlobalStorage interface.
 func (bs *BoltStorage) GetUSDInfo(version common.Version) (common.USDData, error) {
 	var (
@@ -360,24 +328,6 @@ func (bs *BoltStorage) StoreBTCInfo(data common.BTCData) error {
 	err = bs.db.Update(func(tx *bolt.Tx) error {
 		var dataJSON []byte
 		b := tx.Bucket([]byte(btcBucket))
-		dataJSON, uErr := json.Marshal(data)
-		if uErr != nil {
-			return uErr
-		}
-		return b.Put(boltutil.Uint64ToBytes(timepoint), dataJSON)
-	})
-	return err
-}
-
-// StoreUSDCInfo stores the given USDC information to database. It implements fetcher.GlobalStorage interface.
-func (bs *BoltStorage) StoreUSDCInfo(data common.USDCData) error {
-	var (
-		err       error
-		timepoint = data.Timestamp
-	)
-	err = bs.db.Update(func(tx *bolt.Tx) error {
-		var dataJSON []byte
-		b := tx.Bucket([]byte(usdcBucket))
 		dataJSON, uErr := json.Marshal(data)
 		if uErr != nil {
 			return uErr
