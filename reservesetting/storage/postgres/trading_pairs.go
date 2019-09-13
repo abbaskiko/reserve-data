@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pricePrecision, amountPrecision uint64,
-	amountLimitMin, amountLimitMax, priceLimitMin, priceLimitMax, minNotional float64) (uint64, error) {
+	amountLimitMin, amountLimitMax, priceLimitMin, priceLimitMax, minNotional float64, tradingByAssetID uint64) (uint64, error) {
 
 	var tradingPairID uint64
 	err := tx.NamedStmt(s.stmts.newTradingPair).Get(
@@ -65,6 +65,11 @@ func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pr
 			exchangeID,
 			pErr.Message,
 		)
+	}
+	_, err = s.createTradingBy(tx, tradingByAssetID, tradingPairID)
+	if err != nil {
+		log.Printf("create trading pair failed on create tradingby, err=%v\n", err)
+		return 0, err
 	}
 	log.Printf("trading pair created id=%d", tradingPairID)
 	return tradingPairID, nil

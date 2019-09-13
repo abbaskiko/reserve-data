@@ -173,7 +173,7 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 		}
 	}
 	for _, tradingPair := range tps {
-		pairID, err := s.createTradingPair(tx, exchangeID,
+		_, err = s.createTradingPair(tx, exchangeID,
 			tradingPair.Base,
 			tradingPair.Quote,
 			tradingPair.PricePrecision,
@@ -183,14 +183,10 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 			tradingPair.PriceLimitMin,
 			tradingPair.PriceLimitMax,
 			tradingPair.MinNotional,
+			assetID,
 		)
 		if err != nil {
 			log.Printf("failed to create trading pair, err=%v\n", err)
-			return 0, err
-		}
-		_, err = s.createTradingBy(tx, assetID, pairID)
-		if err != nil {
-			log.Printf("failed to create trading by, err=%v\n", err)
 			return 0, err
 		}
 	}

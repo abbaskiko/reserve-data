@@ -30,8 +30,6 @@ func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType comm
 		err = s.checkUpdateAssetExchangeParams(*(e.(*common.UpdateAssetExchangeEntry)))
 	case common.ChangeTypeCreateTradingPair:
 		_, _, err = s.checkCreateTradingPairParams(*(e.(*common.CreateTradingPairEntry)))
-	case common.ChangeTypeCreateTradingBy:
-		err = s.checkCreateTradingByParams(*e.(*common.CreateTradingByEntry))
 	case common.ChangeTypeChangeAssetAddr:
 		err = s.checkChangeAssetAddressParams(*e.(*common.ChangeAssetAddressEntry))
 	case common.ChangeTypeUpdateExchange:
@@ -319,17 +317,6 @@ func getAssetExchangeByExchangeID(asset common.Asset, exchangeID uint64) (common
 		}
 	}
 	return common.AssetExchange{}, false
-}
-
-func (s *Server) checkCreateTradingByParams(createEntry common.CreateTradingByEntry) error {
-	tpSymBol, err := s.storage.GetTradingPair(createEntry.TradingPairID)
-	if err != nil {
-		return err
-	}
-	if tpSymBol.Base != createEntry.AssetID && tpSymBol.Quote != createEntry.AssetID {
-		return common.ErrTradingByAssetIDInvalid
-	}
-	return nil
 }
 
 func (s *Server) checkUpdateAssetParams(updateEntry common.UpdateAssetEntry) error {

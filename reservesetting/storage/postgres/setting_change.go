@@ -167,26 +167,11 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return err
 		}
-
-	case *common.CreateTradingByEntry:
-		_, err = s.createTradingBy(tx, e.AssetID, e.TradingPairID)
-		if err != nil {
-			msg := fmt.Sprintf("create trading by %d, err=%v\n", i, err)
-			log.Println(msg)
-			return err
-		}
 	case *common.CreateTradingPairEntry:
-		pairID, err := s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
-			e.AmountLimitMax, e.PriceLimitMin, e.PriceLimitMax, e.MinNotional)
+		_, err = s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
+			e.AmountLimitMax, e.PriceLimitMin, e.PriceLimitMax, e.MinNotional, e.AssetID)
 		if err != nil {
 			msg := fmt.Sprintf("create trading pair %d, err=%v\n", i, err)
-			log.Println(msg)
-			return err
-		}
-		// TODO: should we move create trading by into createTradingPair
-		_, err = s.createTradingBy(tx, e.AssetID, pairID)
-		if err != nil {
-			msg := fmt.Sprintf("create trading by at position %d failed, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
