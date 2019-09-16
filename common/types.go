@@ -576,7 +576,7 @@ type RateResponse struct {
 type AllRateEntry struct {
 	Timestamp   Timestamp
 	ReturnTime  Timestamp
-	Data        map[string]RateEntry
+	Data        map[uint64]RateEntry
 	BlockNumber uint64
 }
 
@@ -585,7 +585,7 @@ type AllRateResponse struct {
 	Version       Version
 	Timestamp     Timestamp
 	ReturnTime    Timestamp
-	Data          map[string]RateResponse
+	Data          map[uint64]RateResponse
 	BlockNumber   uint64
 	ToBlockNumber uint64
 }
