@@ -69,8 +69,9 @@ func NewPostgresStorage(db *sqlx.DB) (*PostgresStorage, error) {
 	}
 
 	// init all feed as enabled
+	query := `INSERT INTO "feed_configuration" (name, enabled) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
 	for _, feed := range world.AllFeeds() {
-		if err := s.UpdateFeedConfiguration(feed, true); err != nil {
+		if _, err := s.db.Exec(query, feed, true); err != nil {
 			return s, err
 		}
 	}
@@ -373,8 +374,11 @@ func (ps *PostgresStorage) GetActivity(id common.ActivityID) (common.ActivityRec
 
 // PendingSetRate return pending set rate activity
 func (ps *PostgresStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
-	// TODO: apply get first mined nonce logic
-	return nil, 0, nil
+	pendings, err := ps.GetPendingActivities()
+	if err != nil {
+		return nil, 0, err
+	}
+	return getFirstAndCountPendingSetrate(pendings, minedNonce)
 }
 
 // HasPendingDeposit return true if there is any pending deposit for a token
