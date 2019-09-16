@@ -99,18 +99,14 @@ func (ps *PostgresStorage) CurrentVersion(table, dataType string, timepoint uint
 		id int64
 	)
 	timestamp := common.TimepointToTime(timepoint)
-	query := fmt.Sprintf(`SELECT COALESCE(MIN(id), 0)  FROM "%s" WHERE created >= $1 and type = $2`, table)
+	query := fmt.Sprintf(`SELECT id FROM "%s" WHERE created <= $1 and type = $2 ORDER BY created DESC LIMIT 1`, table)
 	if err := ps.db.Get(&id, query, timestamp, dataType); err != nil {
+		if err == sql.ErrNoRows {
+			return v, fmt.Errorf("there is no version at timestamp: %d", timepoint)
+		}
 		return v, err
 	}
-	if id > 1 {
-		v = common.Version(id - 1)
-	} else if id == 0 {
-		if err := ps.db.Get(&id, fmt.Sprintf(`SELECT MAX(id) FROM "%s" where type = $1`, table), dataType); err != nil {
-			return v, err
-		}
-		v = common.Version(id)
-	}
+	v = common.Version(id)
 	return v, nil
 }
 
