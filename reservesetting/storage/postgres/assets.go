@@ -522,6 +522,7 @@ func (tpd *tradingPairDB) ToCommon() common.TradingPair {
 		PriceLimitMin:   tpd.PriceLimitMin,
 		PriceLimitMax:   tpd.PriceLimitMax,
 		MinNotional:     tpd.MinNotional,
+		ExchangeID:      tpd.ExchangeID,
 	}
 }
 

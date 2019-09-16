@@ -73,6 +73,7 @@ type TradingPair struct {
 	PriceLimitMin   float64 `json:"price_limit_min"`
 	PriceLimitMax   float64 `json:"price_limit_max"`
 	MinNotional     float64 `json:"min_notional"`
+	ExchangeID      uint64  `json:"-"`
 }
 
 // TradingBy is a struct hold trading pair and its asset
