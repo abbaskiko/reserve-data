@@ -355,10 +355,9 @@ func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.Al
 	result.ReturnTime = returnTime
 	result.BlockNumber = currentBlock
 
-	result.Data = map[string]common.RateEntry{}
+	result.Data = map[uint64]common.RateEntry{}
 	for i, token := range validTokens {
-		// TODO: should store asset_id instead of symbol
-		result.Data[token.Symbol] = common.NewRateEntry(
+		result.Data[token.ID] = common.NewRateEntry(
 			baseBuys[i],
 			compactBuys[i],
 			baseSells[i],
