@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
@@ -189,22 +190,17 @@ func (s *Server) GetRate(c *gin.Context) {
 
 // TradeRequest form
 type TradeRequest struct {
-	Exchange string  `json:"exchange"`
-	Pair     uint64  `json:"pair"`
-	Amount   float64 `json:"amount"`
-	Rate     float64 `json:"rate"`
-	Type     string  `json:"type"`
+	Pair   uint64  `json:"pair"`
+	Amount float64 `json:"amount"`
+	Rate   float64 `json:"rate"`
+	Type   string  `json:"type"`
 }
 
 // Trade create an order in cexs
 func (s *Server) Trade(c *gin.Context) {
 	var request TradeRequest
+	var err error
 	if err := c.ShouldBindJSON(&request); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	exchange, err := common.GetExchange(request.Exchange)
-	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -217,6 +213,12 @@ func (s *Server) Trade(c *gin.Context) {
 
 	if request.Type != "sell" && request.Type != "buy" {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Trade type of %s is not supported.", request.Type)))
+		return
+	}
+
+	exchange, ok := common.SupportedExchanges[common.ExchangeID(pair.ExchangeID)]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", pair.ExchangeID)))
 		return
 	}
 
@@ -269,9 +271,9 @@ func (s *Server) CancelOrder(c *gin.Context) {
 
 // WithdrawRequest type
 type WithdrawRequest struct {
-	Exchange string   `json:"exchange"`
-	Asset    uint64   `json:"asset"`
-	Amount   *big.Int `json:"amount"`
+	ExchangeID uint64   `json:"exchange"`
+	Asset      uint64   `json:"asset"`
+	Amount     *big.Int `json:"amount"`
 }
 
 // Withdraw asset to reserve from cex
@@ -282,9 +284,9 @@ func (s *Server) Withdraw(c *gin.Context) {
 		return
 	}
 
-	exchange, err := common.GetExchange(request.Exchange)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+	exchange, ok := common.SupportedExchanges[common.ExchangeID(request.ExchangeID)]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", request.ExchangeID)))
 		return
 	}
 
@@ -293,7 +295,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Withdraw %s %d from %s\n", request.Amount.Text(10), asset.ID, exchange.ID().String())
+	log.Printf("Withdraw %s id=%d symbol=%v from %s\n", request.Amount.Text(10), asset.ID, asset.Symbol, exchange.ID().String())
 	id, err := s.core.Withdraw(exchange, asset, request.Amount)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -304,9 +306,9 @@ func (s *Server) Withdraw(c *gin.Context) {
 
 // DepositRequest type
 type DepositRequest struct {
-	Exchange string   `json:"string"`
-	Amount   *big.Int `json:"amount"`
-	Asset    uint64   `json:"asset"`
+	ExchangeID uint64   `json:"exchange"`
+	Amount     *big.Int `json:"amount"`
+	Asset      uint64   `json:"asset"`
 }
 
 // Deposit asset into cex
@@ -316,18 +318,20 @@ func (s *Server) Deposit(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	exchange, err := common.GetExchange(request.Exchange)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+
+	exchange, ok := common.SupportedExchanges[common.ExchangeID(request.ExchangeID)]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", request.ExchangeID)))
 		return
 	}
+
 	asset, err := s.settingStorage.GetAsset(request.Asset)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	log.Printf("Depositing %s %d to %s\n", request.Amount.Text(10), asset.ID, exchange.ID().String())
+	log.Printf("Depositing %s id=%d symbol=%v to %s\n", request.Amount.Text(10), asset.ID, asset.Symbol, exchange.ID().String())
 	id, err := s.core.Deposit(exchange, asset, request.Amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))

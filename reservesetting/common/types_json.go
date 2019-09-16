@@ -29,6 +29,9 @@ func (entry *SettingChangeEntry) UnmarshalJSON(data []byte) error {
 	decode.DisallowUnknownFields()
 
 	if err = decode.Decode(obj); err != nil {
+		if te, ok := err.(*json.UnmarshalTypeError); ok {
+			return errors.New(te.Error())
+		}
 		return err
 	}
 	entry.Data = obj

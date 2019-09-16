@@ -83,14 +83,14 @@ func (rc ReserveCore) Trade(
 	recordActivity := func(id, status string, done, remaining float64, finished bool, err error) error {
 		uid := timebasedID(id)
 		log.Printf(
-			"Core ----------> %s on %s: base: %s, quote: %s, rate: %s, amount: %s, timestamp: %d ==> Result: id: %s, done: %s, remaining: %s, finished: %t, error: %s",
+			"Core ----------> %s on %s: base: %s, quote: %s, rate: %s, amount: %s, timestamp: %d ==> Result: id: %s, done: %s, remaining: %s, finished: %t, error: %v",
 			tradeType, exchange.ID().String(), pair.BaseSymbol, pair.QuoteSymbol,
 			strconv.FormatFloat(rate, 'f', -1, 64),
 			strconv.FormatFloat(amount, 'f', -1, 64), timepoint,
 			uid,
 			strconv.FormatFloat(done, 'f', -1, 64),
 			strconv.FormatFloat(remaining, 'f', -1, 64),
-			finished, common.ErrorToString(err),
+			finished, err,
 		)
 
 		return rc.activityStorage.Record(
@@ -110,7 +110,7 @@ func (rc ReserveCore) Trade(
 				"done":      done,
 				"remaining": remaining,
 				"finished":  finished,
-				"error":     common.ErrorToString(err),
+				"error":     fmt.Sprintf("%v", err),
 			},
 			status,
 			"",
@@ -172,8 +172,8 @@ func (rc ReserveCore) Deposit(
 	recordActivity := func(status, txhex, txnonce, txprice string, err error) error {
 		uid := uidGenerator(txhex)
 		log.Printf(
-			"Core ----------> Deposit to %s: token: %s, amount: %s, timestamp: %d ==> Result: tx: %s, error: %s",
-			exchange.ID().String(), asset.Symbol, amount.Text(10), timepoint, txhex, common.ErrorToString(err),
+			"Core ----------> Deposit to %s: token: %s, amount: %s, timestamp: %d ==> Result: tx: %s, error: %v",
+			exchange.ID().String(), asset.Symbol, amount.Text(10), timepoint, txhex, err,
 		)
 
 		return rc.activityStorage.Record(
@@ -189,7 +189,7 @@ func (rc ReserveCore) Deposit(
 				"tx":       txhex,
 				"nonce":    txnonce,
 				"gasPrice": txprice,
-				"error":    common.ErrorToString(err),
+				"error":    fmt.Sprintf("%v", err),
 			},
 			"",
 			status,
@@ -267,7 +267,7 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 				"amount":    strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
 				"timepoint": timepoint,
 			}, map[string]interface{}{
-				"error": common.ErrorToString(err),
+				"error": fmt.Sprintf("%v", err),
 				"id":    id,
 				// this field will be updated with real tx when data fetcher can fetch it
 				// from exchanges
@@ -397,7 +397,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%s)", err.Error())
 	}
 	oldNonce, initPrice, count, err = rc.pendingSetrateInfo(minedNonce)
-	log.Printf("old nonce: %v, init price: %v, count: %d, err: %s", oldNonce, initPrice, count, common.ErrorToString(err))
+	log.Printf("old nonce: %v, init price: %v, count: %d, err: %v", oldNonce, initPrice, count, err)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%s). Please try later", err.Error())
 	}
@@ -479,15 +479,15 @@ func (rc ReserveCore) SetRates(
 			"tx":       txhex,
 			"nonce":    txnonce,
 			"gasPrice": txprice,
-			"error":    common.ErrorToString(err),
+			"error":    fmt.Sprintf("%v", err),
 		},
 		"",
 		miningStatus,
 		common.GetTimepoint(),
 	)
 	log.Printf(
-		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %s, storage error: %s",
-		txhex, txnonce, txprice, common.ErrorToString(err), common.ErrorToString(sErr),
+		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %v, storage error: %v",
+		txhex, txnonce, txprice, err, sErr,
 	)
 
 	return uid, common.CombineActivityStorageErrs(err, sErr)
