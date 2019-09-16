@@ -45,4 +45,5 @@ func TestStorage_UpdateTradingPair(t *testing.T) {
 	updatedTradingPair, err := s.GetTradingPair(1)
 	require.NoError(t, err)
 	require.Equal(t, expectedTradingPair, updatedTradingPair)
+	require.Equal(t, binance, updatedTradingPair.ExchangeID)
 }
