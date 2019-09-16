@@ -112,12 +112,11 @@ func (ps *PostgresStorage) currentVersion(dataType string, timepoint uint64) (co
 	return v, nil
 }
 
-// GetData return data from a table
-func (ps *PostgresStorage) GetData(table, dataType string, v common.Version) ([]byte, error) {
+func (ps *PostgresStorage) getData(dataType string, v common.Version) ([]byte, error) {
 	var (
 		data []byte
 	)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE id = $1 AND type = $2`, table)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE id = $1 AND type = $2`, dataTableName)
 	if err := ps.db.Get(&data, query, v, dataType); err != nil {
 		return []byte{}, err
 	}
@@ -139,7 +138,7 @@ func (ps *PostgresStorage) GetAllPrices(v common.Version) (common.AllPriceEntry,
 	var (
 		allPrices common.AllPriceEntry
 	)
-	data, err := ps.GetData(dataTableName, priceDataType, v)
+	data, err := ps.getData(priceDataType, v)
 	if err != nil {
 		return common.AllPriceEntry{}, err
 	}
@@ -177,7 +176,7 @@ func (ps *PostgresStorage) GetAuthData(v common.Version) (common.AuthDataSnapsho
 	var (
 		authData common.AuthDataSnapshot
 	)
-	data, err := ps.GetData(dataTableName, authDataType, v)
+	data, err := ps.getData(authDataType, v)
 	if err != nil {
 		return common.AuthDataSnapshot{}, err
 	}
@@ -257,7 +256,7 @@ func (ps *PostgresStorage) GetRate(v common.Version) (common.AllRateEntry, error
 	var (
 		rate common.AllRateEntry
 	)
-	data, err := ps.GetData(dataTableName, rateDataType, v)
+	data, err := ps.getData(rateDataType, v)
 	if err != nil {
 		return rate, err
 	}
@@ -444,7 +443,7 @@ func (ps *PostgresStorage) GetGoldInfo(v common.Version) (common.GoldData, error
 	var (
 		goldData common.GoldData
 	)
-	data, err := ps.GetData(dataTableName, goldDataType, v)
+	data, err := ps.getData(goldDataType, v)
 	if err != nil {
 		return common.GoldData{}, err
 	}
@@ -459,7 +458,7 @@ func (ps *PostgresStorage) GetBTCInfo(v common.Version) (common.BTCData, error) 
 	var (
 		btcData common.BTCData
 	)
-	data, err := ps.GetData(dataTableName, btcDataType, v)
+	data, err := ps.getData(btcDataType, v)
 	if err != nil {
 		return common.BTCData{}, err
 	}

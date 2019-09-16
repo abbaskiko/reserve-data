@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
-	"log"
 	"math/big"
 	"testing"
 
@@ -166,13 +164,6 @@ func TestActivity(t *testing.T) {
 	err = ps.Record(activityTest.Action, activityTest.ID, activityTest.Destination,
 		activityTest.Params, activityTest.Result, activityTest.ExchangeStatus, activityTest.MiningStatus, 1568622125860)
 	assert.NoError(t, err)
-
-	dataByte, _ := json.Marshal(activityTest)
-
-	var parseData common.ActivityRecord
-	json.Unmarshal(dataByte, &parseData)
-
-	log.Printf("parse data: %T", parseData.Result["blockNumber"])
 
 	// test update activity
 	testID := common.ActivityID{
