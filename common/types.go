@@ -164,11 +164,13 @@ func NewFundingFee(widthraw, deposit map[string]float64) FundingFee {
 	}
 }
 
+// ActivityID specify an activity
 type ActivityID struct {
 	Timepoint uint64
 	EID       string
 }
 
+// ToBytes convert activity id into bytes
 func (ai ActivityID) ToBytes() [64]byte {
 	var b [64]byte
 	temp := make([]byte, 64)
@@ -178,10 +180,12 @@ func (ai ActivityID) ToBytes() [64]byte {
 	return b
 }
 
+// MarshalText return activty into byte
 func (ai ActivityID) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("%s|%s", strconv.FormatUint(ai.Timepoint, 10), ai.EID)), nil
 }
 
+// UnmarshalText unmarshal activity from byte to activity id
 func (ai *ActivityID) UnmarshalText(b []byte) error {
 	id, err := StringToActivityID(string(b))
 	if err != nil {
@@ -192,11 +196,13 @@ func (ai *ActivityID) UnmarshalText(b []byte) error {
 	return nil
 }
 
+// String convert from activity id to string
 func (ai ActivityID) String() string {
 	res, _ := ai.MarshalText()
 	return string(res)
 }
 
+// StringToActivityID convert from string to activity id
 func StringToActivityID(id string) (ActivityID, error) {
 	result := ActivityID{}
 	parts := strings.Split(id, "|")
@@ -232,6 +238,14 @@ type ActivityRecord struct {
 	ExchangeStatus string                 `json:"ExchangeStatus,omitempty"`
 	MiningStatus   string                 `json:"MiningStatus,omitempty"`
 	Timestamp      Timestamp              `json:"Timestamp,omitempty"`
+}
+
+// ActivityDeposit is activity deposit
+type ActivityDeposit struct {
+}
+
+// ActivityWithdraw is withdraw activity
+type ActivityWithdraw struct {
 }
 
 //NewActivityRecord return an activity record with params["assets"] only as asset.ID

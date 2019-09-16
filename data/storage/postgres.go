@@ -25,14 +25,18 @@ CREATE TABLE IF NOT EXISTS "fetch_data"
 	data JSONB NOT NULL,
 	type text NOT NULL
 );
+CREATE INDEX IF NOT EXISTS "fetch_data_created_index" ON "fetch_data" (created);
 
 CREATE TABLE IF NOT EXISTS "activity"
 (
 	id SERIAL PRIMARY KEY,
+	timepoint BIGINT NOT NULL,
+	eid TEXT NOT NULL,
 	created TIMESTAMP NOT NULL,
-	isPending BOOL NOT NULL,
-	data JSONB NOT NULL
+	is_pending BOOL NOT NULL,
+	data JSON NOT NULL
 );
+CREATE INDEX IF NOT EXISTS "activity_idx" ON "activity" (timepoint, eid);
 
 CREATE TABLE IF NOT EXISTS "feed_configuration"
 (
@@ -78,9 +82,8 @@ func NewPostgresStorage(db *sqlx.DB) (*PostgresStorage, error) {
 	return s, nil
 }
 
-// StoreData into a table
-func (ps *PostgresStorage) StoreData(data interface{}, table, dataType string, timepoint uint64) error {
-	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, type) VALUES ($1, $2, $3)`, table)
+func (ps *PostgresStorage) storeData(data interface{}, dataType string, timepoint uint64) error {
+	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, type) VALUES ($1, $2, $3)`, dataTableName)
 	timestamp := common.TimepointToTime(timepoint)
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
@@ -92,14 +95,13 @@ func (ps *PostgresStorage) StoreData(data interface{}, table, dataType string, t
 	return nil
 }
 
-// CurrentVersion return current version of a table
-func (ps *PostgresStorage) CurrentVersion(table, dataType string, timepoint uint64) (common.Version, error) {
+func (ps *PostgresStorage) currentVersion(dataType string, timepoint uint64) (common.Version, error) {
 	var (
 		v  common.Version
 		id int64
 	)
 	timestamp := common.TimepointToTime(timepoint)
-	query := fmt.Sprintf(`SELECT id FROM "%s" WHERE created <= $1 and type = $2 ORDER BY created DESC LIMIT 1`, table)
+	query := fmt.Sprintf(`SELECT id FROM "%s" WHERE created <= $1 and type = $2 ORDER BY created DESC LIMIT 1`, dataTableName)
 	if err := ps.db.Get(&id, query, timestamp, dataType); err != nil {
 		if err == sql.ErrNoRows {
 			return v, fmt.Errorf("there is no version at timestamp: %d", timepoint)
@@ -124,12 +126,12 @@ func (ps *PostgresStorage) GetData(table, dataType string, v common.Version) ([]
 
 // StorePrice store price
 func (ps *PostgresStorage) StorePrice(priceEntry common.AllPriceEntry, timepoint uint64) error {
-	return ps.StoreData(priceEntry, dataTableName, priceDataType, timepoint)
+	return ps.storeData(priceEntry, priceDataType, timepoint)
 }
 
 // CurrentPriceVersion return current price version
 func (ps *PostgresStorage) CurrentPriceVersion(timepoint uint64) (common.Version, error) {
-	return ps.CurrentVersion(dataTableName, priceDataType, timepoint)
+	return ps.currentVersion(priceDataType, timepoint)
 }
 
 // GetAllPrices return all prices currently save in db
@@ -162,12 +164,12 @@ func (ps *PostgresStorage) GetOnePrice(pairID uint64, v common.Version) (common.
 
 // StoreAuthSnapshot store authdata
 func (ps *PostgresStorage) StoreAuthSnapshot(authData *common.AuthDataSnapshot, timepoint uint64) error {
-	return ps.StoreData(authData, dataTableName, authDataType, timepoint)
+	return ps.storeData(authData, authDataType, timepoint)
 }
 
 // CurrentAuthDataVersion return current auth data version
 func (ps *PostgresStorage) CurrentAuthDataVersion(timepoint uint64) (common.Version, error) {
-	return ps.CurrentVersion(dataTableName, authDataType, timepoint)
+	return ps.currentVersion(authDataType, timepoint)
 }
 
 // GetAuthData return auth data
@@ -242,12 +244,12 @@ func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error
 
 // StoreRate store rate
 func (ps *PostgresStorage) StoreRate(allRateEntry common.AllRateEntry, timepoint uint64) error {
-	return ps.StoreData(allRateEntry, dataTableName, rateDataType, timepoint)
+	return ps.storeData(allRateEntry, rateDataType, timepoint)
 }
 
 // CurrentRateVersion return current rate version
 func (ps *PostgresStorage) CurrentRateVersion(timepoint uint64) (common.Version, error) {
-	return ps.CurrentVersion(dataTableName, rateDataType, timepoint)
+	return ps.currentVersion(rateDataType, timepoint)
 }
 
 // GetRate return rate at a specific version
@@ -332,20 +334,24 @@ func (ps *PostgresStorage) GetPendingActivities() ([]common.ActivityRecord, erro
 // UpdateActivity update activity to finished if it is finished
 func (ps *PostgresStorage) UpdateActivity(id common.ActivityID, act common.ActivityRecord) error {
 	var (
-		activity common.ActivityRecord
+		data []byte
 	)
 	// get activity from db
-	getQuery := fmt.Sprintf(`SELECT data FROM "%s" WHERE id = $1`, activityTable)
-	if err := ps.db.Get(&activity, getQuery, id); err != nil {
+	getQuery := fmt.Sprintf(`SELECT data FROM "%s" WHERE timepoint = $1 AND eid = $2`, activityTable)
+	if err := ps.db.Get(&data, getQuery, id.Timepoint, id.EID); err != nil {
 		if err == sql.ErrNoRows {
 			return nil
 		}
 		return err
 	}
 	// check if activity is not pending anymore update it
-	updateQuery := fmt.Sprintf(`UPDATE "%s" SET is_pending = $1`, activityTable)
+	updateQuery := fmt.Sprintf(`UPDATE "%s" SET is_pending = $1, data = $2 WHERE timepoint = $2 AND eid = $3`, activityTable)
+	dataBytes, err := json.Marshal(act)
+	if err != nil {
+		return err
+	}
 	if !act.IsPending() {
-		if _, err := ps.db.Exec(updateQuery, false); err != nil {
+		if _, err := ps.db.Exec(updateQuery, false, dataBytes, id.Timepoint, id.EID); err != nil {
 			return err
 		}
 	}
@@ -358,8 +364,8 @@ func (ps *PostgresStorage) GetActivity(id common.ActivityID) (common.ActivityRec
 		activityRecord common.ActivityRecord
 		data           []byte
 	)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE data->>'ID' = $1`, activityTable)
-	if err := ps.db.Get(&data, query, id); err != nil {
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE timepoint = $1 AND eid = $2`, activityTable)
+	if err := ps.db.Get(&data, query, id.Timepoint, id.EID); err != nil {
 		return common.ActivityRecord{}, err
 	}
 	if err := json.Unmarshal(data, &activityRecord); err != nil {
@@ -409,13 +415,13 @@ func (ps *PostgresStorage) Record(action string, id common.ActivityID, destinati
 		mstatus,
 		common.Timestamp(strconv.FormatUint(timepoint, 10)),
 	)
-	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, is_pending) VALUES($1, $2, $3)`, activityTable)
+	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, is_pending, timepoint, eid) VALUES($1, $2, $3, $4, $5)`, activityTable)
 	timestamp := common.TimepointToTime(timepoint)
 	data, err := json.Marshal(record)
 	if err != nil {
 		return err
 	}
-	if _, err := ps.db.Exec(query, timestamp, data, true); err != nil {
+	if _, err := ps.db.Exec(query, timestamp, data, true, id.Timepoint, id.EID); err != nil {
 		return err
 	}
 	return nil
@@ -424,13 +430,13 @@ func (ps *PostgresStorage) Record(action string, id common.ActivityID, destinati
 // StoreGoldInfo store gold info into database
 func (ps *PostgresStorage) StoreGoldInfo(goldData common.GoldData) error {
 	timepoint := goldData.Timestamp
-	return ps.StoreData(goldData, dataTableName, goldDataType, timepoint)
+	return ps.storeData(goldData, goldDataType, timepoint)
 }
 
 // StoreBTCInfo store btc info into database
 func (ps *PostgresStorage) StoreBTCInfo(btcData common.BTCData) error {
 	timepoint := btcData.Timestamp
-	return ps.StoreData(btcData, dataTableName, btcDataType, timepoint)
+	return ps.storeData(btcData, btcDataType, timepoint)
 }
 
 // GetGoldInfo return gold info
@@ -465,12 +471,12 @@ func (ps *PostgresStorage) GetBTCInfo(v common.Version) (common.BTCData, error) 
 
 // CurrentGoldInfoVersion return btc info version
 func (ps *PostgresStorage) CurrentGoldInfoVersion(timepoint uint64) (common.Version, error) {
-	return ps.CurrentVersion(dataTableName, goldDataType, timepoint)
+	return ps.currentVersion(goldDataType, timepoint)
 }
 
 // CurrentBTCInfoVersion return current btc info version
 func (ps *PostgresStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, error) {
-	return ps.CurrentVersion(dataTableName, btcDataType, timepoint)
+	return ps.currentVersion(btcDataType, timepoint)
 }
 
 // UpdateFeedConfiguration return false if there is an error

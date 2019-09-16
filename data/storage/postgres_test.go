@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"encoding/json"
+	"log"
 	"math/big"
 	"testing"
 
@@ -40,7 +42,7 @@ func TestRate(t *testing.T) {
 	timepoint := uint64(1568358532784)
 
 	// test store rate
-	err = ps.StoreData(rateData, dataTableName, rateDataType, timepoint)
+	err = ps.StoreRate(rateData, timepoint)
 	require.NoError(t, err)
 
 	// test get current version
@@ -106,8 +108,8 @@ func TestPrice(t *testing.T) {
 
 	timepoint := uint64(1568358536753)
 
-	// test store rate
-	err = ps.StoreData(priceData, dataTableName, priceDataType, timepoint)
+	// test store price
+	err = ps.StorePrice(priceData, timepoint)
 	require.NoError(t, err)
 
 	// test get current version
@@ -125,4 +127,64 @@ func TestPrice(t *testing.T) {
 	prices, err := ps.GetAllPrices(currentPriceVersion)
 	require.NoError(t, err)
 	assert.Equal(t, priceData, prices)
+}
+
+func TestActivity(t *testing.T) {
+	db, teardown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		require.NoError(t, teardown())
+	}()
+
+	ps, err := NewPostgresStorage(db)
+	require.NoError(t, err)
+
+	activityTest := common.ActivityRecord{
+		Action: "deposit",
+		ID: common.ActivityID{
+			Timepoint: 1568622132671609009,
+			EID:       "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74|BQX|39811.443679",
+		},
+		Destination: "binance",
+		Params: map[string]interface{}{
+			"amount":    "39811.443679",
+			"exchange":  "binance",
+			"timepoint": uint64(1568622125860),
+			"token":     "BQX",
+		},
+		Result: map[string]interface{}{
+			"blockNumber":  8559409,
+			"error":        "",
+			"gasPrice":     "50100000000",
+			"nonce":        "11039",
+			"status_error": "",
+			"tx":           "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74",
+		},
+		ExchangeStatus: "",
+		MiningStatus:   "mined",
+		Timestamp:      "1568622125860",
+	}
+	err = ps.Record(activityTest.Action, activityTest.ID, activityTest.Destination,
+		activityTest.Params, activityTest.Result, activityTest.ExchangeStatus, activityTest.MiningStatus, 1568622125860)
+	assert.NoError(t, err)
+
+	dataByte, _ := json.Marshal(activityTest)
+
+	var parseData common.ActivityRecord
+	json.Unmarshal(dataByte, &parseData)
+
+	log.Printf("parse data: %T", parseData.Result["blockNumber"])
+
+	// test update activity
+	testID := common.ActivityID{
+		Timepoint: 1568622132671609009,
+		EID:       "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74|BQX|39811.443679",
+	}
+	// activityTest.ExchangeStatus = common.ExchangeStatusDone
+	// err = ps.UpdateActivity(testID, activityTest)
+	// assert.NoError(t, err)
+
+	// test get activity
+	activity, err := ps.GetActivity(testID)
+	assert.NoError(t, err)
+	assert.Equal(t, activityTest, activity)
 }
