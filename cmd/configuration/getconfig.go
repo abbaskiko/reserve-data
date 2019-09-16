@@ -54,7 +54,7 @@ func GetConfig(
 ) (*Config, error) {
 	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
 	if err != nil {
-		log.Printf("Can't init the world (which is used to get global data), err " + err.Error())
+		log.Printf("Can't init the world (which is used to get global data), err %s", err.Error())
 		return nil, err
 	}
 
