@@ -150,12 +150,12 @@ func TestActivity(t *testing.T) {
 			Asset:     2, // KNC id
 		},
 		Result: common.ActivityResult{
-			// "blockNumber":  8559409,
-			Error:    "",
-			GasPrice: "50100000000",
-			Nonce:    "11039",
-			// "status_error": "",
-			Tx: "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74",
+			BlockNumber: 8559409,
+			Error:       "",
+			GasPrice:    "50100000000",
+			Nonce:       "11039",
+			StatusError: "",
+			Tx:          "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74",
 		},
 		ExchangeStatus: "",
 		MiningStatus:   "mined",
@@ -170,9 +170,10 @@ func TestActivity(t *testing.T) {
 		Timepoint: 1568622132671609009,
 		EID:       "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74|BQX|39811.443679",
 	}
-	// activityTest.ExchangeStatus = common.ExchangeStatusDone
-	// err = ps.UpdateActivity(testID, activityTest)
-	// assert.NoError(t, err)
+	
+	activityTest.ExchangeStatus = common.ExchangeStatusDone
+	err = ps.UpdateActivity(testID, activityTest)
+	assert.NoError(t, err)
 
 	// test get activity
 	activity, err := ps.GetActivity(testID)

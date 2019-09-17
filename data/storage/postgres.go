@@ -344,7 +344,7 @@ func (ps *PostgresStorage) UpdateActivity(id common.ActivityID, act common.Activ
 		return err
 	}
 	// check if activity is not pending anymore update it
-	updateQuery := fmt.Sprintf(`UPDATE "%s" SET is_pending = $1, data = $2 WHERE timepoint = $2 AND eid = $3`, activityTable)
+	updateQuery := fmt.Sprintf(`UPDATE "%s" SET is_pending = $1, data = $2 WHERE timepoint = $3 AND eid = $4`, activityTable)
 	dataBytes, err := json.Marshal(act)
 	if err != nil {
 		return err
