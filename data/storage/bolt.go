@@ -26,12 +26,8 @@ const (
 	activityBucket                  string = "activities"
 	authDataBucket                  string = "auth_data"
 	pendingActivityBucket           string = "pending_activities"
-	metricTargetQuantity            string = "target_quantity"
 	enableRebalance                 string = "enable_rebalance"
 	setrateControl                  string = "setrate_control"
-	pwiEquation                     string = "pwi_equation"
-	exchangeStatus                  string = "exchange_status"
-	exchangeNotifications           string = "exchange_notifications"
 	maxNumberVersion                int    = 1000
 	maxGetRatesPeriod               uint64 = 86400000      //1 days in milisec
 	authDataExpiredDuration         uint64 = 10 * 86400000 //10day in milisec
@@ -40,22 +36,6 @@ const (
 	goldBucket                      string = "gold_feeds"
 	btcBucket                       string = "btc_feeds"
 	disabledFeedsBucket             string = "disabled_feeds"
-
-	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
-	pendingTargetQuantityV2 string = "pending_target_qty_v2"
-	// targetQuantityV2 constant for bucet name for target quantity v2
-	targetQuantityV2 string = "target_quantity_v2"
-
-	// pendingPWIEquationV2 is the bucket name for storing pending
-	// pwi equation for later approval.
-	pendingPWIEquationV2 string = "pending_pwi_equation_v2"
-	// pwiEquationV2 stores the PWI equations after confirmed.
-	pwiEquationV2 string = "pwi_equation_v2"
-
-	// pendingRebalanceQuadratic stores pending rebalance quadratic equation
-	pendingRebalanceQuadratic = "pending_rebalance_quadratic"
-	// rebalanceQuadratic stores rebalance quadratic equation
-	rebalanceQuadratic = "rebalance_quadratic"
 
 	//btcFetcherConfiguration stores configuration for btc fetcher
 	fetcherConfigurationBucket = "btc_fetcher_configuration"
@@ -89,20 +69,10 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			activityBucket,
 			pendingActivityBucket,
 			authDataBucket,
-			metricTargetQuantity,
 			enableRebalance,
 			setrateControl,
-			pwiEquation,
-			exchangeStatus,
-			exchangeNotifications,
 			pendingStatbleTokenParamsBucket,
 			stableTokenParamsBucket,
-			pendingTargetQuantityV2,
-			targetQuantityV2,
-			pendingPWIEquationV2,
-			pwiEquationV2,
-			pendingRebalanceQuadratic,
-			rebalanceQuadratic,
 			fetcherConfigurationBucket,
 		}
 
@@ -205,6 +175,7 @@ func (bs *BoltStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, 
 	return common.Version(result), err
 }
 
+// UpdateFeedConfiguration upate feed configuration
 func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error {
 	const disableValue = "disabled"
 	var (
@@ -241,6 +212,7 @@ func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error 
 	})
 }
 
+// GetFeedConfiguration return feed configuration
 func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
 	var (
 		err      error
@@ -303,6 +275,7 @@ func (bs *BoltStorage) StoreBTCInfo(data common.BTCData) error {
 	return err
 }
 
+// ExportExpiredAuthData export to back it up
 func (bs *BoltStorage) ExportExpiredAuthData(currentTime uint64, fileName string) (nRecord uint64, err error) {
 	expiredTimestampByte := boltutil.Uint64ToBytes(currentTime - authDataExpiredDuration)
 	outFile, err := os.Create(fileName)
@@ -350,6 +323,7 @@ func (bs *BoltStorage) ExportExpiredAuthData(currentTime uint64, fileName string
 	return nRecord, err
 }
 
+// PruneExpiredAuthData from database
 func (bs *BoltStorage) PruneExpiredAuthData(currentTime uint64) (nRecord uint64, err error) {
 	expiredTimestampByte := boltutil.Uint64ToBytes(currentTime - authDataExpiredDuration)
 
@@ -614,7 +588,8 @@ func (bs *BoltStorage) Record(
 	action string,
 	id common.ActivityID,
 	destination string,
-	params map[string]interface{}, result map[string]interface{},
+	params common.ActivityParams,
+	result common.ActivityResult,
 	estatus string,
 	mstatus string,
 	timepoint uint64) error {
@@ -726,22 +701,6 @@ func (bs *BoltStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Activity
 	return result, err
 }
 
-// interfaceConverstionToUint64 will assert the interface as string
-// and parse it to uint64. Return 0 if anything goes wrong)
-func interfaceConverstionToUint64(intf interface{}) uint64 {
-	numString, ok := intf.(string)
-	if !ok {
-		log.Printf("(%v) can't be converted to type string", intf)
-		return 0
-	}
-	num, err := strconv.ParseUint(numString, 10, 64)
-	if err != nil {
-		log.Printf("ERROR: parsing error %s, inteface conversion to uint64 will set to 0", err)
-		return 0
-	}
-	return num
-}
-
 func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce uint64) (*common.ActivityRecord, uint64, error) {
 	var minNonce uint64 = math.MaxUint64
 	var minPrice uint64 = math.MaxUint64
@@ -750,7 +709,7 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 	for i, act := range pendings {
 		if act.Action == common.ActionSetRate {
 			log.Printf("looking for pending set_rates: %+v", act)
-			nonce := interfaceConverstionToUint64(act.Result["nonce"])
+			nonce := act.Result.Nonce
 			if nonce < minedNonce {
 				log.Printf("NONCE_ISSUE: stalled pending set rate transaction, pending: %d, mined: %d",
 					nonce, minedNonce)
@@ -760,7 +719,10 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 					minedNonce, nonce)
 			}
 
-			gasPrice := interfaceConverstionToUint64(act.Result["gasPrice"])
+			gasPrice, err := strconv.ParseUint(act.Result.GasPrice, 10, 64)
+			if err != nil {
+				return nil, 0, err
+			}
 			if nonce == minNonce {
 				if gasPrice < minPrice {
 					minNonce = nonce
@@ -778,17 +740,15 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 	}
 
 	if result == nil {
-		log.Printf("NONCE_ISSUE: found no pending set rate transaction with nonce newer than equal to mined nonce: %d",
-			minedNonce)
+		log.Printf("NONCE_ISSUE: found no pending set rate transaction with nonce newer than equal to mined nonce: %d", minedNonce)
 	} else {
-		log.Printf("NONCE_ISSUE: unmined pending set rate, nonce: %d, count: %d, mined nonce: %d",
-			interfaceConverstionToUint64(result.Result["nonce"]), count, minedNonce)
+		log.Printf("NONCE_ISSUE: unmined pending set rate, nonce: %d, count: %d, mined nonce: %d", result.Result.Nonce, count, minedNonce)
 	}
 
 	return result, count, nil
 }
 
-//RemovePendingActivities remove it
+//RemoveStalePendingActivities remove it
 func (bs *BoltStorage) RemoveStalePendingActivities(tx *bolt.Tx, stales []common.ActivityRecord) error {
 	pb := tx.Bucket([]byte(pendingActivityBucket))
 	for _, stale := range stales {
@@ -875,141 +835,10 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 				return uErr
 			}
 			if record.Action == common.ActionDeposit {
-				assetIDStr, ok := record.Params["asset"].(string)
-				if !ok {
-					log.Printf("ERROR: record Params token (%v) can not be converted to string", record.Params["asset"])
-					continue
-				}
-
-				assetID, err := strconv.Atoi(assetIDStr)
-				if err != nil {
-					log.Printf("stored assset id is not an int64 number stored=%v err=%s", assetIDStr, err.Error())
-				}
-
-				if uint64(assetID) == asset.ID && record.Destination == exchange.ID().String() {
+				assetID := record.Params.Asset
+				if assetID == asset.ID && record.Destination == exchange.ID().String() {
 					result = true
 				}
-			}
-		}
-		return nil
-	})
-	return result, err
-}
-
-//GetTokenTargetQty get target quantity
-func (bs *BoltStorage) GetTokenTargetQty() (common.TokenTargetQty, error) {
-	var (
-		tokenTargetQty = common.TokenTargetQty{}
-		err            error
-	)
-	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(metricTargetQuantity))
-		c := b.Cursor()
-		result, vErr := reverseSeek(common.GetTimepoint(), c)
-		if vErr != nil {
-			return vErr
-		}
-		data := b.Get(boltutil.Uint64ToBytes(result))
-		// be defensive, but this should never happen
-		if data == nil {
-			return fmt.Errorf("version %d doesn't exist", result)
-		}
-		return json.Unmarshal(data, &tokenTargetQty)
-	})
-	return tokenTargetQty, err
-}
-
-// GetExchangeStatus get exchange status to dashboard and analytics
-func (bs *BoltStorage) GetExchangeStatus() (common.ExchangesStatus, error) {
-	result := make(common.ExchangesStatus)
-	err := bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(exchangeStatus))
-		c := b.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var exstat common.ExStatus
-			if _, vErr := common.GetExchange(strings.ToLower(string(k))); vErr != nil {
-				continue
-			}
-			if vErr := json.Unmarshal(v, &exstat); vErr != nil {
-				return vErr
-			}
-			result[string(k)] = exstat
-		}
-		return nil
-	})
-	return result, err
-}
-
-func (bs *BoltStorage) UpdateExchangeStatus(data common.ExchangesStatus) error {
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(exchangeStatus))
-		for k, v := range data {
-			dataJSON, uErr := json.Marshal(v)
-			if uErr != nil {
-				return uErr
-			}
-			if uErr := b.Put([]byte(k), dataJSON); uErr != nil {
-				return uErr
-			}
-		}
-		return nil
-	})
-	return err
-}
-
-func (bs *BoltStorage) UpdateExchangeNotification(
-	exchange, action, token string, fromTime, toTime uint64, isWarning bool, msg string) error {
-	err := bs.db.Update(func(tx *bolt.Tx) error {
-		exchangeBk := tx.Bucket([]byte(exchangeNotifications))
-		b, uErr := exchangeBk.CreateBucketIfNotExists([]byte(exchange))
-		if uErr != nil {
-			return uErr
-		}
-		key := fmt.Sprintf("%s_%s", action, token)
-		noti := common.ExchangeNotiContent{
-			FromTime:  fromTime,
-			ToTime:    toTime,
-			IsWarning: isWarning,
-			Message:   msg,
-		}
-
-		// update new value
-		dataJSON, uErr := json.Marshal(noti)
-		if uErr != nil {
-			return uErr
-		}
-		return b.Put([]byte(key), dataJSON)
-	})
-	return err
-}
-
-func (bs *BoltStorage) GetExchangeNotifications() (common.ExchangeNotifications, error) {
-	result := common.ExchangeNotifications{}
-	err := bs.db.View(func(tx *bolt.Tx) error {
-		exchangeBks := tx.Bucket([]byte(exchangeNotifications))
-		c := exchangeBks.Cursor()
-		for name, bucket := c.First(); name != nil; name, bucket = c.Next() {
-			// if bucket == nil, then name is a child bucket name (according to bolt docs)
-			if bucket == nil {
-				b := exchangeBks.Bucket(name)
-				c := b.Cursor()
-				actionContent := common.ExchangeActionNoti{}
-				for k, v := c.First(); k != nil; k, v = c.Next() {
-					actionToken := strings.Split(string(k), "_")
-					action := actionToken[0]
-					token := actionToken[1]
-					notiContent := common.ExchangeNotiContent{}
-					if uErr := json.Unmarshal(v, &notiContent); uErr != nil {
-						return uErr
-					}
-					tokenContent, exist := actionContent[action]
-					if !exist {
-						tokenContent = common.ExchangeTokenNoti{}
-					}
-					tokenContent[token] = notiContent
-					actionContent[action] = tokenContent
-				}
-				result[string(name)] = actionContent
 			}
 		}
 		return nil

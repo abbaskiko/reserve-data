@@ -58,14 +58,8 @@ func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange
 	if activity.Action != common.ActionTrade {
 		return errors.New("this is not an order activity so cannot cancel")
 	}
-	base, ok := activity.Params["base"].(string)
-	if !ok {
-		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params["base"])
-	}
-	quote, ok := activity.Params["quote"].(string)
-	if !ok {
-		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
-	}
+	base := activity.Params.Base
+	quote := activity.Params.Quote
 	orderID := id.EID
 	return exchange.CancelOrder(orderID, base, quote)
 }
@@ -97,20 +91,21 @@ func (rc ReserveCore) Trade(
 			common.ActionTrade,
 			uid,
 			exchange.ID().String(),
-			map[string]interface{}{
-				"exchange":  exchange,
-				"type":      tradeType,
-				"base":      pair.BaseSymbol,
-				"quote":     pair.QuoteSymbol,
-				"rate":      rate,
-				"amount":    strconv.FormatFloat(amount, 'f', -1, 64),
-				"timepoint": timepoint,
-			}, map[string]interface{}{
-				"id":        id,
-				"done":      done,
-				"remaining": remaining,
-				"finished":  finished,
-				"error":     fmt.Sprintf("%v", err),
+			common.ActivityParams{
+				Exchange:  exchange.ID(),
+				Type:      tradeType,
+				Base:      pair.BaseSymbol,
+				Quote:     pair.QuoteSymbol,
+				Rate:      rate,
+				Amount:    amount,
+				Timepoint: timepoint,
+			},
+			common.ActivityResult{
+				ID:        id,
+				Done:      done,
+				Remaining: remaining,
+				Finished:  finished,
+				Error:     fmt.Sprintf("%v", err),
 			},
 			status,
 			"",
@@ -169,7 +164,7 @@ func (rc ReserveCore) Deposit(
 		)
 		return timebasedID(id)
 	}
-	recordActivity := func(status, txhex, txnonce, txprice string, err error) error {
+	recordActivity := func(status, txhex string, txnonce uint64, txprice string, err error) error {
 		uid := uidGenerator(txhex)
 		log.Printf(
 			"Core ----------> Deposit to %s: token: %s, amount: %s, timestamp: %d ==> Result: tx: %s, error: %v",
@@ -180,16 +175,17 @@ func (rc ReserveCore) Deposit(
 			common.ActionDeposit,
 			uid,
 			exchange.ID().String(),
-			map[string]interface{}{
-				"exchange":  exchange,
-				"asset":     asset,
-				"amount":    strconv.FormatFloat(amountFloat, 'f', -1, 64),
-				"timepoint": timepoint,
-			}, map[string]interface{}{
-				"tx":       txhex,
-				"nonce":    txnonce,
-				"gasPrice": txprice,
-				"error":    fmt.Sprintf("%v", err),
+			common.ActivityParams{
+				Exchange:  exchange.ID(),
+				Asset:     asset.ID,
+				Amount:    amountFloat,
+				Timepoint: timepoint,
+			},
+			common.ActivityResult{
+				Tx:       txhex,
+				Nonce:    txnonce,
+				GasPrice: txprice,
+				Error:    fmt.Sprintf("%v", err),
 			},
 			"",
 			status,
@@ -199,7 +195,7 @@ func (rc ReserveCore) Deposit(
 
 	if !supported {
 		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID().String(), asset.Symbol)
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -207,7 +203,7 @@ func (rc ReserveCore) Deposit(
 	}
 
 	if ok, err = rc.activityStorage.HasPendingDeposit(asset, exchange); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -215,7 +211,7 @@ func (rc ReserveCore) Deposit(
 	}
 	if ok {
 		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", asset.Symbol, exchange.ID().String())
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -223,14 +219,14 @@ func (rc ReserveCore) Deposit(
 	}
 
 	if err = sanityCheckAmount(exchange, asset, amount); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 	if tx, err = rc.blockchain.Send(asset, amount, address); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -240,7 +236,7 @@ func (rc ReserveCore) Deposit(
 	sErr := recordActivity(
 		statusSubmitted,
 		tx.Hash().Hex(),
-		strconv.FormatUint(tx.Nonce(), 10),
+		tx.Nonce(),
 		tx.GasPrice().Text(10),
 		nil,
 	)
@@ -261,17 +257,18 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 			common.ActionWithdraw,
 			uid,
 			exchange.ID().String(),
-			map[string]interface{}{
-				"exchange":  exchange,
-				"asset":     asset,
-				"amount":    strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
-				"timepoint": timepoint,
-			}, map[string]interface{}{
-				"error": fmt.Sprintf("%v", err),
-				"id":    id,
+			common.ActivityParams{
+				Exchange:  exchange.ID(),
+				Asset:     asset.ID,
+				Amount:    common.BigToFloat(amount, int64(asset.Decimals)),
+				Timepoint: timepoint,
+			},
+			common.ActivityResult{
+				Error: fmt.Sprintf("%v", err),
+				ID:    id,
 				// this field will be updated with real tx when data fetcher can fetch it
 				// from exchanges
-				"tx": "",
+				Tx: "",
 			},
 			status,
 			"",
@@ -339,25 +336,13 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	if act == nil {
 		return nil, nil, 0, nil
 	}
-	nonceStr, ok := act.Result["nonce"].(string)
-	if !ok {
-		nErr := fmt.Errorf("cannot convert result[nonce] (value %v) to string type", act.Result["nonce"])
-		return nil, nil, count, nErr
-	}
-	gasPriceStr, ok := act.Result["gasPrice"].(string)
-	if !ok {
-		nErr := fmt.Errorf("cannot convert result[gasPrice] (value %v) to string type", act.Result["gasPrice"])
-		return nil, nil, count, nErr
-	}
-	nonce, err := strconv.ParseUint(nonceStr, 10, 64)
-	if err != nil {
-		return nil, nil, count, err
-	}
+	gasPriceStr := act.Result.GasPrice
+
 	gasPrice, err := strconv.ParseUint(gasPriceStr, 10, 64)
 	if err != nil {
 		return nil, nil, count, err
 	}
-	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
+	return big.NewInt(int64(act.Result.Nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
 
 // GetSetRateResult return result of set rate action
@@ -448,7 +433,7 @@ func (rc ReserveCore) SetRates(
 	var (
 		tx           *types.Transaction
 		txhex        = ethereum.Hash{}.Hex()
-		txnonce      = "0"
+		txnonce      = uint64(0)
 		txprice      = "0"
 		err          error
 		miningStatus string
@@ -460,7 +445,7 @@ func (rc ReserveCore) SetRates(
 	} else {
 		miningStatus = common.MiningStatusSubmitted
 		txhex = tx.Hash().Hex()
-		txnonce = strconv.FormatUint(tx.Nonce(), 10)
+		txnonce = tx.Nonce()
 		txprice = tx.GasPrice().Text(10)
 	}
 	uid := timebasedID(txhex)
@@ -468,25 +453,26 @@ func (rc ReserveCore) SetRates(
 		common.ActionSetRate,
 		uid,
 		"blockchain",
-		map[string]interface{}{
-			"assets": assets,
-			"buys":   buys,
-			"sells":  sells,
-			"block":  block,
-			"afpMid": afpMids,
-			"msgs":   additionalMsgs,
-		}, map[string]interface{}{
-			"tx":       txhex,
-			"nonce":    txnonce,
-			"gasPrice": txprice,
-			"error":    fmt.Sprintf("%v", err),
+		common.ActivityParams{
+			Assets: assets,
+			Buys:   buys,
+			Sells:  sells,
+			Block:  block,
+			AFPMid: afpMids,
+			Msgs:   additionalMsgs,
+		},
+		common.ActivityResult{
+			Tx:       txhex,
+			Nonce:    txnonce,
+			GasPrice: txprice,
+			Error:    fmt.Sprintf("%v", err),
 		},
 		"",
 		miningStatus,
 		common.GetTimepoint(),
 	)
 	log.Printf(
-		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %v, storage error: %v",
+		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %d, price: %s, error: %v, storage error: %v",
 		txhex, txnonce, txprice, err, sErr,
 	)
 
