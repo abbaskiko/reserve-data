@@ -9,6 +9,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
@@ -258,24 +259,25 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 }
 
 //FetchOnePairTradeHistory fetch trade history for one pair from exchange
-func (bn *Binance) FetchOnePairTradeHistory(
-	wait *sync.WaitGroup,
-	data *sync.Map,
-	pair commonv3.TradingPairSymbols) {
-
-	defer wait.Done()
-	result := []common.TradeHistory{}
+func (bn *Binance) FetchOnePairTradeHistory(pair commonv3.TradingPairSymbols) ([]common.TradeHistory, error) {
+	var result []common.TradeHistory
 	fromID, err := bn.storage.GetLastIDTradeHistory(pair.ID)
 	if err != nil {
-		log.Printf("Cannot get last ID trade history: %s", err.Error())
+		return nil, errors.Wrapf(err, "Cannot get last ID trade history")
 	}
 	resp, err := bn.interf.GetAccountTradeHistory(pair.BaseSymbol, pair.QuoteSymbol, fromID)
 	if err != nil {
-		log.Printf("Binance Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
+		return nil, errors.Wrapf(err, "Binance Cannot fetch data for pair %s%s", pair.BaseSymbol, pair.QuoteSymbol)
 	}
 	for _, trade := range resp {
-		price, _ := strconv.ParseFloat(trade.Price, 64)
-		quantity, _ := strconv.ParseFloat(trade.Qty, 64)
+		price, err := strconv.ParseFloat(trade.Price, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Can not parse price: %v", price)
+		}
+		quantity, err := strconv.ParseFloat(trade.Qty, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Can not parse quantity: %v", trade.Qty)
+		}
 		historyType := "sell"
 		if trade.IsBuyer {
 			historyType = "buy"
@@ -289,17 +291,14 @@ func (bn *Binance) FetchOnePairTradeHistory(
 		)
 		result = append(result, tradeHistory)
 	}
-	data.Store(pair.ID, result)
+	return result, nil
 }
 
 //FetchTradeHistory get all trade history for all tokens in the exchange
 func (bn *Binance) FetchTradeHistory() {
-	t := time.NewTicker(10 * time.Minute)
 	go func() {
-		for isFirstLoop := true; ; isFirstLoop = false {
-			if !isFirstLoop { // if not first loop then sleep for 10 minutes
-				<-t.C
-			}
+		t := time.NewTicker(10 * time.Minute)
+		for ; ; <-t.C {
 			result := common.ExchangeTradeHistory{}
 			data := sync.Map{}
 			pairs, err := bn.TokenPairs()
@@ -313,8 +312,15 @@ func (bn *Binance) FetchTradeHistory() {
 			for i < len(pairs) {
 				for x = i; x < len(pairs) && x < i+batchSize; x++ {
 					wait.Add(1)
-					pair := pairs[x]
-					go bn.FetchOnePairTradeHistory(&wait, &data, pair)
+					go func(pair commonv3.TradingPairSymbols) {
+						defer wait.Done()
+						histories, err := bn.FetchOnePairTradeHistory(pair)
+						if err != nil {
+							log.Printf("Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
+							return
+						}
+						data.Store(pair.ID, histories)
+					}(pairs[x])
 				}
 				i = x
 				wait.Wait()
