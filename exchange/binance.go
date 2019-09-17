@@ -295,12 +295,9 @@ func (bn *Binance) FetchOnePairTradeHistory(
 //FetchTradeHistory get all trade history for all tokens in the exchange
 func (bn *Binance) FetchTradeHistory() {
 	t := time.NewTicker(10 * time.Minute)
-	var isFirstLoop = true
 	go func() {
-		for {
-			if isFirstLoop { // if not first loop then sleep for 10 minutes
-				isFirstLoop = false
-			} else {
+		for isFirstLoop := true; ; isFirstLoop = false {
+			if !isFirstLoop { // if not first loop then sleep for 10 minutes
 				<-t.C
 			}
 			result := common.ExchangeTradeHistory{}
