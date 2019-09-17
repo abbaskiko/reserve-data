@@ -201,19 +201,6 @@ func (ps *PostgresStorage) GetAuthData(v common.Version) (common.AuthDataSnapsho
 
 // ExportExpiredAuthData export data to store on s3 storage
 func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath string) (uint64, error) {
-	var (
-		data [][]byte
-	)
-	// Get expire data
-	timepointExpireData := timepoint - authDataExpiredDuration
-	timestampExpire := common.TimepointToTime(timepointExpireData)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created > $2`, fetchDataTable)
-	if err := ps.db.Select(&data, query, authDataType, timestampExpire); err != nil {
-		if err == sql.ErrNoRows {
-			return 0, nil
-		}
-		return 0, err
-	}
 
 	// create export file
 	outFile, err := os.Create(filePath)
@@ -226,13 +213,38 @@ func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath stri
 		}
 	}()
 
-	for _, dataByte := range data {
-		_, err := outFile.WriteString(string(dataByte) + "\n")
+	// Get expire data
+	timepointExpireData := timepoint - authDataExpiredDuration
+	timestampExpire := common.TimepointToTime(timepointExpireData)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created > $2`, fetchDataTable)
+	rows, err := ps.db.Query(query, authDataType, timestampExpire)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+	defer func() {
+		if cle := rows.Close(); cle != nil {
+			log.Printf("close result error %v\n", cle)
+		}
+	}()
+
+	var count uint64
+	for rows.Next() {
+		var data []byte
+		err = rows.Scan(&data)
 		if err != nil {
 			return 0, err
 		}
+		_, _ = outFile.Write(data)
+		_, err = outFile.Write([]byte{'\n'})
+		if err != nil {
+			return 0, err
+		}
+		count++
 	}
-	return uint64(len(data)), nil
+	return count, nil
 }
 
 // PruneExpiredAuthData remove expire auth data from database
