@@ -333,8 +333,14 @@ func (h *Huobi) FetchOnePairTradeHistory(
 //FetchTradeHistory get all trade history for all pairs from huobi exchange
 func (h *Huobi) FetchTradeHistory() {
 	t := time.NewTicker(10 * time.Minute)
+	var isFirstLoop = true
 	go func() {
 		for {
+			if isFirstLoop { // if not first loop then sleep for 10 minutes
+				isFirstLoop = false
+			} else {
+				<-t.C
+			}
 			result := map[uint64][]common.TradeHistory{}
 			data := sync.Map{}
 			pairs, err := h.TokenPairs()
@@ -373,7 +379,6 @@ func (h *Huobi) FetchTradeHistory() {
 			if err := h.storage.StoreTradeHistory(result); err != nil {
 				log.Printf("Store trade history error: %s", err.Error())
 			}
-			<-t.C
 		}
 	}()
 }

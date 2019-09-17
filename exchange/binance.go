@@ -295,8 +295,14 @@ func (bn *Binance) FetchOnePairTradeHistory(
 //FetchTradeHistory get all trade history for all tokens in the exchange
 func (bn *Binance) FetchTradeHistory() {
 	t := time.NewTicker(10 * time.Minute)
+	var isFirstLoop = true
 	go func() {
 		for {
+			if isFirstLoop { // if not first loop then sleep for 10 minutes
+				isFirstLoop = false
+			} else {
+				<-t.C
+			}
 			result := common.ExchangeTradeHistory{}
 			data := sync.Map{}
 			pairs, err := bn.TokenPairs()
@@ -341,7 +347,6 @@ func (bn *Binance) FetchTradeHistory() {
 			if err := bn.storage.StoreTradeHistory(result); err != nil {
 				log.Printf("Binance Store trade history error: %s", err.Error())
 			}
-			<-t.C
 		}
 	}()
 }
