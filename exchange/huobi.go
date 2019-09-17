@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -12,6 +11,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
@@ -299,21 +299,21 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 }
 
 // FetchOnePairTradeHistory return trade history of one pair token
-func (h *Huobi) FetchOnePairTradeHistory(
-	wait *sync.WaitGroup,
-	data *sync.Map,
-	pair commonv3.TradingPairSymbols) {
-	defer wait.Done()
-	result := []common.TradeHistory{}
+func (h *Huobi) FetchOnePairTradeHistory(pair commonv3.TradingPairSymbols) ([]common.TradeHistory, error) {
+	var result []common.TradeHistory
 	resp, err := h.interf.GetAccountTradeHistory(pair.BaseSymbol, pair.QuoteSymbol)
 	if err != nil {
-		log.Printf("Cannot fetch data for pair %s%s: %s",
-			pair.BaseSymbol, pair.QuoteSymbol, err.Error())
-		return
+		return nil, err
 	}
 	for _, trade := range resp.Data {
-		price, _ := strconv.ParseFloat(trade.Price, 64)
-		quantity, _ := strconv.ParseFloat(trade.Amount, 64)
+		price, err := strconv.ParseFloat(trade.Price, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Can not parse price: %v", trade.Price)
+		}
+		quantity, err := strconv.ParseFloat(trade.Amount, 64)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Can not parse price error: %v", trade.Amount)
+		}
 		historyType := tradeTypeSell
 		if trade.Type == "buy-limit" {
 			historyType = tradeTypeBuy
@@ -327,14 +327,14 @@ func (h *Huobi) FetchOnePairTradeHistory(
 		)
 		result = append(result, tradeHistory)
 	}
-	data.Store(pair.ID, result)
+	return result, nil
 }
 
 //FetchTradeHistory get all trade history for all pairs from huobi exchange
 func (h *Huobi) FetchTradeHistory() {
-	t := time.NewTicker(10 * time.Minute)
 	go func() {
-		for {
+		t := time.NewTicker(10 * time.Minute)
+		for ; ; <-t.C {
 			result := map[uint64][]common.TradeHistory{}
 			data := sync.Map{}
 			pairs, err := h.TokenPairs()
@@ -345,7 +345,15 @@ func (h *Huobi) FetchTradeHistory() {
 			wait := sync.WaitGroup{}
 			for _, pair := range pairs {
 				wait.Add(1)
-				go h.FetchOnePairTradeHistory(&wait, &data, pair)
+				go func(pair commonv3.TradingPairSymbols) {
+					defer wait.Done()
+					histories, err := h.FetchOnePairTradeHistory(pair)
+					if err != nil {
+						log.Printf("Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
+						return
+					}
+					data.Store(pair.ID, histories)
+				}(pair)
 			}
 			wait.Wait()
 			var integrity = true
@@ -373,7 +381,6 @@ func (h *Huobi) FetchTradeHistory() {
 			if err := h.storage.StoreTradeHistory(result); err != nil {
 				log.Printf("Store trade history error: %s", err.Error())
 			}
-			<-t.C
 		}
 	}()
 }
