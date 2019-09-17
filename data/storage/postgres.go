@@ -245,7 +245,7 @@ func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error
 	timestampExpire := common.TimepointToTime(timepointExpireData)
 	query := fmt.Sprintf(`WITH deleted AS 
 	(DELETE FROM "%s" WHERE type = $1 AND created > $2 RETURNING *) SELECT count(*) FROM deleted`, fetchDataTable)
-	if err := ps.db.Select(&count, query, authDataType, timestampExpire); err != nil {
+	if err := ps.db.Get(&count, query, authDataType, timestampExpire); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
@@ -392,19 +392,23 @@ func (ps *PostgresStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRe
 // HasPendingDeposit return true if there is any pending deposit for a token
 func (ps *PostgresStorage) HasPendingDeposit(token commonv3.Asset, exchange common.Exchange) (bool, error) {
 	var (
-		result struct {
-			Pending uint64 `db:"pending"`
-		}
+		pendingActivity common.ActivityRecord
+		data            [][]byte
 	)
-	query := fmt.Sprintf(`SELECT COUNT(*) AS pending FROM "%s" WHERE is_pending IS TRUE AND data->>'Action' = $1`, activityTable)
-	if err := ps.db.Get(&result, query, common.ActionDeposit); err != nil {
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE is_pending IS TRUE AND data->>'Action' = $1 AND data ->> 'Destination' = $2`, activityTable)
+	if err := ps.db.Select(&data, query, common.ActionDeposit, exchange.ID().String()); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
 		return false, err
 	}
-	if result.Pending > 0 {
-		return true, nil
+	for _, activity := range data {
+		if err := json.Unmarshal(activity, &pendingActivity); err != nil {
+			return false, err
+		}
+		if pendingActivity.Params.Asset == token.ID {
+			return true, nil
+		}
 	}
 	return false, nil
 }

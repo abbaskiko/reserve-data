@@ -9,6 +9,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
+	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 func TestRate(t *testing.T) {
@@ -165,6 +166,10 @@ func TestActivity(t *testing.T) {
 		activityTest.Params, activityTest.Result, activityTest.ExchangeStatus, activityTest.MiningStatus, 1568622125860)
 	assert.NoError(t, err)
 
+	hasPending, err := ps.HasPendingDeposit(commonv3.Asset{ID: 2}, common.TestExchange{})
+	assert.NoError(t, err)
+	assert.True(t, hasPending)
+
 	// test update activity
 	testID := common.ActivityID{
 		Timepoint: 1568622132671609009,
@@ -175,8 +180,72 @@ func TestActivity(t *testing.T) {
 	err = ps.UpdateActivity(testID, activityTest)
 	assert.NoError(t, err)
 
+	hasPending, err = ps.HasPendingDeposit(commonv3.Asset{ID: 2}, common.TestExchange{})
+	assert.NoError(t, err)
+	assert.False(t, hasPending)
+
 	// test get activity
 	activity, err := ps.GetActivity(testID)
 	assert.NoError(t, err)
 	assert.Equal(t, activityTest, activity)
+}
+
+func TestAuthData(t *testing.T) {
+	db, teardown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		require.NoError(t, teardown())
+	}()
+
+	ps, err := NewPostgresStorage(db)
+	require.NoError(t, err)
+
+	authDataTest := common.AuthDataSnapshot{
+		Valid:      true,
+		Error:      "",
+		Timestamp:  "1568705819377",
+		ReturnTime: "1568705821452",
+		ExchangeBalances: map[common.ExchangeID]common.EBalanceEntry{
+			common.Binance: {
+				Valid:      true,
+				Error:      "",
+				Timestamp:  "1568705819377",
+				ReturnTime: "1568705819461",
+				AvailableBalance: map[string]float64{
+					"ETH": 177.72330689,
+					"KNC": 3851.21689913,
+				},
+				LockedBalance: map[string]float64{
+					"ETH": 0,
+					"KNC": 0,
+				},
+				DepositBalance: map[string]float64{
+					"ETH": 0,
+					"KNC": 0,
+				},
+				Status: true,
+			},
+		},
+		ReserveBalances: map[string]common.BalanceEntry{
+			"ETH": {
+				Valid:      true,
+				Error:      "",
+				Timestamp:  "1568705820671",
+				ReturnTime: "1568705820937",
+				Balance:    common.RawBalance(*big.NewInt(432048208)),
+			},
+			"KNC": {
+				Valid:      true,
+				Error:      "",
+				Timestamp:  "1568705820671",
+				ReturnTime: "1568705820937",
+				Balance:    common.RawBalance(*big.NewInt(3194712941)),
+			},
+		},
+		PendingActivities: []common.ActivityRecord{},
+		Block:             8565634,
+	}
+
+	timepoint := uint64(1568705819377)
+	err = ps.StoreAuthSnapshot(&authDataTest, timepoint)
+	assert.NoError(t, err)
 }
