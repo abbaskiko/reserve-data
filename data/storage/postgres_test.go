@@ -241,11 +241,181 @@ func TestAuthData(t *testing.T) {
 				Balance:    common.RawBalance(*big.NewInt(3194712941)),
 			},
 		},
-		PendingActivities: []common.ActivityRecord{},
-		Block:             8565634,
+		Block: 8565634,
 	}
 
 	timepoint := uint64(1568705819377)
 	err = ps.StoreAuthSnapshot(&authDataTest, timepoint)
 	assert.NoError(t, err)
+
+	// get authdata
+	version, err := ps.CurrentAuthDataVersion(1568705819378)
+	assert.NoError(t, err)
+
+	getAuthData, err := ps.GetAuthData(version)
+	assert.NoError(t, err)
+	assert.Equal(t, authDataTest, getAuthData)
+
+	// prune outdated data
+	timepoint = common.GetTimepoint()
+	deleted, err := ps.PruneExpiredAuthData(timepoint)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(1), deleted)
 }
+
+func TestFeedConfiguration(t *testing.T) {
+	db, teardown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		require.NoError(t, teardown())
+	}()
+
+	ps, err := NewPostgresStorage(db)
+	require.NoError(t, err)
+
+	// test default all feed are enabled
+	feeds, err := ps.GetFeedConfiguration()
+	assert.NoError(t, err)
+	for _, feed := range feeds {
+		assert.True(t, feed.Enabled)
+	}
+
+	// test update feed
+	err = ps.UpdateFeedConfiguration("Gemini", false)
+	assert.NoError(t, err)
+
+	feeds, err = ps.GetFeedConfiguration()
+	assert.NoError(t, err)
+	for _, feed := range feeds {
+		if feed.Name == "Gemini" {
+			assert.False(t, feed.Enabled)
+			continue
+		}
+		assert.True(t, feed.Enabled)
+	}
+}
+
+func TestGoldData(t *testing.T) {
+	db, teardown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		require.NoError(t, teardown())
+	}()
+
+	ps, err := NewPostgresStorage(db)
+	require.NoError(t, err)
+
+	goldTest := common.GoldData{
+		DGX: common.DGXGoldData{
+			Data: []common.GoldRate{
+				{
+					Time:   1568356189,
+					Price:  0.27008084,
+					Symbol: "DGXETH",
+				},
+			},
+			Error:     "",
+			Valid:     true,
+			Status:    "",
+			Timestamp: 0,
+		},
+		GDAX: common.GDAXGoldData{
+			Ask:     "179.52",
+			Bid:     "179.51",
+			Size:    "3.00000000",
+			Time:    "2019-09-13T06:29:23.037Z",
+			Error:   "",
+			Valid:   true,
+			Price:   "179.53000000",
+			Volume:  "34118.55527070",
+			TradeID: 51291927,
+		},
+		Gemini: common.GeminiGoldData{
+			Ask:   "179.56",
+			Bid:   "179.52",
+			Last:  "179.53",
+			Error: "",
+			Valid: true,
+			Volume: struct {
+				ETH       string `json:"ETH"`
+				USD       string `json:"USD"`
+				Timestamp uint64 `json:"timestamp"`
+			}{
+				ETH:       "2587.61414071",
+				USD:       "464667.9095133173",
+				Timestamp: 1568355900000,
+			},
+		},
+		Kraken: common.KrakenGoldData{
+			Valid:           true,
+			ErrorFromKraken: nil,
+			Result: map[string]struct {
+				A []string `json:"a"`
+				B []string `json:"b"`
+				C []string `json:"c"`
+				V []string `json:"v"`
+				P []string `json:"p"`
+				T []uint64 `json:"t"`
+				L []string `json:"l"`
+				H []string `json:"h"`
+				O string   `json:"o"`
+			}{
+				"XETHZUSD": {
+					A: []string{
+						"179.55000",
+						"120",
+						"120.000",
+					},
+					B: []string{
+						"179.49000",
+						"33",
+						"33.000",
+					},
+					C: []string{
+						"179.54000",
+						"0.05000000",
+					},
+					H: []string{
+						"181.87000",
+						"182.70000",
+					},
+					L: []string{
+						"179.00000",
+						"176.51000",
+					},
+					O: "180.99000",
+					P: []string{
+						"180.18664",
+						"179.75713",
+					},
+					T: []uint64{
+						606,
+						3526,
+					},
+					V: []string{
+						"3894.72837992",
+						"17861.39347398",
+					},
+				},
+			},
+			Error: "",
+		},
+		Timestamp: 1568356191628,
+		OneForgeETH: common.OneForgeGoldData{
+			Text:      "",
+			Error:     true,
+			Value:     0,
+			Message:   "API Key Not Valid. Please go to 1forge.com to get an API key. If you have any questions please email us at contact@1forge.com",
+			Timestamp: 0,
+		},
+		OneForgeUSD: common.OneForgeGoldData{
+			Text:      "",
+			Error:     true,
+			Value:     0,
+			Message:   "API Key Not Valid. Please go to 1forge.com to get an API key. If you have any questions please email us at contact@1forge.com",
+			Timestamp: 0,
+		},
+	}
+	err = ps.StoreGoldInfo(goldTest)
+	assert.NoError(t, err)
+}
+
+func TestBTCData(t *testing.T) {}
