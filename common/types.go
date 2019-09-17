@@ -243,10 +243,10 @@ type ActivityRecord struct {
 // ActivityParams is params for activity
 type ActivityParams struct {
 	// deposit, withdraw params
-	Exchange  Exchange     `json:"exchange,omitempty"`
-	Asset     common.Asset `json:"asset,omitempty"`
-	Amount    float64      `json:"amount,omitempty"`
-	Timepoint uint64       `json:"timepoint,omitempty"`
+	Exchange  ExchangeID `json:"exchange,omitempty"`
+	Asset     uint64     `json:"asset,omitempty"`
+	Amount    float64    `json:"amount,omitempty"`
+	Timepoint uint64     `json:"timepoint,omitempty"`
 	// SetRates params
 	Assets []common.Asset `json:"assets,omitempty"`
 	Buys   []*big.Int     `json:"buys,omitempty"`

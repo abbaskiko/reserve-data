@@ -92,7 +92,7 @@ func (rc ReserveCore) Trade(
 			uid,
 			exchange.ID().String(),
 			common.ActivityParams{
-				Exchange:  exchange,
+				Exchange:  exchange.ID(),
 				Type:      tradeType,
 				Base:      pair.BaseSymbol,
 				Quote:     pair.QuoteSymbol,
@@ -176,8 +176,8 @@ func (rc ReserveCore) Deposit(
 			uid,
 			exchange.ID().String(),
 			common.ActivityParams{
-				Exchange:  exchange,
-				Asset:     asset,
+				Exchange:  exchange.ID(),
+				Asset:     asset.ID,
 				Amount:    amountFloat,
 				Timepoint: timepoint,
 			},
@@ -258,8 +258,8 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 			uid,
 			exchange.ID().String(),
 			common.ActivityParams{
-				Exchange:  exchange,
-				Asset:     asset,
+				Exchange:  exchange.ID(),
+				Asset:     asset.ID,
 				Amount:    common.BigToFloat(amount, int64(asset.Decimals)),
 				Timepoint: timepoint,
 			},

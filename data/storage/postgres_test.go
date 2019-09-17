@@ -24,8 +24,8 @@ func TestRate(t *testing.T) {
 	baseBuy, _ := big.NewInt(0).SetString("940916409070162411520", 10)
 	baseSell, _ := big.NewInt(0).SetString("1051489536265074", 10)
 	rateData := common.AllRateEntry{
-		Data: map[string]common.RateEntry{
-			"KNC": {
+		Data: map[uint64]common.RateEntry{
+			2: {
 				Block:       8539892,
 				BaseBuy:     baseBuy,
 				BaseSell:    baseSell,
@@ -144,10 +144,10 @@ func TestActivity(t *testing.T) {
 		},
 		Destination: "binance",
 		Params: common.ActivityParams{
-			Amount: 39811.443679,
-			// Exchange:  "binance",
+			Amount:    39811.443679,
+			Exchange:  common.Binance,
 			Timepoint: uint64(1568622125860),
-			// Asset:     "BQX",
+			Asset:     2, // KNC id
 		},
 		Result: common.ActivityResult{
 			// "blockNumber":  8559409,

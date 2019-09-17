@@ -854,7 +854,7 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 				return uErr
 			}
 			if record.Action == common.ActionDeposit {
-				assetID := record.Params.Asset.ID
+				assetID := record.Params.Asset
 				if assetID == asset.ID && record.Destination == exchange.ID().String() {
 					result = true
 				}

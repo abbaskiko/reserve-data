@@ -642,13 +642,13 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			case common.ActionDeposit:
 				txHash := activity.Result.Tx
 				amount := activity.Params.Amount
-				assetID := activity.Params.Asset.ID
+				assetID := activity.Params.Asset
 
 				status, err = exchange.DepositStatus(id, txHash, assetID, amount, timepoint)
 				log.Printf("Got deposit status for %v: (%s), error(%v)", activity, status, err)
 			case common.ActionWithdraw:
 				amount := activity.Params.Amount
-				assetID := activity.Params.Asset.ID
+				assetID := activity.Params.Asset
 
 				status, tx, err = exchange.WithdrawStatus(id.EID, assetID, amount, timepoint)
 				log.Printf("Got withdraw status for %v: (%s), error(%v)", activity, status, err)

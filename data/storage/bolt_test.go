@@ -56,8 +56,8 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 		common.NewActivityID(1, "1"),
 		exchange.ID().String(),
 		common.ActivityParams{
-			Exchange:  exchange,
-			Asset:     asset,
+			Exchange:  exchange.ID(),
+			Asset:     asset.ID,
 			Amount:    1.0,
 			Timepoint: timepoint,
 		},

@@ -1,6 +1,8 @@
 package http
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -25,8 +27,13 @@ func (s *Server) CancelAllOrders(c *gin.Context) {
 
 	for _, activity := range pendingActivites {
 		if activity.Action == common.ActionTrade {
-			exchange := activity.Params.Exchange
+			exchangeID := activity.Params.Exchange
 			// Cancel order
+			exchange, ok := common.SupportedExchanges[exchangeID]
+			if !ok {
+				httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("exchange %s does not exist", exchange.ID().String())))
+				return
+			}
 			if err := s.core.CancelOrder(activity.ID, exchange); err != nil {
 				// save failed order id
 				response = append(response, failedCancelOrder{
