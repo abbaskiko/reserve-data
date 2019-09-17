@@ -211,13 +211,9 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 				continue
 			}
 			//Set activity result tx to tx from cexs if currently result tx is not nil an is an empty string
-			resultTx, ok := activity.Result["tx"].(string)
-			if !ok {
-				log.Printf("WARNING: Activity Result Tx (value %v) cannot be asserted to string", activity.Result["tx"])
-				continue
-			}
+			resultTx := activity.Result.Tx
 			if resultTx == "" {
-				activity.Result["tx"] = activityStatus.Tx
+				activity.Result.Tx = activityStatus.Tx
 			}
 		}
 	}
@@ -313,14 +309,10 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 			return false
 		}
 
-		actNonce, ok := act.Result["nonce"].(string)
-		// interface assertion also return false if actNonce is nil
-		if !ok {
-			return false
-		}
+		actNonce := act.Result.Nonce
 		nonce, err := strconv.ParseUint(actNonce, 10, 64)
 		if err != nil {
-			log.Printf("ERROR convert act.Result[nonce] to Uint64 failed %s", err.Error())
+			log.Printf("ERROR convert act.Result.Nonce to Uint64 failed %s", err.Error())
 			return false
 		}
 		return nonce < minedNonce
@@ -336,11 +328,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 			var blockNum uint64
 			var status string
 			var err error
-			txStr, ok := activity.Result["tx"].(string)
-			if !ok {
-				log.Printf("TX_STATUS: WARNING cannot convert activity.Result[tx] (value %v) to string type", activity.Result["tx"])
-				continue
-			}
+			txStr := activity.Result.Tx
 			tx := ethereum.HexToHash(txStr)
 			if tx.Big().IsInt64() && tx.Big().Int64() == 0 {
 				continue
@@ -448,11 +436,11 @@ func updateActivitywithBlockchainStatus(activity *common.ActivityRecord, bstatus
 	if activityStatus.Error != nil {
 		snapshot.Valid = false
 		snapshot.Error = activityStatus.Error.Error()
-		activity.Result["status_error"] = activityStatus.Error.Error()
+		activity.Result.StatusError = activityStatus.Error.Error()
 	} else {
-		activity.Result["status_error"] = ""
+		activity.Result.StatusError = ""
 	}
-	activity.Result["blockNumber"] = activityStatus.BlockNumber
+	activity.Result.BlockNumber = activityStatus.BlockNumber
 }
 
 func updateActivitywithExchangeStatus(activity *common.ActivityRecord, estatuses *sync.Map, snapshot *common.AuthDataSnapshot) {
@@ -473,19 +461,17 @@ func updateActivitywithExchangeStatus(activity *common.ActivityRecord, estatuses
 		activity.ExchangeStatus = activityStatus.ExchangeStatus
 	}
 
-	resultTx, ok := activity.Result["tx"].(string)
-	if !ok {
-		log.Printf("WARNING: activity.Result[tx] (value %v) cannot be asserted to string type", activity.Result["tx"])
-	} else if ok && resultTx == "" {
-		activity.Result["tx"] = activityStatus.Tx
+	resultTx := activity.Result.Tx
+	if resultTx == "" {
+		activity.Result.Tx = activityStatus.Tx
 	}
 
 	if activityStatus.Error != nil {
 		snapshot.Valid = false
 		snapshot.Error = activityStatus.Error.Error()
-		activity.Result["status_error"] = activityStatus.Error.Error()
+		activity.Result.StatusError = activityStatus.Error.Error()
 	} else {
-		activity.Result["status_error"] = ""
+		activity.Result.StatusError = ""
 	}
 }
 
@@ -648,77 +634,23 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			switch activity.Action {
 			case common.ActionTrade:
 				orderID := id.EID
-				base, ok := activity.Params["base"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Params base (%v) can't be converted to type string", activity.Params["base"])
-					continue
-				}
-				quote, ok := activity.Params["quote"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Params quote (%v) can't be converted to type string", activity.Params["quote"])
-					continue
-				}
+				base := activity.Params.Base
+				quote := activity.Params.Quote
 				// we ignore error of order status because it doesn't affect
 				// authdata. Analytic will ignore order status anyway.
 				status, _ = exchange.OrderStatus(orderID, base, quote)
 			case common.ActionDeposit:
-				txHash, ok := activity.Result["tx"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Result tx (%v) can't be converted to type string", activity.Result["tx"])
-					continue
-				}
-				amountStr, ok := activity.Params["amount"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Params amount (%v) can't be converted to type string", activity.Params["amount"])
-					continue
-				}
-				amount, uErr := strconv.ParseFloat(amountStr, 64)
-				if uErr != nil {
-					log.Printf("WARNING: can't parse activity Params amount %s to float64", amountStr)
-					continue
-				}
-				assetIDStr, ok := activity.Params["asset"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Params token (%v) can't be converted to type string", activity.Params["asset"])
-					continue
-				}
+				txHash := activity.Result.Tx
+				amount := activity.Params.Amount
+				assetID := activity.Params.Asset.ID
 
-				assetID, err := strconv.Atoi(assetIDStr)
-				if err != nil {
-					log.Printf("WARNING: invalid stored asset id=%s", assetIDStr)
-					continue
-				}
-
-				status, err = exchange.DepositStatus(id, txHash, uint64(assetID), amount, timepoint)
+				status, err = exchange.DepositStatus(id, txHash, assetID, amount, timepoint)
 				log.Printf("Got deposit status for %v: (%s), error(%v)", activity, status, err)
 			case common.ActionWithdraw:
-				amountStr, ok := activity.Params["amount"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Params amount (%v) can't be converted to type string", activity.Params["amount"])
-					continue
-				}
-				amount, uErr := strconv.ParseFloat(amountStr, 64)
-				if uErr != nil {
-					log.Printf("WARNING: can't parse activity Params amount %s to float64", amountStr)
-					continue
-				}
-				assetIDStr, ok := activity.Params["asset"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Params token (%v) can't be converted to type string", activity.Params["asset"])
-					continue
-				}
+				amount := activity.Params.Amount
+				assetID := activity.Params.Asset.ID
 
-				assetID, err := strconv.Atoi(assetIDStr)
-				if err != nil {
-					log.Printf("WARNING: invalid stored asset id id=%s err=%s", assetIDStr, err.Error())
-				}
-
-				_, ok = activity.Result["tx"].(string)
-				if !ok {
-					log.Printf("WARNING: activity Result tx (%v) can't be converted to type string", activity.Result["tx"])
-					continue
-				}
-				status, tx, err = exchange.WithdrawStatus(id.EID, uint64(assetID), amount, timepoint)
+				status, tx, err = exchange.WithdrawStatus(id.EID, assetID, amount, timepoint)
 				log.Printf("Got withdraw status for %v: (%s), error(%v)", activity, status, err)
 			default:
 				continue

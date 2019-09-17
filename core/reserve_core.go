@@ -58,14 +58,8 @@ func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange
 	if activity.Action != common.ActionTrade {
 		return errors.New("this is not an order activity so cannot cancel")
 	}
-	base, ok := activity.Params["base"].(string)
-	if !ok {
-		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params["base"])
-	}
-	quote, ok := activity.Params["quote"].(string)
-	if !ok {
-		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
-	}
+	base := activity.Params.Base
+	quote := activity.Params.Quote
 	orderID := id.EID
 	return exchange.CancelOrder(orderID, base, quote)
 }
@@ -97,20 +91,21 @@ func (rc ReserveCore) Trade(
 			common.ActionTrade,
 			uid,
 			exchange.ID().String(),
-			map[string]interface{}{
-				"exchange":  exchange,
-				"type":      tradeType,
-				"base":      pair.BaseSymbol,
-				"quote":     pair.QuoteSymbol,
-				"rate":      rate,
-				"amount":    strconv.FormatFloat(amount, 'f', -1, 64),
-				"timepoint": timepoint,
-			}, map[string]interface{}{
-				"id":        id,
-				"done":      done,
-				"remaining": remaining,
-				"finished":  finished,
-				"error":     fmt.Sprintf("%v", err),
+			common.ActivityParams{
+				Exchange:  exchange,
+				Type:      tradeType,
+				Base:      pair.BaseSymbol,
+				Quote:     pair.QuoteSymbol,
+				Rate:      rate,
+				Amount:    amount,
+				Timepoint: timepoint,
+			},
+			common.ActivityResult{
+				ID:        id,
+				Done:      done,
+				Remaining: remaining,
+				Finished:  finished,
+				Error:     fmt.Sprintf("%v", err),
 			},
 			status,
 			"",
@@ -180,16 +175,17 @@ func (rc ReserveCore) Deposit(
 			common.ActionDeposit,
 			uid,
 			exchange.ID().String(),
-			map[string]interface{}{
-				"exchange":  exchange,
-				"asset":     asset,
-				"amount":    strconv.FormatFloat(amountFloat, 'f', -1, 64),
-				"timepoint": timepoint,
-			}, map[string]interface{}{
-				"tx":       txhex,
-				"nonce":    txnonce,
-				"gasPrice": txprice,
-				"error":    fmt.Sprintf("%v", err),
+			common.ActivityParams{
+				Exchange:  exchange,
+				Asset:     asset,
+				Amount:    amountFloat,
+				Timepoint: timepoint,
+			},
+			common.ActivityResult{
+				Tx:       txhex,
+				Nonce:    txnonce,
+				GasPrice: txprice,
+				Error:    fmt.Sprintf("%v", err),
 			},
 			"",
 			status,
@@ -261,17 +257,18 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 			common.ActionWithdraw,
 			uid,
 			exchange.ID().String(),
-			map[string]interface{}{
-				"exchange":  exchange,
-				"asset":     asset,
-				"amount":    strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
-				"timepoint": timepoint,
-			}, map[string]interface{}{
-				"error": fmt.Sprintf("%v", err),
-				"id":    id,
+			common.ActivityParams{
+				Exchange:  exchange,
+				Asset:     asset,
+				Amount:    common.BigToFloat(amount, int64(asset.Decimals)),
+				Timepoint: timepoint,
+			},
+			common.ActivityResult{
+				Error: fmt.Sprintf("%v", err),
+				ID:    id,
 				// this field will be updated with real tx when data fetcher can fetch it
 				// from exchanges
-				"tx": "",
+				Tx: "",
 			},
 			status,
 			"",
@@ -339,16 +336,8 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	if act == nil {
 		return nil, nil, 0, nil
 	}
-	nonceStr, ok := act.Result["nonce"].(string)
-	if !ok {
-		nErr := fmt.Errorf("cannot convert result[nonce] (value %v) to string type", act.Result["nonce"])
-		return nil, nil, count, nErr
-	}
-	gasPriceStr, ok := act.Result["gasPrice"].(string)
-	if !ok {
-		nErr := fmt.Errorf("cannot convert result[gasPrice] (value %v) to string type", act.Result["gasPrice"])
-		return nil, nil, count, nErr
-	}
+	nonceStr := act.Result.Nonce
+	gasPriceStr := act.Result.GasPrice
 	nonce, err := strconv.ParseUint(nonceStr, 10, 64)
 	if err != nil {
 		return nil, nil, count, err
@@ -468,18 +457,19 @@ func (rc ReserveCore) SetRates(
 		common.ActionSetRate,
 		uid,
 		"blockchain",
-		map[string]interface{}{
-			"assets": assets,
-			"buys":   buys,
-			"sells":  sells,
-			"block":  block,
-			"afpMid": afpMids,
-			"msgs":   additionalMsgs,
-		}, map[string]interface{}{
-			"tx":       txhex,
-			"nonce":    txnonce,
-			"gasPrice": txprice,
-			"error":    fmt.Sprintf("%v", err),
+		common.ActivityParams{
+			Assets: assets,
+			Buys:   buys,
+			Sells:  sells,
+			Block:  block,
+			AFPMid: afpMids,
+			Msgs:   additionalMsgs,
+		},
+		common.ActivityResult{
+			Tx:       txhex,
+			Nonce:    txnonce,
+			GasPrice: txprice,
+			Error:    fmt.Sprintf("%v", err),
 		},
 		"",
 		miningStatus,

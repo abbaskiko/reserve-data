@@ -230,40 +230,56 @@ func NewActivityID(timepoint uint64, eid string) ActivityID {
 
 // ActivityRecord object
 type ActivityRecord struct {
-	Action         string                 `json:"Action,omitempty"`
-	ID             ActivityID             `json:"ID,omitempty"`
-	Destination    string                 `json:"Destination,omitempty"`
-	Params         map[string]interface{} `json:"Params,omitempty"`
-	Result         map[string]interface{} `json:"Result,omitempty"`
-	ExchangeStatus string                 `json:"ExchangeStatus,omitempty"`
-	MiningStatus   string                 `json:"MiningStatus,omitempty"`
-	Timestamp      Timestamp              `json:"Timestamp,omitempty"`
+	Action         string         `json:"Action,omitempty"`
+	ID             ActivityID     `json:"ID,omitempty"`
+	Destination    string         `json:"Destination,omitempty"`
+	Params         ActivityParams `json:"Params,omitempty"`
+	Result         ActivityResult `json:"Result,omitempty"`
+	ExchangeStatus string         `json:"ExchangeStatus,omitempty"`
+	MiningStatus   string         `json:"MiningStatus,omitempty"`
+	Timestamp      Timestamp      `json:"Timestamp,omitempty"`
 }
 
-// ActivityDeposit is activity deposit
-type ActivityDeposit struct {
+// ActivityParams is params for activity
+type ActivityParams struct {
+	// deposit, withdraw params
+	Exchange  Exchange     `json:"exchange,omitempty"`
+	Asset     common.Asset `json:"asset,omitempty"`
+	Amount    float64      `json:"amount,omitempty"`
+	Timepoint uint64       `json:"timepoint,omitempty"`
+	// SetRates params
+	Assets []common.Asset `json:"assets,omitempty"`
+	Buys   []*big.Int     `json:"buys,omitempty"`
+	Sells  []*big.Int     `json:"sells,omitempty"`
+	Block  *big.Int       `json:"block,omitempty"`
+	AFPMid []*big.Int     `json:"afpMid,omitempty"`
+	Msgs   []string       `json:"msgs,omitempty"`
+	// Trade params
+	Type  string  `json:"type"`
+	Base  string  `json:"base"`
+	Quote string  `json:"quote"`
+	Rate  float64 `json:"rate"`
 }
 
-// ActivityWithdraw is withdraw activity
-type ActivityWithdraw struct {
+// ActivityResult is result of an activity
+type ActivityResult struct {
+	Tx       string `json:"tx,omitempty"`
+	Nonce    string `json:"nonce,omitempty"`
+	GasPrice string `json:"gasPrice,omitempty"`
+	Error    string `json:"error,omitempty"`
+	// ID of withdraw
+	ID string `json:"id,omitempty"`
+	// params of trade
+	Done      float64 `json:"done,omitempty"`
+	Remaining float64 `json:"remaining,omitempty"`
+	Finished  bool    `json:"finished,omitempty"`
+	//
+	StatusError string `json:"status_error"`
+	BlockNumber uint64 `json:"blockNumber"`
 }
 
 //NewActivityRecord return an activity record with params["assets"] only as asset.ID
-func NewActivityRecord(action string, id ActivityID, destination string, params, result map[string]interface{}, exStatus, miStatus string, timestamp Timestamp) ActivityRecord {
-	//if any params is an asset, save it ID instead of whole struct
-	for k, v := range params {
-		if asset, ok := v.(common.Asset); ok {
-			params[k] = strconv.FormatUint(asset.ID, 10)
-		}
-	}
-	assets, ok := params["assets"].([]common.Asset)
-	if ok {
-		var assetIDs []uint64
-		for _, t := range assets {
-			assetIDs = append(assetIDs, t.ID)
-		}
-		params["assets"] = assetIDs
-	}
+func NewActivityRecord(action string, id ActivityID, destination string, params ActivityParams, result ActivityResult, exStatus, miStatus string, timestamp Timestamp) ActivityRecord {
 	return ActivityRecord{
 		Action:         action,
 		ID:             id,

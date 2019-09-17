@@ -25,7 +25,7 @@ func (s *Server) CancelAllOrders(c *gin.Context) {
 
 	for _, activity := range pendingActivites {
 		if activity.Action == common.ActionTrade {
-			exchange := activity.Params["exchange"].(common.Exchange)
+			exchange := activity.Params.Exchange
 			// Cancel order
 			if err := s.core.CancelOrder(activity.ID, exchange); err != nil {
 				// save failed order id

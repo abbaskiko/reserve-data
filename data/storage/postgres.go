@@ -402,7 +402,7 @@ func (ps *PostgresStorage) HasPendingDeposit(token commonv3.Asset, exchange comm
 
 // Record save activity
 func (ps *PostgresStorage) Record(action string, id common.ActivityID, destination string,
-	params map[string]interface{}, result map[string]interface{},
+	params common.ActivityParams, result common.ActivityResult,
 	estatus string, mstatus string, timepoint uint64) error {
 	record := common.NewActivityRecord(
 		action,

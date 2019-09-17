@@ -588,7 +588,8 @@ func (bs *BoltStorage) Record(
 	action string,
 	id common.ActivityID,
 	destination string,
-	params map[string]interface{}, result map[string]interface{},
+	params common.ActivityParams,
+	result common.ActivityResult,
 	estatus string,
 	mstatus string,
 	timepoint uint64) error {
@@ -702,19 +703,19 @@ func (bs *BoltStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Activity
 
 // interfaceConverstionToUint64 will assert the interface as string
 // and parse it to uint64. Return 0 if anything goes wrong)
-func interfaceConverstionToUint64(intf interface{}) uint64 {
-	numString, ok := intf.(string)
-	if !ok {
-		log.Printf("(%v) can't be converted to type string", intf)
-		return 0
-	}
-	num, err := strconv.ParseUint(numString, 10, 64)
-	if err != nil {
-		log.Printf("ERROR: parsing error %s, inteface conversion to uint64 will set to 0", err)
-		return 0
-	}
-	return num
-}
+// func interfaceConverstionToUint64(intf interface{}) uint64 {
+// 	numString, ok := intf.(string)
+// 	if !ok {
+// 		log.Printf("(%v) can't be converted to type string", intf)
+// 		return 0
+// 	}
+// 	num, err := strconv.ParseUint(numString, 10, 64)
+// 	if err != nil {
+// 		log.Printf("ERROR: parsing error %s, inteface conversion to uint64 will set to 0", err)
+// 		return 0
+// 	}
+// 	return num
+// }
 
 func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce uint64) (*common.ActivityRecord, uint64, error) {
 	var minNonce uint64 = math.MaxUint64
@@ -724,7 +725,10 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 	for i, act := range pendings {
 		if act.Action == common.ActionSetRate {
 			log.Printf("looking for pending set_rates: %+v", act)
-			nonce := interfaceConverstionToUint64(act.Result["nonce"])
+			nonce, err := strconv.ParseUint(act.Result.Nonce, 10, 64)
+			if err != nil {
+				return nil, 0, err
+			}
 			if nonce < minedNonce {
 				log.Printf("NONCE_ISSUE: stalled pending set rate transaction, pending: %d, mined: %d",
 					nonce, minedNonce)
@@ -734,7 +738,10 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 					minedNonce, nonce)
 			}
 
-			gasPrice := interfaceConverstionToUint64(act.Result["gasPrice"])
+			gasPrice, err := strconv.ParseUint(act.Result.GasPrice, 10, 64)
+			if err != nil {
+				return nil, 0, err
+			}
 			if nonce == minNonce {
 				if gasPrice < minPrice {
 					minNonce = nonce
@@ -752,17 +759,15 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 	}
 
 	if result == nil {
-		log.Printf("NONCE_ISSUE: found no pending set rate transaction with nonce newer than equal to mined nonce: %d",
-			minedNonce)
+		log.Printf("NONCE_ISSUE: found no pending set rate transaction with nonce newer than equal to mined nonce: %d", minedNonce)
 	} else {
-		log.Printf("NONCE_ISSUE: unmined pending set rate, nonce: %d, count: %d, mined nonce: %d",
-			interfaceConverstionToUint64(result.Result["nonce"]), count, minedNonce)
+		log.Printf("NONCE_ISSUE: unmined pending set rate, nonce: %s, count: %d, mined nonce: %d", result.Result.Nonce, count, minedNonce)
 	}
 
 	return result, count, nil
 }
 
-//RemovePendingActivities remove it
+//RemoveStalePendingActivities remove it
 func (bs *BoltStorage) RemoveStalePendingActivities(tx *bolt.Tx, stales []common.ActivityRecord) error {
 	pb := tx.Bucket([]byte(pendingActivityBucket))
 	for _, stale := range stales {
@@ -849,18 +854,8 @@ func (bs *BoltStorage) HasPendingDeposit(asset commonv3.Asset, exchange common.E
 				return uErr
 			}
 			if record.Action == common.ActionDeposit {
-				assetIDStr, ok := record.Params["asset"].(string)
-				if !ok {
-					log.Printf("ERROR: record Params token (%v) can not be converted to string", record.Params["asset"])
-					continue
-				}
-
-				assetID, err := strconv.Atoi(assetIDStr)
-				if err != nil {
-					log.Printf("stored assset id is not an int64 number stored=%v err=%s", assetIDStr, err.Error())
-				}
-
-				if uint64(assetID) == asset.ID && record.Destination == exchange.ID().String() {
+				assetID := record.Params.Asset.ID
+				if assetID == asset.ID && record.Destination == exchange.ID().String() {
 					result = true
 				}
 			}
