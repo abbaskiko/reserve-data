@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS "fetch_data"
 (
 	id SERIAL PRIMARY KEY,
 	created TIMESTAMP NOT NULL,
-	data JSONB NOT NULL,
-	type text NOT NULL
+	data JSON NOT NULL,
+	type SMALLINT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS "fetch_data_created_index" ON "fetch_data" (created);
 
@@ -34,9 +34,10 @@ CREATE TABLE IF NOT EXISTS "activity"
 	eid TEXT NOT NULL,
 	created TIMESTAMP NOT NULL,
 	is_pending BOOL NOT NULL,
-	data JSON NOT NULL
+	data JSONB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS "activity_idx" ON "activity" (timepoint, eid);
+CREATE INDEX IF NOT EXISTS "pending_idx" ON "activity" (is_pending) WHERE is_pending IS TRUE;
 
 CREATE TABLE IF NOT EXISTS "feed_configuration"
 (
@@ -45,16 +46,21 @@ CREATE TABLE IF NOT EXISTS "feed_configuration"
 	enabled BOOLEAN NOT NULL
 );
 `
-	dataTableName          = "fetch_data"
+	fetchDataTable         = "fetch_data" // data fetch from exchange and blockchain
 	activityTable          = "activity"
 	feedConfigurationTable = "feed_configuration"
 	// data type constant
 
-	priceDataType = "price"
-	rateDataType  = "rate"
-	authDataType  = "authData"
-	goldDataType  = "gold"
-	btcDataType   = "btc"
+)
+
+type fetchDataType int
+
+const (
+	priceDataType fetchDataType = iota // "price"
+	rateDataType                       // = "rate"
+	authDataType                       // = "authData"
+	goldDataType                       // = "gold"
+	btcDataType                        // = "btc"
 )
 
 // PostgresStorage struct
@@ -82,26 +88,44 @@ func NewPostgresStorage(db *sqlx.DB) (*PostgresStorage, error) {
 	return s, nil
 }
 
-func (ps *PostgresStorage) storeData(data interface{}, dataType string, timepoint uint64) error {
-	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, type) VALUES ($1, $2, $3)`, dataTableName)
+func getDataType(data interface{}) fetchDataType {
+	switch data.(type) {
+	case common.AuthDataSnapshot, *common.AuthDataSnapshot:
+		return authDataType
+	case common.BTCData, *common.BTCData:
+		return btcDataType
+	case common.GoldData, *common.GoldData:
+		return goldDataType
+	case common.AllPriceEntry, *common.AllPriceEntry:
+		return priceDataType
+	case common.AllRateEntry, *common.AllRateEntry:
+		return rateDataType
+	}
+	log.Panicf("unexpected data type %+v\n", data)
+	return 0
+}
+
+func (ps *PostgresStorage) storeFetchData(data interface{}, timepoint uint64) error {
+	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, type) VALUES ($1, $2, $3)`, fetchDataTable)
 	timestamp := common.TimepointToTime(timepoint)
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
+	dataType := getDataType(data)
 	if _, err := ps.db.Exec(query, timestamp, dataJSON, dataType); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ps *PostgresStorage) currentVersion(dataType string, timepoint uint64) (common.Version, error) {
+func (ps *PostgresStorage) currentVersion(dataType fetchDataType, timepoint uint64) (common.Version, error) {
 	var (
 		v  common.Version
 		id int64
 	)
 	timestamp := common.TimepointToTime(timepoint)
-	query := fmt.Sprintf(`SELECT id FROM "%s" WHERE created <= $1 and type = $2 ORDER BY created DESC LIMIT 1`, dataTableName)
+	query := fmt.Sprintf(`SELECT id FROM "%s" WHERE created <= $1 and type = $2 ORDER BY created DESC LIMIT 1`, fetchDataTable)
 	if err := ps.db.Get(&id, query, timestamp, dataType); err != nil {
 		if err == sql.ErrNoRows {
 			return v, fmt.Errorf("there is no version at timestamp: %d", timepoint)
@@ -112,20 +136,21 @@ func (ps *PostgresStorage) currentVersion(dataType string, timepoint uint64) (co
 	return v, nil
 }
 
-func (ps *PostgresStorage) getData(dataType string, v common.Version) ([]byte, error) {
+func (ps *PostgresStorage) getData(o interface{}, v common.Version) error {
 	var (
 		data []byte
 	)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE id = $1 AND type = $2`, dataTableName)
+	dataType := getDataType(o)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE id = $1 AND type = $2`, fetchDataTable)
 	if err := ps.db.Get(&data, query, v, dataType); err != nil {
-		return []byte{}, err
+		return err
 	}
-	return data, nil
+	return json.Unmarshal(data, o)
 }
 
 // StorePrice store price
 func (ps *PostgresStorage) StorePrice(priceEntry common.AllPriceEntry, timepoint uint64) error {
-	return ps.storeData(priceEntry, priceDataType, timepoint)
+	return ps.storeFetchData(priceEntry, timepoint)
 }
 
 // CurrentPriceVersion return current price version
@@ -138,14 +163,8 @@ func (ps *PostgresStorage) GetAllPrices(v common.Version) (common.AllPriceEntry,
 	var (
 		allPrices common.AllPriceEntry
 	)
-	data, err := ps.getData(priceDataType, v)
-	if err != nil {
-		return common.AllPriceEntry{}, err
-	}
-	if err := json.Unmarshal(data, &allPrices); err != nil {
-		return common.AllPriceEntry{}, err
-	}
-	return allPrices, nil
+	err := ps.getData(&allPrices, v)
+	return allPrices, err
 }
 
 // GetOnePrice return one price
@@ -163,7 +182,7 @@ func (ps *PostgresStorage) GetOnePrice(pairID uint64, v common.Version) (common.
 
 // StoreAuthSnapshot store authdata
 func (ps *PostgresStorage) StoreAuthSnapshot(authData *common.AuthDataSnapshot, timepoint uint64) error {
-	return ps.storeData(authData, authDataType, timepoint)
+	return ps.storeFetchData(authData, timepoint)
 }
 
 // CurrentAuthDataVersion return current auth data version
@@ -176,14 +195,8 @@ func (ps *PostgresStorage) GetAuthData(v common.Version) (common.AuthDataSnapsho
 	var (
 		authData common.AuthDataSnapshot
 	)
-	data, err := ps.getData(authDataType, v)
-	if err != nil {
-		return common.AuthDataSnapshot{}, err
-	}
-	if err := json.Unmarshal(data, &authData); err != nil {
-		return common.AuthDataSnapshot{}, err
-	}
-	return authData, nil
+	err := ps.getData(&authData, v)
+	return authData, err
 }
 
 // ExportExpiredAuthData export data to store on s3 storage
@@ -194,7 +207,7 @@ func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath stri
 	// Get expire data
 	timepointExpireData := timepoint - authDataExpiredDuration
 	timestampExpire := common.TimepointToTime(timepointExpireData)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created > $2`, dataTableName)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created > $2`, fetchDataTable)
 	if err := ps.db.Select(&data, query, authDataType, timestampExpire); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
@@ -231,7 +244,7 @@ func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error
 	timepointExpireData := timepoint - authDataExpiredDuration
 	timestampExpire := common.TimepointToTime(timepointExpireData)
 	query := fmt.Sprintf(`WITH deleted AS 
-	(DELETE FROM "%s" WHERE type = $1 AND created > $2 RETURNING *) SELECT count(*) FROM deleted`, dataTableName)
+	(DELETE FROM "%s" WHERE type = $1 AND created > $2 RETURNING *) SELECT count(*) FROM deleted`, fetchDataTable)
 	if err := ps.db.Select(&count, query, authDataType, timestampExpire); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
@@ -243,7 +256,7 @@ func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error
 
 // StoreRate store rate
 func (ps *PostgresStorage) StoreRate(allRateEntry common.AllRateEntry, timepoint uint64) error {
-	return ps.storeData(allRateEntry, rateDataType, timepoint)
+	return ps.storeFetchData(allRateEntry, timepoint)
 }
 
 // CurrentRateVersion return current rate version
@@ -256,14 +269,8 @@ func (ps *PostgresStorage) GetRate(v common.Version) (common.AllRateEntry, error
 	var (
 		rate common.AllRateEntry
 	)
-	data, err := ps.getData(rateDataType, v)
-	if err != nil {
-		return rate, err
-	}
-	if err := json.Unmarshal(data, &rate); err != nil {
-		return common.AllRateEntry{}, err
-	}
-	return rate, nil
+	err := ps.getData(&rate, v)
+	return rate, err
 }
 
 //GetRates return rate from time to time
@@ -272,7 +279,7 @@ func (ps *PostgresStorage) GetRates(fromTime, toTime uint64) ([]common.AllRateEn
 		rates []common.AllRateEntry
 		data  [][]byte
 	)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created >= $2 AND created <= $3`, dataTableName)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created >= $2 AND created <= $3`, fetchDataTable)
 	from := common.TimepointToTime(fromTime)
 	to := common.TimepointToTime(toTime)
 	if err := ps.db.Select(&data, query, rateDataType, from, to); err != nil {
@@ -385,16 +392,18 @@ func (ps *PostgresStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRe
 // HasPendingDeposit return true if there is any pending deposit for a token
 func (ps *PostgresStorage) HasPendingDeposit(token commonv3.Asset, exchange common.Exchange) (bool, error) {
 	var (
-		data [][]byte
+		result struct {
+			Pending uint64 `db:"pending"`
+		}
 	)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE is_pending IS TRUE AND data->>'Action' = $1`, activityTable)
-	if err := ps.db.Select(&data, query, common.ActionDeposit); err != nil {
+	query := fmt.Sprintf(`SELECT COUNT(*) AS pending FROM "%s" WHERE is_pending IS TRUE AND data->>'Action' = $1`, activityTable)
+	if err := ps.db.Get(&result, query, common.ActionDeposit); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
 		return false, err
 	}
-	if len(data) > 0 {
+	if result.Pending > 0 {
 		return true, nil
 	}
 	return false, nil
@@ -429,13 +438,13 @@ func (ps *PostgresStorage) Record(action string, id common.ActivityID, destinati
 // StoreGoldInfo store gold info into database
 func (ps *PostgresStorage) StoreGoldInfo(goldData common.GoldData) error {
 	timepoint := goldData.Timestamp
-	return ps.storeData(goldData, goldDataType, timepoint)
+	return ps.storeFetchData(goldData, timepoint)
 }
 
 // StoreBTCInfo store btc info into database
 func (ps *PostgresStorage) StoreBTCInfo(btcData common.BTCData) error {
 	timepoint := btcData.Timestamp
-	return ps.storeData(btcData, btcDataType, timepoint)
+	return ps.storeFetchData(btcData, timepoint)
 }
 
 // GetGoldInfo return gold info
@@ -443,14 +452,8 @@ func (ps *PostgresStorage) GetGoldInfo(v common.Version) (common.GoldData, error
 	var (
 		goldData common.GoldData
 	)
-	data, err := ps.getData(goldDataType, v)
-	if err != nil {
-		return common.GoldData{}, err
-	}
-	if err := json.Unmarshal(data, &goldData); err != nil {
-		return common.GoldData{}, err
-	}
-	return goldData, nil
+	err := ps.getData(&goldData, v)
+	return goldData, err
 }
 
 // GetBTCInfo return BTC info
@@ -458,14 +461,8 @@ func (ps *PostgresStorage) GetBTCInfo(v common.Version) (common.BTCData, error) 
 	var (
 		btcData common.BTCData
 	)
-	data, err := ps.getData(btcDataType, v)
-	if err != nil {
-		return common.BTCData{}, err
-	}
-	if err := json.Unmarshal(data, &btcData); err != nil {
-		return common.BTCData{}, err
-	}
-	return btcData, nil
+	err := ps.getData(&btcData, v)
+	return btcData, err
 }
 
 // CurrentGoldInfoVersion return btc info version
