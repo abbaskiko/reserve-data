@@ -55,15 +55,15 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 		"deposit",
 		common.NewActivityID(1, "1"),
 		exchange.ID().String(),
-		map[string]interface{}{
-			"exchange":  exchange,
-			"asset":     asset,
-			"amount":    "1.0",
-			"timepoint": timepoint,
+		common.ActivityParams{
+			Exchange:  exchange.ID(),
+			Asset:     asset.ID,
+			Amount:    1.0,
+			Timepoint: timepoint,
 		},
-		map[string]interface{}{
-			"tx":    "",
-			"error": nil,
+		common.ActivityResult{
+			Tx:    "",
+			Error: "",
 		},
 		"",
 		"submitted",

@@ -1,11 +1,13 @@
 package common
 
+// GoldRate gold rate
 type GoldRate struct {
 	Symbol string  `json:"symbol"`
 	Price  float64 `json:"price"`
 	Time   uint64  `json:"time"`
 }
 
+// DGXGoldData dgx gold data
 type DGXGoldData struct {
 	Valid     bool
 	Timestamp uint64
@@ -14,6 +16,7 @@ type DGXGoldData struct {
 	Error     string
 }
 
+// OneForgeGoldData oneforge gold data
 type OneForgeGoldData struct {
 	Value     float64
 	Text      string
@@ -22,6 +25,7 @@ type OneForgeGoldData struct {
 	Message   string
 }
 
+// GDAXGoldData gdax gold data
 type GDAXGoldData struct {
 	Valid   bool
 	Error   string
@@ -34,6 +38,7 @@ type GDAXGoldData struct {
 	Time    string `json:"time"`
 }
 
+// KrakenGoldData kraken gold data
 type KrakenGoldData struct {
 	Valid           bool
 	Error           string        `json:"network_error"`
@@ -51,6 +56,7 @@ type KrakenGoldData struct {
 	} `json:"result"`
 }
 
+// GeminiGoldData godl data from gemini
 type GeminiGoldData struct {
 	Valid  bool
 	Error  string
@@ -64,6 +70,7 @@ type GeminiGoldData struct {
 	Last string `json:"last"`
 }
 
+// GoldData gold data info
 type GoldData struct {
 	Timestamp   uint64
 	DGX         DGXGoldData

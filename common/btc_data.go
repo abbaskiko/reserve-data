@@ -7,7 +7,7 @@ type BTCData struct {
 	Gemini    GeminiData   `json:"GeminiBTC"`
 }
 
-// CoinBaseData is the response of Coinbase ETH/BTC ticker request.
+// CoinbaseData is the response of Coinbase ETH/BTC ticker request.
 // Example: https://api.pro.coinbase.com/products/eth-btc/ticker
 // Response
 // {
@@ -31,6 +31,7 @@ type CoinbaseData struct {
 	Volume  string `json:"volume"`
 }
 
+// GeminiDataVolume gemini data volume
 type GeminiDataVolume struct {
 	ETH       string `json:"ETH"`
 	BTC       string `json:"BTC"`
