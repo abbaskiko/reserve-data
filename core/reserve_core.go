@@ -164,7 +164,7 @@ func (rc ReserveCore) Deposit(
 		)
 		return timebasedID(id)
 	}
-	recordActivity := func(status, txhex, txnonce, txprice string, err error) error {
+	recordActivity := func(status, txhex string, txnonce uint64, txprice string, err error) error {
 		uid := uidGenerator(txhex)
 		log.Printf(
 			"Core ----------> Deposit to %s: token: %s, amount: %s, timestamp: %d ==> Result: tx: %s, error: %v",
@@ -195,7 +195,7 @@ func (rc ReserveCore) Deposit(
 
 	if !supported {
 		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID().String(), asset.Symbol)
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -203,7 +203,7 @@ func (rc ReserveCore) Deposit(
 	}
 
 	if ok, err = rc.activityStorage.HasPendingDeposit(asset, exchange); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -211,7 +211,7 @@ func (rc ReserveCore) Deposit(
 	}
 	if ok {
 		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", asset.Symbol, exchange.ID().String())
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -219,14 +219,14 @@ func (rc ReserveCore) Deposit(
 	}
 
 	if err = sanityCheckAmount(exchange, asset, amount); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 	if tx, err = rc.blockchain.Send(asset, amount, address); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
+		sErr := recordActivity(statusFailed, "", 0, "", err)
 		if sErr != nil {
 			log.Printf("failed to save activity record: %s", sErr)
 		}
@@ -236,7 +236,7 @@ func (rc ReserveCore) Deposit(
 	sErr := recordActivity(
 		statusSubmitted,
 		tx.Hash().Hex(),
-		strconv.FormatUint(tx.Nonce(), 10),
+		tx.Nonce(),
 		tx.GasPrice().Text(10),
 		nil,
 	)
@@ -336,17 +336,13 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	if act == nil {
 		return nil, nil, 0, nil
 	}
-	nonceStr := act.Result.Nonce
 	gasPriceStr := act.Result.GasPrice
-	nonce, err := strconv.ParseUint(nonceStr, 10, 64)
-	if err != nil {
-		return nil, nil, count, err
-	}
+
 	gasPrice, err := strconv.ParseUint(gasPriceStr, 10, 64)
 	if err != nil {
 		return nil, nil, count, err
 	}
-	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
+	return big.NewInt(int64(act.Result.Nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
 
 // GetSetRateResult return result of set rate action
@@ -437,7 +433,7 @@ func (rc ReserveCore) SetRates(
 	var (
 		tx           *types.Transaction
 		txhex        = ethereum.Hash{}.Hex()
-		txnonce      = "0"
+		txnonce      = uint64(0)
 		txprice      = "0"
 		err          error
 		miningStatus string
@@ -449,7 +445,7 @@ func (rc ReserveCore) SetRates(
 	} else {
 		miningStatus = common.MiningStatusSubmitted
 		txhex = tx.Hash().Hex()
-		txnonce = strconv.FormatUint(tx.Nonce(), 10)
+		txnonce = tx.Nonce()
 		txprice = tx.GasPrice().Text(10)
 	}
 	uid := timebasedID(txhex)
@@ -476,7 +472,7 @@ func (rc ReserveCore) SetRates(
 		common.GetTimepoint(),
 	)
 	log.Printf(
-		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %v, storage error: %v",
+		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %d, price: %s, error: %v, storage error: %v",
 		txhex, txnonce, txprice, err, sErr,
 	)
 

@@ -255,16 +255,16 @@ type ActivityParams struct {
 	AFPMid []*big.Int     `json:"afpMid,omitempty"`
 	Msgs   []string       `json:"msgs,omitempty"`
 	// Trade params
-	Type  string  `json:"type"`
-	Base  string  `json:"base"`
-	Quote string  `json:"quote"`
-	Rate  float64 `json:"rate"`
+	Type  string  `json:"type,omitempty"`
+	Base  string  `json:"base,omitempty"`
+	Quote string  `json:"quote,omitempty"`
+	Rate  float64 `json:"rate,omitempty"`
 }
 
 // ActivityResult is result of an activity
 type ActivityResult struct {
 	Tx       string `json:"tx,omitempty"`
-	Nonce    string `json:"nonce,omitempty"`
+	Nonce    uint64 `json:"nonce,omitempty"`
 	GasPrice string `json:"gasPrice,omitempty"`
 	Error    string `json:"error,omitempty"`
 	// ID of withdraw
@@ -274,8 +274,8 @@ type ActivityResult struct {
 	Remaining float64 `json:"remaining,omitempty"`
 	Finished  bool    `json:"finished,omitempty"`
 	//
-	StatusError string `json:"status_error"`
-	BlockNumber uint64 `json:"blockNumber"`
+	StatusError string `json:"status_error,omitempty"`
+	BlockNumber uint64 `json:"blockNumber,omitempty"`
 }
 
 //NewActivityRecord return an activity record with params["assets"] only as asset.ID

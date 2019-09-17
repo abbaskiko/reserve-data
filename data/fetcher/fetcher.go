@@ -308,14 +308,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 		if act.Action != common.ActionSetRate {
 			return false
 		}
-
-		actNonce := act.Result.Nonce
-		nonce, err := strconv.ParseUint(actNonce, 10, 64)
-		if err != nil {
-			log.Printf("ERROR convert act.Result.Nonce to Uint64 failed %s", err.Error())
-			return false
-		}
-		return nonce < minedNonce
+		return act.Result.Nonce < minedNonce
 	}
 }
 

@@ -154,7 +154,7 @@ func TestActivity(t *testing.T) {
 			BlockNumber: 8559409,
 			Error:       "",
 			GasPrice:    "50100000000",
-			Nonce:       "11039",
+			Nonce:       11039,
 			StatusError: "",
 			Tx:          "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74",
 		},

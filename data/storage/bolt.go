@@ -701,22 +701,6 @@ func (bs *BoltStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Activity
 	return result, err
 }
 
-// interfaceConverstionToUint64 will assert the interface as string
-// and parse it to uint64. Return 0 if anything goes wrong)
-// func interfaceConverstionToUint64(intf interface{}) uint64 {
-// 	numString, ok := intf.(string)
-// 	if !ok {
-// 		log.Printf("(%v) can't be converted to type string", intf)
-// 		return 0
-// 	}
-// 	num, err := strconv.ParseUint(numString, 10, 64)
-// 	if err != nil {
-// 		log.Printf("ERROR: parsing error %s, inteface conversion to uint64 will set to 0", err)
-// 		return 0
-// 	}
-// 	return num
-// }
-
 func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce uint64) (*common.ActivityRecord, uint64, error) {
 	var minNonce uint64 = math.MaxUint64
 	var minPrice uint64 = math.MaxUint64
@@ -725,10 +709,7 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 	for i, act := range pendings {
 		if act.Action == common.ActionSetRate {
 			log.Printf("looking for pending set_rates: %+v", act)
-			nonce, err := strconv.ParseUint(act.Result.Nonce, 10, 64)
-			if err != nil {
-				return nil, 0, err
-			}
+			nonce := act.Result.Nonce
 			if nonce < minedNonce {
 				log.Printf("NONCE_ISSUE: stalled pending set rate transaction, pending: %d, mined: %d",
 					nonce, minedNonce)
@@ -761,7 +742,7 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 	if result == nil {
 		log.Printf("NONCE_ISSUE: found no pending set rate transaction with nonce newer than equal to mined nonce: %d", minedNonce)
 	} else {
-		log.Printf("NONCE_ISSUE: unmined pending set rate, nonce: %s, count: %d, mined nonce: %d", result.Result.Nonce, count, minedNonce)
+		log.Printf("NONCE_ISSUE: unmined pending set rate, nonce: %d, count: %d, mined nonce: %d", result.Result.Nonce, count, minedNonce)
 	}
 
 	return result, count, nil
