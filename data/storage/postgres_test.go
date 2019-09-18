@@ -244,12 +244,12 @@ func TestAuthData(t *testing.T) {
 		Block: 8565634,
 	}
 
-	timepoint := uint64(1568705819377)
+	timepoint := uint64(1560842137000)
 	err = ps.StoreAuthSnapshot(&authDataTest, timepoint)
 	assert.NoError(t, err)
 
 	// get authdata
-	version, err := ps.CurrentAuthDataVersion(1568705819378)
+	version, err := ps.CurrentAuthDataVersion(1560842137001)
 	assert.NoError(t, err)
 
 	getAuthData, err := ps.GetAuthData(version)
