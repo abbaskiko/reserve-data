@@ -9,8 +9,6 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
-
-	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 // Version indicate fetched data version
@@ -248,12 +246,12 @@ type ActivityParams struct {
 	Amount    float64    `json:"amount,omitempty"`
 	Timepoint uint64     `json:"timepoint,omitempty"`
 	// SetRates params
-	Assets []common.Asset `json:"assets,omitempty"`
-	Buys   []*big.Int     `json:"buys,omitempty"`
-	Sells  []*big.Int     `json:"sells,omitempty"`
-	Block  *big.Int       `json:"block,omitempty"`
-	AFPMid []*big.Int     `json:"afpMid,omitempty"`
-	Msgs   []string       `json:"msgs,omitempty"`
+	Assets []uint64   `json:"assets,omitempty"` // list of asset id
+	Buys   []*big.Int `json:"buys,omitempty"`
+	Sells  []*big.Int `json:"sells,omitempty"`
+	Block  *big.Int   `json:"block,omitempty"`
+	AFPMid []*big.Int `json:"afpMid,omitempty"`
+	Msgs   []string   `json:"msgs,omitempty"`
 	// Trade params
 	Type  string  `json:"type,omitempty"`
 	Base  string  `json:"base,omitempty"`
@@ -278,7 +276,7 @@ type ActivityResult struct {
 	BlockNumber uint64 `json:"blockNumber,omitempty"`
 }
 
-//NewActivityRecord return an activity record with params["assets"] only as asset.ID
+//NewActivityRecord return an activity record
 func NewActivityRecord(action string, id ActivityID, destination string, params ActivityParams, result ActivityResult, exStatus, miStatus string, timestamp Timestamp) ActivityRecord {
 	return ActivityRecord{
 		Action:         action,
@@ -337,6 +335,7 @@ func (ar ActivityRecord) IsPending() bool {
 	return true
 }
 
+// ActivityStatus is status of an activity
 type ActivityStatus struct {
 	ExchangeStatus string
 	Tx             string

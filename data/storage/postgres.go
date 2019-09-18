@@ -18,12 +18,22 @@ import (
 
 const (
 	schema = `
+DO
+$$
+    BEGIN
+        IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'fetch_data_type') THEN
+            CREATE TYPE fetch_data_type AS ENUM ('price', 'rate',
+                'auth_data','gold', 'btc');
+        END IF;
+    END
+$$;
+
 CREATE TABLE IF NOT EXISTS "fetch_data" 
 (
 	id SERIAL PRIMARY KEY,
 	created TIMESTAMP NOT NULL,
 	data JSON NOT NULL,
-	type SMALLINT NOT NULL
+	type fetch_data_type NOT NULL
 );
 CREATE INDEX IF NOT EXISTS "fetch_data_created_index" ON "fetch_data" (created);
 
@@ -53,14 +63,15 @@ CREATE TABLE IF NOT EXISTS "feed_configuration"
 
 )
 
+//go:generate enumer -type=fetchDataType -linecomment -json=true -sql=true
 type fetchDataType int
 
 const (
-	priceDataType fetchDataType = iota // "price"
-	rateDataType                       // = "rate"
-	authDataType                       // = "authData"
-	goldDataType                       // = "gold"
-	btcDataType                        // = "btc"
+	priceDataType fetchDataType = iota // price
+	rateDataType                       // rate
+	authDataType                       // auth_data
+	goldDataType                       // gold
+	btcDataType                        // btc
 )
 
 // PostgresStorage struct
@@ -216,7 +227,7 @@ func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath stri
 	// Get expire data
 	timepointExpireData := timepoint - authDataExpiredDuration
 	timestampExpire := common.TimepointToTime(timepointExpireData)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created > $2`, fetchDataTable)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created < $2`, fetchDataTable)
 	rows, err := ps.db.Query(query, authDataType, timestampExpire)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -256,7 +267,7 @@ func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error
 	timepointExpireData := timepoint - authDataExpiredDuration
 	timestampExpire := common.TimepointToTime(timepointExpireData)
 	query := fmt.Sprintf(`WITH deleted AS 
-	(DELETE FROM "%s" WHERE type = $1 AND created > $2 RETURNING *) SELECT count(*) FROM deleted`, fetchDataTable)
+	(DELETE FROM "%s" WHERE type = $1 AND created < $2 RETURNING *) SELECT count(*) FROM deleted`, fetchDataTable)
 	if err := ps.db.Get(&count, query, authDataType, timestampExpire); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
