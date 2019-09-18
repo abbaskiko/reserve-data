@@ -130,7 +130,6 @@ func (f *Fetcher) FetchGlobalData(timepoint uint64) {
 			log.Printf("Store USD info failed, %v\n", err)
 		}
 	}
-
 }
 
 func (f *Fetcher) RunBlockFetcher() {

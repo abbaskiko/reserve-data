@@ -21,13 +21,16 @@ const (
 
 var (
 	// logDir is located at base of this repository.
-	logDir       = filepath.Join(filepath.Dir(filepath.Dir(common.CurrentDir())), "log")
-	noAuthEnable bool
-	servPort     = 8000
-	endpointOW   string
-	baseURL      string
-	stdoutLog    bool
-	dryRun       bool
+	logDir         = filepath.Join(filepath.Dir(filepath.Dir(common.CurrentDir())), "log")
+	noAuthEnable   bool
+	servPort       = 8000
+	endpointOW     string
+	baseURL        string
+	stdoutLog      bool
+	dryRun         bool
+	profilerPrefix string
+
+	cliAddress common.AddressConfig
 )
 
 func serverStart(_ *cobra.Command, _ []string) {
@@ -79,6 +82,7 @@ func serverStart(_ *cobra.Command, _ []string) {
 		config.MetricStorage,
 		servPortStr,
 		config.EnableAuthentication,
+		profilerPrefix,
 		config.AuthEngine,
 		kyberENV,
 		bc, config.Setting,

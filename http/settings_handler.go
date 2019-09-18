@@ -21,6 +21,7 @@ const (
 	depositOPAddressName      = "deposit_operator"
 	intermediateOPAddressName = "intermediate_operator"
 	validAddressLength        = 42
+	ETHID                     = "ETH"
 )
 
 func (s *Server) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
@@ -28,9 +29,10 @@ func (s *Server) updateInternalTokensIndices(tokenUpdates map[string]common.Toke
 	if err != nil {
 		return err
 	}
-	for _, tokenUpdate := range tokenUpdates {
+	for tokenSymbol, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
-		if token.Internal {
+		// No need to load and set for ETH
+		if token.Internal && tokenSymbol != ETHID {
 			tokens = append(tokens, token)
 		}
 	}
@@ -156,8 +158,8 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 	}
 	// prepare each tokenUpdate instance for individual token
 	for tokenID, tokenUpdate := range tokenUpdates {
+		tokenUpdate.Token.ID = tokenID
 		token := tokenUpdate.Token
-		token.ID = tokenID
 		if len(token.Address) != validAddressLength {
 			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s's address is invalid length. Token field in token request might be empty ", tokenID)))
 			return
@@ -172,10 +174,14 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 				httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is internal, required more setting (%s)", token.ID, uErr.Error())))
 				return
 			}
+			//skip ETH for fill pair ETH-ETH
+			if tokenID == ETHID {
+				continue
+			}
 
 			for ex, tokExSett := range tokenUpdate.Exchanges {
 				//query exchangeprecisionlimit from exchange for the pair token-ETH
-				pairID := common.NewTokenPairID(token.ID, "ETH")
+				pairID := common.NewTokenPairID(token.ID, ETHID)
 				// If the pair is not in current token listing request, get its result from exchange
 				_, ok1 := tokExSett.Info[pairID]
 				if !ok1 {
@@ -230,9 +236,9 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 		return
 	}
 	var (
-		pws    common.PWIEquationRequestV2
-		tarQty common.TokenTargetQtyV2
-		quadEq common.RebalanceQuadraticRequest
+		pws    = make(common.PWIEquationRequestV2)
+		tarQty = make(common.TokenTargetQtyV2)
+		quadEq = make(common.RebalanceQuadraticRequest)
 		err    error
 	)
 	hasInternal := thereIsInternal(tokenUpdates)
@@ -269,6 +275,7 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 	preparedToken := []common.Token{}
 	for tokenID, tokenUpdate := range tokenUpdates {
 		token := tokenUpdate.Token
+		token.ID = tokenID
 		token.LastActivationChange = common.GetTimepoint()
 		preparedToken = append(preparedToken, token)
 		if token.Internal {
@@ -334,11 +341,11 @@ func (s *Server) RejectTokenUpdate(c *gin.Context) {
 // getInfosFromExchangeEndPoint assembles a map of exchange to lists of PairIDs and
 // query their exchange Info in one go
 func (s *Server) getInfosFromExchangeEndPoint(tokenUpdates map[string]common.TokenUpdate) (map[string]common.ExchangeInfo, error) {
-	const ETHID = "ETH"
 	exTokenPairIDs := make(map[string]([]common.TokenPairID))
 	result := make(map[string]common.ExchangeInfo)
 	for tokenID, tokenUpdate := range tokenUpdates {
-		if tokenUpdate.Token.Internal {
+		// ETH-ETH pair does not exist
+		if tokenUpdate.Token.Internal && tokenID != ETHID {
 			for ex, exSetting := range tokenUpdate.Exchanges {
 				_, err := s.ensureRunningExchange(ex)
 				if err != nil {
@@ -399,8 +406,10 @@ func thereIsInternal(tokenUpdates map[string]common.TokenUpdate) bool {
 
 func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 	token := tokenUpdate.Token
-	if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
-		return fmt.Errorf("cannot get token indice from smart contract (%s) ", uErr.Error())
+	if !token.IsETH() { // TokenIndices doesn't contains ETH
+		if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
+			return fmt.Errorf("cannot get token indice from smart contract (%s) ", uErr.Error())
+		}
 	}
 	if tokenUpdate.Exchanges == nil {
 		return errors.New("there is no exchange setting")

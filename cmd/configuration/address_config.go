@@ -39,15 +39,12 @@ var AddressConfigs = map[string]common.AddressConfig{
 	},
 }
 
-func mustGetAddressesConfig(kyberEnv string) common.AddressConfig {
-	if kyberEnv == common.ProductionMode {
-		kyberEnv = common.MainnetMode
+func mustGetAddressesConfig(kyberEnv string, cliAddresses common.AddressConfig) common.AddressConfig {
+
+	if cliAddresses.Network != "" && cliAddresses.Pricing != "" && cliAddresses.Wrapper != "" && cliAddresses.Reserve != "" {
+		return cliAddresses
 	}
 
-	result, avail := AddressConfigs[kyberEnv]
-	if avail {
-		return result
-	}
 	if kyberEnv == common.SimulationMode {
 		resultFromFile, err := loadAddressFromFile(simSettingPath)
 		if err != nil {
@@ -57,7 +54,7 @@ func mustGetAddressesConfig(kyberEnv string) common.AddressConfig {
 	}
 
 	log.Panicf("cannot get address config for mode %s", kyberEnv)
-	return result
+	return common.AddressConfig{}
 }
 
 func loadAddressFromFile(path string) (common.AddressConfig, error) {
