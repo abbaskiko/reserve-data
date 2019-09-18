@@ -18,12 +18,22 @@ import (
 
 const (
 	schema = `
+DO
+$$
+    BEGIN
+        IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'fetch_data_type') THEN
+            CREATE TYPE fetch_data_type AS ENUM ('price', 'rate',
+                'auth_data','gold', 'btc');
+        END IF;
+    END
+$$;
+
 CREATE TABLE IF NOT EXISTS "fetch_data" 
 (
 	id SERIAL PRIMARY KEY,
 	created TIMESTAMP NOT NULL,
 	data JSON NOT NULL,
-	type SMALLINT NOT NULL
+	type fetch_data_type NOT NULL
 );
 CREATE INDEX IF NOT EXISTS "fetch_data_created_index" ON "fetch_data" (created);
 
@@ -53,14 +63,15 @@ CREATE TABLE IF NOT EXISTS "feed_configuration"
 
 )
 
+//go:generate enumer -type=fetchDataType -linecomment -json=true -sql=true
 type fetchDataType int
 
 const (
-	priceDataType fetchDataType = iota // "price"
-	rateDataType                       // = "rate"
-	authDataType                       // = "authData"
-	goldDataType                       // = "gold"
-	btcDataType                        // = "btc"
+	priceDataType fetchDataType = iota // price
+	rateDataType                       // rate
+	authDataType                       // auth_data
+	goldDataType                       // gold
+	btcDataType                        // btc
 )
 
 // PostgresStorage struct
