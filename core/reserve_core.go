@@ -449,12 +449,16 @@ func (rc ReserveCore) SetRates(
 		txprice = tx.GasPrice().Text(10)
 	}
 	uid := timebasedID(txhex)
+	assetsID := []uint64{}
+	for _, asset := range assets {
+		assetsID = append(assetsID, asset.ID)
+	}
 	sErr := rc.activityStorage.Record(
 		common.ActionSetRate,
 		uid,
 		"blockchain",
 		common.ActivityParams{
-			Assets: assets,
+			Assets: assetsID,
 			Buys:   buys,
 			Sells:  sells,
 			Block:  block,
