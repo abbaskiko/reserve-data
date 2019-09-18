@@ -276,7 +276,7 @@ type ActivityResult struct {
 	BlockNumber uint64 `json:"blockNumber,omitempty"`
 }
 
-//NewActivityRecord return an activity record with params["assets"] only as asset.ID
+//NewActivityRecord return an activity record
 func NewActivityRecord(action string, id ActivityID, destination string, params ActivityParams, result ActivityResult, exStatus, miStatus string, timestamp Timestamp) ActivityRecord {
 	return ActivityRecord{
 		Action:         action,

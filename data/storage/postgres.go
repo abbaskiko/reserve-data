@@ -216,7 +216,7 @@ func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath stri
 	// Get expire data
 	timepointExpireData := timepoint - authDataExpiredDuration
 	timestampExpire := common.TimepointToTime(timepointExpireData)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created > $2`, fetchDataTable)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created < $2`, fetchDataTable)
 	rows, err := ps.db.Query(query, authDataType, timestampExpire)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -256,7 +256,7 @@ func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error
 	timepointExpireData := timepoint - authDataExpiredDuration
 	timestampExpire := common.TimepointToTime(timepointExpireData)
 	query := fmt.Sprintf(`WITH deleted AS 
-	(DELETE FROM "%s" WHERE type = $1 AND created > $2 RETURNING *) SELECT count(*) FROM deleted`, fetchDataTable)
+	(DELETE FROM "%s" WHERE type = $1 AND created < $2 RETURNING *) SELECT count(*) FROM deleted`, fetchDataTable)
 	if err := ps.db.Get(&count, query, authDataType, timestampExpire); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil

@@ -211,8 +211,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 				continue
 			}
 			//Set activity result tx to tx from cexs if currently result tx is not nil an is an empty string
-			resultTx := activity.Result.Tx
-			if resultTx == "" {
+			if activity.Result.Tx == "" {
 				activity.Result.Tx = activityStatus.Tx
 			}
 		}
@@ -454,8 +453,7 @@ func updateActivitywithExchangeStatus(activity *common.ActivityRecord, estatuses
 		activity.ExchangeStatus = activityStatus.ExchangeStatus
 	}
 
-	resultTx := activity.Result.Tx
-	if resultTx == "" {
+	if activity.Result.Tx == "" {
 		activity.Result.Tx = activityStatus.Tx
 	}
 
@@ -468,6 +466,7 @@ func updateActivitywithExchangeStatus(activity *common.ActivityRecord, estatuses
 	}
 }
 
+// PersistSnapshot save a authdata snapshot into db
 func (f *Fetcher) PersistSnapshot(
 	ebalances *sync.Map,
 	bbalances map[string]common.BalanceEntry,
