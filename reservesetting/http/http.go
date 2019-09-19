@@ -3,6 +3,8 @@ package http
 import (
 	"log"
 
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 
@@ -22,8 +24,18 @@ type Server struct {
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
-func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange, blockchain *blockchain.Blockchain) *Server {
+func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange, blockchain *blockchain.Blockchain,
+	sentryDSN string) *Server {
 	r := gin.Default()
+	if sentryDSN != "" {
+		// To initialize Sentry's handler, you need to initialize Sentry itself beforehand
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn: sentryDSN,
+		}); err != nil {
+			log.Printf("Sentry initialization failed: %v\n", err)
+		}
+		r.Use(sentrygin.New(sentrygin.Options{}))
+	}
 	server := &Server{
 		storage:            storage,
 		r:                  r,
