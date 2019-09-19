@@ -31,7 +31,7 @@ $$;
 CREATE TABLE IF NOT EXISTS "fetch_data" 
 (
 	id SERIAL PRIMARY KEY,
-	created TIMESTAMP NOT NULL,
+	created TIMESTAMPTZ NOT NULL,
 	data JSON NOT NULL,
 	type fetch_data_type NOT NULL
 );
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS "activity"
 	id SERIAL PRIMARY KEY,
 	timepoint BIGINT NOT NULL,
 	eid TEXT NOT NULL,
-	created TIMESTAMP NOT NULL,
+	created TIMESTAMPTZ NOT NULL,
 	is_pending BOOL NOT NULL,
 	data JSONB NOT NULL
 );
