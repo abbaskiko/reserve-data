@@ -96,10 +96,8 @@ func (se *StableEx) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTra
 	return common.ExchangeTradeHistory{}, nil
 }
 
-func (se *StableEx) FetchTradeHistory(timepoint uint64) (map[uint64][]common.TradeHistory, error) {
-	result := map[uint64][]common.TradeHistory{}
+func (se *StableEx) FetchTradeHistory() {
 	// TODO: get trade history
-	return result, errors.New("not supported")
 }
 
 func (se *StableEx) DepositStatus(id common.ActivityID, txHash string, assetID uint64, amount float64, timepoint uint64) (string, error) {
