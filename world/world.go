@@ -41,10 +41,12 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("unexpected return code: %d", resp.StatusCode)
 		return fmt.Errorf("unexpected return code: %d", resp.StatusCode)
 	}
-
-	if err = json.NewDecoder(resp.Body).Decode(dst); err != nil {
+	d := json.NewDecoder(resp.Body)
+	d.DisallowUnknownFields()
+	if err = d.Decode(dst); err != nil {
 		log.Printf("%s decode failed, %v\n", caller, err)
 		return err
 	}
@@ -76,8 +78,6 @@ func (tw *TheWorld) getOneForgeGoldUSDInfo() common.OneForgeGoldData {
 	if err != nil {
 		result.Error = true
 		result.Message = err.Error()
-	} else {
-		result.Error = false
 	}
 	return result
 }
@@ -89,8 +89,6 @@ func (tw *TheWorld) getOneForgeGoldETHInfo() common.OneForgeGoldData {
 	if err != nil {
 		result.Error = true
 		result.Message = err.Error()
-	} else {
-		result.Error = false
 	}
 	return result
 }

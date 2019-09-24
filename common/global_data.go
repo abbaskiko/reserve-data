@@ -9,17 +9,17 @@ type GoldRate struct {
 type DGXGoldData struct {
 	Valid     bool
 	Timestamp uint64
-	Status    string     `json:"success"`
+	Status    string     `json:"status"`
 	Data      []GoldRate `json:"data"`
 	Error     string
 }
 
 type OneForgeGoldData struct {
-	Value     float64
-	Text      string
-	Timestamp uint64
-	Error     bool
-	Message   string
+	Value     float64 `json:"value"`
+	Text      string  `json:"text"`
+	Timestamp uint64  `json:"timestamp"`
+	Error     bool    `json:"error"`
+	Message   string  `json:"message"`
 }
 
 type GDAXGoldData struct {
