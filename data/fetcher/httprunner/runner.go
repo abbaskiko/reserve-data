@@ -18,8 +18,13 @@ type HTTPRunner struct {
 	rticker          chan time.Time
 	bticker          chan time.Time
 	globalDataTicker chan time.Time
+	hTicker          chan time.Time
 
 	server *Server
+}
+
+func (hr *HTTPRunner) GetExchangeHistoryTicker() <-chan time.Time {
+	return hr.hTicker
 }
 
 // GetGlobalDataTicker returns the global data ticker.
@@ -45,6 +50,10 @@ func (hr *HTTPRunner) GetAuthDataTicker() <-chan time.Time {
 // GetRateTicker returns the rate ticker.
 func (hr *HTTPRunner) GetRateTicker() <-chan time.Time {
 	return hr.rticker
+}
+
+func (hr *HTTPRunner) GetHistoryTicker() <-chan time.Time {
+	return hr.hTicker
 }
 
 // waitPingResponse waits until HTTP ticker server responses to request.
@@ -131,6 +140,7 @@ func NewHTTPRunner(options ...Option) (*HTTPRunner, error) {
 	rchan := make(chan time.Time)
 	bchan := make(chan time.Time)
 	globalDataChan := make(chan time.Time)
+	hChan := make(chan time.Time)
 
 	runner := &HTTPRunner{
 		oticker:          ochan,
@@ -138,6 +148,7 @@ func NewHTTPRunner(options ...Option) (*HTTPRunner, error) {
 		rticker:          rchan,
 		bticker:          bchan,
 		globalDataTicker: globalDataChan,
+		hTicker:          hChan,
 		server:           nil,
 	}
 

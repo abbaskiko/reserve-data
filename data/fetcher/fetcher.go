@@ -72,6 +72,7 @@ func (f *Fetcher) Run() error {
 	go f.RunRateFetcher()
 	go f.RunBlockFetcher()
 	go f.RunGlobalDataFetcher()
+	go f.RunFetchExchangeHistory()
 	log.Printf("Fetcher runner is running...")
 	return nil
 }
@@ -711,4 +712,26 @@ func (f *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, 
 	for pair, exchangeData := range exdata {
 		data.SetOnePrice(exchange.ID(), pair, exchangeData)
 	}
+}
+
+// RunFetchExchangeHistory starts a fetcher to get exchange trade history
+func (f *Fetcher) RunFetchExchangeHistory() {
+	for ; ; <-f.runner.GetExchangeHistoryTicker() {
+		log.Printf("got signal in orderbook channel with exchange-history")
+		f.fetchExchangeTradeHistory()
+		log.Printf("fetched data from exchanges")
+		log.Printf("waiting for signal from runner exchange-history channel")
+	}
+}
+
+func (f *Fetcher) fetchExchangeTradeHistory() {
+	wait := sync.WaitGroup{}
+	for _, exchange := range f.exchanges {
+		wait.Add(1)
+		go func(exchange Exchange) {
+			defer wait.Done()
+			exchange.FetchTradeHistory()
+		}(exchange)
+	}
+	wait.Wait()
 }
