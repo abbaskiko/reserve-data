@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS "assets"
     target_rebalance_threshold    FLOAT     NULL,
     target_transfer_threshold     FLOAT     NULL,
 
-    created                       TIMESTAMP NOT NULL,
-    updated                       TIMESTAMP NOT NULL,
+    created                       TIMESTAMPTZ NOT NULL,
+    updated                       TIMESTAMPTZ NOT NULL,
     -- if set_rate strategy is defined, pwi columns are required
     CONSTRAINT pwi_check CHECK (
             set_rate = 'not_set'
@@ -147,7 +147,7 @@ $$;
 CREATE TABLE IF NOT EXISTS setting_change
 (
     id      SERIAL PRIMARY KEY,
-    created TIMESTAMP                 NOT NULL,
+    created TIMESTAMPTZ                 NOT NULL,
     cat     setting_change_cat UNIQUE NOT NULL,
     data    JSON                      NOT NULL
 );
@@ -162,21 +162,21 @@ CREATE TABLE IF NOT EXISTS price_factor
 CREATE TABLE IF NOT EXISTS set_rate_control
 (
     id        SERIAL PRIMARY KEY,
-    timepoint TIMESTAMP NOT NULL,
+    timepoint TIMESTAMPTZ NOT NULL,
     status    BOOLEAN   NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS rebalance_control
 (
     id        SERIAL PRIMARY KEY,
-    timepoint TIMESTAMP NOT NULL,
+    timepoint TIMESTAMPTZ NOT NULL,
     status    BOOLEAN   NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS stable_token_params_control
 (
     id        SERIAL PRIMARY KEY,
-    timepoint TIMESTAMP NOT NULL,
+    timepoint TIMESTAMPTZ NOT NULL,
     data      JSON      NOT NULL
 );
 
