@@ -35,20 +35,6 @@ func (tw *TheWorld) getGeminiBTCInfo(url string) common.GeminiETHBTCData {
 	return result
 }
 
-func (tw *TheWorld) getGeminiUSDInfo(url string) common.GeminiETHUSDData {
-	var (
-		result = common.GeminiETHUSDData{}
-	)
-	err := tw.getPublic(url, &result)
-	if err != nil {
-		result.Error = err.Error()
-		result.Valid = false
-	} else {
-		result.Valid = true
-	}
-	return result
-}
-
 func (tw *TheWorld) GetBTCInfo() (common.BTCData, error) {
 	return common.BTCData{
 		Coinbase: tw.getCoinbaseInfo(tw.endpoint.CoinbaseBTCEndpoint()),

@@ -53,7 +53,6 @@ type Endpoint interface {
 
 	CoinbaseUSDCEndpoint() string
 	BinanceUSDCEndpoint() string
-	GeminiUSDEndpoint() string
 	CoinbaseUSDEndpoint() string
 	CoinbaseDAIEndpoint() string
 	HitDaiEndpoint() string
@@ -94,10 +93,6 @@ func (re RealEndpoint) HitDaiEndpoint() string {
 
 func (re RealEndpoint) CoinbaseUSDEndpoint() string {
 	return "https://api.pro.coinbase.com/products/eth-usd/ticker"
-}
-
-func (re RealEndpoint) GeminiUSDEndpoint() string {
-	return "https://api.gemini.com/v1/pubticker/ethusd"
 }
 
 func (re RealEndpoint) CoinbaseUSDCEndpoint() string {
@@ -174,10 +169,6 @@ func (se SimulatedEndpoint) CoinbaseDAIEndpoint() string {
 }
 
 func (se SimulatedEndpoint) HitDaiEndpoint() string {
-	panic("implement me")
-}
-
-func (se SimulatedEndpoint) GeminiUSDEndpoint() string {
 	panic("implement me")
 }
 

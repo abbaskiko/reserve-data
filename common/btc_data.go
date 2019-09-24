@@ -59,21 +59,6 @@ type GeminiETHBTCData struct {
 	Last   string             `json:"last"`
 }
 
-type GeminiVolumeETHUSD struct {
-	ETH       string `json:"ETH"`
-	USD       string `json:"USD"`
-	Timestamp uint64 `json:"timestamp"`
-}
-
-type GeminiETHUSDData struct {
-	Valid  bool
-	Error  string
-	Bid    string             `json:"bid"`
-	Ask    string             `json:"ask"`
-	Volume GeminiVolumeETHUSD `json:"volume"`
-	Last   string             `json:"last"`
-}
-
 type BitFinexData struct {
 	Valid           bool
 	Error           string
