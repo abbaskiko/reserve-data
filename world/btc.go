@@ -39,7 +39,6 @@ func (tw *TheWorld) getGeminiUSDInfo(url string) common.GeminiETHUSDData {
 	var (
 		result = common.GeminiETHUSDData{}
 	)
-
 	err := tw.getPublic(url, &result)
 	if err != nil {
 		result.Error = err.Error()

@@ -25,27 +25,28 @@ func (tw *TheWorld) getBitFinexInfo(url string) common.BitFinexData {
 	if err != nil {
 		result.Error = err.Error()
 		result.Valid = false
-	} else {
-		result.Valid = true
+		return result
 	}
 	var bitFinexSampleResponse = []float64{201.01, 777.63092538, 201.02, 1648.5772469599997,
 		-8.21238498, -0.0393, 201.01098627, 75575.33225073, 211.44, 199}
 	if len(bitFinexResp) != len(bitFinexSampleResponse) {
 		result.Error = fmt.Sprintf("bitfinex return unexpected number of fields, %v", bitFinexResp)
 		result.Valid = false
-	} else {
-		result.Valid = true
-		result.Bid = bitFinexResp[0]
-		result.BidSize = bitFinexResp[1]
-		result.Ask = bitFinexResp[2]
-		result.AskSize = bitFinexResp[3]
-		result.DailyChange = bitFinexResp[4]
-		result.DailyChangePerc = bitFinexResp[5]
-		result.LastPrice = bitFinexResp[6]
-		result.Volume = bitFinexResp[7]
-		result.High = bitFinexResp[8]
-		result.Low = bitFinexResp[9]
+		return result
 	}
+
+	result.Bid = bitFinexResp[0]
+	result.BidSize = bitFinexResp[1]
+	result.Ask = bitFinexResp[2]
+	result.AskSize = bitFinexResp[3]
+	result.DailyChange = bitFinexResp[4]
+	result.DailyChangePerc = bitFinexResp[5]
+	result.LastPrice = bitFinexResp[6]
+	result.Volume = bitFinexResp[7]
+	result.High = bitFinexResp[8]
+	result.Low = bitFinexResp[9]
+
+	result.Valid = true
 	return result
 }
 
