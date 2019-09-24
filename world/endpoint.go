@@ -25,6 +25,11 @@ var (
 
 		"CoinbaseDAI",
 		"HitDAI",
+
+		"BitFinexUSD",
+		"BinanceUSDT",
+		"BinancePAX",
+		"BinanceTUSD",
 	}
 	// remove unused feeds
 )
@@ -48,16 +53,34 @@ type Endpoint interface {
 
 	CoinbaseUSDCEndpoint() string
 	BinanceUSDCEndpoint() string
-
-	GeminiUSDEndpoint() string
 	CoinbaseUSDEndpoint() string
-
 	CoinbaseDAIEndpoint() string
 	HitDaiEndpoint() string
+
+	BitFinexUSDTEndpoint() string
+	BinanceUSDTEndpoint() string
+	BinancePAXEndpoint() string
+	BinanceTUSDEndpoint() string
 }
 
 type RealEndpoint struct {
 	OneForgeKey string `json:"oneforge"`
+}
+
+func (re RealEndpoint) BitFinexUSDTEndpoint() string {
+	return "https://api-pub.bitfinex.com/v2/ticker/tETHUSD"
+}
+
+func (re RealEndpoint) BinanceUSDTEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDT"
+}
+
+func (re RealEndpoint) BinancePAXEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHPAX"
+}
+
+func (re RealEndpoint) BinanceTUSDEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHTUSD"
 }
 
 func (re RealEndpoint) CoinbaseDAIEndpoint() string {
@@ -70,10 +93,6 @@ func (re RealEndpoint) HitDaiEndpoint() string {
 
 func (re RealEndpoint) CoinbaseUSDEndpoint() string {
 	return "https://api.pro.coinbase.com/products/eth-usd/ticker"
-}
-
-func (re RealEndpoint) GeminiUSDEndpoint() string {
-	return "https://api.gemini.com/v1/pubticker/ethusd"
 }
 
 func (re RealEndpoint) CoinbaseUSDCEndpoint() string {
@@ -89,11 +108,11 @@ func (re RealEndpoint) GoldDataEndpoint() string {
 }
 
 func (re RealEndpoint) OneForgeGoldETHDataEndpoint() string {
-	return "https://api.1forge.com/convert?from=XAU&to=ETH&quantity=1&api_key=" + re.OneForgeKey
+	return "https://forex.1forge.com/1.0.3/convert?from=XAU&to=ETH&quantity=1&api_key=" + re.OneForgeKey
 }
 
 func (re RealEndpoint) OneForgeGoldUSDDataEndpoint() string {
-	return "https://api.1forge.com/convert?from=XAU&to=USD&quantity=1&api_key=" + re.OneForgeKey
+	return "https://forex.1forge.com/1.0.3/convert?from=XAU&to=USD&quantity=1&api_key=" + re.OneForgeKey
 }
 
 func (re RealEndpoint) GDAXDataEndpoint() string {
@@ -129,15 +148,27 @@ func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
 type SimulatedEndpoint struct {
 }
 
+func (se SimulatedEndpoint) BitFinexUSDTEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinanceUSDTEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinancePAXEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinanceTUSDEndpoint() string {
+	panic("implement me")
+}
+
 func (se SimulatedEndpoint) CoinbaseDAIEndpoint() string {
 	panic("implement me")
 }
 
 func (se SimulatedEndpoint) HitDaiEndpoint() string {
-	panic("implement me")
-}
-
-func (se SimulatedEndpoint) GeminiUSDEndpoint() string {
 	panic("implement me")
 }
 
