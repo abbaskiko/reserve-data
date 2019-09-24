@@ -332,14 +332,17 @@ func (h *Huobi) FetchOnePairTradeHistory(pair commonv3.TradingPairSymbols) ([]co
 
 //FetchTradeHistory get all trade history for all pairs from huobi exchange
 func (h *Huobi) FetchTradeHistory() {
-	result := map[uint64][]common.TradeHistory{}
-	data := sync.Map{}
 	pairs, err := h.TokenPairs()
 	if err != nil {
 		log.Printf("Huobi fetch trade history failed (%s). This might due to pairs setting hasn't been init yet", err.Error())
 		return
 	}
-	wait := sync.WaitGroup{}
+	var (
+		result = map[uint64][]common.TradeHistory{}
+		guard  = &sync.Mutex{}
+		wait   = &sync.WaitGroup{}
+	)
+
 	for _, pair := range pairs {
 		wait.Add(1)
 		go func(pair commonv3.TradingPairSymbols) {
@@ -349,32 +352,12 @@ func (h *Huobi) FetchTradeHistory() {
 				log.Printf("Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
 				return
 			}
-			data.Store(pair.ID, histories)
+			guard.Lock()
+			result[pair.ID] = histories
+			guard.Unlock()
 		}(pair)
 	}
 	wait.Wait()
-	var integrity = true
-	data.Range(func(key, value interface{}) bool {
-		tokenPairID, ok := key.(uint64)
-		//if there is conversion error, continue to next key,val
-		if !ok {
-			log.Printf("Key (%v) cannot be asserted to TokenPairID", key)
-			integrity = false
-			return false
-		}
-		tradeHistories, ok := value.([]common.TradeHistory)
-		if !ok {
-			log.Printf("Value (%v) cannot be asserted to []TradeHistory", value)
-			integrity = false
-			return false
-		}
-		result[tokenPairID] = tradeHistories
-		return true
-	})
-	if !integrity {
-		log.Print("Huobi fetch trade history returns corrupted. Try again in 10 mins")
-		return
-	}
 	if err := h.storage.StoreTradeHistory(result); err != nil {
 		log.Printf("Store trade history error: %s", err.Error())
 	}

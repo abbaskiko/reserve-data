@@ -295,18 +295,20 @@ func (bn *Binance) FetchOnePairTradeHistory(pair commonv3.TradingPairSymbols) ([
 
 //FetchTradeHistory get all trade history for all tokens in the exchange
 func (bn *Binance) FetchTradeHistory() {
-	result := common.ExchangeTradeHistory{}
-	data := sync.Map{}
 	pairs, err := bn.TokenPairs()
 	if err != nil {
 		log.Printf("Binance Get Token pairs setting failed (%s)", err.Error())
 		return
 	}
-	wait := sync.WaitGroup{}
-	var i int
-	var x int
-	for i < len(pairs) {
-		for x = i; x < len(pairs) && x < i+batchSize; x++ {
+	var (
+		result        = common.ExchangeTradeHistory{}
+		guard         = &sync.Mutex{}
+		wait          = &sync.WaitGroup{}
+		batchStart, x int
+	)
+
+	for batchStart < len(pairs) {
+		for x = batchStart; x < len(pairs) && x < batchStart+batchSize; x++ {
 			wait.Add(1)
 			go func(pair commonv3.TradingPairSymbols) {
 				defer wait.Done()
@@ -315,34 +317,15 @@ func (bn *Binance) FetchTradeHistory() {
 					log.Printf("Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
 					return
 				}
-				data.Store(pair.ID, histories)
+				guard.Lock()
+				result[pair.ID] = histories
+				guard.Unlock()
 			}(pairs[x])
 		}
-		i = x
+		batchStart = x
 		wait.Wait()
 	}
-	var integrity = true
-	data.Range(func(key, value interface{}) bool {
-		tokenPairID, ok := key.(uint64)
-		//if there is conversion error, continue to next key,val
-		if !ok {
-			log.Printf("Key (%v) cannot be asserted to TokenPairID", key)
-			integrity = false
-			return false
-		}
-		tradeHistories, ok := value.([]common.TradeHistory)
-		if !ok {
-			log.Printf("Value (%v) cannot be asserted to []TradeHistory", value)
-			integrity = false
-			return false
-		}
-		result[tokenPairID] = tradeHistories
-		return true
-	})
-	if !integrity {
-		log.Print("Binance fetch trade history returns corrupted. Try again in 10 mins")
-		return
-	}
+
 	if err := bn.storage.StoreTradeHistory(result); err != nil {
 		log.Printf("Binance Store trade history error: %s", err.Error())
 	}
