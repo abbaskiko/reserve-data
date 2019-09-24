@@ -3,8 +3,8 @@ package common
 // BTCData is the data returned by /btc-feed API.
 type BTCData struct {
 	Timestamp uint64
-	Coinbase  CoinbaseData `json:"CoinbaseBTC"`
-	Gemini    GeminiData   `json:"GeminiBTC"`
+	Coinbase  CoinbaseData     `json:"CoinbaseBTC"`
+	Gemini    GeminiETHBTCData `json:"GeminiBTC"`
 }
 
 // CoinBaseData is the response of Coinbase ETH/BTC ticker request.
@@ -31,13 +31,13 @@ type CoinbaseData struct {
 	Volume  string `json:"volume"`
 }
 
-type GeminiDataVolume struct {
+type GeminiVolumeETHBTC struct {
 	ETH       string `json:"ETH"`
 	BTC       string `json:"BTC"`
 	Timestamp uint64 `json:"timestamp"`
 }
 
-// GeminiData is the data returns by Gemini ETH/BTC ticker.
+// GeminiETHBTCData is the data returns by Gemini ETH/BTC ticker.
 // Example: https://api.gemini.com/v1/pubticker/ethbtc
 // Response
 // {
@@ -50,11 +50,41 @@ type GeminiDataVolume struct {
 //  },
 //  "last": "0.02694"
 // }
-type GeminiData struct {
+type GeminiETHBTCData struct {
 	Valid  bool
 	Error  string
-	Bid    string           `json:"bid"`
-	Ask    string           `json:"ask"`
-	Volume GeminiDataVolume `json:"volume"`
-	Last   string           `json:"last"`
+	Bid    string             `json:"bid"`
+	Ask    string             `json:"ask"`
+	Volume GeminiVolumeETHBTC `json:"volume"`
+	Last   string             `json:"last"`
+}
+
+type GeminiVolumeETHUSD struct {
+	ETH       string `json:"ETH"`
+	USD       string `json:"USD"`
+	Timestamp uint64 `json:"timestamp"`
+}
+
+type GeminiETHUSDData struct {
+	Valid  bool
+	Error  string
+	Bid    string             `json:"bid"`
+	Ask    string             `json:"ask"`
+	Volume GeminiVolumeETHUSD `json:"volume"`
+	Last   string             `json:"last"`
+}
+
+type BitFinexData struct {
+	Valid           bool
+	Error           string
+	Bid             float64 `json:"bid"`
+	BidSize         float64 `json:"bid_size"`
+	Ask             float64 `json:"ask"`
+	AskSize         float64 `json:"ask_size"`
+	DailyChange     float64 `json:"daily_change"`
+	DailyChangePerc float64 `json:"daily_change_perc"`
+	LastPrice       float64 `json:"last_price"`
+	Volume          float64 `json:"volume"`
+	High            float64 `json:"high"`
+	Low             float64 `json:"low"`
 }

@@ -25,6 +25,11 @@ var (
 
 		"CoinbaseDAI",
 		"HitDAI",
+
+		"BitFinexUSD",
+		"BinanceUSDT",
+		"BinancePAX",
+		"BinanceTUSD",
 	}
 	// remove unused feeds
 )
@@ -48,16 +53,35 @@ type Endpoint interface {
 
 	CoinbaseUSDCEndpoint() string
 	BinanceUSDCEndpoint() string
-
 	GeminiUSDEndpoint() string
 	CoinbaseUSDEndpoint() string
-
 	CoinbaseDAIEndpoint() string
 	HitDaiEndpoint() string
+
+	BitFinexUSDTEndpoint() string
+	BinanceUSDTEndpoint() string
+	BinancePAXEndpoint() string
+	BinanceTUSDEndpoint() string
 }
 
 type RealEndpoint struct {
 	OneForgeKey string `json:"oneforge"`
+}
+
+func (re RealEndpoint) BitFinexUSDTEndpoint() string {
+	return "https://api-pub.bitfinex.com/v2/ticker/tETHUSD"
+}
+
+func (re RealEndpoint) BinanceUSDTEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDT"
+}
+
+func (re RealEndpoint) BinancePAXEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHPAX"
+}
+
+func (re RealEndpoint) BinanceTUSDEndpoint() string {
+	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHTUSD"
 }
 
 func (re RealEndpoint) CoinbaseDAIEndpoint() string {
@@ -127,6 +151,22 @@ func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
 }
 
 type SimulatedEndpoint struct {
+}
+
+func (se SimulatedEndpoint) BitFinexUSDTEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinanceUSDTEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinancePAXEndpoint() string {
+	panic("implement me")
+}
+
+func (se SimulatedEndpoint) BinanceTUSDEndpoint() string {
+	panic("implement me")
 }
 
 func (se SimulatedEndpoint) CoinbaseDAIEndpoint() string {
