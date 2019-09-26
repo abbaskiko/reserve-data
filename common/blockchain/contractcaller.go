@@ -31,7 +31,7 @@ func (c ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, timeOu
 			return client.CallContract(ctx, msg, blockNo)
 		}()
 		if err != nil {
-			log.Printf("FALLBACK: Ether client %s done, getting err %v, trying next one...", client.Url, err)
+			log.Printf("FALLBACK: Ether client %s done, getting err %v, trying next one...", client.URL, err)
 			continue
 		}
 		return output, nil

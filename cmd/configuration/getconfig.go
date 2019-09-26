@@ -81,7 +81,7 @@ func GetConfig(
 			bkClients[ep] = bkClient
 			callClients = append(callClients, &common.EthClient{
 				Client: bkClient,
-				Url:    ep,
+				URL:    ep,
 			})
 		}
 	}

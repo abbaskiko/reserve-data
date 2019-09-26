@@ -7,5 +7,5 @@ import (
 // EthClient just a wrap for ethclient.Client with url connect to
 type EthClient struct {
 	*ethclient.Client
-	Url string
+	URL string
 }
