@@ -61,7 +61,7 @@ curl -X POST "https://gateway.local/v3/enable-rebalance"
 Get set-rate status, if response is *true* then set-rate is enable, the analytic can perform set-rate, else response is *false*, the analytic hold set-rate ability.
 
 ```shell
-curl -X -GET "https://gateway.local/set-rate-status"
+curl -X -GET "https://gateway.local/v3/set-rate-status"
 ```
 
 > sample response
