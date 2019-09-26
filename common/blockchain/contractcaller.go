@@ -8,24 +8,22 @@ import (
 	"time"
 
 	ether "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/ethclient"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 type ContractCaller struct {
-	clients []*ethclient.Client
-	urls    []string
+	clients []*common.EthClient
 }
 
-func NewContractCaller(clients []*ethclient.Client, urls []string) *ContractCaller {
+func NewContractCaller(clients []*common.EthClient) *ContractCaller {
 	return &ContractCaller{
 		clients: clients,
-		urls:    urls,
 	}
 }
 
 func (c ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, timeOut time.Duration) ([]byte, error) {
-	for i, client := range c.clients {
-		url := c.urls[i]
+	for _, client := range c.clients {
 
 		output, err := func() ([]byte, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), timeOut)
@@ -33,7 +31,7 @@ func (c ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, timeOu
 			return client.CallContract(ctx, msg, blockNo)
 		}()
 		if err != nil {
-			log.Printf("FALLBACK: Ether client %s done, getting err %v, trying next one...", url, err)
+			log.Printf("FALLBACK: Ether client %s done, getting err %v, trying next one...", client.Url, err)
 			continue
 		}
 		return output, nil
