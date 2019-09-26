@@ -37,7 +37,7 @@ func (b Broadcaster) Broadcast(tx *types.Transaction) (map[string]error, bool) {
 		wg.Add(1)
 		timeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		b.broadcast(timeout, id, client, tx, &wg, &failures)
-		defer cancel()
+		cancel()
 	}
 	wg.Wait()
 	result := map[string]error{}
