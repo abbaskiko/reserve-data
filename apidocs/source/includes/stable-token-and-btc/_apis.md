@@ -132,7 +132,7 @@ curl -X GET "https://gateway.local/v3/stable-token-params"
 ## Get gold data
 
 ```shell
-curl -X GET "https://gateway.local/gold-feed"
+curl -X GET "https://gateway.local/v3/gold-feed"
 ```
 
 > sample response
@@ -277,13 +277,13 @@ curl -X GET "https://gateway.local/gold-feed"
 
 ### HTTP Request
 
-`GET https://gateway.local/gold-feed`
+`GET https://gateway.local/v3/gold-feed`
 
 
 ## Get BTC data
 
 ```shell
-curl -X GET "https://gateway.local/btc-feed"
+curl -X GET "https://gateway.local/v3/btc-feed"
 ```
 
 > sample response
@@ -320,4 +320,4 @@ curl -X GET "https://gateway.local/btc-feed"
 
 ### HTTP Request
 
-`GET https://gateway.local/btc-feed`
+`GET https://gateway.local/v3/btc-feed`

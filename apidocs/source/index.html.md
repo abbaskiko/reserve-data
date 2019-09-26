@@ -45,7 +45,7 @@ Required headers:
 ## Get time server
 
 ```shell
-curl -X GET "http://gateway.local/timeserver"
+curl -X GET "http://gateway.local/v3/timeserver"
 ```
 
 > sample response
@@ -59,7 +59,7 @@ curl -X GET "http://gateway.local/timeserver"
 
 ### HTTP request
 
-`GET https://gateway.local/timeserver`
+`GET https://gateway.local/v3/timeserver`
 
 ## Get auth data
 
@@ -192,7 +192,7 @@ curl -X GET "https://gateway.local/v3/authdata"
 ## Get all activities
 
 ```shell
-curl -X GET "https://gateway.local/activities?fromTime=1564889953000&toTime=1565235553000"
+curl -X GET "https://gateway.local/v3/activities?fromTime=1564889953000&toTime=1565235553000"
 ```
 
 > sample response
@@ -202,7 +202,7 @@ curl -X GET "https://gateway.local/activities?fromTime=1564889953000&toTime=1565
 
 ### HTTP Request
 
-`GET https://gateway.local/activities`
+`GET https://gateway.local/v3/activities`
 
 Param | Type | Required | Default | Description
 ----- | ---- | -------- | ------- | -----------

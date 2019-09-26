@@ -7,7 +7,7 @@ APIs relate to centralized exchanges
 Create an order into centralized exchange
 
 ```shell
-curl -X POST "http://gateway.local/trade"
+curl -X POST "http://gateway.local/v3/trade"
 -H 'Content-Type: application/json'
 -d '{
    "pair" : 1
@@ -31,7 +31,7 @@ curl -X POST "http://gateway.local/trade"
 
 ### HTTP Request
 
-`POST https://gateway.local/trade`
+`POST https://gateway.local/v3/trade`
 <aside class="notice">Rebalance key is required</aside>
 
 Params | Type | Required | Default | Description
@@ -45,7 +45,7 @@ type | string | true | nil | order type (buy or sell)
 ## Cancel order 
 
 ```shell
-curl -X POST "http://gateway.local/cancelorder/binance"
+curl -X POST "http://gateway.local/v3/cancelorder/binance"
 -H 'Content-Type: application/json'
 -d '{
     "order_id": 43142
@@ -62,7 +62,7 @@ curl -X POST "http://gateway.local/cancelorder/binance"
 
 ### HTTP request
 
-`POST https://gateway.local/cancelorder/:exchange`
+`POST https://gateway.local/v3/cancelorder/:exchange`
 <aside class="notice">Rebalance key is required</aside>
 
 Param | Type | Required | Default | Description
@@ -72,7 +72,7 @@ order_id | string | true | nil | order id to be cancelled
 ## Withdraw
 
 ```shell
-curl -X POST "https://gateway.local/withdraw"
+curl -X POST "https://gateway.local/v3/withdraw"
 -H 'Content-type: application/json'
 -d '{
     "exchange": 1,
@@ -92,7 +92,7 @@ curl -X POST "https://gateway.local/withdraw"
 
 ### HTTP Request
 
-`POST https://gateway.local/withdraw`
+`POST https://gateway.local/v3/withdraw`
 <aside class="notice">Rebalance key is required</aside>
 
 Params | Type | Required | Default | Description
@@ -105,7 +105,7 @@ asset | uint64 (asset id) | true | nil | asset we want to withdraw
 ## Deposit
 
 ```shell
-curl -X POST "https://gateway.local/deposit"
+curl -X POST "https://gateway.local/v3/deposit"
 -H 'Content-Type: application/json'
 -d '{
     "exchange": 1,
@@ -125,7 +125,7 @@ curl -X POST "https://gateway.local/deposit"
 
 ### HTTP Request
 
-`POST https://gateway.local/deposit`
+`POST https://gateway.local/v3/deposit`
 <aside class="notice">Rebalance key is required</aside>
 
 Param | Type | Required | Default | Description
@@ -138,7 +138,7 @@ amount | string (big integer) | true | nil | amount to deposit
 ## Get trade history
 
 ```shell
-curl -X GET "https://gateway.local/tradehistory?fromTime=1565149153000&toTime=1565235553000"
+curl -X GET "https://gateway.local/v3/tradehistory?fromTime=1565149153000&toTime=1565235553000"
 ```
 
 > sample response

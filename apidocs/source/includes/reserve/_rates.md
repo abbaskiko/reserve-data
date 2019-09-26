@@ -3,7 +3,7 @@
 ## Get prices for all base-quote pairs
 
 ```shell
-curl -X -GET "http://gateway.local/prices"
+curl -X -GET "http://gateway.local/v3/prices"
 ```
 
 > sample response
@@ -96,7 +96,7 @@ curl -X -GET "http://gateway.local/prices"
 
 ### HTTP Request
 
-`GET https://gateway.local/prices`
+`GET https://gateway.local/v3/prices`
 
 ## Get prices for a specific base-quote pair
 
@@ -109,12 +109,12 @@ curl -X GET "https://gateway.local/prices/omg/eth"
 
 ### HTTP Request
 
-`GET https://gateway.local/prices/:base/:quote`
+`GET https://gateway.local/v3/prices/:base/:quote`
 
 ## Get token rates from blockchain
 
 ```shell
-curl -X GET "http://127.0.0.1:8000/getrates"
+curl -X GET "http://127.0.0.1:8000/v3/getrates"
 ```
 
 > sample response
@@ -173,7 +173,7 @@ curl -X GET "http://127.0.0.1:8000/getrates"
 ## Get all token rates from blockchain
 
 ```shell
-curl -X GET "https://gateway.local/get-all-rates"
+curl -X GET "https://gateway.local/v3/get-all-rates"
 ```
 
 > sample response
