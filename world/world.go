@@ -46,6 +46,7 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 
 	if resp.StatusCode != http.StatusOK {
 		errMsg := fmt.Sprintf("unexpected return code: %d, response text %s", resp.StatusCode, body)
+		log.Println(errMsg)
 		return errors.New(errMsg)
 	}
 	d := json.NewDecoder(bytes.NewBuffer(body))
