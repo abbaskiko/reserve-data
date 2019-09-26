@@ -68,6 +68,7 @@ func (s *Server) register() {
 	s.r.GET("/rtick", newTickerHandler(s.runner.rticker))
 	s.r.GET("/btick", newTickerHandler(s.runner.bticker))
 	s.r.GET("/gtick", newTickerHandler(s.runner.globalDataTicker))
+	s.r.GET("/htick", newTickerHandler(s.runner.hTicker))
 }
 
 // Start creates the HTTP server if needed and starts it.

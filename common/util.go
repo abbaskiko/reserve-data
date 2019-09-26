@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -32,14 +33,6 @@ func CurrentDir() string {
 func CmdDirLocation() string {
 	_, fileName, _, _ := runtime.Caller(0)
 	return filepath.Join(filepath.Dir(filepath.Dir(fileName)), "cmd")
-}
-
-// ErrorToString returns error as string and an empty string if the error is nil
-func ErrorToString(err error) string {
-	if err == nil {
-		return ""
-	}
-	return err.Error()
 }
 
 // FloatToBigInt converts a float to a big int with specific decimal
@@ -91,10 +84,43 @@ func CombineActivityStorageErrs(err, sErr error) error {
 	if err == nil && sErr != nil {
 		return sErr
 	}
-	return fmt.Errorf("action error: %s, storage error: %s", ErrorToString(err), ErrorToString(sErr))
+	return fmt.Errorf("action error: %v, storage error: %v", err, sErr)
 }
 
 // IsEthereumAddress returns true if the given address is ethereum.
 func IsEthereumAddress(addr common.Address) bool {
 	return addr == common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+}
+
+// GetCallerFunctionName return caller function name
+func GetCallerFunctionName() string {
+	fn := getFrame(2).Function
+	lastSlash := strings.LastIndex(fn, "/")
+	if lastSlash != -1 {
+		return fn[lastSlash+1:]
+	}
+	return fn
+}
+
+func getFrame(skipFrames int) runtime.Frame {
+	// We need the frame at index skipFrames+2, since we never want runtime.Callers and getFrame
+	targetFrameIndex := skipFrames + 2
+
+	// Set size to targetFrameIndex+2 to ensure we have room for one more caller than we need
+	programCounters := make([]uintptr, targetFrameIndex+2)
+	n := runtime.Callers(0, programCounters)
+
+	frame := runtime.Frame{Function: "unknown"}
+	if n > 0 {
+		frames := runtime.CallersFrames(programCounters[:n])
+		for more, frameIndex := true, 0; more && frameIndex <= targetFrameIndex; frameIndex++ {
+			var frameCandidate runtime.Frame
+			frameCandidate, more = frames.Next()
+			if frameIndex == targetFrameIndex {
+				frame = frameCandidate
+			}
+		}
+	}
+
+	return frame
 }

@@ -7,11 +7,10 @@ APIs relate to centralized exchanges
 Create an order into centralized exchange
 
 ```shell
-curl -X POST "http://gateway.local/trade/binance"
+curl -X POST "http://gateway.local/v3/trade"
 -H 'Content-Type: application/json'
 -d '{
-   "base": "KNC",
-   "quote": "ETH",
+   "pair" : 1
    "rate": 0.443,
    "amount": 141,
    "type": "buy" 
@@ -32,12 +31,12 @@ curl -X POST "http://gateway.local/trade/binance"
 
 ### HTTP Request
 
-`POST https://gateway.local/trade/:exchange_id`
+`POST https://gateway.local/v3/trade`
+<aside class="notice">Rebalance key is required</aside>
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
-base | string | true | nil | base asset
-quote | string | true | nil | quote asset
+pair | uint64 | true | nil | id of pair
 rate | float64 | true | nil | rate to create order
 amount | float64 | true | nil | order amount 
 type | string | true | nil | order type (buy or sell)
@@ -46,7 +45,7 @@ type | string | true | nil | order type (buy or sell)
 ## Cancel order 
 
 ```shell
-curl -X POST "http://gateway.local/cancelorder/binance"
+curl -X POST "http://gateway.local/v3/cancelorder/binance"
 -H 'Content-Type: application/json'
 -d '{
     "order_id": 43142
@@ -63,7 +62,8 @@ curl -X POST "http://gateway.local/cancelorder/binance"
 
 ### HTTP request
 
-`POST https://gateway.local/cancelorder/:exchange`
+`POST https://gateway.local/v3/cancelorder/:exchange`
+<aside class="notice">Rebalance key is required</aside>
 
 Param | Type | Required | Default | Description
 ----- | ---- | -------- | ------- | -----------
@@ -72,9 +72,10 @@ order_id | string | true | nil | order id to be cancelled
 ## Withdraw
 
 ```shell
-curl -X POST "https://gateway.local/withdraw/binance"
+curl -X POST "https://gateway.local/v3/withdraw"
 -H 'Content-type: application/json'
 -d '{
+    "exchange": 1,
     "amount": 41.42342,
     "asset": "ETH"
 }'
@@ -91,10 +92,12 @@ curl -X POST "https://gateway.local/withdraw/binance"
 
 ### HTTP Request
 
-`POST https://gateway.local/withdraw/:exchange`
+`POST https://gateway.local/v3/withdraw`
+<aside class="notice">Rebalance key is required</aside>
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
+exchange | uint64(int) | true | nil | id of exchange
 amount | string(big int) | true | nil | amount we want to withdraw
 asset | uint64 (asset id) | true | nil | asset we want to withdraw
 
@@ -102,9 +105,10 @@ asset | uint64 (asset id) | true | nil | asset we want to withdraw
 ## Deposit
 
 ```shell
-curl -X POST "https://gateway.local/deposit/binance"
+curl -X POST "https://gateway.local/v3/deposit"
 -H 'Content-Type: application/json'
 -d '{
+    "exchange": 1,
     "asset": 1,
     "amount": "41342342"
 }'
@@ -121,10 +125,12 @@ curl -X POST "https://gateway.local/deposit/binance"
 
 ### HTTP Request
 
-`POST https://gateway.local/deposit/:exchange`
+`POST https://gateway.local/v3/deposit`
+<aside class="notice">Rebalance key is required</aside>
 
 Param | Type | Required | Default | Description
 ----- | ---- | -------- | ------- | -----------
+exchange | uint64(int) | true | nil | id of exchange
 asset | integer (asset id) | true | nil | asset id
 amount | string (big integer) | true | nil | amount to deposit
 
@@ -132,7 +138,7 @@ amount | string (big integer) | true | nil | amount to deposit
 ## Get trade history
 
 ```shell
-curl -X GET "https://gateway.local/tradehistory?fromTime=1565149153000&toTime=1565235553000"
+curl -X GET "https://gateway.local/v3/tradehistory?fromTime=1565149153000&toTime=1565235553000"
 ```
 
 > sample response

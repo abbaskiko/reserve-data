@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
@@ -20,6 +22,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/world"
 )
 
+// Config config for core
 type Config struct {
 	ActivityStorage      core.ActivityStorage
 	DataStorage          data.Storage
@@ -44,19 +47,24 @@ type Config struct {
 	ContractAddresses *common.ContractAddressConfiguration
 }
 
+// AddCoreConfig add config for core
 func (c *Config) AddCoreConfig(
+	cliCtx *cli.Context,
 	secretConfigFile string,
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
-	enabledExchanges []common.ExchangeID,
 	settingStore storagev3.Interface,
 ) error {
-	dataStorage, err := storage.NewBoltStorage(dataFile)
+	db, err := NewDBFromContext(cliCtx)
 	if err != nil {
-		log.Printf("failed create new data storage database err=%s", err.Error())
+		return err
+	}
+	dataStorage, err := storage.NewPostgresStorage(db)
+	if err != nil {
+		log.Printf("failed to create new data storage databse err=%s", err.Error())
 		return err
 	}
 
@@ -74,6 +82,7 @@ func (c *Config) AddCoreConfig(
 			3*time.Second,  // rate fetching interval
 			5*time.Second,  // block fetching interval
 			10*time.Second, // global data fetching interval
+			10*time.Minute, // exchange trade history fetching interval
 		)
 		dataControllerRunner = datapruner.NewStorageControllerTickerRunner(24 * time.Hour)
 	}
@@ -101,12 +110,12 @@ func (c *Config) AddCoreConfig(
 
 	// create Exchange pool
 	exchangePool, err := NewExchangePool(
+		cliCtx,
 		secretConfigFile,
 		c.Blockchain,
 		dpl,
 		bi,
 		hi,
-		enabledExchanges,
 		settingStore,
 	)
 	if err != nil {

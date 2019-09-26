@@ -8,12 +8,13 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 
+	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
 func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pricePrecision, amountPrecision uint64,
-	amountLimitMin, amountLimitMax, priceLimitMin, priceLimitMax, minNotional float64) (uint64, error) {
+	amountLimitMin, amountLimitMax, priceLimitMin, priceLimitMax, minNotional float64, tradingByAssetID uint64) (uint64, error) {
 
 	var tradingPairID uint64
 	err := tx.NamedStmt(s.stmts.newTradingPair).Get(
@@ -65,6 +66,11 @@ func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pr
 			pErr.Message,
 		)
 	}
+	_, err = s.createTradingBy(tx, tradingByAssetID, tradingPairID)
+	if err != nil {
+		log.Printf("create trading pair failed on create tradingby, err=%v\n", err)
+		return 0, err
+	}
 	log.Printf("trading pair created id=%d", tradingPairID)
 	return tradingPairID, nil
 }
@@ -75,7 +81,7 @@ func (s *Storage) UpdateTradingPair(id uint64, updateOpts storage.UpdateTradingP
 	if err != nil {
 		return err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	err = s.updateTradingPair(tx, id, updateOpts)
 	if err != nil {

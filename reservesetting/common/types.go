@@ -73,6 +73,7 @@ type TradingPair struct {
 	PriceLimitMin   float64 `json:"price_limit_min"`
 	PriceLimitMax   float64 `json:"price_limit_max"`
 	MinNotional     float64 `json:"min_notional"`
+	ExchangeID      uint64  `json:"-"`
 }
 
 // TradingBy is a struct hold trading pair and its asset
@@ -232,13 +233,6 @@ type CreateTradingPairEntry struct {
 	ExchangeID uint64 `json:"exchange_id"`
 }
 
-// CreateTradingByEntry present the information to create a trading by
-type CreateTradingByEntry struct {
-	settingChangeMarker
-	AssetID       uint64 `json:"asset_id"`
-	TradingPairID uint64 `json:"trading_pair_id"`
-}
-
 // ChangeAssetAddressEntry present data to create a change asset address
 type ChangeAssetAddressEntry struct {
 	settingChangeMarker
@@ -274,8 +268,6 @@ const (
 	ChangeTypeUpdateAssetExchange // update_asset_exchange
 	// ChangeTypeCreateTradingPair is used when create a trading pair
 	ChangeTypeCreateTradingPair // create_trading_pair
-	// ChangeTypeCreateTradingBy is used when create a trading by
-	ChangeTypeCreateTradingBy // create_trading_by
 	// ChangeTypeUpdateExchange is used when update exchange
 	ChangeTypeUpdateExchange // update_exchange
 	// ChangeTypeChangeAssetAddr is used when update address of an asset

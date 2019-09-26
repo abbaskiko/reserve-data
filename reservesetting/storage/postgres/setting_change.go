@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -29,7 +30,7 @@ func (s *Storage) CreateSettingChange(cat common.ChangeCatalog, obj common.Setti
 	if err != nil {
 		return 0, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	if err = tx.Stmtx(s.stmts.newSettingChange).Get(&id, cat.String(), jsonData); err != nil {
 		pErr, ok := err.(*pq.Error)
@@ -124,7 +125,7 @@ func (s *Storage) RejectSettingChange(id uint64) error {
 	if err != nil {
 		return err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 	err = tx.Stmtx(s.stmts.deleteSettingChange).Get(&returnedID, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -166,26 +167,11 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 			log.Println(msg)
 			return err
 		}
-
-	case *common.CreateTradingByEntry:
-		_, err = s.createTradingBy(tx, e.AssetID, e.TradingPairID)
-		if err != nil {
-			msg := fmt.Sprintf("create trading by %d, err=%v\n", i, err)
-			log.Println(msg)
-			return err
-		}
 	case *common.CreateTradingPairEntry:
-		pairID, err := s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
-			e.AmountLimitMax, e.PriceLimitMin, e.PriceLimitMax, e.MinNotional)
+		_, err = s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
+			e.AmountLimitMax, e.PriceLimitMin, e.PriceLimitMax, e.MinNotional, e.AssetID)
 		if err != nil {
 			msg := fmt.Sprintf("create trading pair %d, err=%v\n", i, err)
-			log.Println(msg)
-			return err
-		}
-		// TODO: should we move create trading by into createTradingPair
-		_, err = s.createTradingBy(tx, e.AssetID, pairID)
-		if err != nil {
-			msg := fmt.Sprintf("create trading by at position %d failed, err=%v\n", i, err)
 			log.Println(msg)
 			return err
 		}
@@ -244,7 +230,7 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 	if err != nil {
 		return errors.Wrap(err, "create transaction error")
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 	changeObj, err := s.getSettingChange(tx, id)
 	if err != nil {
 		return errors.Wrap(err, "get setting change error")

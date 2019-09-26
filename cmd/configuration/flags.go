@@ -57,7 +57,7 @@ func NewBinanceCliFlags() []cli.Flag {
 	}
 }
 
-// NewBinanceCliFlags returns the Binance endpoints configuration from cli context.
+// NewBinanceInterfaceFromContext returns the Binance endpoints configuration from cli context.
 func NewBinanceInterfaceFromContext(c *cli.Context) binance.Interface {
 	return binance.NewRealInterface(
 		c.GlobalString(binancePublicEndpointFlag),
@@ -65,7 +65,7 @@ func NewBinanceInterfaceFromContext(c *cli.Context) binance.Interface {
 	)
 }
 
-// NewhuobiCliFlags returns new configuration flags for huobi.
+// NewHuobiCliFlags returns new configuration flags for huobi.
 func NewHuobiCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
@@ -83,7 +83,7 @@ func NewHuobiCliFlags() []cli.Flag {
 	}
 }
 
-// NewhuobiCliFlags returns the huobi endpoints configuration from cli context.
+// NewhuobiInterfaceFromContext returns the huobi endpoints configuration from cli context.
 func NewhuobiInterfaceFromContext(c *cli.Context) huobi.Interface {
 	return huobi.NewRealInterface(
 		c.GlobalString(huobiPublicEndpointFlag),
@@ -139,6 +139,7 @@ func NewCliFlags() []cli.Flag {
 	return flags
 }
 
+// CreateBlockchain create new blockchain object
 func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 	var (
 		bc  *blockchain.Blockchain
@@ -248,12 +249,8 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 
 	secretConfigFile := NewSecretConfigFileFromContext(c)
 
-	enabledExchanges, err := NewExchangesFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-
 	config, err := GetConfig(
+		c,
 		dpl,
 		ethereumNodeConf,
 		bi,
@@ -261,7 +258,6 @@ func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
 		contractAddressConf,
 		dataFile,
 		secretConfigFile,
-		enabledExchanges,
 		sr,
 	)
 	if err != nil {

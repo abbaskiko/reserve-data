@@ -55,8 +55,6 @@ func SettingChangeFromType(t ChangeType) (SettingChangeType, error) {
 		i = &UpdateAssetExchangeEntry{}
 	case ChangeTypeCreateTradingPair:
 		i = &CreateTradingPairEntry{}
-	case ChangeTypeCreateTradingBy:
-		i = &CreateTradingByEntry{}
 	case ChangeTypeUpdateExchange:
 		i = &UpdateExchangeEntry{}
 	case ChangeTypeChangeAssetAddr:

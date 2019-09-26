@@ -288,7 +288,7 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 	opts := bc.GetCallOpts(atBlock)
 	balances, err := bc.GeneratedGetBalances(opts, reserve, tokens)
 	returnTime := common.GetTimestamp()
-	log.Printf("Fetcher ------> balances: %v, err: %s", balances, common.ErrorToString(err))
+	log.Printf("Fetcher ------> balances: %v, err: %v", balances, err)
 	if err != nil {
 		for _, token := range assets {
 			// TODO: should store token id instead of symbol
@@ -355,10 +355,9 @@ func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.Al
 	result.ReturnTime = returnTime
 	result.BlockNumber = currentBlock
 
-	result.Data = map[string]common.RateEntry{}
+	result.Data = map[uint64]common.RateEntry{}
 	for i, token := range validTokens {
-		// TODO: should store asset_id instead of symbol
-		result.Data[token.Symbol] = common.NewRateEntry(
+		result.Data[token.ID] = common.NewRateEntry(
 			baseBuys[i],
 			compactBuys[i],
 			baseSells[i],

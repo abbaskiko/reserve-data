@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -53,7 +54,7 @@ func (s *Storage) GetAssetExchangeBySymbol(exchangeID uint64, symbol string) (co
 	if err != nil {
 		return result, err
 	}
-	defer rollbackUnlessCommitted(tx)
+	defer pgutil.RollbackUnlessCommitted(tx)
 
 	log.Printf("getting asset symbol=%s", symbol)
 	err = tx.Stmtx(s.stmts.getAssetExchangeBySymbol).Get(&result, exchangeID, symbol)

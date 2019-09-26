@@ -219,34 +219,37 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 	return result, err
 }
 
-func isDuplicated(oldData, newData map[string]common.RateResponse) bool {
+func isDuplicated(oldData, newData map[uint64]common.RateResponse) bool {
+	if len(oldData) != len(newData) {
+		return false
+	}
 	for tokenID, oldElem := range oldData {
-		newelem, ok := newData[tokenID]
+		newElem, ok := newData[tokenID]
 		if !ok {
 			return false
 		}
-		if oldElem.BaseBuy != newelem.BaseBuy {
+		if oldElem.BaseBuy != newElem.BaseBuy {
 			return false
 		}
-		if oldElem.CompactBuy != newelem.CompactBuy {
+		if oldElem.CompactBuy != newElem.CompactBuy {
 			return false
 		}
-		if oldElem.BaseSell != newelem.BaseSell {
+		if oldElem.BaseSell != newElem.BaseSell {
 			return false
 		}
-		if oldElem.CompactSell != newelem.CompactSell {
+		if oldElem.CompactSell != newElem.CompactSell {
 			return false
 		}
-		if oldElem.Rate != newelem.Rate {
+		if oldElem.Rate != newElem.Rate {
 			return false
 		}
 	}
 	return true
 }
 
-func getOneRateData(rate common.AllRateEntry) map[string]common.RateResponse {
+func getOneRateData(rate common.AllRateEntry) map[uint64]common.RateResponse {
 	//get data from rate object and return the data.
-	data := map[string]common.RateResponse{}
+	data := map[uint64]common.RateResponse{}
 	for tokenID, r := range rate.Data {
 		data[tokenID] = common.RateResponse{
 			Timestamp:   rate.Timestamp,
@@ -312,7 +315,7 @@ func (rd ReserveData) GetRate(timepoint uint64) (common.AllRateResponse, error) 
 	result.Version = version
 	result.Timestamp = timestamp
 	result.ReturnTime = returnTime
-	data := map[string]common.RateResponse{}
+	data := map[uint64]common.RateResponse{}
 	for tokenID, rate := range rates.Data {
 		data[tokenID] = common.RateResponse{
 			Timestamp:   rates.Timestamp,
