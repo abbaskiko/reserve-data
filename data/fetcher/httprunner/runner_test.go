@@ -14,13 +14,13 @@ func testTicker(t *testing.T, ch <-chan time.Time, path string, port int) {
 
 	t.Logf("testing ticker for path: %s", path)
 
-	now := common.GetTimepoint()
+	now := common.NowInMillis()
 
 	go func(ch <-chan time.Time) {
 		ts := <-ch
 		t.Logf("got timestamp: %s for path: %s", ts, path)
-		if !ts.Equal(common.TimepointToTime(now)) {
-			t.Errorf("wrong timestamp received, expected: %s, got: %s", common.TimepointToTime(now), ts)
+		if !ts.Equal(common.MillisToTime(now)) {
+			t.Errorf("wrong timestamp received, expected: %s, got: %s", common.MillisToTime(now), ts)
 		}
 	}(ch)
 

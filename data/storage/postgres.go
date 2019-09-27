@@ -118,7 +118,7 @@ func getDataType(data interface{}) fetchDataType {
 
 func (ps *PostgresStorage) storeFetchData(data interface{}, timepoint uint64) error {
 	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, type) VALUES ($1, $2, $3)`, fetchDataTable)
-	timestamp := common.TimepointToTime(timepoint)
+	timestamp := common.MillisToTime(timepoint)
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func (ps *PostgresStorage) currentVersion(dataType fetchDataType, timepoint uint
 		v  common.Version
 		id int64
 	)
-	timestamp := common.TimepointToTime(timepoint)
+	timestamp := common.MillisToTime(timepoint)
 	query := fmt.Sprintf(`SELECT id FROM "%s" WHERE created <= $1 and type = $2 ORDER BY created DESC LIMIT 1`, fetchDataTable)
 	if err := ps.db.Get(&id, query, timestamp, dataType); err != nil {
 		if err == sql.ErrNoRows {
@@ -226,7 +226,7 @@ func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath stri
 
 	// Get expire data
 	timepointExpireData := timepoint - authDataExpiredDuration
-	timestampExpire := common.TimepointToTime(timepointExpireData)
+	timestampExpire := common.MillisToTime(timepointExpireData)
 	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created < $2`, fetchDataTable)
 	rows, err := ps.db.Query(query, authDataType, timestampExpire)
 	if err != nil {
@@ -265,7 +265,7 @@ func (ps *PostgresStorage) PruneExpiredAuthData(timepoint uint64) (uint64, error
 	)
 	// Get expire data
 	timepointExpireData := timepoint - authDataExpiredDuration
-	timestampExpire := common.TimepointToTime(timepointExpireData)
+	timestampExpire := common.MillisToTime(timepointExpireData)
 	query := fmt.Sprintf(`WITH deleted AS 
 	(DELETE FROM "%s" WHERE type = $1 AND created < $2 RETURNING *) SELECT count(*) FROM deleted`, fetchDataTable)
 	if err := ps.db.Get(&count, query, authDataType, timestampExpire); err != nil {
@@ -303,8 +303,8 @@ func (ps *PostgresStorage) GetRates(fromTime, toTime uint64) ([]common.AllRateEn
 		data  [][]byte
 	)
 	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created >= $2 AND created <= $3`, fetchDataTable)
-	from := common.TimepointToTime(fromTime)
-	to := common.TimepointToTime(toTime)
+	from := common.MillisToTime(fromTime)
+	to := common.MillisToTime(toTime)
 	if err := ps.db.Select(&data, query, rateDataType, from, to); err != nil {
 		return []common.AllRateEntry{}, err
 	}
@@ -325,8 +325,8 @@ func (ps *PostgresStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Acti
 		data       [][]byte
 	)
 	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE created >= $1 AND created <= $2`, activityTable)
-	from := common.TimepointToTime(fromTime)
-	to := common.TimepointToTime(toTime)
+	from := common.MillisToTime(fromTime)
+	to := common.MillisToTime(toTime)
 	if err := ps.db.Select(&data, query, from, to); err != nil {
 		return nil, err
 	}
@@ -451,7 +451,7 @@ func (ps *PostgresStorage) Record(action string, id common.ActivityID, destinati
 		common.Timestamp(strconv.FormatUint(timepoint, 10)),
 	)
 	query := fmt.Sprintf(`INSERT INTO "%s" (created, data, is_pending, timepoint, eid) VALUES($1, $2, $3, $4, $5)`, activityTable)
-	timestamp := common.TimepointToTime(timepoint)
+	timestamp := common.MillisToTime(timepoint)
 	data, err := json.Marshal(record)
 	if err != nil {
 		return err

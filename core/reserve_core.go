@@ -73,7 +73,7 @@ func (rc ReserveCore) Trade(
 	amount float64) (common.ActivityID, float64, float64, bool, error) {
 	var err error
 
-	timepoint := common.GetTimepoint()
+	timepoint := common.NowInMillis()
 	recordActivity := func(id, status string, done, remaining float64, finished bool, err error) error {
 		uid := timebasedID(id)
 		log.Printf(
@@ -246,7 +246,7 @@ func (rc ReserveCore) Deposit(
 // Withdraw token from exchange
 func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) (common.ActivityID, error) {
 	var err error
-	timepoint := common.GetTimepoint()
+	timepoint := common.NowInMillis()
 	activityRecord := func(id, status string, err error) error {
 		uid := timebasedID(id)
 		log.Printf(
@@ -473,7 +473,7 @@ func (rc ReserveCore) SetRates(
 		},
 		"",
 		miningStatus,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	log.Printf(
 		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %d, price: %s, error: %v, storage error: %v",

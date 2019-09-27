@@ -397,11 +397,11 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 	if nonceFromNode < bc.localSetRateNonce {
 		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
 			nonceFromNode, bc.localSetRateNonce)
-		if common.GetTimepoint()-bc.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
+		if common.NowInMillis()-bc.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
 			log.Printf("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
 				bc.localSetRateNonce, nonceFromNode)
 			bc.localSetRateNonce = nonceFromNode
-			bc.setRateNonceTimestamp = common.GetTimepoint()
+			bc.setRateNonceTimestamp = common.NowInMillis()
 			return nonceFromNode, nil
 		}
 		log.Printf("SET_RATE_MINED_NONCE: using cached nonce %d instead of nonce from node %d",
@@ -412,7 +412,7 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 	log.Printf("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
 		bc.localSetRateNonce, nonceFromNode)
 	bc.localSetRateNonce = nonceFromNode
-	bc.setRateNonceTimestamp = common.GetTimepoint()
+	bc.setRateNonceTimestamp = common.NowInMillis()
 	return nonceFromNode, nil
 }
 

@@ -137,7 +137,7 @@ func TestExchangeDown(t *testing.T) {
 	pendings := []common.ActivityRecord{}
 
 	var snapshot common.AuthDataSnapshot
-	timepoint := common.GetTimepoint()
+	timepoint := common.NowInMillis()
 
 	// Persist normal auth snapshot
 	err = fetcher.PersistSnapshot(&ebalance, bbalance, &estatuses, &bstatuses, pendings, &snapshot, timepoint)
@@ -162,7 +162,7 @@ func TestExchangeDown(t *testing.T) {
 		t.Fatalf("Cannot persist snapshot: %s", err.Error())
 	}
 	// check if snapshot store latest data instead of empty
-	version, err := fetcher.storage.CurrentAuthDataVersion(common.GetTimepoint())
+	version, err := fetcher.storage.CurrentAuthDataVersion(common.NowInMillis())
 	if err != nil {
 		t.Fatalf("Snapshot did not saved: %s", err.Error())
 	}

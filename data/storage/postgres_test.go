@@ -257,7 +257,7 @@ func TestAuthData(t *testing.T) {
 	assert.Equal(t, authDataTest, getAuthData)
 
 	// prune outdated data
-	timepoint = common.GetTimepoint()
+	timepoint = common.NowInMillis()
 	deleted, err := ps.PruneExpiredAuthData(timepoint)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(1), deleted)
