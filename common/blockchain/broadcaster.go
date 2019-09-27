@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -19,15 +18,11 @@ type Broadcaster struct {
 	clients map[string]*ethclient.Client
 }
 
-func (b Broadcaster) broadcast(
-	ctx context.Context,
-	id string, client ethereum.TransactionSender, tx *types.Transaction,
-	wg *sync.WaitGroup, failures *sync.Map) {
-	defer wg.Done()
+func (b Broadcaster) sendTx(client ethereum.TransactionSender, tx *types.Transaction) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	err := client.SendTransaction(ctx, tx)
-	if err != nil {
-		failures.Store(id, err)
-	}
+	cancel()
+	return err
 }
 
 func (b Broadcaster) Broadcast(tx *types.Transaction) (map[string]error, bool) {
@@ -35,27 +30,20 @@ func (b Broadcaster) Broadcast(tx *types.Transaction) (map[string]error, bool) {
 	wg := sync.WaitGroup{}
 	for id, client := range b.clients {
 		wg.Add(1)
-		timeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		b.broadcast(timeout, id, client, tx, &wg, &failures)
-		defer cancel()
+		go func(cid string, c *ethclient.Client) {
+			defer wg.Done()
+			if err := b.sendTx(c, tx); err != nil {
+				failures.Store(cid, err)
+			}
+		}(id, client)
 	}
 	wg.Wait()
-	result := map[string]error{}
+	errorDetail := map[string]error{}
 	failures.Range(func(key, value interface{}) bool {
-		k, ok := key.(string)
-		if !ok {
-			log.Printf("Broadcast: key (%v) cannot be asserted to string", key)
-			return true
-		}
-		err, ok := value.(error)
-		if !ok {
-			log.Printf("Broadcast: value (%v) cannot be asserted to error", value)
-			return true
-		}
-		result[k] = err
+		errorDetail[key.(string)] = value.(error) // as failures access scope is this func, we sure it's a string->error map
 		return true
 	})
-	return result, len(result) != len(b.clients) && len(b.clients) > 0
+	return errorDetail, len(errorDetail) != len(b.clients) && len(b.clients) > 0
 }
 
 func NewBroadcaster(clients map[string]*ethclient.Client) *Broadcaster {

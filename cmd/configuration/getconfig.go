@@ -71,7 +71,7 @@ func GetConfig(
 	mainClient := ethclient.NewClient(client)
 	bkClients := map[string]*ethclient.Client{}
 
-	var callClients []*ethclient.Client
+	var callClients []*common.EthClient
 	for _, ep := range nodeConf.Backup {
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
@@ -79,7 +79,10 @@ func GetConfig(
 			log.Printf("Cannot connect to %s, err %s. Ignore it.", ep, err)
 		} else {
 			bkClients[ep] = bkClient
-			callClients = append(callClients, bkClient)
+			callClients = append(callClients, &common.EthClient{
+				Client: bkClient,
+				URL:    ep,
+			})
 		}
 	}
 
@@ -87,7 +90,7 @@ func GetConfig(
 		client, mainClient, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
 		chainType,
-		blockchain.NewContractCaller(callClients, nodeConf.Backup),
+		blockchain.NewContractCaller(callClients),
 	)
 
 	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
