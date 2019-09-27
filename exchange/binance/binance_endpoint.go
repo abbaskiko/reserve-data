@@ -118,7 +118,7 @@ func (ep *Endpoint) GetDepthOnePair(baseID, quoteID string) (exchange.Binaresp, 
 			"limit":  "100",
 		},
 		false,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 
 	respData := exchange.Binaresp{}
@@ -161,7 +161,7 @@ func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, ra
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/order",
 		params,
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err != nil {
 		return result, err
@@ -172,7 +172,7 @@ func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, ra
 
 func (ep *Endpoint) GetTradeHistory(symbol string) (exchange.BinanceTradeHistory, error) {
 	result := exchange.BinanceTradeHistory{}
-	timepoint := common.GetTimepoint()
+	timepoint := common.NowInMillis()
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.PublicEndpoint()+"/api/v1/trades",
@@ -209,7 +209,7 @@ func (ep *Endpoint) GetAccountTradeHistory(
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/myTrades",
 		params,
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		err = json.Unmarshal(respBody, &result)
@@ -227,7 +227,7 @@ func (ep *Endpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawit
 			"endTime":   fmt.Sprintf("%d", endTime),
 		},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
@@ -250,7 +250,7 @@ func (ep *Endpoint) DepositHistory(startTime, endTime uint64) (exchange.Binadepo
 			"endTime":   fmt.Sprintf("%d", endTime),
 		},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
@@ -273,7 +273,7 @@ func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.Binacancel, 
 			"orderId": fmt.Sprintf("%d", id),
 		},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
@@ -296,7 +296,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 			"orderId": fmt.Sprintf("%d", id),
 		},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
@@ -327,7 +327,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 			"amount":  strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
 		},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
@@ -348,7 +348,7 @@ func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/account",
 		map[string]string{},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
@@ -371,7 +371,7 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair commonv3.TradingPairSymbols) (exch
 			"symbol": pair.BaseSymbol + pair.QuoteSymbol,
 		},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err != nil {
 		return result, err
@@ -391,7 +391,7 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress
 			"asset": asset,
 		},
 		true,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
@@ -411,7 +411,7 @@ func (ep *Endpoint) GetExchangeInfo() (exchange.BinanceExchangeInfo, error) {
 		ep.interf.PublicEndpoint()+"/api/v1/exchangeInfo",
 		map[string]string{},
 		false,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		err = json.Unmarshal(respBody, &result)
@@ -426,7 +426,7 @@ func (ep *Endpoint) getServerTime() (uint64, error) {
 		ep.interf.PublicEndpoint()+"/api/v1/time",
 		map[string]string{},
 		false,
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		err = json.Unmarshal(respBody, &result)
@@ -435,9 +435,9 @@ func (ep *Endpoint) getServerTime() (uint64, error) {
 }
 
 func (ep *Endpoint) UpdateTimeDelta() error {
-	currentTime := common.GetTimepoint()
+	currentTime := common.NowInMillis()
 	serverTime, err := ep.getServerTime()
-	responseTime := common.GetTimepoint()
+	responseTime := common.NowInMillis()
 	if err != nil {
 		return err
 	}

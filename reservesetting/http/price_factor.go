@@ -72,8 +72,8 @@ func (s *Server) getPriceFactor(c *gin.Context) {
 	}
 	data := convertToPriceFactorResponse(store)
 	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
-		"timestamp":  common2.GetTimepoint(),
-		"returnTime": common2.GetTimepoint(),
+		"timestamp":  common2.NowInMillis(),
+		"returnTime": common2.NowInMillis(),
 		"data":       data,
 	}))
 }

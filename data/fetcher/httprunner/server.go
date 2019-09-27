@@ -49,7 +49,7 @@ func getTimePoint(c *gin.Context) uint64 {
 func newTickerHandler(ch chan time.Time) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		timepoint := getTimePoint(c)
-		ch <- common.TimepointToTime(timepoint)
+		ch <- common.MillisToTime(timepoint)
 		httputil.ResponseSuccess(c)
 	}
 }

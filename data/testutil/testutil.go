@@ -33,7 +33,7 @@ func (ts *GlobalStorageTestSuite) Run() {
 	dgxSts := []string{"first", "second", "third"}
 	for _, dgxSt := range dgxSts {
 		err := ts.fgs.StoreGoldInfo(common.GoldData{
-			Timestamp: common.GetTimepoint(),
+			Timestamp: common.NowInMillis(),
 			DGX: common.DGXGoldData{
 				Valid:  true,
 				Status: dgxSt,
@@ -45,7 +45,7 @@ func (ts *GlobalStorageTestSuite) Run() {
 	}
 
 	ts.t.Log("getting gold info of future timepoint, expected to get latest version")
-	var futureTimepoint uint64 = common.GetTimepoint() + 100
+	var futureTimepoint uint64 = common.NowInMillis() + 100
 	version, err := ts.dgs.CurrentGoldInfoVersion(futureTimepoint)
 	if err != nil {
 		ts.t.Fatal(err)

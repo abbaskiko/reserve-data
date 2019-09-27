@@ -25,7 +25,7 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 		t.Fatalf("Couldn't init bolt storage %v", err)
 	}
 	exchange := common.TestExchange{}
-	timepoint := common.GetTimepoint()
+	timepoint := common.NowInMillis()
 	asset := commonv3.Asset{
 		ID:                 1,
 		Symbol:             "OMG",
@@ -67,7 +67,7 @@ func TestHasPendingDepositBoltStorage(t *testing.T) {
 		},
 		"",
 		"submitted",
-		common.GetTimepoint())
+		common.NowInMillis())
 	if err != nil {
 		t.Fatalf("Store activity error: %s", err.Error())
 	}

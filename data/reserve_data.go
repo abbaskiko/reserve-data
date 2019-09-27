@@ -367,10 +367,10 @@ func (rd ReserveData) ControlAuthDataSize() error {
 	for {
 		log.Printf("DataPruner: waiting for signal from runner AuthData controller channel")
 		t := <-rd.storageController.Runner.GetAuthBucketTicker()
-		timepoint := common.TimeToTimepoint(t)
-		log.Printf("DataPruner: got signal in AuthData controller channel with timestamp %d", common.TimeToTimepoint(t))
+		timepoint := common.TimeToMillis(t)
+		log.Printf("DataPruner: got signal in AuthData controller channel with timestamp %d", common.TimeToMillis(t))
 		fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC()))
-		nRecord, err := rd.storage.ExportExpiredAuthData(common.TimeToTimepoint(t), fileName)
+		nRecord, err := rd.storage.ExportExpiredAuthData(common.TimeToMillis(t), fileName)
 		if err != nil {
 			log.Printf("ERROR: DataPruner export AuthData operation failed: %s", err)
 		} else {
@@ -398,7 +398,7 @@ func (rd ReserveData) ControlAuthDataSize() error {
 				}
 			}
 			if integrity && err == nil {
-				nPrunedRecords, err := rd.storage.PruneExpiredAuthData(common.TimeToTimepoint(t))
+				nPrunedRecords, err := rd.storage.PruneExpiredAuthData(common.TimeToMillis(t))
 				switch {
 				case err != nil:
 					log.Printf("DataPruner: Can not prune Auth Data (%s)", err)

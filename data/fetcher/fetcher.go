@@ -51,7 +51,7 @@ func NewFetcher(
 
 func (f *Fetcher) SetBlockchain(blockchain Blockchain) {
 	f.blockchain = blockchain
-	f.FetchCurrentBlock(common.GetTimepoint())
+	f.FetchCurrentBlock(common.NowInMillis())
 }
 
 func (f *Fetcher) AddExchange(exchange Exchange) {
@@ -81,8 +81,8 @@ func (f *Fetcher) RunGlobalDataFetcher() {
 	for {
 		log.Printf("waiting for signal from global data channel")
 		t := <-f.runner.GetGlobalDataTicker()
-		log.Printf("got signal in global data channel with timestamp %d", common.TimeToTimepoint(t))
-		timepoint := common.TimeToTimepoint(t)
+		log.Printf("got signal in global data channel with timestamp %d", common.TimeToMillis(t))
+		timepoint := common.TimeToMillis(t)
 		f.FetchGlobalData(timepoint)
 		log.Printf("fetched block from blockchain")
 	}
@@ -94,7 +94,7 @@ func (f *Fetcher) FetchGlobalData(timepoint uint64) {
 		log.Printf("failed to fetch Gold Info: %s", err.Error())
 		return
 	}
-	goldData.Timestamp = common.GetTimepoint()
+	goldData.Timestamp = common.NowInMillis()
 
 	if err = f.globalStorage.StoreGoldInfo(goldData); err != nil {
 		log.Printf("Storing gold info failed: %s", err.Error())
@@ -105,7 +105,7 @@ func (f *Fetcher) FetchGlobalData(timepoint uint64) {
 		log.Printf("failed to fetch BTC Info: %s", err.Error())
 		return
 	}
-	btcData.Timestamp = common.GetTimepoint()
+	btcData.Timestamp = common.NowInMillis()
 	if err = f.globalStorage.StoreBTCInfo(btcData); err != nil {
 		log.Printf("Storing BTC info failed: %s", err.Error())
 	}
@@ -115,8 +115,8 @@ func (f *Fetcher) RunBlockFetcher() {
 	for {
 		log.Printf("waiting for signal from block channel")
 		t := <-f.runner.GetBlockTicker()
-		log.Printf("got signal in block channel with timestamp %d", common.TimeToTimepoint(t))
-		timepoint := common.TimeToTimepoint(t)
+		log.Printf("got signal in block channel with timestamp %d", common.TimeToMillis(t))
+		timepoint := common.TimeToMillis(t)
 		f.FetchCurrentBlock(timepoint)
 		log.Printf("fetched block from blockchain")
 	}
@@ -126,8 +126,8 @@ func (f *Fetcher) RunRateFetcher() {
 	for {
 		log.Printf("waiting for signal from runner rate channel")
 		t := <-f.runner.GetRateTicker()
-		log.Printf("got signal in rate channel with timestamp %d", common.TimeToTimepoint(t))
-		f.FetchRate(common.TimeToTimepoint(t))
+		log.Printf("got signal in rate channel with timestamp %d", common.TimeToMillis(t))
+		f.FetchRate(common.TimeToMillis(t))
 		log.Printf("fetched rates from blockchain")
 	}
 }
@@ -164,8 +164,8 @@ func (f *Fetcher) RunAuthDataFetcher() {
 	for {
 		log.Printf("waiting for signal from runner auth data channel")
 		t := <-f.runner.GetAuthDataTicker()
-		log.Printf("got signal in auth data channel with timestamp %d", common.TimeToTimepoint(t))
-		f.FetchAllAuthData(common.TimeToTimepoint(t))
+		log.Printf("got signal in auth data channel with timestamp %d", common.TimeToMillis(t))
+		f.FetchAllAuthData(common.TimeToMillis(t))
 		log.Printf("fetched data from exchanges")
 	}
 }
@@ -285,7 +285,7 @@ func (f *Fetcher) FetchCurrentBlock(timepoint uint64) {
 	} else {
 		// update currentBlockUpdateTime first to avoid race condition
 		// where fetcher is trying to fetch new rate
-		f.currentBlockUpdateTime = common.GetTimepoint()
+		f.currentBlockUpdateTime = common.NowInMillis()
 		f.currentBlock = block
 	}
 }
@@ -363,7 +363,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 				if nonceValidator(activity) {
 					txFailed = true
 				} else {
-					elapsed := common.GetTimepoint() - activity.Timestamp.MustToUint64()
+					elapsed := common.NowInMillis() - activity.Timestamp.Millis()
 					if elapsed > uint64(expiredDuration) {
 						log.Printf("TX_STATUS: tx(%s) is lost, elapsed time: %d", txStr, elapsed)
 						txFailed = true
@@ -494,7 +494,7 @@ func (f *Fetcher) PersistSnapshot(
 		if !v.Valid {
 			// get old auth data, because get balance error then we have to keep
 			// balance to the latest version then analytic won't get exchange balance to zero
-			authVersion, err := f.storage.CurrentAuthDataVersion(common.GetTimepoint())
+			authVersion, err := f.storage.CurrentAuthDataVersion(common.NowInMillis())
 			if err == nil {
 				oldAuth, err := f.storage.GetAuthData(authVersion)
 				if err != nil {
@@ -655,7 +655,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			if err1 != nil {
 				log.Printf("Activity %v has invalid timestamp. Just ignore it.", activity)
 			} else {
-				if common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
+				if common.NowInMillis()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 					result[id] = common.NewActivityStatus(common.ExchangeStatusFailed, tx, blockNum, activity.MiningStatus, err)
 				} else {
 					result[id] = common.NewActivityStatus(status, tx, blockNum, activity.MiningStatus, err)
@@ -667,7 +667,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				log.Printf("Activity %v has invalid timestamp. Just ignore it.", activity)
 			} else if activity.Destination == exchange.ID().String() &&
 				activity.ExchangeStatus == common.ExchangeStatusDone &&
-				common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
+				common.NowInMillis()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 				// the activity is still pending but its exchange status is done and it is stuck there for more than
 				// maxActivityLifeTime. This activity is considered failed.
 				result[activity.ID] = common.NewActivityStatus(common.ExchangeStatusFailed, "", 0, activity.MiningStatus, nil)
@@ -681,8 +681,8 @@ func (f *Fetcher) RunOrderbookFetcher() {
 	for {
 		log.Printf("waiting for signal from runner orderbook channel")
 		t := <-f.runner.GetOrderbookTicker()
-		log.Printf("got signal in orderbook channel with timestamp %d", common.TimeToTimepoint(t))
-		f.FetchOrderbook(common.TimeToTimepoint(t))
+		log.Printf("got signal in orderbook channel with timestamp %d", common.TimeToMillis(t))
+		f.FetchOrderbook(common.TimeToMillis(t))
 		log.Printf("fetched data from exchanges")
 	}
 }

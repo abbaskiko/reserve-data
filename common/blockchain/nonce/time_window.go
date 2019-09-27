@@ -51,7 +51,7 @@ func (tw *TimeWindow) MinedNonce(ethclient *ethclient.Client) (*big.Int, error) 
 func (tw *TimeWindow) GetNextNonce(ethclient *ethclient.Client) (*big.Int, error) {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
-	t := common.GetTimepoint()
+	t := common.NowInMillis()
 	if t-tw.time < tw.window {
 		tw.time = t
 		tw.manualNonce.Add(tw.manualNonce, ethereum.Big1)

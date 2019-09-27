@@ -41,7 +41,7 @@ func getTimePoint(c *gin.Context, useDefault bool) uint64 {
 			log.Printf("Interpreted timestamp to default - %d\n", maxTimespot)
 			return maxTimespot
 		}
-		timepoint := common.GetTimepoint()
+		timepoint := common.NowInMillis()
 		log.Printf("Interpreted timestamp to current time - %d\n", timepoint)
 		return timepoint
 	}
@@ -346,7 +346,7 @@ func (s *Server) GetActivities(c *gin.Context) {
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
-		toTime = common.GetTimepoint()
+		toTime = common.NowInMillis()
 	}
 
 	data, err := s.app.GetRecords(fromTime*1000000, toTime*1000000)
@@ -405,7 +405,7 @@ func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	}
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
-		toTime = common.GetTimepoint()
+		toTime = common.NowInMillis()
 	}
 	return fromTime, toTime, true
 }
