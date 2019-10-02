@@ -18,7 +18,7 @@ type RPCTransaction struct {
 
 type txExtraInfo struct {
 	BlockNumber *string
-	BlockHash   ethereum.Hash
+	BlockHash   *ethereum.Hash
 	From        ethereum.Address
 }
 
