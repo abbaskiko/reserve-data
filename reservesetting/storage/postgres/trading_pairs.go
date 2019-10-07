@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -51,11 +50,8 @@ func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pr
 
 		switch pErr.Code {
 		case errAssertFailure, errForeignKeyViolation:
-			log.Printf("failed to create trading pair as assertion failed base=%d quote=%d exchange_id=%d err=%s",
-				baseID,
-				quoteID,
-				exchangeID,
-				pErr.Message)
+			s.l.Infow("failed to create trading pair as assertion failed", "base", baseID,
+				"quote", quoteID, "exchangeID", exchangeID, "err", pErr.Message)
 			return 0, common.ErrBadTradingPairConfiguration
 		}
 
@@ -68,10 +64,10 @@ func (s *Storage) createTradingPair(tx *sqlx.Tx, exchangeID, baseID, quoteID, pr
 	}
 	_, err = s.createTradingBy(tx, tradingByAssetID, tradingPairID)
 	if err != nil {
-		log.Printf("create trading pair failed on create tradingby, err=%v\n", err)
+		s.l.Infow("create trading pair failed on create tradingBy", "err", err)
 		return 0, err
 	}
-	log.Printf("trading pair created id=%d", tradingPairID)
+	s.l.Infow("trading pair created", "id", tradingPairID)
 	return tradingPairID, nil
 }
 
@@ -90,7 +86,7 @@ func (s *Storage) UpdateTradingPair(id uint64, updateOpts storage.UpdateTradingP
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	log.Printf("trading pair update successfully id=%d", id)
+	s.l.Infow("trading pair update successfully", "id", id)
 	return nil
 }
 
@@ -120,7 +116,7 @@ func (s *Storage) updateTradingPair(tx *sqlx.Tx, id uint64, opts storage.UpdateT
 	} else if err != nil {
 		return err
 	}
-	log.Printf("trading pair configuration %d is updated", id)
+	s.l.Infow("trading pair configuration is updated", "id", id)
 	return nil
 }
 

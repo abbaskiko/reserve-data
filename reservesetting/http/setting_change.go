@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/gin-gonic/gin"
@@ -163,7 +162,7 @@ func (s *Server) createSettingChangeWithType(t common.ChangeCatalog) func(ctx *g
 func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	var settingChange common.SettingChange
 	if err := c.ShouldBindJSON(&settingChange); err != nil {
-		log.Printf("cannot bind data to create setting_change from request err=%s", err.Error())
+		s.sugar.Warnw("cannot bind data to create setting_change from request", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -186,7 +185,7 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	}
 	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
 		msg := fmt.Sprintf("validate trading pair info failed, %s", err)
-		log.Println(msg)
+		s.sugar.Warnw(msg)
 		httputil.ResponseFailure(c, httputil.WithReason(msg))
 		return
 	}
@@ -203,7 +202,7 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 		httputil.ResponseFailure(c, httputil.WithError(makeFriendlyMessage(err)))
 		// clean up
 		if err = s.storage.RejectSettingChange(id); err != nil {
-			log.Printf("failed to clean up, error")
+			s.sugar.Errorw("failed to clean up with reject setting change", "err", err)
 		}
 		return
 	}
@@ -215,7 +214,6 @@ func (s *Server) getSettingChange(c *gin.Context) {
 		ID uint64 `uri:"id" binding:"required"`
 	}
 	if err := c.ShouldBindUri(&input); err != nil {
-		log.Println(err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -235,8 +233,9 @@ func (s *Server) getSettingChangeWithType(t common.ChangeCatalog) func(ctx *gin.
 func (s *Server) getSettingChanges(c *gin.Context, t common.ChangeCatalog) {
 	result, err := s.storage.GetSettingChanges(t)
 	if err != nil {
-		log.Printf("failed to get setting changes %v\n", err)
+		s.sugar.Warnw("failed to get setting changes", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
@@ -262,7 +261,6 @@ func (s *Server) confirmSettingChange(c *gin.Context) {
 		ID uint64 `uri:"id" binding:"required"`
 	}
 	if err := c.ShouldBindUri(&input); err != nil {
-		log.Println(err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}

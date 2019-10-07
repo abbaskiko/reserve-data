@@ -11,6 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/http"
+	"github.com/KyberNetwork/reserve-data/lib/app"
 )
 
 func main() {
@@ -35,8 +36,15 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
-	conf, err := configuration.NewConfigurationFromContext(c)
+	// TODO: port reserve core to use zap too
+	sugar, flusher, err := app.NewSugaredLogger(c)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		flusher()
+	}()
+	conf, err := configuration.NewConfigurationFromContext(c, sugar)
 	if err != nil {
 		return err
 	}

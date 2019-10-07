@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -55,7 +54,7 @@ func (s *Storage) GetExchange(id uint64) (common.Exchange, error) {
 		result  common.Exchange
 	)
 
-	log.Printf("querying exchange %d from database", id)
+	s.l.Infow("querying exchange from database", "id", id)
 	if err := s.stmts.getExchange.Get(&qResult, id); err != nil {
 		if err == sql.ErrNoRows {
 			return common.Exchange{}, common.ErrNotFound
@@ -82,7 +81,7 @@ func (s *Storage) GetExchangeByName(name string) (common.Exchange, error) {
 		qResult = exchangeDB{}
 		result  common.Exchange
 	)
-	log.Printf("querying exchange %s from database", name)
+	s.l.Infow("querying exchange from database", "name", name)
 	if err := s.stmts.getExchangeByName.Get(&qResult, name); err != nil {
 		if err == sql.ErrNoRows {
 			return result, common.ErrNotFound
@@ -119,7 +118,7 @@ func (s *Storage) updateExchange(tx *sqlx.Tx, id uint64, updateOpts storage.Upda
 		updateMsgs = append(updateMsgs, fmt.Sprintf("disable=%t", *updateOpts.Disable))
 	}
 
-	log.Printf("updating exchange %d %s", id, strings.Join(updateMsgs, " "))
+	s.l.Infow("updating exchange", "id", id, "fields", strings.Join(updateMsgs, " "))
 	sts := s.stmts.updateExchange
 	if tx != nil {
 		sts = tx.NamedStmt(s.stmts.updateExchange)
@@ -149,7 +148,7 @@ func (s *Storage) updateExchange(tx *sqlx.Tx, id uint64, updateOpts storage.Upda
 
 		// check_violation
 		if pErr.Code == errCodeCheckViolation && pErr.Constraint == "disable_check" {
-			log.Printf("required setting is missing, could not enable exchange")
+			s.l.Infow("required setting is missing, could not enable exchange")
 			return common.ErrExchangeFeeMissing
 		}
 

@@ -14,13 +14,13 @@ func (s *Server) setPriceFactor(c *gin.Context) {
 	log.Printf("storing price factor")
 	var params common.PriceFactorAtTime
 	if err := c.ShouldBindJSON(&params); err != nil {
-		log.Printf("cannot bind request parameter, err=%s", err.Error())
+		s.sugar.Warnw("cannot bind request parameter", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	id, err := s.storage.CreatePriceFactor(params)
 	if err != nil {
-		log.Printf("cannot store price factor, err=%s", err.Error())
+		s.sugar.Warnw("cannot store price factor", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -57,16 +57,16 @@ func convertToPriceFactorResponse(in []common.PriceFactorAtTime) []*common.Asset
 	return res
 }
 func (s *Server) getPriceFactor(c *gin.Context) {
-	log.Printf("get price factor")
+	s.sugar.Infow("get price factor")
 	var params getPriceFactorParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		log.Printf("cannot bind request parameter, err=%s", err.Error())
+		s.sugar.Warnw("cannot bind request parameter", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	store, err := s.storage.GetPriceFactors(params.From, params.To)
 	if err != nil {
-		log.Printf("cannot get price factor, err=%s", err.Error())
+		s.sugar.Warnw("cannot get price factor", err, err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -81,7 +81,7 @@ func (s *Server) getPriceFactor(c *gin.Context) {
 func (s *Server) getSetRateStatus(c *gin.Context) {
 	status, err := s.storage.GetSetRateStatus()
 	if err != nil {
-		log.Printf("failed to get set rate control, err:%v\n", err.Error())
+		s.sugar.Warnw("failed to get set rate status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(status))
@@ -89,7 +89,7 @@ func (s *Server) getSetRateStatus(c *gin.Context) {
 
 func (s *Server) holdSetRate(c *gin.Context) {
 	if err := s.storage.SetSetRateStatus(false); err != nil {
-		log.Printf("failed to set set rate control, err:%v\n", err.Error())
+		s.sugar.Warnw("failed to set rate staus", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)
@@ -97,7 +97,7 @@ func (s *Server) holdSetRate(c *gin.Context) {
 
 func (s *Server) enableSetRate(c *gin.Context) {
 	if err := s.storage.SetSetRateStatus(true); err != nil {
-		log.Printf("failed to set set rate control, err:%v\n", err.Error())
+		s.sugar.Warnw("failed to set SetRate status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)
@@ -106,7 +106,7 @@ func (s *Server) enableSetRate(c *gin.Context) {
 func (s *Server) getRebalanceStatus(c *gin.Context) {
 	status, err := s.storage.GetRebalanceStatus()
 	if err != nil {
-		log.Printf("failed to get rebalance control, err:%v\n", err.Error())
+		s.sugar.Warnw("failed to get rebalance status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(status))
@@ -114,7 +114,7 @@ func (s *Server) getRebalanceStatus(c *gin.Context) {
 
 func (s *Server) holdRebalance(c *gin.Context) {
 	if err := s.storage.SetRebalanceStatus(false); err != nil {
-		log.Printf("failed to set rebalance control, err:%v\n", err.Error())
+		s.sugar.Warnw("failed to set rebalance status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)
@@ -122,7 +122,7 @@ func (s *Server) holdRebalance(c *gin.Context) {
 
 func (s *Server) enableRebalance(c *gin.Context) {
 	if err := s.storage.SetRebalanceStatus(true); err != nil {
-		log.Printf("failed to set rebalance control, err:%v\n", err.Error())
+		s.sugar.Warnw("failed to set rebalance status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
@@ -15,8 +16,7 @@ func TestUpdateAsset(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
-	s, err := NewStorage(db)
+	s, err := NewStorage(db, sugarLog())
 	assert.NoError(t, err)
 	initData(t, s)
 	assetID := uint64(1)
@@ -125,8 +125,7 @@ func TestGetAssetBySymbol(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
-	s, err := NewStorage(db)
+	s, err := NewStorage(db, sugarLog())
 	assert.NoError(t, err)
 	initData(t, s)
 	assetByID, err := s.GetAsset(3)
@@ -135,4 +134,9 @@ func TestGetAssetBySymbol(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, assetByID.ID, assetBySymbol.ID)
 	require.Equal(t, assetByID.Decimals, assetBySymbol.Decimals)
+}
+
+func sugarLog() *zap.SugaredLogger {
+	l := zap.NewExample()
+	return l.Sugar()
 }

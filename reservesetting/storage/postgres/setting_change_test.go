@@ -191,7 +191,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 		assert.NoError(t, tearDown())
 	}()
 
-	s, err := NewStorage(db)
+	s, err := NewStorage(db, sugarLog())
 	assert.NoError(t, err)
 	initData(t, s)
 	var tests = []struct {
@@ -525,8 +525,7 @@ func TestStorage_GetDepositAddresses(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
-	s, err := NewStorage(db)
+	s, err := NewStorage(db, sugarLog())
 	assert.NoError(t, err)
 	initData(t, s)
 

@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"go.uber.org/zap"
+
 	common2 "github.com/KyberNetwork/reserve-data/common"
 )
 
@@ -52,4 +54,9 @@ func testHTTPRequest(t *testing.T, tc testCase, handler http.Handler) {
 	resp := httptest.NewRecorder()
 	handler.ServeHTTP(resp, req)
 	tc.assert(t, resp)
+}
+
+func sugarLog() *zap.SugaredLogger {
+	l := zap.NewExample()
+	return l.Sugar()
 }

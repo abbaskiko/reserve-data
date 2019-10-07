@@ -9,6 +9,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
+	"github.com/KyberNetwork/reserve-data/cmd/mode"
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/exchange"
@@ -29,7 +30,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "HTTP gateway for reserve core"
 	app.Action = run
-
+	app.Flags = append(app.Flags, mode.NewCliFlag())
 	app.Flags = append(app.Flags, deployment.NewCliFlag())
 	app.Flags = append(app.Flags, configuration.NewBinanceCliFlags()...)
 	app.Flags = append(app.Flags, configuration.NewHuobiCliFlags()...)
@@ -78,7 +79,15 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("failed to initiate live exchanges: %s", err)
 	}
 
-	sr, err := postgres.NewStorage(db)
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		flusher()
+	}()
+
+	sr, err := postgres.NewStorage(db, sugar)
 	if err != nil {
 		return err
 	}
@@ -103,7 +112,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 	sentryDSN := libapp.SentryDSNFromFlag(c)
-	server := http.NewServer(sr, host, liveExchanges, newBlockchain, sentryDSN)
+	server := http.NewServer(sr, host, liveExchanges, newBlockchain, sentryDSN, sugar)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}

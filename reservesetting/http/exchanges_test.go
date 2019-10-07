@@ -26,11 +26,10 @@ func TestExchanges(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
-	s, err := postgres.NewStorage(db)
+	sugar := sugarLog()
+	s, err := postgres.NewStorage(db, sugarLog())
 	require.NoError(t, err)
-
-	server := NewServer(s, "", supportedExchanges, nil, "")
+	server := NewServer(s, "", supportedExchanges, nil, "", sugar)
 	c := apiClient{s: server}
 
 	ex, err := c.getExchange(binance)
