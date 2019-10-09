@@ -3,12 +3,12 @@ package blockchain
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 )
 
 type RPCTransaction struct {
@@ -35,7 +35,7 @@ func (tx *RPCTransaction) BlockNumber() *big.Int {
 	}
 	blockno, err := hexutil.DecodeBig(*tx.txExtraInfo.BlockNumber)
 	if err != nil {
-		log.Printf("Error decoding block number: %v", err)
+		zap.S().Errorf("Error decoding block number: %v", err)
 		return big.NewInt(0)
 	}
 	return blockno
@@ -54,7 +54,7 @@ var errNotCached = errors.New("sender not cached")
 func setSenderFromServer(tx *types.Transaction, addr ethereum.Address, block ethereum.Hash) {
 	// Use types.Sender for side-effect to store our signer into the cache.
 	if _, err := types.Sender(&senderFromServer{addr, block}, tx); err != nil {
-		log.Printf("Type sender error: %s", err.Error())
+		zap.S().Errorf("Type sender error: %s", err.Error())
 	}
 }
 

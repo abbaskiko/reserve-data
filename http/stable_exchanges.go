@@ -1,17 +1,18 @@
 package http
 
 import (
-	"log"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 
-	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/gin-gonic/gin"
+
+	"github.com/KyberNetwork/reserve-data/http/httputil"
 )
 
 // GetGoldData return gold data feed
 func (s *Server) GetGoldData(c *gin.Context) {
-	log.Printf("Getting gold data")
+	zap.S().Info("Getting gold data")
 
 	data, err := s.app.GetGoldData(getTimePoint(c, true, s.l))
 	if err != nil {
