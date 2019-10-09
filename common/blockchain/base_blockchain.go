@@ -317,12 +317,18 @@ func (b *BaseBlockchain) TransactionByHash(ctx context.Context, hash ethereum.Ha
 	err = b.rpcClient.CallContext(ctx, &json, "eth_getTransactionByHash", hash)
 	if err != nil {
 		return nil, false, err
-	} else if json == nil {
+	}
+	if json == nil {
 		return nil, false, ether.NotFound
-	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+	}
+
+	if _, r, _ := json.tx.RawSignatureValues(); r == nil {
 		return nil, false, errors.New("server returned transaction without signature")
 	}
-	setSenderFromServer(json.tx, json.From, json.BlockHash)
+	if json.BlockHash == nil {
+		return json, true, nil
+	}
+	setSenderFromServer(json.tx, json.From, *json.BlockHash)
 	return json, json.BlockNumber().Cmp(ethereum.Big0) == 0, nil
 }
 

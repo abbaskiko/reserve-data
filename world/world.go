@@ -1,8 +1,11 @@
 package world
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -34,21 +37,24 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 		log.Printf("request on %s failed, %v\n", caller, err)
 		return err
 	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("failed to close response body: %s", cErr.Error())
-		}
-	}()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		errMsg := fmt.Sprintf("%s read response error %v", caller, err)
+		log.Println(errMsg)
+		return errors.New(errMsg)
+	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("unexpected return code: %d", resp.StatusCode)
-		return fmt.Errorf("unexpected return code: %d", resp.StatusCode)
+		errMsg := fmt.Sprintf("unexpected return code: %d, response text %s", resp.StatusCode, body)
+		log.Println(errMsg)
+		return errors.New(errMsg)
 	}
-	d := json.NewDecoder(resp.Body)
+	d := json.NewDecoder(bytes.NewBuffer(body))
 	d.DisallowUnknownFields()
 	if err = d.Decode(dst); err != nil {
-		log.Printf("%s decode failed, %v\n", caller, err)
-		return err
+		errMsg := fmt.Sprintf("%s unmarshal failed, err = %v, response text %s", caller, err, body)
+		log.Println(errMsg)
+		return errors.New(errMsg)
 	}
 
 	return nil
