@@ -37,7 +37,6 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// TODO: port reserve core to use zap too
 	l, flusher, err := app.NewSugaredLogger(c)
 	if err != nil {
 		panic(err)
