@@ -1,11 +1,10 @@
 package configuration
 
 import (
-	"log"
-
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -53,10 +52,11 @@ func GetConfig(
 	dataFile string,
 	secretConfigFile string,
 	settingStorage storage.Interface,
+	s *zap.SugaredLogger,
 ) (*Config, error) {
-	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
+	theWorld, err := world.NewTheWorld(dpl, secretConfigFile, s)
 	if err != nil {
-		log.Printf("Can't init the world (which is used to get global data), err %s", err.Error())
+		s.Errorw("Can't init the world (which is used to get global data)", "err", err.Error())
 		return nil, err
 	}
 
@@ -76,7 +76,7 @@ func GetConfig(
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
 		if err != nil {
-			log.Printf("Cannot connect to %s, err %s. Ignore it.", ep, err)
+			s.Warnf("Cannot connect to %s, err %s. Ignore it.", ep, err)
 		} else {
 			bkClients[ep] = bkClient
 			callClients = append(callClients, &common.EthClient{
@@ -90,12 +90,13 @@ func GetConfig(
 		client, mainClient, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
 		chainType,
-		blockchain.NewContractCaller(callClients),
+		blockchain.NewContractCaller(callClients, s),
+		s,
 	)
 
 	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
 	if err != nil {
-		log.Printf("failed to load AWS config from file %s", secretConfigFile)
+		s.Errorf("failed to load AWS config from file %s", secretConfigFile)
 		return nil, err
 	}
 	s3archive := archive.NewS3Archive(awsConf)
@@ -109,8 +110,8 @@ func GetConfig(
 		SettingStorage:          settingStorage,
 	}
 
-	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
+	s.Infof("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
+	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage, s); err != nil {
 		return nil, err
 	}
 	return config, nil

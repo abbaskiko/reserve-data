@@ -3,22 +3,24 @@ package blockchain
 import (
 	"context"
 	"errors"
-	"log"
 	"math/big"
 	"time"
 
 	ether "github.com/ethereum/go-ethereum"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
 type ContractCaller struct {
 	clients []*common.EthClient
+	l       *zap.SugaredLogger
 }
 
-func NewContractCaller(clients []*common.EthClient) *ContractCaller {
+func NewContractCaller(clients []*common.EthClient, l *zap.SugaredLogger) *ContractCaller {
 	return &ContractCaller{
 		clients: clients,
+		l:       l,
 	}
 }
 
@@ -31,7 +33,7 @@ func (c ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, timeOu
 			return client.CallContract(ctx, msg, blockNo)
 		}()
 		if err != nil {
-			log.Printf("FALLBACK: Ether client %s done, getting err %v, trying next one...", client.URL, err)
+			c.l.Infof("FALLBACK: Ether client %s done, getting err %v, trying next one...", client.URL, err)
 			continue
 		}
 		return output, nil

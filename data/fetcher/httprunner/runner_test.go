@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/testutil"
 )
 
 func testTicker(t *testing.T, ch <-chan time.Time, path string, port int) {
@@ -45,7 +46,7 @@ func testTicker(t *testing.T, ch <-chan time.Time, path string, port int) {
 }
 
 func TestHttpRunner(t *testing.T) {
-	runner, err := NewHTTPRunner()
+	runner, err := NewHTTPRunner(testutil.NewExampleSugar())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
@@ -32,32 +33,33 @@ type Server struct {
 	r              *gin.Engine
 	blockchain     Blockchain
 	settingStorage storage.Interface
+	l              *zap.SugaredLogger
 }
 
-func getTimePoint(c *gin.Context, useDefault bool) uint64 {
+func getTimePoint(c *gin.Context, useDefault bool, l *zap.SugaredLogger) uint64 {
 	timestamp := c.DefaultQuery("timestamp", "")
 	if timestamp == "" {
 		if useDefault {
-			log.Printf("Interpreted timestamp to default - %d\n", maxTimespot)
+			l.Infow("Interpreted timestamp to default", "maxTimespot", maxTimespot)
 			return maxTimespot
 		}
 		timepoint := common.NowInMillis()
-		log.Printf("Interpreted timestamp to current time - %d\n", timepoint)
+		l.Infow("Interpreted timestamp to current time", "timepoint", timepoint)
 		return timepoint
 	}
 	timepoint, err := strconv.ParseUint(timestamp, 10, 64)
 	if err != nil {
-		log.Printf("Interpreted timestamp(%s) to default - %d", timestamp, maxTimespot)
+		l.Infow("Interpreted timestamp to default", "timestamp", timestamp, "maxTimespot", maxTimespot)
 		return maxTimespot
 	}
-	log.Printf("Interpreted timestamp(%s) to %d", timestamp, timepoint)
+	l.Infow("Interpreted timestamp", "timestamp", timestamp, "timepoint", timepoint)
 	return timepoint
 }
 
 // AllPricesVersion return current version of all token
 func (s *Server) AllPricesVersion(c *gin.Context) {
-	log.Printf("Getting all prices version")
-	data, err := s.app.CurrentPriceVersion(getTimePoint(c, true))
+	s.l.Infow("Getting all prices version")
+	data, err := s.app.CurrentPriceVersion(getTimePoint(c, true, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -75,8 +77,8 @@ type price struct {
 
 // AllPrices return prices of all tokens
 func (s *Server) AllPrices(c *gin.Context) {
-	log.Printf("Getting all prices \n")
-	data, err := s.app.GetAllPrices(getTimePoint(c, true))
+	s.l.Infow("Getting all prices")
+	data, err := s.app.GetAllPrices(getTimePoint(c, true, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -113,7 +115,7 @@ func (s *Server) AllPrices(c *gin.Context) {
 func (s *Server) Price(c *gin.Context) {
 	base := c.Param("base")
 	quote := c.Param("quote")
-	log.Printf("Getting price for %s - %s \n", base, quote)
+	s.l.Infow("Getting price", "base", base, "quote", quote)
 	// TODO: change getting price to accept asset id
 	//pair, err := s.setting.NewTokenPairFromID(base, quote)
 	//if err != nil {
@@ -134,8 +136,8 @@ func (s *Server) Price(c *gin.Context) {
 
 // AuthDataVersion return current version of auth data
 func (s *Server) AuthDataVersion(c *gin.Context) {
-	log.Printf("Getting current auth data snapshot version")
-	data, err := s.app.CurrentAuthDataVersion(getTimePoint(c, true))
+	s.l.Infow("Getting current auth data snapshot version")
+	data, err := s.app.CurrentAuthDataVersion(getTimePoint(c, true, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -145,8 +147,8 @@ func (s *Server) AuthDataVersion(c *gin.Context) {
 
 // AuthData return current auth data
 func (s *Server) AuthData(c *gin.Context) {
-	log.Printf("Getting current auth data snapshot \n")
-	data, err := s.app.GetAuthData(getTimePoint(c, true))
+	s.l.Infow("Getting current auth data snapshot \n")
+	data, err := s.app.GetAuthData(getTimePoint(c, true, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -159,7 +161,7 @@ func (s *Server) AuthData(c *gin.Context) {
 
 // GetRates return all rates
 func (s *Server) GetRates(c *gin.Context) {
-	log.Printf("Getting all rates \n")
+	s.l.Infow("Getting all rates")
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
@@ -175,8 +177,8 @@ func (s *Server) GetRates(c *gin.Context) {
 
 // GetRate return rate of a token
 func (s *Server) GetRate(c *gin.Context) {
-	log.Printf("Getting all rates \n")
-	data, err := s.app.GetRate(getTimePoint(c, true))
+	s.l.Infow("Getting all rates")
+	data, err := s.app.GetRate(getTimePoint(c, true, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -255,7 +257,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Cancel order id: %s from %s\n", request.OrderID, exchange.ID().String())
+	s.l.Infow("Cancel order", "id", request.OrderID, "from", exchange.ID().String())
 	activityID, err := common.StringToActivityID(request.OrderID)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -295,7 +297,8 @@ func (s *Server) Withdraw(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Withdraw %s id=%d symbol=%v from %s\n", request.Amount.Text(10), asset.ID, asset.Symbol, exchange.ID().String())
+	s.l.Infow("Withdraw", "amount", request.Amount.Text(10), "asset_id", asset.ID,
+		"asset_symbol", asset.Symbol, "exchange", exchange.ID().String())
 	id, err := s.core.Withdraw(exchange, asset, request.Amount)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -331,8 +334,9 @@ func (s *Server) Deposit(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Depositing %s id=%d symbol=%v to %s\n", request.Amount.Text(10), asset.ID, asset.Symbol, exchange.ID().String())
-	id, err := s.core.Deposit(exchange, asset, request.Amount, getTimePoint(c, false))
+	s.l.Infow("Depositing", "amount", request.Amount.Text(10), "asset_id", asset.ID,
+		"asset_symbol", asset.Symbol, "exchange", exchange.ID().String())
+	id, err := s.core.Deposit(exchange, asset, request.Amount, getTimePoint(c, false, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -342,7 +346,7 @@ func (s *Server) Deposit(c *gin.Context) {
 
 // GetActivities return all activities record
 func (s *Server) GetActivities(c *gin.Context) {
-	log.Printf("Getting all activity records \n")
+	s.l.Infow("Getting all activity records")
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
@@ -369,7 +373,7 @@ func (s *Server) StopFetcher(c *gin.Context) {
 
 // ImmediatePendingActivities return activities which are pending
 func (s *Server) ImmediatePendingActivities(c *gin.Context) {
-	log.Printf("Getting all immediate pending activity records \n")
+	s.l.Infow("Getting all immediate pending activity records")
 	data, err := s.app.GetPendingActivities()
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -465,6 +469,7 @@ func NewHTTPServer(
 	dpl deployment.Deployment,
 	bc Blockchain,
 	settingStorage storage.Interface,
+	l *zap.SugaredLogger,
 ) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
@@ -488,5 +493,6 @@ func NewHTTPServer(
 		r:              r,
 		blockchain:     bc,
 		settingStorage: settingStorage,
+		l:              l,
 	}
 }

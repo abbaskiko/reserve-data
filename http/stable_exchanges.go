@@ -13,7 +13,7 @@ import (
 func (s *Server) GetGoldData(c *gin.Context) {
 	log.Printf("Getting gold data")
 
-	data, err := s.app.GetGoldData(getTimePoint(c, true))
+	data, err := s.app.GetGoldData(getTimePoint(c, true, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -23,7 +23,7 @@ func (s *Server) GetGoldData(c *gin.Context) {
 
 // GetBTCData return BTC data feed
 func (s *Server) GetBTCData(c *gin.Context) {
-	data, err := s.app.GetBTCData(getTimePoint(c, true))
+	data, err := s.app.GetBTCData(getTimePoint(c, true, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {

@@ -37,7 +37,7 @@ func TestServer_StableTokenParams(t *testing.T) {
 		assert.NoError(t, tearDown())
 	}()
 
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)

@@ -48,6 +48,14 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		flusher()
+	}()
+
 	host := httputil.NewHTTPAddressFromContext(c)
 	db, err := configuration.NewDBFromContext(c)
 	if err != nil {
@@ -67,25 +75,17 @@ func run(c *cli.Context) error {
 	bi := configuration.NewBinanceInterfaceFromContext(c)
 	// dummy signer as live infos does not need to sign
 	binanceSigner := binance.NewSigner("", "")
-	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
+	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl, sugar)
 	hi := configuration.NewhuobiInterfaceFromContext(c)
 
 	// dummy signer as live infos does not need to sign
 	huobiSigner := huobi.NewSigner("", "")
-	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi)
+	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi, sugar)
 
 	liveExchanges, err := getLiveExchanges(enableExchanges, binanceEndpoint, huobiEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to initiate live exchanges: %s", err)
 	}
-
-	sugar, flusher, err := libapp.NewSugaredLogger(c)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		flusher()
-	}()
 
 	sr, err := postgres.NewStorage(db, sugar)
 	if err != nil {

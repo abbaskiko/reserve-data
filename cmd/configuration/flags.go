@@ -2,7 +2,6 @@ package configuration
 
 import (
 	"fmt"
-	"log"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
@@ -141,7 +140,7 @@ func NewCliFlags() []cli.Flag {
 }
 
 // CreateBlockchain create new blockchain object
-func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
+func CreateBlockchain(config *Config, l *zap.SugaredLogger) (*blockchain.Blockchain, error) {
 	var (
 		bc  *blockchain.Blockchain
 		err error
@@ -150,9 +149,10 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 		config.Blockchain,
 		config.ContractAddresses,
 		config.SettingStorage,
+		l,
 	)
 	if err != nil {
-		log.Printf("failed to create block chain err=%s", err.Error())
+		l.Errorw("failed to create block chain", "err", err)
 		return nil, err
 	}
 
@@ -160,7 +160,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	assets, err := config.SettingStorage.GetTransferableAssets()
 	if err != nil {
-		log.Printf("Can't get the list of Internal Tokens for indices: %s", err.Error())
+		l.Errorw("Can't get the list of Internal Tokens for indices", "err", err)
 		return nil, err
 	}
 
@@ -173,7 +173,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	err = bc.LoadAndSetTokenIndices(assetAddrs)
 	if err != nil {
-		log.Printf("Can't load and set token indices: %s", err.Error())
+		l.Errorw("Can't load and set token indices", "err", err)
 		return nil, err
 	}
 
@@ -181,7 +181,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 }
 
 // CreateDataCore create reserve data component
-func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
+func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain, l *zap.SugaredLogger) (*data.ReserveData, *core.ReserveCore) {
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
@@ -190,6 +190,7 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.FetcherRunner,
 		dpl == deployment.Simulation,
 		config.ContractAddresses,
+		l,
 	)
 	for _, ex := range config.FetcherExchanges {
 		dataFetcher.AddExchange(ex)
@@ -207,9 +208,10 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.DataGlobalStorage,
 		config.Exchanges,
 		config.SettingStorage,
+		l,
 	)
 
-	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses)
+	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses, l)
 	return rData, rCore
 }
 
@@ -228,12 +230,12 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		return nil, err
 	}
 
-	ethereumNodeConf, err := NewEthereumNodeConfigurationFromContext(c)
+	ethereumNodeConf, err := NewEthereumNodeConfigurationFromContext(c, s)
 	if err != nil {
 		return nil, err
 	}
 
-	dataFile, err := NewDataFileFromContext(c)
+	dataFile, err := NewDataFileFromContext(c, s)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +250,7 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		return nil, err
 	}
 
-	secretConfigFile := NewSecretConfigFileFromContext(c)
+	secretConfigFile := NewSecretConfigFileFromContext(c, s)
 
 	config, err := GetConfig(
 		c,
@@ -260,6 +262,7 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		dataFile,
 		secretConfigFile,
 		sr,
+		s,
 	)
 	if err != nil {
 		return nil, err

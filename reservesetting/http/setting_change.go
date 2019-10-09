@@ -162,7 +162,7 @@ func (s *Server) createSettingChangeWithType(t common.ChangeCatalog) func(ctx *g
 func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	var settingChange common.SettingChange
 	if err := c.ShouldBindJSON(&settingChange); err != nil {
-		s.sugar.Warnw("cannot bind data to create setting_change from request", "err", err)
+		s.l.Warnw("cannot bind data to create setting_change from request", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -185,7 +185,7 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	}
 	if err := s.fillLiveInfoSettingChange(&settingChange); err != nil {
 		msg := fmt.Sprintf("validate trading pair info failed, %s", err)
-		s.sugar.Warnw(msg)
+		s.l.Warnw(msg)
 		httputil.ResponseFailure(c, httputil.WithReason(msg))
 		return
 	}
@@ -202,7 +202,7 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 		httputil.ResponseFailure(c, httputil.WithError(makeFriendlyMessage(err)))
 		// clean up
 		if err = s.storage.RejectSettingChange(id); err != nil {
-			s.sugar.Errorw("failed to clean up with reject setting change", "err", err)
+			s.l.Errorw("failed to clean up with reject setting change", "err", err)
 		}
 		return
 	}
@@ -233,7 +233,7 @@ func (s *Server) getSettingChangeWithType(t common.ChangeCatalog) func(ctx *gin.
 func (s *Server) getSettingChanges(c *gin.Context, t common.ChangeCatalog) {
 	result, err := s.storage.GetSettingChanges(t)
 	if err != nil {
-		s.sugar.Warnw("failed to get setting changes", "err", err)
+		s.l.Warnw("failed to get setting changes", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}

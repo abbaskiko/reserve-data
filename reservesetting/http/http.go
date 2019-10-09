@@ -22,7 +22,7 @@ type Server struct {
 	host               string
 	blockchain         *blockchain.Blockchain
 	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
-	sugar              *zap.SugaredLogger
+	l                  *zap.SugaredLogger
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
@@ -44,7 +44,7 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 		host:               host,
 		blockchain:         blockchain,
 		supportedExchanges: supportedExchanges,
-		sugar:              sugar,
+		l:                  sugar,
 	}
 	g := r.Group("/v3")
 

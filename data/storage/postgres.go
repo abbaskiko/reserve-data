@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
@@ -77,16 +77,18 @@ const (
 // PostgresStorage struct
 type PostgresStorage struct {
 	db *sqlx.DB
+	l  *zap.SugaredLogger
 }
 
 // NewPostgresStorage return new db instance
-func NewPostgresStorage(db *sqlx.DB) (*PostgresStorage, error) {
+func NewPostgresStorage(db *sqlx.DB, l *zap.SugaredLogger) (*PostgresStorage, error) {
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("failed to intialize database schema err=%s", err.Error())
 	}
 
 	s := &PostgresStorage{
 		db: db,
+		l:  l,
 	}
 
 	// init all feed as enabled
@@ -112,8 +114,7 @@ func getDataType(data interface{}) fetchDataType {
 	case common.AllRateEntry, *common.AllRateEntry:
 		return rateDataType
 	}
-	log.Panicf("unexpected data type %+v\n", data)
-	return 0
+	panic(fmt.Sprintf("unexpected data type %+v", data))
 }
 
 func (ps *PostgresStorage) storeFetchData(data interface{}, timepoint uint64) error {
@@ -220,7 +221,7 @@ func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath stri
 	}
 	defer func() {
 		if cErr := outFile.Close(); cErr != nil {
-			log.Printf("Close file error: %s", cErr.Error())
+			ps.l.Errorf("Close file error: %s", cErr.Error())
 		}
 	}()
 
@@ -237,7 +238,7 @@ func (ps *PostgresStorage) ExportExpiredAuthData(timepoint uint64, filePath stri
 	}
 	defer func() {
 		if cle := rows.Close(); cle != nil {
-			log.Printf("close result error %v\n", cle)
+			ps.l.Errorf("close result error %v", cle)
 		}
 	}()
 

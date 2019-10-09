@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -29,6 +29,7 @@ type Endpoint struct {
 	signer    Signer
 	interf    Interface
 	timeDelta int64
+	l         *zap.SugaredLogger
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
@@ -75,14 +76,14 @@ func (ep *Endpoint) GetResponse(
 	req.URL.RawQuery = q.Encode()
 	ep.fillRequest(req, signNeeded, timepoint)
 
-	log.Printf("request to binance: %s\n", req.URL)
+	ep.l.Infof("request to binance: %s", req.URL)
 	resp, err := client.Do(req)
 	if err != nil {
 		return respBody, err
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			ep.l.Warnf("Response body close error: %s", cErr.Error())
 		}
 	}()
 	switch resp.StatusCode {
@@ -104,7 +105,7 @@ func (ep *Endpoint) GetResponse(
 		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
 	if err != nil || len(respBody) == 0 {
-		log.Printf("request to %s, got response from binance: %s, err: %v", req.URL, common.TruncStr(respBody), err)
+		ep.l.Warnf("request to %s, got response from binance: %s, err: %v", req.URL, common.TruncStr(respBody), err)
 	}
 	return respBody, err
 }
@@ -441,22 +442,20 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Binance current time: %d", currentTime)
-	log.Printf("Binance server time: %d", serverTime)
-	log.Printf("Binance response time: %d", responseTime)
+
 	roundtripTime := (int64(responseTime) - int64(currentTime)) / 2
 	ep.timeDelta = int64(serverTime) - int64(currentTime) - roundtripTime
-
-	log.Printf("Time delta: %d", ep.timeDelta)
+	ep.l.Infow("UpdateTimeDelta", "binance_time", currentTime,
+		"server_time", serverTime, "response_time", responseTime, "time_delta", ep.timeDelta)
 	return nil
 }
 
 //NewBinanceEndpoint return new endpoint instance for using binance
-func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment) *Endpoint {
-	endpoint := &Endpoint{signer: signer, interf: interf}
+func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, l *zap.SugaredLogger) *Endpoint {
+	endpoint := &Endpoint{signer: signer, interf: interf, l: l}
 	switch dpl {
 	case deployment.Simulation:
-		log.Println("Simulate environment, no updateTime called...")
+		l.Info("Simulate environment, no updateTime called...")
 	default:
 		err := endpoint.UpdateTimeDelta()
 		if err != nil {

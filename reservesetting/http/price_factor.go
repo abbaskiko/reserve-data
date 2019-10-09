@@ -1,8 +1,6 @@
 package http
 
 import (
-	"log"
-
 	"github.com/gin-gonic/gin"
 
 	common2 "github.com/KyberNetwork/reserve-data/common"
@@ -11,16 +9,16 @@ import (
 )
 
 func (s *Server) setPriceFactor(c *gin.Context) {
-	log.Printf("storing price factor")
+	s.l.Info("storing price factor")
 	var params common.PriceFactorAtTime
 	if err := c.ShouldBindJSON(&params); err != nil {
-		s.sugar.Warnw("cannot bind request parameter", "err", err)
+		s.l.Warnw("cannot bind request parameter", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	id, err := s.storage.CreatePriceFactor(params)
 	if err != nil {
-		s.sugar.Warnw("cannot store price factor", "err", err)
+		s.l.Warnw("cannot store price factor", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -57,16 +55,16 @@ func convertToPriceFactorResponse(in []common.PriceFactorAtTime) []*common.Asset
 	return res
 }
 func (s *Server) getPriceFactor(c *gin.Context) {
-	s.sugar.Infow("get price factor")
+	s.l.Infow("get price factor")
 	var params getPriceFactorParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		s.sugar.Warnw("cannot bind request parameter", "err", err)
+		s.l.Warnw("cannot bind request parameter", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 	store, err := s.storage.GetPriceFactors(params.From, params.To)
 	if err != nil {
-		s.sugar.Warnw("cannot get price factor", err, err)
+		s.l.Warnw("cannot get price factor", err, err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
@@ -81,7 +79,7 @@ func (s *Server) getPriceFactor(c *gin.Context) {
 func (s *Server) getSetRateStatus(c *gin.Context) {
 	status, err := s.storage.GetSetRateStatus()
 	if err != nil {
-		s.sugar.Warnw("failed to get set rate status", "err", err)
+		s.l.Warnw("failed to get set rate status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(status))
@@ -89,7 +87,7 @@ func (s *Server) getSetRateStatus(c *gin.Context) {
 
 func (s *Server) holdSetRate(c *gin.Context) {
 	if err := s.storage.SetSetRateStatus(false); err != nil {
-		s.sugar.Warnw("failed to set rate staus", "err", err)
+		s.l.Warnw("failed to set rate staus", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)
@@ -97,7 +95,7 @@ func (s *Server) holdSetRate(c *gin.Context) {
 
 func (s *Server) enableSetRate(c *gin.Context) {
 	if err := s.storage.SetSetRateStatus(true); err != nil {
-		s.sugar.Warnw("failed to set SetRate status", "err", err)
+		s.l.Warnw("failed to set SetRate status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)
@@ -106,7 +104,7 @@ func (s *Server) enableSetRate(c *gin.Context) {
 func (s *Server) getRebalanceStatus(c *gin.Context) {
 	status, err := s.storage.GetRebalanceStatus()
 	if err != nil {
-		s.sugar.Warnw("failed to get rebalance status", "err", err)
+		s.l.Warnw("failed to get rebalance status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(status))
@@ -114,7 +112,7 @@ func (s *Server) getRebalanceStatus(c *gin.Context) {
 
 func (s *Server) holdRebalance(c *gin.Context) {
 	if err := s.storage.SetRebalanceStatus(false); err != nil {
-		s.sugar.Warnw("failed to set rebalance status", "err", err)
+		s.l.Warnw("failed to set rebalance status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)
@@ -122,7 +120,7 @@ func (s *Server) holdRebalance(c *gin.Context) {
 
 func (s *Server) enableRebalance(c *gin.Context) {
 	if err := s.storage.SetRebalanceStatus(true); err != nil {
-		s.sugar.Warnw("failed to set rebalance status", "err", err)
+		s.l.Warnw("failed to set rebalance status", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	}
 	httputil.ResponseSuccess(c)

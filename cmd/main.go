@@ -49,24 +49,24 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	bc, err := configuration.CreateBlockchain(conf)
+	bc, err := configuration.CreateBlockchain(conf, sugar)
 	if err != nil {
-		log.Printf("Can not create blockchain: (%s)", err)
+		sugar.Errorw("Can not create blockchain", "err", err)
 		return err
 	}
 
 	dryRun := configuration.NewDryRunFromContext(c)
 
-	rData, rCore := configuration.CreateDataCore(conf, dpl, bc)
+	rData, rCore := configuration.CreateDataCore(conf, dpl, bc, sugar)
 	if !dryRun {
 		if dpl != deployment.Simulation {
 			if err = rData.RunStorageController(); err != nil {
-				log.Printf("failed to run storage controller err=%s", err.Error())
+				sugar.Errorw("failed to run storage controller", "err", err)
 				return err
 			}
 		}
 		if err = rData.Run(); err != nil {
-			log.Printf("failed to run data service err=%s", err.Error())
+			sugar.Errorw("failed to run data service", "err", err)
 			return err
 		}
 	}
@@ -82,6 +82,7 @@ func run(c *cli.Context) error {
 		dpl,
 		bc,
 		conf.SettingStorage,
+		sugar,
 	)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
@@ -90,7 +91,7 @@ func run(c *cli.Context) error {
 	if !dryRun {
 		server.Run()
 	} else {
-		log.Printf("Dry run finished. All configs are corrected")
+		sugar.Infow("Dry run finished. All configs are corrected")
 	}
 
 	return err

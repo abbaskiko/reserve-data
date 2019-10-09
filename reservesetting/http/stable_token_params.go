@@ -9,7 +9,7 @@ import (
 func (s *Server) getStableTokenParams(c *gin.Context) {
 	params, err := s.storage.GetStableTokenParams()
 	if err != nil {
-		s.sugar.Warnw("failed to get stable token params", "err", err)
+		s.l.Warnw("failed to get stable token params", "err", err)
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}

@@ -132,7 +132,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)
 
@@ -296,7 +296,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 		assert.NoError(t, tearDown())
 	}()
 
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)
@@ -589,7 +589,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)
 
@@ -721,7 +721,7 @@ func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
 		supportedExchanges[exchangeID] = exchange
 	}
 
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)
@@ -817,7 +817,7 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 		supportedExchanges[exchangeID] = exchange
 	}
 
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)
 	t.Log(s)
@@ -899,7 +899,7 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 		exchange := v1common.TestExchange{}
 		supportedExchanges[exchangeID] = exchange
 	}
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)
 	server := NewServer(s, "", supportedExchanges, nil, "", sugar)
@@ -985,7 +985,7 @@ func TestCreateTradingPair(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-	sugar := sugarLog()
+	sugar := testutil.NewExampleSugar()
 
 	s, err := postgres.NewStorage(db, sugar)
 	require.NoError(t, err)

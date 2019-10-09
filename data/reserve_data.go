@@ -3,12 +3,12 @@ package data
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
@@ -25,6 +25,7 @@ type ReserveData struct {
 	globalStorage     GlobalStorage
 	exchanges         []common.Exchange
 	settingStorage    storage.Interface
+	l                 *zap.SugaredLogger
 }
 
 // CurrentGoldInfoVersion get current godl info version
@@ -160,7 +161,7 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 			//* it seems this token have balance in exchange but have not configured
 			//* in core, just ignore it
 			if err != nil {
-				log.Printf("failed to get token by name: %s", exchangeTokenSymbol)
+				rd.l.Warnf("failed to get token by name: %s", exchangeTokenSymbol)
 				continue
 			}
 			tokens[exchangeTokenSymbol] = token
@@ -173,7 +174,7 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 			//* it seems this token have balance in exchange but have not configured
 			//* in core, just ignore it
 			if err != nil {
-				log.Printf("failed to get token by name: %s", tokenSymbol)
+				rd.l.Warnf("failed to get token by name: %s", tokenSymbol)
 				continue
 			}
 			tokens[tokenSymbol] = token
@@ -360,38 +361,38 @@ func (rd ReserveData) ControlAuthDataSize() error {
 
 	defer func() {
 		if rErr := os.RemoveAll(tmpDir); rErr != nil {
-			log.Printf("failed to cleanup temp dir: %s, err : %s", tmpDir, rErr.Error())
+			rd.l.Errorf("failed to cleanup temp dir: %s, err : %s", tmpDir, rErr.Error())
 		}
 	}()
 
 	for {
-		log.Printf("DataPruner: waiting for signal from runner AuthData controller channel")
+		rd.l.Info("DataPruner: waiting for signal from runner AuthData controller channel")
 		t := <-rd.storageController.Runner.GetAuthBucketTicker()
 		timepoint := common.TimeToMillis(t)
-		log.Printf("DataPruner: got signal in AuthData controller channel with timestamp %d", common.TimeToMillis(t))
+		rd.l.Errorf("DataPruner: got signal in AuthData controller channel with timestamp %d", common.TimeToMillis(t))
 		fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC()))
 		nRecord, err := rd.storage.ExportExpiredAuthData(common.TimeToMillis(t), fileName)
 		if err != nil {
-			log.Printf("ERROR: DataPruner export AuthData operation failed: %s", err)
+			rd.l.Errorf("ERROR: DataPruner export AuthData operation failed: %s", err)
 		} else {
 			var integrity bool
 			if nRecord > 0 {
 				err = rd.storageController.Arch.UploadFile(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 				if err != nil {
-					log.Printf("DataPruner: Upload file failed: %s", err)
+					rd.l.Errorf("DataPruner: Upload file failed: %s", err)
 				} else {
 					integrity, err = rd.storageController.Arch.CheckFileIntergrity(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 					if err != nil {
-						log.Printf("ERROR: DataPruner: error in file integrity check (%s):", err)
+						rd.l.Errorf("ERROR: DataPruner: error in file integrity check (%s):", err)
 					} else if !integrity {
-						log.Printf("ERROR: DataPruner: file upload corrupted")
+						rd.l.Errorf("ERROR: DataPruner: file upload corrupted")
 
 					}
 					if err != nil || !integrity {
 						//if the intergrity check failed, remove the remote file.
 						removalErr := rd.storageController.Arch.RemoveFile(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 						if removalErr != nil {
-							log.Printf("ERROR: DataPruner: cannot remove remote file :(%s)", removalErr)
+							rd.l.Warnf("ERROR: DataPruner: cannot remove remote file :(%s)", removalErr)
 							return err
 						}
 					}
@@ -401,12 +402,12 @@ func (rd ReserveData) ControlAuthDataSize() error {
 				nPrunedRecords, err := rd.storage.PruneExpiredAuthData(common.TimeToMillis(t))
 				switch {
 				case err != nil:
-					log.Printf("DataPruner: Can not prune Auth Data (%s)", err)
+					rd.l.Errorf("DataPruner: Can not prune Auth Data (%s)", err)
 					return err
 				case nPrunedRecords != nRecord:
-					log.Printf("DataPruner: Number of Exported Data is %d, which is different from number of pruned data %d", nRecord, nPrunedRecords)
+					rd.l.Infof("DataPruner: Number of Exported Data is %d, which is different from number of pruned data %d", nRecord, nPrunedRecords)
 				default:
-					log.Printf("DataPruner: exported and pruned %d expired records from AuthData", nRecord)
+					rd.l.Infof("DataPruner: exported and pruned %d expired records from AuthData", nRecord)
 				}
 			}
 		}
@@ -434,11 +435,11 @@ func (rd ReserveData) GetTradeHistory(fromTime, toTime uint64) (common.AllTradeH
 // RunStorageController run storage controller
 func (rd ReserveData) RunStorageController() error {
 	if err := rd.storageController.Runner.Start(); err != nil {
-		log.Fatalf("Storage controller runner error: %s", err.Error())
+		rd.l.Fatalf("Storage controller runner error: %s", err.Error())
 	}
 	go func() {
 		if err := rd.ControlAuthDataSize(); err != nil {
-			log.Printf("Control auth data size error: %s", err.Error())
+			rd.l.Errorf("Control auth data size error: %s", err.Error())
 		}
 	}()
 	return nil
@@ -449,7 +450,7 @@ func NewReserveData(storage Storage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,
 	exchanges []common.Exchange,
-	settingStorage storage.Interface) *ReserveData {
+	settingStorage storage.Interface, l *zap.SugaredLogger) *ReserveData {
 	storageController, err := datapruner.NewStorageController(storageControllerRunner, arch)
 	if err != nil {
 		panic(err)
@@ -461,5 +462,6 @@ func NewReserveData(storage Storage,
 		globalStorage:     globalStorage,
 		exchanges:         exchanges,
 		settingStorage:    settingStorage,
+		l:                 l,
 	}
 }
