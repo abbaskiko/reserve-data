@@ -107,11 +107,12 @@ func NewEthereumNodesCliFlags() []cli.Flag {
 }
 
 // NewEthereumNodeConfigurationFromContext returns the configured ethereum node from cli context.
-func NewEthereumNodeConfigurationFromContext(c *cli.Context, l *zap.SugaredLogger) (*EthereumNodeConfiguration, error) {
+func NewEthereumNodeConfigurationFromContext(c *cli.Context) (*EthereumNodeConfiguration, error) {
 	var (
 		conf        = &EthereumNodeConfiguration{}
 		mainNode    = c.GlobalString(ethereumMainNodeFlag)
 		backupNodes = c.StringSlice(ethereumBackupNodeFlag)
+		l           = zap.S()
 	)
 
 	if len(mainNode) != 0 && len(backupNodes) != 0 {

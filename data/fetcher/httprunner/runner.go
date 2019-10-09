@@ -136,7 +136,7 @@ func WithPort(port int) Option {
 }
 
 // NewHTTPRunner creates a new instance of HTTPRunner.
-func NewHTTPRunner(l *zap.SugaredLogger, options ...Option) (*HTTPRunner, error) {
+func NewHTTPRunner(options ...Option) (*HTTPRunner, error) {
 	ochan := make(chan time.Time)
 	achan := make(chan time.Time)
 	rchan := make(chan time.Time)
@@ -152,7 +152,7 @@ func NewHTTPRunner(l *zap.SugaredLogger, options ...Option) (*HTTPRunner, error)
 		globalDataTicker: globalDataChan,
 		hTicker:          hChan,
 		server:           nil,
-		l:                l,
+		l:                zap.S(),
 	}
 
 	for _, option := range options {

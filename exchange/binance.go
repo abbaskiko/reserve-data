@@ -391,7 +391,7 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 	return common.ExchangeStatusDone, nil
 }
 
-func NewBinance(interf BinanceInterface, storage BinanceStorage, sr storage.Interface, l *zap.SugaredLogger) (*Binance, error) {
+func NewBinance(interf BinanceInterface, storage BinanceStorage, sr storage.Interface) (*Binance, error) {
 	binance := &Binance{
 		interf:  interf,
 		storage: storage,
@@ -399,7 +399,7 @@ func NewBinance(interf BinanceInterface, storage BinanceStorage, sr storage.Inte
 		BinanceLive: BinanceLive{
 			interf: interf,
 		},
-		l: l,
+		l: zap.S(),
 	}
 	return binance, nil
 }

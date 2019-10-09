@@ -38,12 +38,12 @@ type ReserveCore struct {
 func NewReserveCore(
 	blockchain Blockchain,
 	storage ActivityStorage,
-	addressConf *common.ContractAddressConfiguration, l *zap.SugaredLogger) *ReserveCore {
+	addressConf *common.ContractAddressConfiguration) *ReserveCore {
 	return &ReserveCore{
 		blockchain:      blockchain,
 		activityStorage: storage,
 		addressConf:     addressConf,
-		l:               l,
+		l:               zap.S(),
 	}
 }
 

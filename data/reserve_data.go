@@ -450,7 +450,7 @@ func NewReserveData(storage Storage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,
 	exchanges []common.Exchange,
-	settingStorage storage.Interface, l *zap.SugaredLogger) *ReserveData {
+	settingStorage storage.Interface) *ReserveData {
 	storageController, err := datapruner.NewStorageController(storageControllerRunner, arch)
 	if err != nil {
 		panic(err)
@@ -462,6 +462,6 @@ func NewReserveData(storage Storage,
 		globalStorage:     globalStorage,
 		exchanges:         exchanges,
 		settingStorage:    settingStorage,
-		l:                 l,
+		l:                 zap.S(),
 	}
 }

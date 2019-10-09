@@ -81,14 +81,14 @@ type PostgresStorage struct {
 }
 
 // NewPostgresStorage return new db instance
-func NewPostgresStorage(db *sqlx.DB, l *zap.SugaredLogger) (*PostgresStorage, error) {
+func NewPostgresStorage(db *sqlx.DB) (*PostgresStorage, error) {
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("failed to intialize database schema err=%s", err.Error())
 	}
 
 	s := &PostgresStorage{
 		db: db,
-		l:  l,
+		l:  zap.S(),
 	}
 
 	// init all feed as enabled

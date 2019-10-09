@@ -17,10 +17,10 @@ type ContractCaller struct {
 	l       *zap.SugaredLogger
 }
 
-func NewContractCaller(clients []*common.EthClient, l *zap.SugaredLogger) *ContractCaller {
+func NewContractCaller(clients []*common.EthClient) *ContractCaller {
 	return &ContractCaller{
 		clients: clients,
-		l:       l,
+		l:       zap.S(),
 	}
 }
 

@@ -52,11 +52,11 @@ func GetConfig(
 	dataFile string,
 	secretConfigFile string,
 	settingStorage storage.Interface,
-	s *zap.SugaredLogger,
 ) (*Config, error) {
-	theWorld, err := world.NewTheWorld(dpl, secretConfigFile, s)
+	l := zap.S()
+	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
 	if err != nil {
-		s.Errorw("Can't init the world (which is used to get global data)", "err", err.Error())
+		l.Errorw("Can't init the world (which is used to get global data)", "err", err.Error())
 		return nil, err
 	}
 
@@ -76,7 +76,7 @@ func GetConfig(
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
 		if err != nil {
-			s.Warnf("Cannot connect to rpc endpoint", "endpoint", ep, "err", err)
+			l.Warnf("Cannot connect to rpc endpoint", "endpoint", ep, "err", err)
 		} else {
 			bkClients[ep] = bkClient
 			callClients = append(callClients, &common.EthClient{
@@ -90,13 +90,12 @@ func GetConfig(
 		client, mainClient, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
 		chainType,
-		blockchain.NewContractCaller(callClients, s),
-		s,
+		blockchain.NewContractCaller(callClients),
 	)
 
 	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
 	if err != nil {
-		s.Errorw("failed to load AWS config", "file", secretConfigFile)
+		l.Errorw("failed to load AWS config", "file", secretConfigFile)
 		return nil, err
 	}
 	s3archive := archive.NewS3Archive(awsConf)
@@ -110,8 +109,8 @@ func GetConfig(
 		SettingStorage:          settingStorage,
 	}
 
-	s.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage, s); err != nil {
+	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
+	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
 		return nil, err
 	}
 	return config, nil

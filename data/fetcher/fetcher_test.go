@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/data/fetcher/httprunner"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/world"
@@ -95,15 +94,14 @@ func TestExchangeDown(t *testing.T) {
 			t.Error(rErr)
 		}
 	}()
-	s := testutil.NewExampleSugar()
-	runner, err := httprunner.NewHTTPRunner(s, httprunner.WithPort(9000))
+	runner, err := httprunner.NewHTTPRunner(httprunner.WithPort(9000))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	addressConf := &common.ContractAddressConfiguration{}
 
-	fetcher := NewFetcher(fstorage, fstorage, &world.TheWorld{}, runner, true, addressConf, s)
+	fetcher := NewFetcher(fstorage, fstorage, &world.TheWorld{}, runner, true, addressConf)
 
 	// mock normal data
 	var estatuses, bstatuses sync.Map

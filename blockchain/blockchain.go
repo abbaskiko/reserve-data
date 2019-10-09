@@ -421,8 +421,8 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 func NewBlockchain(base *blockchain.BaseBlockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
 	sr storage.SettingReader,
-	l *zap.SugaredLogger,
 ) (*Blockchain, error) {
+	l := zap.S()
 	l.Infow("wrapper address", "address", contractAddressConf.Wrapper.Hex())
 	wrapper := blockchain.NewContract(
 		contractAddressConf.Wrapper,

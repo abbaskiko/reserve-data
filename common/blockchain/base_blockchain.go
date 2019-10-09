@@ -383,7 +383,7 @@ func NewBaseBlockchain(
 	operators map[string]*Operator,
 	broadcaster *Broadcaster,
 	chainType string,
-	contractcaller *ContractCaller, l *zap.SugaredLogger) *BaseBlockchain {
+	contractcaller *ContractCaller) *BaseBlockchain {
 
 	file, err := os.Open(
 		filepath.Join(common.CurrentDir(), "ERC20.abi"))
@@ -403,6 +403,6 @@ func NewBaseBlockchain(
 		chainType:      chainType,
 		erc20abi:       packabi,
 		contractCaller: contractcaller,
-		l:              l,
+		l:              zap.S(),
 	}
 }

@@ -389,6 +389,6 @@ func (ep *Endpoint) GetExchangeInfo() (exchange.HuobiExchangeInfo, error) {
 }
 
 //NewHuobiEndpoint return new endpoint instance
-func NewHuobiEndpoint(signer Signer, interf Interface, l *zap.SugaredLogger) *Endpoint {
-	return &Endpoint{signer, interf, l}
+func NewHuobiEndpoint(signer Signer, interf Interface) *Endpoint {
+	return &Endpoint{signer, interf, zap.S()}
 }

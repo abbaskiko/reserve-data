@@ -22,8 +22,9 @@ func NewSecretConfigCliFlag() cli.Flag {
 }
 
 // NewSecretConfigFileFromContext returns the configured secret config file location.
-func NewSecretConfigFileFromContext(c *cli.Context, l *zap.SugaredLogger) string {
+func NewSecretConfigFileFromContext(c *cli.Context) string {
 	secretConfigFile := c.GlobalString(secretConfigFileFlag)
+	l := zap.S()
 	l.Infow("using secret config file", "file", secretConfigFile)
 	return secretConfigFile
 }

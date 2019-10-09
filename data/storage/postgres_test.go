@@ -18,7 +18,7 @@ func TestRate(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ps, err := NewPostgresStorage(db, testutil.NewExampleSugar())
+	ps, err := NewPostgresStorage(db)
 	require.NoError(t, err)
 
 	// test store data
@@ -67,7 +67,7 @@ func TestPrice(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ps, err := NewPostgresStorage(db, testutil.NewExampleSugar())
+	ps, err := NewPostgresStorage(db)
 	require.NoError(t, err)
 
 	// test store data
@@ -134,7 +134,7 @@ func TestActivity(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ps, err := NewPostgresStorage(db, testutil.NewExampleSugar())
+	ps, err := NewPostgresStorage(db)
 	require.NoError(t, err)
 
 	activityTest := common.ActivityRecord{
@@ -196,7 +196,7 @@ func TestAuthData(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ps, err := NewPostgresStorage(db, testutil.NewExampleSugar())
+	ps, err := NewPostgresStorage(db)
 	require.NoError(t, err)
 
 	authDataTest := common.AuthDataSnapshot{
@@ -269,7 +269,7 @@ func TestFeedConfiguration(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ps, err := NewPostgresStorage(db, testutil.NewExampleSugar())
+	ps, err := NewPostgresStorage(db)
 	require.NoError(t, err)
 
 	// test default all feed are enabled
@@ -300,7 +300,7 @@ func TestGoldData(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ps, err := NewPostgresStorage(db, testutil.NewExampleSugar())
+	ps, err := NewPostgresStorage(db)
 	require.NoError(t, err)
 
 	goldTest := common.GoldData{

@@ -28,7 +28,8 @@ type ExchangePool struct {
 
 func updateTradingPairConf(
 	assetStorage storage.Interface,
-	ex common.Exchange, exchangeID uint64, l *zap.SugaredLogger) {
+	ex common.Exchange, exchangeID uint64) {
+	l := zap.S()
 	pairs, err := assetStorage.GetTradingPairs(exchangeID)
 	if err != nil {
 		l.Warnw("failed to get trading pairs", "exchange_id", exchangeID, "err", err.Error())
@@ -74,8 +75,8 @@ func updateTradingPairConf(
 	}
 }
 
-func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInterface, he exchange.HuobiInterface,
-	l *zap.SugaredLogger) {
+func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInterface, he exchange.HuobiInterface) {
+	l := zap.S()
 	assets, err := assetStorage.GetTransferableAssets()
 	if err != nil {
 		l.Warnw("failed to get transferable assets", "err", err.Error())
@@ -144,13 +145,13 @@ func NewExchangePool(
 	bi binance.Interface,
 	hi huobi.Interface,
 	assetStorage storage.Interface,
-	s *zap.SugaredLogger,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
 	var (
 		be      exchange.BinanceInterface
 		he      exchange.HuobiInterface
 		bin, hb common.Exchange
+		s       = zap.S()
 	)
 
 	enabledExchanges, err := NewExchangesFromContext(c)
@@ -173,7 +174,7 @@ func NewExchangePool(
 			exchanges[stableEx.ID()] = stableEx
 		case common.Binance:
 			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
-			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, s)
+			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
@@ -181,14 +182,14 @@ func NewExchangePool(
 			bin, err = exchange.NewBinance(
 				be,
 				binancestorage,
-				assetStorage, s)
+				assetStorage)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Binance: (%s)", err.Error())
 			}
 			exchanges[bin.ID()] = bin
 		case common.Huobi:
 			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
-			he = huobi.NewHuobiEndpoint(huobiSigner, hi, s)
+			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
 			huobistorage, err := huobiStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
@@ -206,7 +207,6 @@ func NewExchangePool(
 				intermediatorNonce,
 				huobistorage,
 				assetStorage,
-				s,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Huobi: (%s)", err.Error())
@@ -215,12 +215,12 @@ func NewExchangePool(
 		}
 	}
 
-	go updateDepositAddress(assetStorage, be, he, s)
+	go updateDepositAddress(assetStorage, be, he)
 	if bin != nil {
-		go updateTradingPairConf(assetStorage, bin, uint64(common.Binance), s)
+		go updateTradingPairConf(assetStorage, bin, uint64(common.Binance))
 	}
 	if hb != nil {
-		go updateTradingPairConf(assetStorage, hb, uint64(common.Huobi), s)
+		go updateTradingPairConf(assetStorage, hb, uint64(common.Huobi))
 	}
 	return &ExchangePool{
 		Exchanges: exchanges,

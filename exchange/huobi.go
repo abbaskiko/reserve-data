@@ -655,7 +655,6 @@ func NewHuobi(
 	nonce blockchain.NonceCorpus,
 	storage HuobiStorage,
 	sr storage.SettingReader,
-	l *zap.SugaredLogger,
 ) (*Huobi, error) {
 
 	bc, err := huobiblockchain.NewBlockchain(blockchain, signer, nonce)
@@ -671,7 +670,7 @@ func NewHuobi(
 		HuobiLive: HuobiLive{
 			interf: interf,
 		},
-		l: l,
+		l: zap.S(),
 	}
 	huobiServer := huobihttp.NewHuobiHTTPServer(&huobiObj)
 	go huobiServer.Run()

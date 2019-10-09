@@ -37,7 +37,7 @@ func NewFetcher(
 	theworld TheWorld,
 	runner Runner,
 	simulationMode bool,
-	contractAddressConf *common.ContractAddressConfiguration, l *zap.SugaredLogger) *Fetcher {
+	contractAddressConf *common.ContractAddressConfiguration) *Fetcher {
 	return &Fetcher{
 		storage:             storage,
 		globalStorage:       globalStorage,
@@ -47,7 +47,7 @@ func NewFetcher(
 		runner:              runner,
 		simulationMode:      simulationMode,
 		contractAddressConf: contractAddressConf,
-		l:                   l,
+		l:                   zap.S(),
 	}
 }
 

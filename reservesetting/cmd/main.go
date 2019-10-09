@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
@@ -55,6 +56,7 @@ func run(c *cli.Context) error {
 	defer func() {
 		flusher()
 	}()
+	zap.ReplaceGlobals(sugar.Desugar())
 
 	host := httputil.NewHTTPAddressFromContext(c)
 	db, err := configuration.NewDBFromContext(c)
@@ -75,19 +77,19 @@ func run(c *cli.Context) error {
 	bi := configuration.NewBinanceInterfaceFromContext(c)
 	// dummy signer as live infos does not need to sign
 	binanceSigner := binance.NewSigner("", "")
-	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl, sugar)
+	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
 	hi := configuration.NewhuobiInterfaceFromContext(c)
 
 	// dummy signer as live infos does not need to sign
 	huobiSigner := huobi.NewSigner("", "")
-	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi, sugar)
+	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi)
 
 	liveExchanges, err := getLiveExchanges(enableExchanges, binanceEndpoint, huobiEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to initiate live exchanges: %s", err)
 	}
 
-	sr, err := postgres.NewStorage(db, sugar)
+	sr, err := postgres.NewStorage(db)
 	if err != nil {
 		return err
 	}
@@ -112,7 +114,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 	sentryDSN := libapp.SentryDSNFromFlag(c)
-	server := http.NewServer(sr, host, liveExchanges, newBlockchain, sentryDSN, sugar)
+	server := http.NewServer(sr, host, liveExchanges, newBlockchain, sentryDSN)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}

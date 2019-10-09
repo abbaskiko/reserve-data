@@ -151,7 +151,7 @@ func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 }
 
 //NewTheWorld return new world instance
-func NewTheWorld(dpl deployment.Deployment, keyfile string, l *zap.SugaredLogger) (*TheWorld, error) {
+func NewTheWorld(dpl deployment.Deployment, keyfile string) (*TheWorld, error) {
 	switch dpl {
 	case deployment.Development,
 		deployment.Production,
@@ -164,9 +164,9 @@ func NewTheWorld(dpl deployment.Deployment, keyfile string, l *zap.SugaredLogger
 		if err != nil {
 			return nil, err
 		}
-		return &TheWorld{endpoint: endpoint, l: l}, nil
+		return &TheWorld{endpoint: endpoint, l: zap.S()}, nil
 	case deployment.Simulation:
-		return &TheWorld{endpoint: SimulatedEndpoint{}, l: l}, nil
+		return &TheWorld{endpoint: SimulatedEndpoint{}, l: zap.S()}, nil
 	}
 	panic("unsupported environment")
 }

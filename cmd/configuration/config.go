@@ -57,23 +57,23 @@ func (c *Config) AddCoreConfig(
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
 	settingStore storagev3.Interface,
-	s *zap.SugaredLogger,
 ) error {
+	l := zap.S()
 	db, err := NewDBFromContext(cliCtx)
 	if err != nil {
 		return err
 	}
-	dataStorage, err := storage.NewPostgresStorage(db, s)
+	dataStorage, err := storage.NewPostgresStorage(db)
 	if err != nil {
-		s.Errorw("failed to create new data storage database", "err", err)
+		l.Errorw("failed to create new data storage database", "err", err)
 		return err
 	}
 
 	var fetcherRunner fetcher.Runner
 	var dataControllerRunner datapruner.StorageControllerRunner
 	if dpl == deployment.Simulation {
-		if fetcherRunner, err = httprunner.NewHTTPRunner(s, httprunner.WithPort(8001)); err != nil {
-			s.Errorw("failed to create HTTP runner", "err", err.Error())
+		if fetcherRunner, err = httprunner.NewHTTPRunner(httprunner.WithPort(8001)); err != nil {
+			l.Errorw("failed to create HTTP runner", "err", err.Error())
 			return err
 		}
 	} else {
@@ -90,12 +90,12 @@ func (c *Config) AddCoreConfig(
 
 	pricingSigner, err := PricingSignerFromConfigFile(secretConfigFile)
 	if err != nil {
-		s.Errorw("failed to get pricing signer from config file", "err", err.Error())
+		l.Errorw("failed to get pricing signer from config file", "err", err.Error())
 		return err
 	}
 	depositSigner, err := DepositSignerFromConfigFile(secretConfigFile)
 	if err != nil {
-		s.Errorw("failed to get deposit signer from config file", "err", err.Error())
+		l.Errorw("failed to get deposit signer from config file", "err", err.Error())
 		return err
 	}
 
@@ -118,21 +118,20 @@ func (c *Config) AddCoreConfig(
 		bi,
 		hi,
 		settingStore,
-		s,
 	)
 	if err != nil {
-		s.Errorw("Can not create exchangePool", "err", err)
+		l.Errorw("Can not create exchangePool", "err", err)
 		return err
 	}
 	fetcherExchanges, err := exchangePool.FetcherExchanges()
 	if err != nil {
-		s.Errorw("cannot create fetcher exchanges", "err", err)
+		l.Errorw("cannot create fetcher exchanges", "err", err)
 		return err
 	}
 	c.FetcherExchanges = fetcherExchanges
 	coreExchanges, err := exchangePool.CoreExchanges()
 	if err != nil {
-		s.Errorw("cannot create core exchanges", "err", err)
+		l.Errorw("cannot create core exchanges", "err", err)
 		return err
 	}
 	c.Exchanges = coreExchanges

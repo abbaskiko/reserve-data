@@ -29,13 +29,12 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-	sugar := testutil.NewExampleSugar()
-	s, err := postgres.NewStorage(db, sugar)
+	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
-	server := NewServer(s, "", supportedExchanges, nil, "", sugar)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 	c := apiClient{s: server}
 	assetResp, err := c.getAsset(assetID)
 	require.NoError(t, err)

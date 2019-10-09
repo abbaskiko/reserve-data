@@ -451,7 +451,8 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 }
 
 //NewBinanceEndpoint return new endpoint instance for using binance
-func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, l *zap.SugaredLogger) *Endpoint {
+func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment) *Endpoint {
+	l := zap.S()
 	endpoint := &Endpoint{signer: signer, interf: interf, l: l}
 	switch dpl {
 	case deployment.Simulation:

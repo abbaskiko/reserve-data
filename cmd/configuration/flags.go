@@ -140,16 +140,16 @@ func NewCliFlags() []cli.Flag {
 }
 
 // CreateBlockchain create new blockchain object
-func CreateBlockchain(config *Config, l *zap.SugaredLogger) (*blockchain.Blockchain, error) {
+func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 	var (
 		bc  *blockchain.Blockchain
 		err error
+		l   = zap.S()
 	)
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
 		config.ContractAddresses,
 		config.SettingStorage,
-		l,
 	)
 	if err != nil {
 		l.Errorw("failed to create block chain", "err", err)
@@ -190,7 +190,6 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.FetcherRunner,
 		dpl == deployment.Simulation,
 		config.ContractAddresses,
-		l,
 	)
 	for _, ex := range config.FetcherExchanges {
 		dataFetcher.AddExchange(ex)
@@ -208,10 +207,9 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.DataGlobalStorage,
 		config.Exchanges,
 		config.SettingStorage,
-		l,
 	)
 
-	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses, l)
+	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses)
 	return rData, rCore
 }
 
@@ -230,12 +228,12 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		return nil, err
 	}
 
-	ethereumNodeConf, err := NewEthereumNodeConfigurationFromContext(c, s)
+	ethereumNodeConf, err := NewEthereumNodeConfigurationFromContext(c)
 	if err != nil {
 		return nil, err
 	}
 
-	dataFile, err := NewDataFileFromContext(c, s)
+	dataFile, err := NewDataFileFromContext(c)
 	if err != nil {
 		return nil, err
 	}
@@ -245,12 +243,12 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		return nil, err
 	}
 
-	sr, err := postgres.NewStorage(db, s)
+	sr, err := postgres.NewStorage(db)
 	if err != nil {
 		return nil, err
 	}
 
-	secretConfigFile := NewSecretConfigFileFromContext(c, s)
+	secretConfigFile := NewSecretConfigFileFromContext(c)
 
 	config, err := GetConfig(
 		c,
@@ -262,7 +260,6 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		dataFile,
 		secretConfigFile,
 		sr,
-		s,
 	)
 	if err != nil {
 		return nil, err

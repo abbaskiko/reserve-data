@@ -37,12 +37,10 @@ func TestServer_StableTokenParams(t *testing.T) {
 		assert.NoError(t, tearDown())
 	}()
 
-	sugar := testutil.NewExampleSugar()
-
-	s, err := postgres.NewStorage(db, sugar)
+	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
-	server := NewServer(s, "", supportedExchanges, nil, "", sugar)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 
 	require.NoError(t, err)
 	var tests = []testCase{

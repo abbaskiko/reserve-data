@@ -469,7 +469,6 @@ func NewHTTPServer(
 	dpl deployment.Deployment,
 	bc Blockchain,
 	settingStorage storage.Interface,
-	l *zap.SugaredLogger,
 ) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
@@ -493,6 +492,6 @@ func NewHTTPServer(
 		r:              r,
 		blockchain:     bc,
 		settingStorage: settingStorage,
-		l:              l,
+		l:              zap.S(),
 	}
 }

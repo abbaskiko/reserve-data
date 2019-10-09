@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/common/testutil"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -124,7 +123,6 @@ func getTestCore(hasPendingDeposit bool) *ReserveCore {
 		testBlockchain{},
 		testActivityStorage{hasPendingDeposit},
 		addressSetting,
-		testutil.NewExampleSugar(),
 	)
 }
 

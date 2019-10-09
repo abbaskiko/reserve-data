@@ -34,8 +34,9 @@ func NewDataFileCliFlags() []cli.Flag {
 }
 
 // NewDataFileFromContext returns the configured main data file from cli context.
-func NewDataFileFromContext(c *cli.Context, l *zap.SugaredLogger) (string, error) {
+func NewDataFileFromContext(c *cli.Context) (string, error) {
 	var dataFile = c.GlobalString(dataFileFlag)
+	l := zap.S()
 	if len(dataFile) == 0 {
 		dpl, err := deployment.NewDeploymentFromContext(c)
 		if err != nil {
