@@ -76,7 +76,7 @@ func GetConfig(
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
 		if err != nil {
-			s.Warnf("Cannot connect to %s, err %s. Ignore it.", ep, err)
+			s.Warnf("Cannot connect to rpc endpoint", "endpoint", ep, "err", err)
 		} else {
 			bkClients[ep] = bkClient
 			callClients = append(callClients, &common.EthClient{
@@ -96,7 +96,7 @@ func GetConfig(
 
 	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
 	if err != nil {
-		s.Errorf("failed to load AWS config from file %s", secretConfigFile)
+		s.Errorw("failed to load AWS config", "file", secretConfigFile)
 		return nil, err
 	}
 	s3archive := archive.NewS3Archive(awsConf)
@@ -110,7 +110,7 @@ func GetConfig(
 		SettingStorage:          settingStorage,
 	}
 
-	s.Infof("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
+	s.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
 	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage, s); err != nil {
 		return nil, err
 	}

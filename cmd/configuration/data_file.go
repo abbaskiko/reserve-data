@@ -42,7 +42,7 @@ func NewDataFileFromContext(c *cli.Context, l *zap.SugaredLogger) (string, error
 			return "", err
 		}
 		defaultDataFile := filepath.Join(common.CmdDirLocation(), fmt.Sprintf("%s.db", dpl))
-		l.Infof("using default data file location %s", defaultDataFile)
+		l.Infow("using default data file", "location", defaultDataFile)
 		return defaultDataFile, nil
 	}
 	return dataFile, nil

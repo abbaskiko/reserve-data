@@ -31,19 +31,19 @@ func updateTradingPairConf(
 	ex common.Exchange, exchangeID uint64, l *zap.SugaredLogger) {
 	pairs, err := assetStorage.GetTradingPairs(exchangeID)
 	if err != nil {
-		l.Warnf("failed to get trading pairs exchange_id=%d err=%s ", exchangeID, err.Error())
+		l.Warnw("failed to get trading pairs", "exchange_id", exchangeID, "err", err.Error())
 		return
 	}
 	exInfo, err := ex.GetLiveExchangeInfos(pairs)
 	if err != nil {
-		l.Warnf("failed to get pair configuration for binance err=%s", err.Error())
+		l.Warnw("failed to get pair configuration for binance", "err", err.Error())
 		return
 	}
 
 	for _, pair := range pairs {
 		pairConf, ok := exInfo[pair.ID]
 		if !ok {
-			l.Warnf("no configuration found for trading pair %d", pair.ID)
+			l.Warnw("no configuration found for trading pair", "pair_id", pair.ID)
 			return
 		}
 
@@ -68,7 +68,7 @@ func updateTradingPairConf(
 			MinNotional:     &minNotional,
 		})
 		if err != nil {
-			l.Warnf("failed to update trading pair id=%d exchange_id=%d err=%s", pair.ID, exchangeID, err.Error())
+			l.Warn("failed to update trading pair", "pair_id", pair.ID, "exchange_id", exchangeID, "err", err.Error())
 			return
 		}
 	}
@@ -78,27 +78,24 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 	l *zap.SugaredLogger) {
 	assets, err := assetStorage.GetTransferableAssets()
 	if err != nil {
-		l.Warnf("failed to get transferable assets err=%s", err.Error())
+		l.Warnw("failed to get transferable assets", "err", err.Error())
 		return
 	}
 	for _, asset := range assets {
 		for _, ae := range asset.Exchanges {
 			switch ae.ExchangeID {
 			case uint64(common.Binance):
-				l.Warnf("updating deposit address for asset id=%d exchange=%s symbol=%s",
-					asset.ID,
-					common.Binance.String(),
-					ae.Symbol)
+				l.Warnw("updating deposit address for asset", "asset_id", asset.ID,
+					"exchange", common.Binance.String(), "symbol", ae.Symbol)
 				if be == nil {
-					l.Warnf("abort updating deposit address due binance exchange disabled")
+					l.Warnw("abort updating deposit address due binance exchange disabled")
 					continue
 				}
 				depositAddress, err := be.GetDepositAddress(ae.Symbol)
 				if err != nil {
-					l.Warnf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
-						asset.ID,
-						common.Binance.String(),
-						ae.Symbol, err.Error())
+					l.Warnw("failed to get deposit address for asset",
+						"asset_id", asset.ID,
+						"exchange", common.Binance.String(), "symbol", ae.Symbol, "err", err.Error())
 					continue
 				}
 				err = assetStorage.UpdateDepositAddress(
@@ -106,24 +103,24 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 					uint64(common.Binance),
 					ethereum.HexToAddress(depositAddress.Address))
 				if err != nil {
-					l.Warnf("assetStorage.UpdateDepositAddress err=%s", err.Error())
+					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
 					continue
 				}
 			case uint64(common.Huobi):
-				l.Warnf("updating deposit address for asset id=%d exchange=%s symbol=%s",
-					asset.ID,
-					common.Huobi.String(),
-					ae.Symbol)
+				l.Warnw("updating deposit address for asset",
+					"asset_id", asset.ID,
+					"exchange", common.Huobi.String(),
+					"symbol", ae.Symbol)
 				if he == nil {
-					l.Warnf("abort updating deposit address due huobi exchange disabled")
+					l.Warnw("abort updating deposit address due huobi exchange disabled")
 					continue
 				}
 				depositAddress, err := he.GetDepositAddress(ae.Symbol)
 				if err != nil {
-					l.Warnf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
-						asset.ID,
-						common.Huobi.String(),
-						ae.Symbol, err.Error())
+					l.Warnw("failed to get deposit address for asset",
+						"asset_id", asset.ID,
+						"exchange", common.Huobi.String(),
+						"symbol", ae.Symbol, "err", err)
 					continue
 				}
 				err = assetStorage.UpdateDepositAddress(
@@ -131,7 +128,7 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 					uint64(common.Huobi),
 					ethereum.HexToAddress(depositAddress.Address))
 				if err != nil {
-					l.Warnf("assetStorage.UpdateDepositAddress err=%s", err.Error())
+					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
 					continue
 				}
 			}

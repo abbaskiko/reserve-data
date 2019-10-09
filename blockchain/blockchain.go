@@ -304,7 +304,8 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 		for i, tok := range assets {
 			if balances[i].Cmp(Big0) == 0 || balances[i].Cmp(BigMax) > 0 {
 				// TODO: log asset_id instead of token
-				bc.l.Infow("Fetcher ------> balances of token is invalid", "token_symbol", tok.Symbol)
+				bc.l.Infow("balances of token is invalid", "token_symbol", tok.Symbol, "balances",
+					balances[i].String())
 				// TODO: should store token id instead of symbol
 				result[tok.Symbol] = common.BalanceEntry{
 					Valid:      false,
@@ -396,22 +397,22 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 		return nonceFromNode, err
 	}
 	if nonceFromNode < bc.localSetRateNonce {
-		bc.l.Infof("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
-			nonceFromNode, bc.localSetRateNonce)
+		bc.l.Infow("SET_RATE_MINED_NONCE: nonce returned from node is smaller than cached nonce",
+			"node_value", nonceFromNode, "cached_value", bc.localSetRateNonce)
 		if common.NowInMillis()-bc.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
-			bc.l.Infof("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
-				bc.localSetRateNonce, nonceFromNode)
+			bc.l.Infow("SET_RATE_MINED_NONCE: cached nonce stalled, overwriting with nonce from node",
+				"cached_value", bc.localSetRateNonce, "node_value", nonceFromNode)
 			bc.localSetRateNonce = nonceFromNode
 			bc.setRateNonceTimestamp = common.NowInMillis()
 			return nonceFromNode, nil
 		}
-		bc.l.Infof("SET_RATE_MINED_NONCE: using cached nonce %d instead of nonce from node %d",
-			bc.localSetRateNonce, nonceFromNode)
+		bc.l.Infow("SET_RATE_MINED_NONCE: using cached nonce instead of nonce from node",
+			"cached_value", bc.localSetRateNonce, "node_value", nonceFromNode)
 		return bc.localSetRateNonce, nil
 	}
 
-	bc.l.Infof("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
-		bc.localSetRateNonce, nonceFromNode)
+	bc.l.Infow("SET_RATE_MINED_NONCE: updating cached nonce",
+		"current", bc.localSetRateNonce, "new", nonceFromNode)
 	bc.localSetRateNonce = nonceFromNode
 	bc.setRateNonceTimestamp = common.NowInMillis()
 	return nonceFromNode, nil
