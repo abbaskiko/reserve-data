@@ -26,10 +26,8 @@ func TestExchanges(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-
 	server := NewServer(s, "", supportedExchanges, nil, "")
 	c := apiClient{s: server}
 

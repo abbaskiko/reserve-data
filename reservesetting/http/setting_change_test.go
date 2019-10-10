@@ -893,10 +893,8 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 		exchange := v1common.TestExchange{}
 		supportedExchanges[exchangeID] = exchange
 	}
-
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-
 	server := NewServer(s, "", supportedExchanges, nil, "")
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)

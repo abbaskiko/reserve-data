@@ -3,9 +3,10 @@ package httprunner
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // HTTPRunner is an implementation of FetcherRunner
@@ -20,6 +21,7 @@ type HTTPRunner struct {
 	globalDataTicker chan time.Time
 	hTicker          chan time.Time
 
+	l      *zap.SugaredLogger
 	server *Server
 }
 
@@ -76,11 +78,11 @@ func (hr *HTTPRunner) waitPingResponse() error {
 		case <-tickCh:
 			rsp, dErr := client.Do(req)
 			if dErr != nil {
-				log.Printf("HTTP server is returning an error: %s, retrying", dErr.Error())
+				hr.l.Warnf("HTTP server is returning an error: %s, retrying", dErr.Error())
 				break
 			}
 			if rsp.StatusCode == http.StatusOK {
-				log.Print("HTTP ticker server is ready")
+				hr.l.Infow("HTTP ticker server is ready")
 				return nil
 			}
 		}
@@ -103,7 +105,7 @@ func (hr *HTTPRunner) Start() error {
 	hr.server = NewServer(hr, addr)
 	go func() {
 		if err := hr.server.Start(); err != nil {
-			log.Printf("Http server for runner couldn't start or get stopped. Error: %s", err)
+			hr.l.Errorf("Http server for runner couldn't start or get stopped. Error: %s", err)
 		}
 	}()
 
@@ -150,6 +152,7 @@ func NewHTTPRunner(options ...Option) (*HTTPRunner, error) {
 		globalDataTicker: globalDataChan,
 		hTicker:          hChan,
 		server:           nil,
+		l:                zap.S(),
 	}
 
 	for _, option := range options {

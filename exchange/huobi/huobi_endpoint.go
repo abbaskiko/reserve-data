@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
@@ -29,6 +29,7 @@ const (
 type Endpoint struct {
 	signer Signer
 	interf Interface
+	l      *zap.SugaredLogger
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool) {
@@ -92,14 +93,13 @@ func (ep *Endpoint) GetResponse(
 	req.URL.RawQuery = q.Encode()
 	ep.fillRequest(req, signNeeded)
 	var respBody []byte
-	//log.Printf("request to huobi: %s\n", req.URL)
 	resp, err := client.Do(req)
 	if err != nil {
 		return respBody, err
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			ep.l.Warnf("response body close error: %s", cErr.Error())
 		}
 	}()
 	switch resp.StatusCode {
@@ -231,7 +231,7 @@ func (ep *Endpoint) DepositHistory(size int) (exchange.HuobiDeposits, error) {
 			err = fmt.Errorf("getting deposit history from Huobi failed: %s", result.Reason)
 		}
 	}
-	log.Printf("huobi deposit history: %v", result)
+	ep.l.Infof("huobi deposit history: %v", result)
 	return result, err
 }
 
@@ -297,17 +297,20 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 		},
 		true,
 	)
-	if err == nil {
-		if err = json.Unmarshal(respBody, &result); err != nil {
-			return "", err
-		}
-		if result.Status != "ok" {
-			return "", fmt.Errorf("withdraw from Huobi failed: %s", result.Reason)
-		}
-		log.Printf("Withdraw id: %s", fmt.Sprintf("%v", result.ID))
-		return strconv.FormatUint(result.ID, 10), nil
+	if err != nil {
+		ep.l.Errorf("withdraw rejected by Huobi %v", err)
+		return "", errors.New("withdraw rejected by Huobi")
 	}
-	return "", errors.New("Withdraw rejected by Huobi")
+
+	if err = json.Unmarshal(respBody, &result); err != nil {
+		return "", err
+	}
+	if result.Status != "ok" {
+		return "", fmt.Errorf("withdraw from Huobi failed: %s", result.Reason)
+	}
+	ep.l.Warnf("withdraw id: %s", fmt.Sprintf("%v", result.ID))
+	return strconv.FormatUint(result.ID, 10), nil
+
 }
 
 func (ep *Endpoint) GetInfo() (exchange.HuobiInfo, error) {
@@ -387,5 +390,5 @@ func (ep *Endpoint) GetExchangeInfo() (exchange.HuobiExchangeInfo, error) {
 
 //NewHuobiEndpoint return new endpoint instance
 func NewHuobiEndpoint(signer Signer, interf Interface) *Endpoint {
-	return &Endpoint{signer, interf}
+	return &Endpoint{signer, interf, zap.S()}
 }

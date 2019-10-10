@@ -7,6 +7,7 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
@@ -21,18 +22,20 @@ type Server struct {
 	host               string
 	blockchain         *blockchain.Blockchain
 	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
+	l                  *zap.SugaredLogger
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
-func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange, blockchain *blockchain.Blockchain,
-	sentryDSN string) *Server {
+func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange,
+	blockchain *blockchain.Blockchain, sentryDSN string) *Server {
+	l := zap.S()
 	r := gin.Default()
 	if sentryDSN != "" {
 		// To initialize Sentry's handler, you need to initialize Sentry itself beforehand
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn: sentryDSN,
 		}); err != nil {
-			log.Printf("Sentry initialization failed: %v\n", err)
+			l.Warnw("Sentry initialization failed", "err", err)
 		}
 		r.Use(sentrygin.New(sentrygin.Options{}))
 	}
@@ -42,6 +45,7 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 		host:               host,
 		blockchain:         blockchain,
 		supportedExchanges: supportedExchanges,
+		l:                  l,
 	}
 	g := r.Group("/v3")
 

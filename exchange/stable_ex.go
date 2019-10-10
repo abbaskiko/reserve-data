@@ -3,16 +3,17 @@ package exchange
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 type StableEx struct {
+	l *zap.SugaredLogger
 }
 
 func (se *StableEx) TokenAddresses() (map[string]ethereum.Address, error) {
@@ -38,7 +39,7 @@ func (se *StableEx) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 }
 
 func (se *StableEx) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
-	log.Print("WARNING stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
+	se.l.Warnf("stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
 	result := make(common.ExchangeInfo)
 	for _, pair := range pairs {
 		result[pair.ID] = common.ExchangePrecisionLimit{
@@ -120,6 +121,6 @@ func (se *StableEx) ID() common.ExchangeID {
 	return common.StableExchange
 }
 
-func NewStableEx() (*StableEx, error) {
-	return &StableEx{}, nil
+func NewStableEx(l *zap.SugaredLogger) (*StableEx, error) {
+	return &StableEx{l: l}, nil
 }

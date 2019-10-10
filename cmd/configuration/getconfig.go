@@ -1,11 +1,10 @@
 package configuration
 
 import (
-	"log"
-
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -54,9 +53,10 @@ func GetConfig(
 	secretConfigFile string,
 	settingStorage storage.Interface,
 ) (*Config, error) {
+	l := zap.S()
 	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
 	if err != nil {
-		log.Printf("Can't init the world (which is used to get global data), err %s", err.Error())
+		l.Errorw("Can't init the world (which is used to get global data)", "err", err.Error())
 		return nil, err
 	}
 
@@ -76,7 +76,7 @@ func GetConfig(
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
 		if err != nil {
-			log.Printf("Cannot connect to %s, err %s. Ignore it.", ep, err)
+			l.Warnf("Cannot connect to rpc endpoint", "endpoint", ep, "err", err)
 		} else {
 			bkClients[ep] = bkClient
 			callClients = append(callClients, &common.EthClient{
@@ -95,7 +95,7 @@ func GetConfig(
 
 	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
 	if err != nil {
-		log.Printf("failed to load AWS config from file %s", secretConfigFile)
+		l.Errorw("failed to load AWS config", "file", secretConfigFile)
 		return nil, err
 	}
 	s3archive := archive.NewS3Archive(awsConf)
@@ -109,7 +109,7 @@ func GetConfig(
 		SettingStorage:          settingStorage,
 	}
 
-	log.Printf("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
+	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
 	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
 		return nil, err
 	}

@@ -1,10 +1,10 @@
 package configuration
 
 import (
-	"log"
 	"path/filepath"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 )
@@ -24,6 +24,7 @@ func NewSecretConfigCliFlag() cli.Flag {
 // NewSecretConfigFileFromContext returns the configured secret config file location.
 func NewSecretConfigFileFromContext(c *cli.Context) string {
 	secretConfigFile := c.GlobalString(secretConfigFileFlag)
-	log.Printf("using secret config file %s", secretConfigFile)
+	l := zap.S()
+	l.Infow("using secret config file", "file", secretConfigFile)
 	return secretConfigFile
 }

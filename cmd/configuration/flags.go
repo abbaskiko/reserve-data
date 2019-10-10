@@ -2,10 +2,10 @@ package configuration
 
 import (
 	"fmt"
-	"log"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
@@ -144,6 +144,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 	var (
 		bc  *blockchain.Blockchain
 		err error
+		l   = zap.S()
 	)
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
@@ -151,7 +152,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 		config.SettingStorage,
 	)
 	if err != nil {
-		log.Printf("failed to create block chain err=%s", err.Error())
+		l.Errorw("failed to create block chain", "err", err)
 		return nil, err
 	}
 
@@ -159,7 +160,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	assets, err := config.SettingStorage.GetTransferableAssets()
 	if err != nil {
-		log.Printf("Can't get the list of Internal Tokens for indices: %s", err.Error())
+		l.Errorw("Can't get the list of Internal Tokens for indices", "err", err)
 		return nil, err
 	}
 
@@ -172,7 +173,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	err = bc.LoadAndSetTokenIndices(assetAddrs)
 	if err != nil {
-		log.Printf("Can't load and set token indices: %s", err.Error())
+		l.Errorw("Can't load and set token indices", "err", err)
 		return nil, err
 	}
 
@@ -180,7 +181,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 }
 
 // CreateDataCore create reserve data component
-func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
+func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain, l *zap.SugaredLogger) (*data.ReserveData, *core.ReserveCore) {
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
@@ -213,7 +214,7 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 }
 
 // NewConfigurationFromContext returns the Configuration object from cli context.
-func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
+func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config, error) {
 	dpl, err := deployment.NewDeploymentFromContext(c)
 	if err != nil {
 		return nil, err

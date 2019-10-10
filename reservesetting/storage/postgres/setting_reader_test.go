@@ -16,7 +16,6 @@ func TestStorage_GetTransferableAssets(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 
@@ -35,7 +34,6 @@ func TestStorage_GetTradingPair(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 
@@ -49,7 +47,6 @@ func TestStorage_GetTradingPairs(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 
@@ -64,7 +61,6 @@ func TestStorage_GetMinNotional(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 

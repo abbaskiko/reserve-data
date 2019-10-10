@@ -6,9 +6,11 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
+	"github.com/KyberNetwork/reserve-data/cmd/mode"
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/exchange"
@@ -29,7 +31,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "HTTP gateway for reserve core"
 	app.Action = run
-
+	app.Flags = append(app.Flags, mode.NewCliFlag())
 	app.Flags = append(app.Flags, deployment.NewCliFlag())
 	app.Flags = append(app.Flags, configuration.NewBinanceCliFlags()...)
 	app.Flags = append(app.Flags, configuration.NewHuobiCliFlags()...)
@@ -47,6 +49,15 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		flusher()
+	}()
+	zap.ReplaceGlobals(sugar.Desugar())
+
 	host := httputil.NewHTTPAddressFromContext(c)
 	db, err := configuration.NewDBFromContext(c)
 	if err != nil {

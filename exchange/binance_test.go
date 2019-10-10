@@ -11,6 +11,7 @@ import (
 )
 
 func TestBinance(t *testing.T) {
+
 	binanceEndpoint := &binanceTestInterface{}
 	binance, err := NewBinance(binanceEndpoint, nil, nil)
 	require.NoError(t, err)

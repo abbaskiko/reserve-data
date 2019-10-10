@@ -15,7 +15,6 @@ func TestPriceFactor(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	assert.NoError(t, err)
 	var inserts = []struct {
@@ -105,7 +104,6 @@ func TestStorage_SetRebalanceControl(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 
@@ -125,7 +123,6 @@ func TestStorage_SetSetRateControl(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	require.NoError(t, err)
 

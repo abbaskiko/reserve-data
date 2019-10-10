@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -23,7 +22,7 @@ func (s *Storage) GetAssetExchange(id uint64) (common.AssetExchange, error) {
 	})
 	switch err {
 	case sql.ErrNoRows:
-		log.Printf("asset exchange not found id=%d", id)
+		s.l.Infow("asset exchange not found", "id", id)
 		return common.AssetExchange{}, common.ErrNotFound
 	case nil:
 
@@ -56,11 +55,11 @@ func (s *Storage) GetAssetExchangeBySymbol(exchangeID uint64, symbol string) (co
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 
-	log.Printf("getting asset symbol=%s", symbol)
+	s.l.Infow("getting asset exchange", "symbol", symbol, "exchange", exchangeID)
 	err = tx.Stmtx(s.stmts.getAssetExchangeBySymbol).Get(&result, exchangeID, symbol)
 	switch err {
 	case sql.ErrNoRows:
-		log.Printf("asset not found symbol=%s", symbol)
+		s.l.Infow("asset not found", "symbol", symbol)
 		return result, common.ErrNotFound
 	case nil:
 		return result, nil
