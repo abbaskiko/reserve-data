@@ -40,19 +40,19 @@ func getTimePoint(c *gin.Context, useDefault bool, l *zap.SugaredLogger) uint64 
 	timestamp := c.DefaultQuery("timestamp", "")
 	if timestamp == "" {
 		if useDefault {
-			l.Infow("Interpreted timestamp to default", "maxTimespot", maxTimespot)
+			l.Debugw("Interpreted timestamp to default", "maxTimespot", maxTimespot)
 			return maxTimespot
 		}
 		timepoint := common.NowInMillis()
-		l.Infow("Interpreted timestamp to current time", "timepoint", timepoint)
+		l.Debugw("Interpreted timestamp to current time", "timepoint", timepoint)
 		return timepoint
 	}
 	timepoint, err := strconv.ParseUint(timestamp, 10, 64)
 	if err != nil {
-		l.Infow("Interpreted timestamp to default", "timestamp", timestamp, "maxTimespot", maxTimespot)
+		l.Debugw("Interpreted timestamp to default", "timestamp", timestamp, "maxTimespot", maxTimespot)
 		return maxTimespot
 	}
-	l.Infow("Interpreted timestamp", "timestamp", timestamp, "timepoint", timepoint)
+	l.Debugw("Interpreted timestamp", "timestamp", timestamp, "timepoint", timepoint)
 	return timepoint
 }
 

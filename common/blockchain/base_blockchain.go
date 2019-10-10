@@ -110,7 +110,8 @@ func (b *BaseBlockchain) SignAndBroadcast(tx *types.Transaction, from string) (*
 	failures, ok := b.broadcaster.Broadcast(signedTx)
 	b.l.Infof("Rebroadcasting failures: %s", failures)
 	if !ok {
-		b.l.Warnf("Broadcasting transaction failed! nonce: %d, gas price: %s, retry failures: %s", tx.Nonce(), tx.GasPrice().Text(10), failures)
+		b.l.Warnf("Broadcasting transaction failed! tx: %s nonce: %d, gas price: %s, retry failures: %s",
+			tx.Hash().String(), tx.Nonce(), tx.GasPrice().Text(10), failures)
 		if signedTx != nil {
 			return signedTx, fmt.Errorf("broadcasting transaction %s failed, retry failures: %s", tx.Hash().Hex(), failures)
 		}
