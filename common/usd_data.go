@@ -30,10 +30,14 @@ type HitData struct {
 // USDData ...
 type USDData struct {
 	Timestamp    uint64
-	CoinbaseUSD  CoinbaseData `json:"CoinbaseUSD"`
-	GeminiUSD    GeminiData   `json:"GeminiUSD"`
-	CoinbaseUSDC CoinbaseData `json:"CoinbaseUSDC"`
-	BinanceUSDC  BinanceData  `json:"BinanceUSDC"`
-	CoinbaseDAI  CoinbaseData `json:"CoinbaseDAI"`
-	HitDAI       HitData      `json:"HitDAI"`
+	CoinbaseUSD  CoinbaseData   `json:"CoinbaseUSD"`
+	GeminiUSD    GeminiGoldData `json:"GeminiUSD"` // gold and usd use the same url
+	CoinbaseUSDC CoinbaseData   `json:"CoinbaseUSDC"`
+	BinanceUSDC  BinanceData    `json:"BinanceUSDC"`
+	CoinbaseDAI  CoinbaseData   `json:"CoinbaseDAI"`
+	HitDAI       HitData        `json:"HitDAI"`
+	BitFinex     BitFinexData   `json:"BitFinexUSD"`
+	BinanceUSDT  BinanceData    `json:"BinanceUSDT"`
+	BinancePAX   BinanceData    `json:"BinancePAX"`
+	BinanceTUSD  BinanceData    `json:"BinanceTUSD"`
 }

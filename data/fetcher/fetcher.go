@@ -192,6 +192,7 @@ func (f *Fetcher) RunAuthDataFetcher() {
 }
 
 func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
+	log.Println("start to fetch auth data")
 	snapshot := common.AuthDataSnapshot{
 		Valid:             true,
 		Timestamp:         common.GetTimestamp(),
@@ -247,6 +248,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	if err = f.FetchAuthDataFromBlockchain(bbalances, &bstatuses, pendings); err != nil {
 		snapshot.Error = err.Error()
 		snapshot.Valid = false
+		log.Printf("FetchAuthDataFromBlockchain failed with error %v\n", err)
 	}
 	snapshot.Block = f.currentBlock
 	snapshot.ReturnTime = common.GetTimestamp()
@@ -254,7 +256,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		&ebalances, bbalances, &estatuses, &bstatuses,
 		pendings, &snapshot, timepoint)
 	if err != nil {
-		log.Printf("Storing exchange balances failed: %s\n", err)
+		log.Printf("Storing auth data failed: %s\n", err)
 		return
 	}
 }
@@ -591,6 +593,7 @@ func (f *Fetcher) PersistSnapshot(
 	// persist blockchain balances
 	snapshot.ReserveBalances = bbalances
 	snapshot.PendingActivities = pendingActivities
+	log.Printf("save auth data with timepoint %d\n", timepoint)
 	return f.storage.StoreAuthSnapshot(snapshot, timepoint)
 }
 
