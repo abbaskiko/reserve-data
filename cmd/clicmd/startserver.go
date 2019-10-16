@@ -49,7 +49,6 @@ func serverStart(_ *cobra.Command, _ []string) {
 	}
 	defer f()
 	zap.ReplaceGlobals(s.Desugar())
-	zap.S().Infow("test", "err", "some error")
 
 	//get configuration from ENV variable
 	kyberENV := common.RunningMode()
