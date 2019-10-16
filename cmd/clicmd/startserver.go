@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data"
 	"github.com/KyberNetwork/reserve-data/blockchain"
@@ -30,13 +31,26 @@ var (
 	dryRun         bool
 	profilerPrefix string
 
+	sentryDSN   string
+	sentryLevel string
+	zapMode     string
+
 	cliAddress common.AddressConfig
 )
 
 func serverStart(_ *cobra.Command, _ []string) {
 	numCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(numCPU)
-	configLog(stdoutLog)
+
+	w := configLog(stdoutLog)
+	s, f, err := newSugaredLogger(w)
+	if err != nil {
+		panic(err)
+	}
+	defer f()
+	zap.ReplaceGlobals(s.Desugar())
+	zap.S().Infow("test", "err", "some error")
+
 	//get configuration from ENV variable
 	kyberENV := common.RunningMode()
 	InitInterface()
@@ -50,7 +64,6 @@ func serverStart(_ *cobra.Command, _ []string) {
 		rData reserve.Data
 		rCore reserve.Core
 		bc    *blockchain.Blockchain
-		err   error
 	)
 
 	bc, err = CreateBlockchain(config)
@@ -91,6 +104,6 @@ func serverStart(_ *cobra.Command, _ []string) {
 	if !dryRun {
 		server.Run()
 	} else {
-		log.Printf("Dry run finished. All configs are corrected")
+		s.Infof("Dry run finished. All configs are corrected")
 	}
 }
