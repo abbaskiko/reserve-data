@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/boltdb/bolt"
 	"go.uber.org/zap"
@@ -21,7 +20,6 @@ const (
 //Storage storage binance information
 //including trade history
 type Storage struct {
-	mu sync.RWMutex
 	db *bolt.DB
 	l  *zap.SugaredLogger
 }
