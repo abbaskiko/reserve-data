@@ -123,6 +123,13 @@ curl -X GET "https://gateway.local/v3/asset/1"
             "rebalance_threshold": 300,
             "transfer_threshold": 300
         },
+        "stable_param": {
+            "price_update_threshold": 0.2,
+            "ask_spread": 34.0,
+            "bid_spread": 0.1,
+            "single_feed_max_thread": 0.4,
+            "multiple_feeds_max_diff": 0.6
+        },
         "created": "2019-07-31T07:50:28.604784Z",
         "updated": "2019-07-31T08:53:20.585862Z"
     },
@@ -206,6 +213,13 @@ curl -X GET "https://gateway.local/v3/asset"
                 "rebalance_threshold": 300,
                 "transfer_threshold": 300
             },
+            "stable_param": {
+                "price_update_threshold": 0.2,
+                "ask_spread": 34.0,
+                "bid_spread": 0.1,
+                "single_feed_max_thread": 0.4,
+                "multiple_feeds_max_diff": 0.6
+            },
             "created": "2019-07-31T07:50:28.604784Z",
             "updated": "2019-07-31T08:53:20.585862Z"
         },
@@ -253,6 +267,13 @@ curl -X GET "https://gateway.local/v3/asset"
                 "reserve": 6,
                 "rebalance_threshold": 0.33,
                 "transfer_threshold": 0.25
+            },
+            "stable_param": {
+                "price_update_threshold": 0,
+                "ask_spread": 0,
+                "bid_spread": 0,
+                "single_feed_max_thread": 0,
+                "multiple_feeds_max_diff": 0
             },
             "created": "2019-07-31T08:53:33.653734Z",
             "updated": "2019-07-31T08:53:33.653734Z"
