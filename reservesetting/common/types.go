@@ -133,6 +133,24 @@ type RebalanceQuadratic struct {
 	C float64 `json:"c"`
 }
 
+// StableParam is params of stablize action
+type StableParam struct {
+	PriceUpdateThreshold float64 `json:"price_update_threshold"`
+	AskSpread            float64 `json:"ask_spread"`
+	BidSpread            float64 `json:"bid_spread"`
+	SingleFeedMaxSpread  float64 `json:"single_feed_max_thread"`
+	MultipleFeedsMaxDiff float64 `json:"multiple_feeds_max_diff"`
+}
+
+// UpdateStableParam is the placeholder for updating stable params
+type UpdateStableParam struct {
+	PriceUpdateThreshold *float64 `json:"price_update_threshold"`
+	AskSpread            *float64 `json:"ask_spread"`
+	BidSpread            *float64 `json:"bid_spread"`
+	SingleFeedMaxSpread  *float64 `json:"single_feed_max_thread"`
+	MultipleFeedsMaxDiff *float64 `json:"multiple_feeds_max_diff"`
+}
+
 // Asset represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
 type Asset struct {
 	ID                 uint64              `json:"id"`
@@ -149,6 +167,7 @@ type Asset struct {
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic,omitempty"`
 	Exchanges          []AssetExchange     `json:"exchanges,omitempty" binding:"dive"`
 	Target             *AssetTarget        `json:"target,omitempty"`
+	StableParam        StableParam         `json:"stable_param"`
 	Created            time.Time           `json:"created"`
 	Updated            time.Time           `json:"updated"`
 }
@@ -197,6 +216,7 @@ type CreateAssetEntry struct {
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
 	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
 	Target             *AssetTarget        `json:"target"`
+	StableParam        *StableParam        `json:"stable_param"`
 }
 
 // UpdateAssetEntry
@@ -214,6 +234,7 @@ type UpdateAssetEntry struct {
 	PWI                *AssetPWI           `json:"pwi"`
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
 	Target             *AssetTarget        `json:"target"`
+	StableParam        *UpdateStableParam  `json:"stable_param"`
 }
 
 type UpdateExchangeEntry struct {

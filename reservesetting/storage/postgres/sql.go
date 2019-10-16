@@ -326,7 +326,12 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 		             :target_total,
 		             :target_reserve,
 		             :target_rebalance_threshold,
-		             :target_transfer_threshold
+		             :target_transfer_threshold,
+		    		 :stable_param_price_update_threshold,
+					 :stable_param_ask_spread,
+		    		 :stable_param_bid_spread,
+		    		 :stable_param_single_feed_max_thread,
+		    		 :stable_param_multiple_feeds_max_diff
 		         );`
 	newAsset, err := db.PrepareNamed(newAssetQuery)
 	if err != nil {
@@ -359,6 +364,11 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 								       assets.target_reserve,
 								       assets.target_rebalance_threshold,
 								       assets.target_transfer_threshold,
+       								   assets.stable_param_price_update_threshold,
+       								   assets.stable_param_ask_spread,
+									   assets.stable_param_bid_spread,
+									   assets.stable_param_single_feed_max_thread,
+									   assets.stable_param_multiple_feeds_max_diff,
 								       assets.created,
 								       assets.updated
 								FROM assets
@@ -393,6 +403,11 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 								         assets.target_reserve,
 								         assets.target_rebalance_threshold,
 								         assets.target_transfer_threshold,
+								         assets.stable_param_price_update_threshold,
+       								   	 assets.stable_param_ask_spread,
+									     assets.stable_param_bid_spread,
+									     assets.stable_param_single_feed_max_thread,
+									     assets.stable_param_multiple_feeds_max_diff,
 								         assets.created,
 								         assets.updated
 								ORDER BY assets.id`
@@ -408,39 +423,44 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 	}
 
 	const updateAssetQuery = `WITH updated AS (
-								    UPDATE "addresses"
-								        SET address = COALESCE(:address, addresses.address)
-								        FROM "assets"
-								        WHERE assets.id = :id AND assets.address_id = addresses.id
-									)
-								UPDATE "assets"
-								SET symbol       = COALESCE(:symbol, symbol),
-								    name         = COALESCE(:name, name),
-								    decimals     = COALESCE(:decimals, decimals),
-								    transferable = COALESCE(:transferable, transferable),
-								    set_rate     = COALESCE(:set_rate, set_rate),
-								    rebalance    = COALESCE(:rebalance, rebalance),
-								    is_quote     = COALESCE(:is_quote, is_quote),
-								    pwi_ask_a = COALESCE(:ask_a,pwi_ask_a),
-									pwi_ask_b = COALESCE(:ask_b, pwi_ask_b),
-									pwi_ask_c = COALESCE(:ask_c, pwi_ask_c),
-									pwi_ask_min_min_spread = COALESCE(:ask_min_min_spread,pwi_ask_min_min_spread),
-									pwi_ask_price_multiply_factor = COALESCE(:ask_price_multiply_factor, pwi_ask_price_multiply_factor),
-									pwi_bid_a = COALESCE(:bid_a,pwi_bid_a),
-									pwi_bid_b = COALESCE(:bid_b,pwi_bid_b),
-									pwi_bid_c = COALESCE(:bid_c,pwi_bid_c),
-									pwi_bid_min_min_spread = COALESCE(:bid_min_min_spread,pwi_bid_min_min_spread),
-									pwi_bid_price_multiply_factor = COALESCE(:bid_price_multiply_factor,pwi_bid_price_multiply_factor),
-									rebalance_quadratic_a = COALESCE(:rebalance_quadratic_a,rebalance_quadratic_a),
-									rebalance_quadratic_b = COALESCE(:rebalance_quadratic_b,rebalance_quadratic_b),
-									rebalance_quadratic_c = COALESCE(:rebalance_quadratic_c,rebalance_quadratic_c),
-									target_total = COALESCE(:target_total,target_total),
-									target_reserve = COALESCE(:target_reserve,target_reserve),
-									target_rebalance_threshold = COALESCE(:target_rebalance_threshold,target_rebalance_threshold),
-									target_transfer_threshold = COALESCE(:target_transfer_threshold,target_transfer_threshold),
-								    updated      = now()
-								WHERE id = :id RETURNING id;
-								`
+			UPDATE "addresses"
+				SET address = COALESCE(:address, addresses.address)
+				FROM "assets"
+				WHERE assets.id = :id AND assets.address_id = addresses.id
+			)
+		UPDATE "assets"
+		SET symbol       = COALESCE(:symbol, symbol),
+			name         = COALESCE(:name, name),
+			decimals     = COALESCE(:decimals, decimals),
+			transferable = COALESCE(:transferable, transferable),
+			set_rate     = COALESCE(:set_rate, set_rate),
+			rebalance    = COALESCE(:rebalance, rebalance),
+			is_quote     = COALESCE(:is_quote, is_quote),
+			pwi_ask_a = COALESCE(:ask_a,pwi_ask_a),
+			pwi_ask_b = COALESCE(:ask_b, pwi_ask_b),
+			pwi_ask_c = COALESCE(:ask_c, pwi_ask_c),
+			pwi_ask_min_min_spread = COALESCE(:ask_min_min_spread,pwi_ask_min_min_spread),
+			pwi_ask_price_multiply_factor = COALESCE(:ask_price_multiply_factor, pwi_ask_price_multiply_factor),
+			pwi_bid_a = COALESCE(:bid_a,pwi_bid_a),
+			pwi_bid_b = COALESCE(:bid_b,pwi_bid_b),
+			pwi_bid_c = COALESCE(:bid_c,pwi_bid_c),
+			pwi_bid_min_min_spread = COALESCE(:bid_min_min_spread,pwi_bid_min_min_spread),
+			pwi_bid_price_multiply_factor = COALESCE(:bid_price_multiply_factor,pwi_bid_price_multiply_factor),
+			rebalance_quadratic_a = COALESCE(:rebalance_quadratic_a,rebalance_quadratic_a),
+			rebalance_quadratic_b = COALESCE(:rebalance_quadratic_b,rebalance_quadratic_b),
+			rebalance_quadratic_c = COALESCE(:rebalance_quadratic_c,rebalance_quadratic_c),
+			target_total = COALESCE(:target_total,target_total),
+			target_reserve = COALESCE(:target_reserve,target_reserve),
+			target_rebalance_threshold = COALESCE(:target_rebalance_threshold,target_rebalance_threshold),
+			target_transfer_threshold = COALESCE(:target_transfer_threshold,target_transfer_threshold),
+			stable_param_price_update_threshold = COALESCE(:stable_param_price_update_threshold,stable_param_price_update_threshold),
+		    stable_param_ask_spread = COALESCE(:stable_param_ask_spread,stable_param_ask_spread),
+		    stable_param_bid_spread = COALESCE(:stable_param_bid_spread,stable_param_bid_spread),
+		    stable_param_single_feed_max_thread = COALESCE(:stable_param_single_feed_max_thread,stable_param_single_feed_max_thread),
+		    stable_param_multiple_feeds_max_diff = COALESCE(:stable_param_multiple_feeds_max_diff,stable_param_multiple_feeds_max_diff),
+		    updated      = now()
+		WHERE id = :id RETURNING id;
+		`
 	updateAsset, err := db.PrepareNamed(updateAssetQuery)
 	if err != nil {
 		return nil, nil, nil, nil, errors.Wrap(err, "failed to prepare updateAsset")

@@ -118,6 +118,12 @@ func initData(t *testing.T, s *Storage) {
 					},
 				},
 				Target: nil,
+				StableParam: &common.StableParam{
+					PriceUpdateThreshold: 10,
+					AskSpread:            11,
+					BidSpread:            12,
+					SingleFeedMaxSpread:  13,
+				},
 			},
 		},
 		{

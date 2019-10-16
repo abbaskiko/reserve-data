@@ -150,7 +150,7 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 		}
 	case *common.CreateAssetEntry:
 		_, err = s.createAsset(tx, e.Symbol, e.Name, e.Address, e.Decimals, e.Transferable, e.SetRate, e.Rebalance,
-			e.IsQuote, e.PWI, e.RebalanceQuadratic, e.Exchanges, e.Target)
+			e.IsQuote, e.PWI, e.RebalanceQuadratic, e.Exchanges, e.Target, e.StableParam)
 		if err != nil {
 			s.l.Infow("create asset", "index", i, "err", err)
 			return err

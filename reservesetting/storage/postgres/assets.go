@@ -51,6 +51,12 @@ type createAssetParams struct {
 	TargetReserve            *float64 `db:"target_reserve"`
 	TargetRebalanceThreshold *float64 `db:"target_rebalance_threshold"`
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
+
+	PriceUpdateThreshold float64 `db:"stable_param_price_update_threshold"`
+	AskSpread            float64 `db:"stable_param_ask_spread"`
+	BidSpread            float64 `db:"stable_param_bid_spread"`
+	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_thread"`
+	MultipleFeedsMaxDiff float64 `db:"stable_param_multiple_feeds_max_diff"`
 }
 
 // CreateAsset create a new asset
@@ -65,6 +71,7 @@ func (s *Storage) CreateAsset(
 	rb *common.RebalanceQuadratic,
 	exchanges []common.AssetExchange,
 	target *common.AssetTarget,
+	stableParam *common.StableParam,
 ) (uint64, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -73,7 +80,7 @@ func (s *Storage) CreateAsset(
 	defer pgutil.RollbackUnlessCommitted(tx)
 
 	id, err := s.createAsset(tx, symbol, name, address, decimals, transferable,
-		setRate, rebalance, isQuote, pwi, rb, exchanges, target)
+		setRate, rebalance, isQuote, pwi, rb, exchanges, target, stableParam)
 	if err != nil {
 		return 0, err
 	}
@@ -253,7 +260,9 @@ func (s *Storage) createAsset(
 	rb *common.RebalanceQuadratic,
 	exchanges []common.AssetExchange,
 	target *common.AssetTarget,
+	stableParam *common.StableParam,
 ) (uint64, error) {
+	// create new asset
 	var assetID uint64
 
 	if transferable && common.IsZeroAddress(address) {
@@ -327,6 +336,14 @@ func (s *Storage) createAsset(
 		arg.TargetTransferThreshold = &target.TransferThreshold
 	}
 
+	if stableParam != nil {
+		arg.PriceUpdateThreshold = stableParam.PriceUpdateThreshold
+		arg.AskSpread = stableParam.AskSpread
+		arg.BidSpread = stableParam.BidSpread
+		arg.SingleFeedMaxSpread = stableParam.SingleFeedMaxSpread
+		arg.MultipleFeedsMaxDiff = stableParam.MultipleFeedsMaxDiff
+	}
+
 	if err := tx.NamedStmt(s.stmts.newAsset).Get(&assetID, arg); err != nil {
 		pErr, ok := err.(*pq.Error)
 		if !ok {
@@ -349,7 +366,7 @@ func (s *Storage) createAsset(
 		}
 		return 0, pErr
 	}
-
+	// create new asset exchange
 	for _, exchange := range exchanges {
 		var (
 			assetExchangeID     uint64
@@ -384,7 +401,7 @@ func (s *Storage) createAsset(
 		}
 
 		s.l.Infow("asset exchange is created", "id", assetExchangeID)
-
+		// create new trading pair
 		for _, pair := range exchange.TradingPairs {
 			var (
 				tradingPairID uint64
@@ -535,6 +552,12 @@ type assetDB struct {
 	TargetRebalanceThreshold *float64 `db:"target_rebalance_threshold"`
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
 
+	PriceUpdateThreshold float64 `db:"stable_param_price_update_threshold"`
+	AskSpread            float64 `db:"stable_param_ask_spread"`
+	BidSpread            float64 `db:"stable_param_bid_spread"`
+	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_thread"`
+	MultipleFeedsMaxDiff float64 `db:"stable_param_multiple_feeds_max_diff"`
+
 	Created time.Time `db:"created"`
 	Updated time.Time `db:"updated"`
 }
@@ -614,7 +637,13 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 			TransferThreshold:  *adb.TargetTransferThreshold,
 		}
 	}
-
+	result.StableParam = common.StableParam{
+		PriceUpdateThreshold: adb.PriceUpdateThreshold,
+		AskSpread:            adb.AskSpread,
+		BidSpread:            adb.BidSpread,
+		SingleFeedMaxSpread:  adb.SingleFeedMaxSpread,
+		MultipleFeedsMaxDiff: adb.MultipleFeedsMaxDiff,
+	}
 	return result, nil
 }
 
@@ -816,6 +845,12 @@ type updateAssetParam struct {
 	TargetReserve            *float64 `db:"target_reserve"`
 	TargetRebalanceThreshold *float64 `db:"target_rebalance_threshold"`
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
+
+	PriceUpdateThreshold *float64 `db:"stable_param_price_update_threshold"`
+	AskSpread            *float64 `db:"stable_param_ask_spread"`
+	BidSpread            *float64 `db:"stable_param_bid_spread"`
+	SingleFeedMaxSpread  *float64 `db:"stable_param_single_feed_max_thread"`
+	MultipleFeedsMaxDiff *float64 `db:"stable_param_multiple_feeds_max_diff"`
 }
 
 func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts) error {
@@ -889,6 +924,15 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 		arg.TargetRebalanceThreshold = &target.RebalanceThreshold
 		arg.TargetTransferThreshold = &target.TransferThreshold
 		updateMsgs = append(updateMsgs, fmt.Sprintf("target=%+v", target))
+	}
+
+	if uo.StableParam != nil {
+		arg.PriceUpdateThreshold = uo.StableParam.PriceUpdateThreshold
+		arg.AskSpread = uo.StableParam.AskSpread
+		arg.BidSpread = uo.StableParam.BidSpread
+		arg.SingleFeedMaxSpread = uo.StableParam.SingleFeedMaxSpread
+		arg.MultipleFeedsMaxDiff = uo.StableParam.MultipleFeedsMaxDiff
+		updateMsgs = append(updateMsgs, fmt.Sprintf("StableParam=%+v", target))
 	}
 
 	if len(updateMsgs) == 0 {

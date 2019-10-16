@@ -46,6 +46,11 @@ func TestUpdateAsset(t *testing.T) {
 		B: 3.2,
 		C: 3.3,
 	}
+	stableParam := &common.UpdateStableParam{
+		PriceUpdateThreshold: common.FloatPointer(1),
+		AskSpread:            common.FloatPointer(2),
+		BidSpread:            common.FloatPointer(3),
+	}
 
 	var tests = []struct {
 		msg      string
@@ -104,6 +109,26 @@ func TestUpdateAsset(t *testing.T) {
 			assertFn: func(t *testing.T, a common.Asset, e error) {
 				assert.NoError(t, e)
 				assert.Equal(t, rebalance, a.RebalanceQuadratic)
+			},
+		},
+		{
+			msg: "test update stable params",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:     assetID,
+							StableParam: stableParam,
+						},
+					},
+				},
+			},
+			assertFn: func(t *testing.T, asset common.Asset, e error) {
+				assert.NoError(t, e)
+				assert.Equal(t, *stableParam.AskSpread, asset.StableParam.AskSpread)
+				assert.Equal(t, *stableParam.PriceUpdateThreshold, asset.StableParam.PriceUpdateThreshold)
+				assert.Equal(t, float64(0), asset.StableParam.MultipleFeedsMaxDiff)
 			},
 		},
 	}
