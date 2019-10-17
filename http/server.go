@@ -17,6 +17,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -45,39 +46,40 @@ type Server struct {
 	r              *gin.Engine
 	blockchain     Blockchain
 	setting        Setting
+	l              *zap.SugaredLogger
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
 	timestamp := c.DefaultQuery("timestamp", "")
+	l := zap.S()
 	if timestamp == "" {
 		if useDefault {
-			log.Printf("Interpreted timestamp to default - %d\n", maxTimespot)
+			l.Debugf("Interpreted timestamp to default - %d\n", maxTimespot)
 			return maxTimespot
 		}
 		timepoint := common.GetTimepoint()
-		log.Printf("Interpreted timestamp to current time - %d\n", timepoint)
+		l.Debugf("Interpreted timestamp to current time - %d\n", timepoint)
 		return timepoint
 	}
 	timepoint, err := strconv.ParseUint(timestamp, 10, 64)
 	if err != nil {
-		log.Printf("Interpreted timestamp(%s) to default - %d", timestamp, maxTimespot)
+		l.Debugf("Interpreted timestamp(%s) to default - %d", timestamp, maxTimespot)
 		return maxTimespot
 	}
-	log.Printf("Interpreted timestamp(%s) to %d", timestamp, timepoint)
+	l.Debugf("Interpreted timestamp(%s) to %d", timestamp, timepoint)
 	return timepoint
 }
 
-func IsIntime(nonce string) bool {
+func IsIntime(l *zap.SugaredLogger, nonce string) bool {
 	serverTime := common.GetTimepoint()
-	log.Printf("Server time: %d, None: %s", serverTime, nonce)
 	nonceInt, err := strconv.ParseInt(nonce, 10, 64)
 	if err != nil {
-		log.Printf("IsIntime returns false, err: %v", err)
+		l.Debugf("IsIntime returns false, err: %v", err)
 		return false
 	}
 	difference := nonceInt - int64(serverTime)
 	if difference < -30000 || difference > 30000 {
-		log.Printf("IsIntime returns false, nonce: %d, serverTime: %d, difference: %d", nonceInt, int64(serverTime), difference)
+		l.Debugf("IsIntime returns false, nonce: %d, serverTime: %d, difference: %d", nonceInt, int64(serverTime), difference)
 		return false
 	}
 	return true
@@ -110,8 +112,8 @@ func (s *Server) Authenticated(c *gin.Context, requiredParams []string, perms []
 	}
 
 	params := c.Request.Form
-	log.Printf("Form params: %s\n", params)
-	if !IsIntime(params.Get("nonce")) {
+	s.l.Debugf("Form params: %s\n", params)
+	if !IsIntime(s.l, params.Get("nonce")) {
 		httputil.ResponseFailure(c, httputil.WithReason("Your nonce is invalid"))
 		return c.Request.Form, false
 	}
@@ -138,7 +140,7 @@ func (s *Server) Authenticated(c *gin.Context, requiredParams []string, perms []
 }
 
 func (s *Server) AllPricesVersion(c *gin.Context) {
-	log.Printf("Getting all prices version")
+	s.l.Infof("Getting all prices version")
 	data, err := s.app.CurrentPriceVersion(getTimePoint(c, true))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -148,7 +150,7 @@ func (s *Server) AllPricesVersion(c *gin.Context) {
 }
 
 func (s *Server) AllPrices(c *gin.Context) {
-	log.Printf("Getting all prices \n")
+	s.l.Infof("Getting all prices \n")
 	data, err := s.app.GetAllPrices(getTimePoint(c, true))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -165,7 +167,7 @@ func (s *Server) AllPrices(c *gin.Context) {
 func (s *Server) Price(c *gin.Context) {
 	base := c.Param("base")
 	quote := c.Param("quote")
-	log.Printf("Getting price for %s - %s \n", base, quote)
+	s.l.Infof("Getting price for %s - %s", base, quote)
 	pair, err := s.setting.NewTokenPairFromID(base, quote)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason("Token pair is not supported"))
@@ -184,7 +186,7 @@ func (s *Server) Price(c *gin.Context) {
 }
 
 func (s *Server) AuthDataVersion(c *gin.Context) {
-	log.Printf("Getting current auth data snapshot version")
+	s.l.Infof("Getting current auth data snapshot version")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
@@ -199,7 +201,7 @@ func (s *Server) AuthDataVersion(c *gin.Context) {
 }
 
 func (s *Server) AuthData(c *gin.Context) {
-	log.Printf("Getting current auth data snapshot \n")
+	s.l.Infof("Getting current auth data snapshot \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
@@ -218,7 +220,7 @@ func (s *Server) AuthData(c *gin.Context) {
 }
 
 func (s *Server) GetRates(c *gin.Context) {
-	log.Printf("Getting all rates \n")
+	s.l.Infof("Getting all rates")
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
@@ -233,7 +235,7 @@ func (s *Server) GetRates(c *gin.Context) {
 }
 
 func (s *Server) GetRate(c *gin.Context) {
-	log.Printf("Getting all rates \n")
+	s.l.Infof("Getting all rates")
 	data, err := s.app.GetRate(getTimePoint(c, true))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -340,11 +342,11 @@ func (s *Server) Trade(c *gin.Context) {
 		return
 	}
 	rate, err := strconv.ParseFloat(rateParam, 64)
-	log.Printf("http server: Trade: rate: %f, raw rate: %s", rate, rateParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+	s.l.Infof("http server: Trade: rate: %f, raw rate: %s", rate, rateParam)
 	if typeParam != "sell" && typeParam != "buy" {
 		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Trade type of %s is not supported.", typeParam)))
 		return
@@ -377,7 +379,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Cancel order id: %s from %s\n", id, exchange.ID())
+	s.l.Infof("Cancel order id: %s from %s\n", id, exchange.ID())
 	activityID, err := common.StringToActivityID(id)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -416,7 +418,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Withdraw %s %s from %s\n", amount.Text(10), token.ID, exchange.ID())
+	s.l.Infof("Withdraw %s %s from %s\n", amount.Text(10), token.ID, exchange.ID())
 	id, err := s.core.Withdraw(exchange, token, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -450,7 +452,7 @@ func (s *Server) Deposit(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	log.Printf("Depositing %s %s to %s\n", amount.Text(10), token.ID, exchange.ID())
+	s.l.Infof("Depositing %s %s to %s\n", amount.Text(10), token.ID, exchange.ID())
 	id, err := s.core.Deposit(exchange, token, amount, getTimePoint(c, false))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -460,7 +462,7 @@ func (s *Server) Deposit(c *gin.Context) {
 }
 
 func (s *Server) GetActivities(c *gin.Context) {
-	log.Printf("Getting all activity records \n")
+	s.l.Infof("Getting all activity records \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
@@ -489,7 +491,7 @@ func (s *Server) StopFetcher(c *gin.Context) {
 }
 
 func (s *Server) ImmediatePendingActivities(c *gin.Context) {
-	log.Printf("Getting all immediate pending activity records \n")
+	s.l.Infof("Getting all immediate pending activity records \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
@@ -507,7 +509,7 @@ func (s *Server) Metrics(c *gin.Context) {
 	response := common.MetricResponse{
 		Timestamp: common.GetTimepoint(),
 	}
-	log.Printf("Getting metrics")
+	s.l.Infof("Getting metrics")
 	postForm, ok := s.Authenticated(c, []string{"tokens", "from", "to"}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
@@ -546,7 +548,7 @@ func (s *Server) Metrics(c *gin.Context) {
 }
 
 func (s *Server) StoreMetrics(c *gin.Context) {
-	log.Printf("Storing metrics")
+	s.l.Infof("Storing metrics")
 	postForm, ok := s.Authenticated(c, []string{"timestamp", "data"}, []Permission{RebalancePermission})
 	if !ok {
 		return
@@ -1163,6 +1165,16 @@ func NewHTTPServer(
 	r.Use(cors.New(corsConfig))
 
 	return &Server{
-		app, core, metric, host, enableAuth, authEngine, profilerPrefix, r, bc, setting,
+		app:            app,
+		core:           core,
+		metric:         metric,
+		host:           host,
+		authEnabled:    enableAuth,
+		auth:           authEngine,
+		profilerPrefix: profilerPrefix,
+		r:              r,
+		blockchain:     bc,
+		setting:        setting,
+		l:              zap.S(),
 	}
 }

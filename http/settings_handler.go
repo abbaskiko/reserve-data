@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 
@@ -59,7 +58,7 @@ func (s *Server) getExchangeSetting(exName settings.ExchangeName) (*common.Excha
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange fee for %s hasn't existed yet.", exName.String())
+		s.l.Infof("the current exchange fee for %s hasn't existed yet.", exName.String())
 		fundingFee := common.NewFundingFee(make(map[string]float64), make(map[string]float64))
 		exFee = common.NewExchangeFee(make(common.TradingFee), fundingFee)
 	}
@@ -68,7 +67,7 @@ func (s *Server) getExchangeSetting(exName settings.ExchangeName) (*common.Excha
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange MinDeposit for %s hasn't existed yet.", exName.String())
+		s.l.Infof("the current exchange MinDeposit for %s hasn't existed yet.", exName.String())
 		exMinDep = make(common.ExchangesMinDeposit)
 	}
 	exInfos, err := s.setting.GetExchangeInfo(exName)
@@ -76,7 +75,7 @@ func (s *Server) getExchangeSetting(exName settings.ExchangeName) (*common.Excha
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange Info for %s hasn't existed yet.", exName.String())
+		s.l.Infof("the current exchange Info for %s hasn't existed yet.", exName.String())
 		exInfos = make(common.ExchangeInfo)
 	}
 	depAddrs, err := s.setting.GetDepositAddresses(exName)
@@ -84,7 +83,7 @@ func (s *Server) getExchangeSetting(exName settings.ExchangeName) (*common.Excha
 		if err != settings.ErrExchangeRecordNotFound {
 			return nil, err
 		}
-		log.Printf("the current exchange deposit addresses  for %s hasn't existed yet.", exName.String())
+		s.l.Infof("the current exchange deposit addresses  for %s hasn't existed yet.", exName.String())
 		depAddrs = make(common.ExchangeAddresses)
 	}
 	return common.NewExchangeSetting(depAddrs, exMinDep, exFee, exInfos), nil
@@ -246,17 +245,17 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 	if hasInternal {
 		pws, err = s.metric.GetPWIEquationV2()
 		if err != nil {
-			log.Printf("WARNING: There is no current PWS equation in database, creating new instance...")
+			s.l.Warnf("There is no current PWS equation in database, creating new instance...")
 			pws = make(common.PWIEquationRequestV2)
 		}
 		tarQty, err = s.metric.GetTargetQtyV2()
 		if err != nil {
-			log.Printf("WARNING: There is no current target quantity in database, creating new instance...")
+			s.l.Warnf("There is no current target quantity in database, creating new instance...")
 			tarQty = make(common.TokenTargetQtyV2)
 		}
 		quadEq, err = s.metric.GetRebalanceQuadratic()
 		if err != nil {
-			log.Printf("WARNING: There is no current quadratic equation in database, creating new instance...")
+			s.l.Warnf("WARNING: There is no current quadratic equation in database, creating new instance...")
 			quadEq = make(common.RebalanceQuadraticRequest)
 		}
 		if s.hasMetricPending() {
@@ -513,9 +512,8 @@ func (s *Server) UpdateDepositAddress(c *gin.Context) {
 	}
 	exDepositAddress := make(common.ExchangeAddresses)
 	for tokenID, addrStr := range exDepositAddressStr {
-		log.Printf("addrstr is %s", addrStr)
+		s.l.Infof("addrstr is %s - addr %s", addrStr, ethereum.HexToAddress(addrStr).String())
 		exDepositAddress[tokenID] = ethereum.HexToAddress(addrStr)
-		log.Print(exDepositAddress[tokenID].Hex())
 	}
 	if err := s.setting.UpdateDepositAddress(exName, exDepositAddress, timestamp); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
