@@ -105,7 +105,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 			RebalanceThreshold: 1.0,
 			Reserve:            1.0,
 			Total:              100.0,
-		})
+		}, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -116,6 +116,8 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 func TestServer_SettingChangeBasic(t *testing.T) {
 	const (
 		settingChangePath = "/v3/setting-change-main"
+
+		expectedAskSpread = 34.1
 	)
 
 	var (
@@ -260,11 +262,28 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								B: 34,
 								C: 24,
 							},
+							StableParam: &common.StableParam{
+								AskSpread: expectedAskSpread,
+							},
 						},
 					},
 				},
 			},
 			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm setting change",
+			endpoint: fmt.Sprint(settingChangePath, "/", 2),
+			method:   http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				asset, err := s.GetAssetBySymbol("KNC")
+				require.NoError(t, err)
+				asset, err = s.GetAsset(asset.ID)
+				require.NoError(t, err)
+				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
+				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+			},
 		},
 	}
 

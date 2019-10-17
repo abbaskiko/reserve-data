@@ -11,6 +11,24 @@ import (
 	// "github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
+func TestStorage_GetAssetBySymbol(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := NewStorage(db)
+	require.NoError(t, err)
+
+	initData(t, s)
+
+	asset, err := s.GetAssetBySymbol("BTC")
+	require.NoError(t, err)
+	realAsset, err := s.GetAsset(asset.ID)
+	require.NoError(t, err)
+	require.Equal(t, float64(13), realAsset.StableParam.SingleFeedMaxSpread)
+	require.Equal(t, float64(0), realAsset.StableParam.MultipleFeedsMaxDiff)
+}
+
 func TestStorage_GetTransferableAssets(t *testing.T) {
 	db, tearDown := testutil.MustNewDevelopmentDB()
 	defer func() {

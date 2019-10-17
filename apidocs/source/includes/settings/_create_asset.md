@@ -55,6 +55,13 @@ curl -X POST "https://gateway.local/v3/setting-change-main" \
                 "reserve": 48000,
                 "rebalance_threshold": 0.33,
                 "transfer_threshold": 0.25
+            },
+            "stable_param": {
+                "price_update_threshold": 0.2,
+                "ask_spread": 34.0,
+                "bid_spread": 0.1,
+                "single_feed_max_spread": 0.4,
+                "multiple_feeds_max_diff": 0.6
             }
         }
     }]
