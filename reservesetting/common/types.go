@@ -138,7 +138,7 @@ type StableParam struct {
 	PriceUpdateThreshold float64 `json:"price_update_threshold"`
 	AskSpread            float64 `json:"ask_spread"`
 	BidSpread            float64 `json:"bid_spread"`
-	SingleFeedMaxSpread  float64 `json:"single_feed_max_thread"`
+	SingleFeedMaxSpread  float64 `json:"single_feed_max_spread"`
 	MultipleFeedsMaxDiff float64 `json:"multiple_feeds_max_diff"`
 }
 
@@ -147,7 +147,7 @@ type UpdateStableParam struct {
 	PriceUpdateThreshold *float64 `json:"price_update_threshold"`
 	AskSpread            *float64 `json:"ask_spread"`
 	BidSpread            *float64 `json:"bid_spread"`
-	SingleFeedMaxSpread  *float64 `json:"single_feed_max_thread"`
+	SingleFeedMaxSpread  *float64 `json:"single_feed_max_spread"`
 	MultipleFeedsMaxDiff *float64 `json:"multiple_feeds_max_diff"`
 }
 

@@ -55,7 +55,7 @@ type createAssetParams struct {
 	PriceUpdateThreshold float64 `db:"stable_param_price_update_threshold"`
 	AskSpread            float64 `db:"stable_param_ask_spread"`
 	BidSpread            float64 `db:"stable_param_bid_spread"`
-	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_thread"`
+	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_spread"`
 	MultipleFeedsMaxDiff float64 `db:"stable_param_multiple_feeds_max_diff"`
 }
 
@@ -555,7 +555,7 @@ type assetDB struct {
 	PriceUpdateThreshold float64 `db:"stable_param_price_update_threshold"`
 	AskSpread            float64 `db:"stable_param_ask_spread"`
 	BidSpread            float64 `db:"stable_param_bid_spread"`
-	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_thread"`
+	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_spread"`
 	MultipleFeedsMaxDiff float64 `db:"stable_param_multiple_feeds_max_diff"`
 
 	Created time.Time `db:"created"`
@@ -849,7 +849,7 @@ type updateAssetParam struct {
 	PriceUpdateThreshold *float64 `db:"stable_param_price_update_threshold"`
 	AskSpread            *float64 `db:"stable_param_ask_spread"`
 	BidSpread            *float64 `db:"stable_param_bid_spread"`
-	SingleFeedMaxSpread  *float64 `db:"stable_param_single_feed_max_thread"`
+	SingleFeedMaxSpread  *float64 `db:"stable_param_single_feed_max_spread"`
 	MultipleFeedsMaxDiff *float64 `db:"stable_param_multiple_feeds_max_diff"`
 }
 

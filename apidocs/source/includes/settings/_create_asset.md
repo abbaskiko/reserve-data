@@ -60,7 +60,7 @@ curl -X POST "https://gateway.local/v3/setting-change-main" \
                 "price_update_threshold": 0.2,
                 "ask_spread": 34.0,
                 "bid_spread": 0.1,
-                "single_feed_max_thread": 0.4,
+                "single_feed_max_spread": 0.4,
                 "multiple_feeds_max_diff": 0.6
             }
         }

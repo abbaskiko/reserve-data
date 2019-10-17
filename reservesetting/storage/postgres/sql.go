@@ -330,7 +330,7 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 		    		 :stable_param_price_update_threshold,
 					 :stable_param_ask_spread,
 		    		 :stable_param_bid_spread,
-		    		 :stable_param_single_feed_max_thread,
+		    		 :stable_param_single_feed_max_spread,
 		    		 :stable_param_multiple_feeds_max_diff
 		         );`
 	newAsset, err := db.PrepareNamed(newAssetQuery)
@@ -367,7 +367,7 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
        								   assets.stable_param_price_update_threshold,
        								   assets.stable_param_ask_spread,
 									   assets.stable_param_bid_spread,
-									   assets.stable_param_single_feed_max_thread,
+									   assets.stable_param_single_feed_max_spread,
 									   assets.stable_param_multiple_feeds_max_diff,
 								       assets.created,
 								       assets.updated
@@ -406,7 +406,7 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 								         assets.stable_param_price_update_threshold,
        								   	 assets.stable_param_ask_spread,
 									     assets.stable_param_bid_spread,
-									     assets.stable_param_single_feed_max_thread,
+									     assets.stable_param_single_feed_max_spread,
 									     assets.stable_param_multiple_feeds_max_diff,
 								         assets.created,
 								         assets.updated
@@ -456,7 +456,7 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 			stable_param_price_update_threshold = COALESCE(:stable_param_price_update_threshold,stable_param_price_update_threshold),
 		    stable_param_ask_spread = COALESCE(:stable_param_ask_spread,stable_param_ask_spread),
 		    stable_param_bid_spread = COALESCE(:stable_param_bid_spread,stable_param_bid_spread),
-		    stable_param_single_feed_max_thread = COALESCE(:stable_param_single_feed_max_thread,stable_param_single_feed_max_thread),
+		    stable_param_single_feed_max_spread = COALESCE(:stable_param_single_feed_max_spread,stable_param_single_feed_max_spread),
 		    stable_param_multiple_feeds_max_diff = COALESCE(:stable_param_multiple_feeds_max_diff,stable_param_multiple_feeds_max_diff),
 		    updated      = now()
 		WHERE id = :id RETURNING id;

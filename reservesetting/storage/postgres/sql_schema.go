@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS "assets"
 	stable_param_price_update_threshold 	FLOAT	DEFAULT 0,
 	stable_param_ask_spread					FLOAT	DEFAULT	0,
 	stable_param_bid_spread					FLOAT	DEFAULT	0,
-	stable_param_single_feed_max_thread		FLOAT	DEFAULT	0,
+	stable_param_single_feed_max_spread		FLOAT	DEFAULT	0,
 	stable_param_multiple_feeds_max_diff 	FLOAT	DEFAULT 0,
 
     created                       TIMESTAMPTZ NOT NULL,
@@ -98,7 +98,7 @@ DO $$
 			ALTER TABLE "assets" 	ADD COLUMN stable_param_price_update_threshold	FLOAT 	DEFAULT	0,
 									ADD COLUMN stable_param_ask_spread				FLOAT 	DEFAULT	0,
 									ADD COLUMN stable_param_bid_spread				FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_single_feed_max_thread	FLOAT 	DEFAULT	0,
+									ADD COLUMN stable_param_single_feed_max_spread	FLOAT 	DEFAULT	0,
 									ADD COLUMN stable_param_multiple_feeds_max_diff	FLOAT 	DEFAULT	0;
 		EXCEPTION 
 			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
@@ -282,7 +282,7 @@ CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
 									 _stable_param_price_update_threshold assets.stable_param_price_update_threshold%TYPE,
 									 _stable_param_ask_spread assets.stable_param_ask_spread%TYPE,
 									 _stable_param_bid_spread assets.stable_param_bid_spread%TYPE,
-									 _stable_param_single_feed_max_thread assets.stable_param_single_feed_max_thread%TYPE,
+									 _stable_param_single_feed_max_spread assets.stable_param_single_feed_max_spread%TYPE,
 									 _stable_param_multiple_feeds_max_diff assets.stable_param_multiple_feeds_max_diff%TYPE
 									)
     RETURNS int AS
@@ -324,7 +324,7 @@ BEGIN
 				stable_param_price_update_threshold,
 				stable_param_ask_spread,
 				stable_param_bid_spread,
-				stable_param_single_feed_max_thread,
+				stable_param_single_feed_max_spread,
 				stable_param_multiple_feeds_max_diff,
                 created,
                 updated)
@@ -356,7 +356,7 @@ BEGIN
 			_stable_param_price_update_threshold,
 			_stable_param_ask_spread,
 			_stable_param_bid_spread,
-			_stable_param_single_feed_max_thread,
+			_stable_param_single_feed_max_spread,
 			_stable_param_multiple_feeds_max_diff,
             now(),
             now()) RETURNING id INTO _id;
