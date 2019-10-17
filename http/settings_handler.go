@@ -512,7 +512,7 @@ func (s *Server) UpdateDepositAddress(c *gin.Context) {
 	}
 	exDepositAddress := make(common.ExchangeAddresses)
 	for tokenID, addrStr := range exDepositAddressStr {
-		s.l.Infof("addrstr is %s - addr %s", addrStr, ethereum.HexToAddress(addrStr))
+		s.l.Infof("addrstr is %s - addr %s", addrStr, ethereum.HexToAddress(addrStr).String())
 		exDepositAddress[tokenID] = ethereum.HexToAddress(addrStr)
 	}
 	if err := s.setting.UpdateDepositAddress(exName, exDepositAddress, timestamp); err != nil {
