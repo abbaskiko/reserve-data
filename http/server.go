@@ -206,8 +206,10 @@ func (s *Server) AuthData(c *gin.Context) {
 	if !ok {
 		return
 	}
-
-	data, err := s.app.GetAuthData(getTimePoint(c, true))
+	now := common.GetTimepoint()
+	tp := getTimePoint(c, true)
+	updateWindow := uint64(30000) // auth data get update every 10s, but we allow it get late at max 30s
+	data, err := s.app.GetAuthData(tp)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -216,6 +218,9 @@ func (s *Server) AuthData(c *gin.Context) {
 			"timestamp": data.Timestamp,
 			"data":      data.Data,
 		}))
+		if now-uint64(data.Version) > updateWindow {
+			s.l.Warnw("auth data not updated", "now", now, "version", data.Version, "requested_time_point", tp)
+		}
 	}
 }
 
