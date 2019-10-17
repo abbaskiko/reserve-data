@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -14,9 +13,11 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -27,6 +28,7 @@ const (
 type Endpoint struct {
 	signer Signer
 	interf Interface
+	l      *zap.SugaredLogger
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool) {
@@ -97,7 +99,7 @@ func (ep *Endpoint) GetResponse(
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			ep.l.Warnf("Response body close error: %v", cErr)
 		}
 	}()
 	switch resp.StatusCode {
@@ -230,7 +232,7 @@ func (ep *Endpoint) DepositHistory(tokens []common.Token) (exchange.HuobiDeposit
 			err = fmt.Errorf("getting deposit history from Huobi failed: %s", result.Reason)
 		}
 	}
-	log.Printf("huobi deposit history: %v", result)
+	ep.l.Infof("huobi deposit history: %v", result)
 	return result, err
 }
 
@@ -297,7 +299,7 @@ func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethere
 		if result.Status != "ok" {
 			return "", fmt.Errorf("withdraw from Huobi failed: %s", result.Reason)
 		}
-		log.Printf("Withdraw id: %s", fmt.Sprintf("%v", result.ID))
+		ep.l.Infof("Withdraw id: %s", fmt.Sprintf("%v", result.ID))
 		return strconv.FormatUint(result.ID, 10), nil
 	}
 	return "", errors.New("Withdraw rejected by Huobi")
@@ -380,5 +382,5 @@ func (ep *Endpoint) GetExchangeInfo() (exchange.HuobiExchangeInfo, error) {
 
 //NewHuobiEndpoint return new endpoint instance
 func NewHuobiEndpoint(signer Signer, interf Interface) *Endpoint {
-	return &Endpoint{signer, interf}
+	return &Endpoint{signer: signer, interf: interf, l: zap.S()}
 }

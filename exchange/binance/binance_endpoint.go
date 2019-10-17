@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -14,9 +13,11 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // Endpoint object stand for Binance endpoint
@@ -27,6 +28,7 @@ type Endpoint struct {
 	signer    Signer
 	interf    Interface
 	timeDelta int64
+	l         *zap.SugaredLogger
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
@@ -72,14 +74,14 @@ func (ep *Endpoint) GetResponse(
 	req.URL.RawQuery = q.Encode()
 	ep.fillRequest(req, signNeeded, timepoint)
 
-	log.Printf("request to binance: %s\n", req.URL)
+	ep.l.Infof("request to binance: %s", req.URL)
 	resp, err := client.Do(req)
 	if err != nil {
 		return respBody, err
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			ep.l.Warnf("Response body close error: %+v", cErr)
 		}
 	}()
 	switch resp.StatusCode {
@@ -101,7 +103,7 @@ func (ep *Endpoint) GetResponse(
 		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
 	if err != nil || len(respBody) == 0 || rand.Int()%10 == 0 {
-		log.Printf("request to %s, got response from binance (error or throttled to 10%%): %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
+		ep.l.Infof("request to %s, got response from binance (error or throttled to 10%%): %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
 	}
 	return respBody, err
 }
@@ -432,26 +434,27 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Binance current time: %d", currentTime)
-	log.Printf("Binance server time: %d", serverTime)
-	log.Printf("Binance response time: %d", responseTime)
+	ep.l.Infow("Binance",
+		"current_time", currentTime,
+		"server_time", serverTime,
+		"response_time", responseTime)
 	roundtripTime := (int64(responseTime) - int64(currentTime)) / 2
 	ep.timeDelta = int64(serverTime) - int64(currentTime) - roundtripTime
 
-	log.Printf("Time delta: %d", ep.timeDelta)
+	ep.l.Infof("Time delta: %d", ep.timeDelta)
 	return nil
 }
 
 //NewBinanceEndpoint return new endpoint instance for using binance
 func NewBinanceEndpoint(signer Signer, interf Interface) *Endpoint {
-	endpoint := &Endpoint{signer, interf, 0}
+	endpoint := &Endpoint{signer: signer, interf: interf, l: zap.S()}
 	switch interf.(type) {
 	case *SimulatedInterface:
-		log.Println("Simulate environment, no updateTime called...")
+		endpoint.l.Infof("Simulate environment, no updateTime called...")
 	default:
 		err := endpoint.UpdateTimeDelta()
 		if err != nil {
-			panic(err)
+			endpoint.l.Panic(err)
 		}
 	}
 	return endpoint
