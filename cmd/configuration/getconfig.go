@@ -137,23 +137,25 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, cliAddress com
 	mainClient := ethclient.NewClient(client)
 	bkClients := map[string]*ethclient.Client{}
 
-	var callClients []*ethclient.Client
+	var callClients []*common.EthClient
 	for _, ep := range bkEndpoints {
-		var bkClient *ethclient.Client
-		bkClient, err = ethclient.Dial(ep)
+		client, err := common.NewEthClient(ep)
 		if err != nil {
-			l.Warnf("Cannot connect to %s, err %s. Ignore it.", ep, err)
-		} else {
-			bkClients[ep] = bkClient
-			callClients = append(callClients, bkClient)
+			l.Warnf("Cannot connect to %s, err %s, ignore it.", ep, err)
+			continue
 		}
+		callClients = append(callClients, client)
+		bkClients[ep] = client.Client
+	}
+	if len(callClients) == 0 {
+		l.Warn("no backup client available")
 	}
 
 	bc := blockchain.NewBaseBlockchain(
 		client, mainClient, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
 		chainType,
-		blockchain.NewContractCaller(callClients, bkEndpoints),
+		blockchain.NewContractCaller(callClients),
 	)
 
 	if !authEnbl {
