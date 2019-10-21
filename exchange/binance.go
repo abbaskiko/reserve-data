@@ -453,12 +453,14 @@ func (bn *Binance) FetchOnePairTradeHistory(
 	tokenPair := fmt.Sprintf("%s-%s", pair.Base.ID, pair.Quote.ID)
 	fromID, err := bn.storage.GetLastIDTradeHistory(tokenPair)
 	if err != nil {
-		bn.l.Warnf("Cannot get last ID trade history: %s", err)
+		bn.l.Warnf("Cannot get last ID trade history",
+			"err", err)
 		return
 	}
 	resp, err := bn.interf.GetAccountTradeHistory(pair.Base, pair.Quote, fromID)
 	if err != nil {
-		bn.l.Warnf("Binance Cannot fetch data for pair %s%s: %v", pair.Base.ID, pair.Quote.ID, err)
+		bn.l.Warnw("Binance Cannot fetch data for pair",
+			"base", pair.Base.ID, "quote", pair.Quote.ID, "err", err)
 		return
 	}
 	pairString := pair.PairID()
