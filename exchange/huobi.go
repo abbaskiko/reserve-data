@@ -455,10 +455,11 @@ func (h *Huobi) FetchOnePairTradeHistory(
 	pair common.TokenPair) {
 
 	defer wait.Done()
-	result := []common.TradeHistory{}
+	var result []common.TradeHistory
 	resp, err := h.interf.GetAccountTradeHistory(pair.Base, pair.Quote)
 	if err != nil {
-		h.l.Warnf("Cannot fetch data for pair %s%s: %+v", pair.Base.ID, pair.Quote.ID, err)
+		h.l.Warnw("Cannot fetch data for pair",
+			"base", pair.Base.ID, "quote", pair.Quote.ID, "err", err)
 		return
 	}
 	pairString := pair.PairID()
