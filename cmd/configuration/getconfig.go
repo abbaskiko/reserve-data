@@ -97,7 +97,7 @@ func GetSetting(kyberENV string, addressSetting *settings.AddressSetting) (*sett
 	return setting, err
 }
 
-func GetConfig(kyberENV string, authEnbl bool, endpointOW string, cliAddress common.AddressConfig) *Config {
+func GetConfig(kyberENV string, authEnbl bool, endpointOW string, cliAddress common.AddressConfig, runnerConfig common.RunnerConfig) *Config {
 	l := zap.S()
 	setPath := GetConfigPaths(kyberENV)
 
@@ -180,6 +180,6 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, cliAddress com
 
 	l.Infof("configured endpoint: %s, backup: %v", config.EthereumEndpoint, config.BackupEthereumEndpoints)
 
-	config.AddCoreConfig(setPath, kyberENV)
+	config.AddCoreConfig(setPath, kyberENV, runnerConfig)
 	return config
 }
