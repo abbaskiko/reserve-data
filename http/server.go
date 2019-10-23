@@ -253,6 +253,7 @@ func (s *Server) GetRate(c *gin.Context) {
 	}
 }
 
+// SetRate call set rate token to blockchain
 func (s *Server) SetRate(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"tokens", "buys", "sells", "block", "afp_mid", "msgs"}, []Permission{RebalancePermission})
 	if !ok {
