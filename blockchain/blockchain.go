@@ -467,3 +467,9 @@ func (b *Blockchain) GetDepositOPAddress() ethereum.Address {
 func (b *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return b.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
+
+// GetListedTokens return listed token in reserve contract
+func (b *Blockchain) GetListedTokens() ([]ethereum.Address, error) {
+	opts := b.GetCallOpts(0)
+	return b.GeneratedGetListedTokens(opts)
+}
