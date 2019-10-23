@@ -740,9 +740,9 @@ type AddressConfig struct {
 
 // RunnerConfig list configs for runner
 type RunnerConfig struct {
-	OrderBookFetchingInterval    time.Duration
-	AuthDataFetchingInterval     time.Duration
-	RateFetchingInterval         time.Duration
-	BlockFetchingInterval        time.Duration
-	GlobalDataFetchingInterval   time.Duration
+	OrderBookFetchingInterval  time.Duration
+	AuthDataFetchingInterval   time.Duration
+	RateFetchingInterval       time.Duration
+	BlockFetchingInterval      time.Duration
+	GlobalDataFetchingInterval time.Duration
 }
