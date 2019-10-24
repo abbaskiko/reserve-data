@@ -257,10 +257,14 @@ func (s *BoltSettingStorage) UpdateTokenWithExchangeSetting(tokens []common.Toke
 		}
 		var toRemoveFromExchanges []string
 		for _, token := range tokens {
-			if !token.Internal {
-				toRemoveFromExchanges = append(toRemoveFromExchanges, token.ID)
-			}
+			toRemoveFromExchanges = append(toRemoveFromExchanges, token.ID)
 		}
+		/*
+			there's a case where TUSD added into binance and remove then. Later we add TUSD to stable_exchange only.
+			it surprise that TUSD also show up in binance, this because we did not remove it last time.
+			so we need a logic that remove all info about token on exchange before we apply new update.
+			this behave is true replace setting instead of overwrite only common part.
+		*/
 		if uErr := removeTokensFromExchanges(tx, toRemoveFromExchanges, availExs); uErr != nil {
 			return uErr
 		}
