@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
 	"github.com/gin-contrib/cors"
@@ -254,6 +255,17 @@ func (s *Server) GetRate(c *gin.Context) {
 	}
 }
 
+func tokenExisted(tokenAddr ethereum.Address, tokens []common.Token) bool {
+	exist := false
+	for _, token := range tokens {
+		if token.Address == tokenAddr.Hex() {
+			exist = true
+			break
+		}
+	}
+	return exist
+}
+
 func (s *Server) checkTokenDelisted(tokens []common.Token, bigBuys, bigSells, bigAfpMid []*big.Int) ([]common.Token, []*big.Int, []*big.Int, []*big.Int, error) {
 	listedTokens, err := s.blockchain.GetListedTokens()
 	if err != nil {
@@ -265,14 +277,7 @@ func (s *Server) checkTokenDelisted(tokens []common.Token, bigBuys, bigSells, bi
 	}
 
 	for _, tokenAddr := range listedTokens {
-		exist := false
-		for _, token := range tokens {
-			if token.Address == tokenAddr.Hex() {
-				exist = true
-				break
-			}
-		}
-		if !exist {
+		if tokenExisted(tokenAddr, tokens) {
 			tokens = append(tokens, common.Token{
 				Address: tokenAddr.Hex(),
 			})
