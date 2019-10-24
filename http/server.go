@@ -277,7 +277,7 @@ func (s *Server) checkTokenDelisted(tokens []common.Token, bigBuys, bigSells, bi
 	}
 
 	for _, tokenAddr := range listedTokens {
-		if tokenExisted(tokenAddr, tokens) {
+		if !tokenExisted(tokenAddr, tokens) {
 			tokens = append(tokens, common.Token{
 				Address: tokenAddr.Hex(),
 			})
