@@ -35,6 +35,7 @@ var (
 	errDataSizeExceed = errors.New("the data size must be less than 1 MB")
 )
 
+// Server object
 type Server struct {
 	app            reserve.Data
 	core           reserve.Core
@@ -257,7 +258,7 @@ func (s *Server) checkTokenDelisted(tokens []common.Token, bigBuys, bigSells, bi
 	listedTokens, err := s.blockchain.GetListedTokens()
 	if err != nil {
 		// error might be from node, return just for warning
-		return nil, nil, nil, nil, err
+		return tokens, bigBuys, bigSells, bigAfpMid, err
 	}
 	if len(listedTokens) <= len(tokens) {
 		return tokens, bigBuys, bigSells, bigAfpMid, nil
