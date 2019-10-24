@@ -24,7 +24,10 @@ const (
 )
 
 var (
-	Big0   = big.NewInt(0)
+	// Big0 zero in big.Int
+	Big0 = big.NewInt(0)
+
+	// BigMax max big.Int
 	BigMax = big.NewInt(10).Exp(big.NewInt(10), big.NewInt(33), nil)
 )
 
@@ -46,6 +49,7 @@ func newTBIndex(bulkIndex, indexInBulk uint64) tbindex {
 	return tbindex{BulkIndex: bulkIndex, IndexInBulk: indexInBulk}
 }
 
+// Blockchain object for interact with blockchain
 type Blockchain struct {
 	*blockchain.BaseBlockchain
 	wrapper      *blockchain.Contract
@@ -61,6 +65,7 @@ type Blockchain struct {
 	l                     *zap.SugaredLogger
 }
 
+// StandardGasPrice get stand gas price from node
 func (bc *Blockchain) StandardGasPrice() float64 {
 	// we use node's recommended gas price because gas station is not returning
 	// correct gas price now
@@ -71,6 +76,7 @@ func (bc *Blockchain) StandardGasPrice() float64 {
 	return common.BigToFloat(price, 9)
 }
 
+// CheckTokenIndices check if token is listed
 func (bc *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
 	opts := bc.GetCallOpts(0)
 	pricingAddr := bc.contractAddress.Pricing
@@ -87,6 +93,7 @@ func (bc *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
 	return nil
 }
 
+// LoadAndSetTokenIndices load and set token indices
 func (bc *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error {
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
@@ -111,11 +118,13 @@ func (bc *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) erro
 	return nil
 }
 
+// RegisterPricingOperator add address as reserve operator for set token rates
 func (bc *Blockchain) RegisterPricingOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	bc.l.Infow("reserve pricing address", "address", signer.GetAddress().Hex())
 	bc.MustRegisterOperator(pricingOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
+// RegisterDepositOperator add address as depostor for reserve
 func (bc *Blockchain) RegisterDepositOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	bc.l.Infow("reserve depositor address", "address", signer.GetAddress().Hex())
 	bc.MustRegisterOperator(depositOP, blockchain.NewOperator(signer, nonceCorpus))
@@ -131,10 +140,11 @@ func readablePrint(data map[ethereum.Address]byte) string {
 
 //====================== Write calls ===============================
 
-// TODO: Need better test coverage
+// SetRates set token rate to reserve
 // we got a bug when compact is not set to old compact
 // or when one of buy/sell got overflowed, it discards
 // the other's compact
+// TODO: Need better test coverage
 func (bc *Blockchain) SetRates(
 	tokens []ethereum.Address,
 	buys []*big.Int,
@@ -228,6 +238,7 @@ func (bc *Blockchain) SetRates(
 
 }
 
+// Send withdraw token from reserve to another address (here is cex)
 func (bc *Blockchain) Send(
 	asset commonv3.Asset,
 	amount *big.Int,
@@ -248,33 +259,9 @@ func (bc *Blockchain) Send(
 	return bc.SignAndBroadcast(tx, depositOP)
 }
 
-func (bc *Blockchain) SetImbalanceStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := bc.GetTxOpts(pricingOP, nil, nil, nil)
-	if err != nil {
-		bc.l.Infow("Getting transaction opts failed", "err", err)
-		return nil, err
-	}
-	tx, err := bc.GeneratedSetImbalanceStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
-	if err != nil {
-		return nil, err
-	}
-	return bc.SignAndBroadcast(tx, pricingOP)
-}
-
-func (bc *Blockchain) SetQtyStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := bc.GetTxOpts(pricingOP, nil, nil, nil)
-	if err != nil {
-		bc.l.Infow("Getting transaction opts failed", "err", err)
-		return nil, err
-	}
-	tx, err := bc.GeneratedSetQtyStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
-	if err != nil {
-		return nil, err
-	}
-	return bc.SignAndBroadcast(tx, pricingOP)
-}
-
 //====================== Readonly calls ============================
+
+// FetchBalanceData return token balance on reserve
 func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
 	result := map[string]common.BalanceEntry{}
 	tokens := []ethereum.Address{}
@@ -328,6 +315,7 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 	return result, nil
 }
 
+// FetchRates return token rates with eth
 func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.AllRateEntry, error) {
 	result := common.AllRateEntry{}
 	tokenAddrs := []ethereum.Address{}
@@ -370,6 +358,7 @@ func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.Al
 	return result, nil
 }
 
+// GetPrice return token rates
 func (bc *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceType string, qty *big.Int, atBlock uint64) (*big.Int, error) {
 	opts := bc.GetCallOpts(atBlock)
 	if priceType == "buy" {
@@ -418,6 +407,7 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 	return nonceFromNode, nil
 }
 
+// NewBlockchain return new blockchain object to to interact with blockchain
 func NewBlockchain(base *blockchain.BaseBlockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
 	sr storage.SettingReader,
@@ -480,4 +470,10 @@ func (bc *Blockchain) GetInternalNetworkAddress() ethereum.Address {
 // GetNetworkAddress return network address
 func (bc *Blockchain) GetNetworkAddress() ethereum.Address {
 	return bc.contractAddress.Network
+}
+
+// GetListedTokens return listed tokens on reserve
+func (bc *Blockchain) GetListedTokens() ([]ethereum.Address, error) {
+	opts := bc.GetCallOpts(0)
+	return bc.GeneratedGetListedTokens(opts)
 }

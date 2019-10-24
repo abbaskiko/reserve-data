@@ -15,4 +15,5 @@ type Blockchain interface {
 	GetWrapperAddress() ethereum.Address
 	GetInternalNetworkAddress() ethereum.Address
 	GetNetworkAddress() ethereum.Address
+	GetListedTokens() ([]ethereum.Address, error)
 }

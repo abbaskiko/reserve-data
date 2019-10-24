@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
@@ -23,6 +24,34 @@ type RateRequest struct {
 type SetRateEntry struct {
 	Block uint64        `json:"block"`
 	Rates []RateRequest `json:"rates"`
+}
+
+func tokenExisted(tokenAddr ethereum.Address, assets []v3common.Asset) bool {
+	for _, asset := range assets {
+		if tokenAddr == asset.Address {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Server) checkDelistedTokens(assets []v3common.Asset, bigBuys, bigSells, bigAfpMid []*big.Int) ([]v3common.Asset, []*big.Int, []*big.Int, []*big.Int, error) {
+	listedToken, err := s.blockchain.GetListedTokens()
+	if err != nil {
+		// return for warning as it might be error from node
+		return assets, bigBuys, bigSells, bigAfpMid, err
+	}
+	for _, tokenAddr := range listedToken {
+		if !tokenExisted(tokenAddr, assets) {
+			assets = append(assets, v3common.Asset{
+				Address: tokenAddr,
+			})
+			bigBuys = append(bigBuys, big.NewInt(0))
+			bigSells = append(bigSells, big.NewInt(0))
+			bigAfpMid = append(bigAfpMid, big.NewInt(0))
+		}
+	}
+	return assets, bigBuys, bigSells, bigAfpMid, nil
 }
 
 // SetRate is for setting token rate
@@ -67,6 +96,11 @@ func (s *Server) SetRate(c *gin.Context) {
 		}
 		bigAfpMid = append(bigAfpMid, rMid)
 		msgs = append(msgs, rate.Msg)
+	}
+	var err error
+	assets, bigBuys, bigSells, bigAfpMid, err = s.checkDelistedTokens(assets, bigBuys, bigSells, bigAfpMid)
+	if err != nil {
+		s.l.Warnw("failed to check delisted token", "error", err)
 	}
 	id, err := s.core.SetRates(assets, bigBuys, bigSells, big.NewInt(int64(input.Block)), bigAfpMid, msgs)
 	if err != nil {
