@@ -10,30 +10,21 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// GeneratedSetBaseRate build tx for set base rate function
 func (b *Blockchain) GeneratedSetBaseRate(opts blockchain.TxOpts, tokens []ethereum.Address, baseBuy []*big.Int, baseSell []*big.Int, buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	return b.BuildTx(timeout, opts, b.pricing, "setBaseRate", tokens, baseBuy, baseSell, buy, sell, blockNumber, indices)
 }
 
+// GeneratedSetCompactData build tx for set compact data function
 func (b *Blockchain) GeneratedSetCompactData(opts blockchain.TxOpts, buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	return b.BuildTx(timeout, opts, b.pricing, "setCompactData", buy, sell, blockNumber, indices)
 }
 
-func (b *Blockchain) GeneratedSetImbalanceStepFunction(opts blockchain.TxOpts, token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	return b.BuildTx(timeout, opts, b.pricing, "setImbalanceStepFunction", token, xBuy, yBuy, xSell, ySell)
-}
-
-func (b *Blockchain) GeneratedSetQtyStepFunction(opts blockchain.TxOpts, token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	return b.BuildTx(timeout, opts, b.pricing, "setQtyStepFunction", token, xBuy, yBuy, xSell, ySell)
-}
-
+// GeneratedGetRate call get rate function from pricing contract
 func (b *Blockchain) GeneratedGetRate(opts blockchain.CallOpts, token ethereum.Address, currentBlockNumber *big.Int, buy bool, qty *big.Int) (*big.Int, error) {
 	timeOut := 2 * time.Second
 	out := big.NewInt(0)
@@ -41,13 +32,13 @@ func (b *Blockchain) GeneratedGetRate(opts blockchain.CallOpts, token ethereum.A
 	return out, err
 }
 
-//GeneratedGetStepFunctionData get step function data for an token
-func (b *Blockchain) GeneratedGetStepFunctionData(opts blockchain.CallOpts, token ethereum.Address, command *big.Int, param *big.Int) (*big.Int, error) {
+// GeneratedGetListedTokens call getListedToken function in pricing contract
+func (b *Blockchain) GeneratedGetListedTokens(opts blockchain.CallOpts) ([]ethereum.Address, error) {
 	timeOut := 2 * time.Second
 	var (
-		ret0 = new(*big.Int)
+		ret0 = new([]ethereum.Address)
 	)
 	out := ret0
-	err := b.Call(timeOut, opts, b.pricing, out, "getStepFunctionData", token, command, param)
+	err := b.Call(timeOut, opts, b.pricing, out, "getListedTokens")
 	return *ret0, err
 }
