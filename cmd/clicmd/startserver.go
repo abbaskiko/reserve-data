@@ -5,6 +5,7 @@ import (
 	"log"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -18,6 +19,12 @@ import (
 const (
 	remoteLogPath  = "core-log"
 	defaultBaseURL = "http://127.0.0.1"
+
+	defaultOrderBookFetchingInterval  = 7 * time.Second
+	defaultAuthDataFetchingInterval   = 5 * time.Second
+	defaultRateFetchingInterval       = 3 * time.Second
+	defaultBlockFetchingInterval      = 5 * time.Second
+	defaultGlobalDataFetchingInterval = 10 * time.Second
 )
 
 var (
@@ -35,7 +42,8 @@ var (
 	sentryLevel string
 	zapMode     string
 
-	cliAddress common.AddressConfig
+	cliAddress   common.AddressConfig
+	runnerConfig common.RunnerConfig
 )
 
 func serverStart(_ *cobra.Command, _ []string) {

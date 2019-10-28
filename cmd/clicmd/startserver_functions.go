@@ -184,7 +184,7 @@ func GetConfigFromENV(kyberENV string) *configuration.Config {
 	zap.S().Infof("Running in %s mode", kyberENV)
 	config := configuration.GetConfig(kyberENV,
 		!noAuthEnable,
-		endpointOW, cliAddress)
+		endpointOW, cliAddress, runnerConfig)
 	return config
 }
 

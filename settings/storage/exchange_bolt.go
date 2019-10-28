@@ -187,6 +187,9 @@ func removeTokensFromExchanges(tx *bolt.Tx, tokens []string, availExs []settings
 		if dErr := delMinDeposit(tx, ex, tokens); dErr != nil {
 			return fmt.Errorf("cannot remove mindeposit of tokens %v from exchange %s, error: %s", tokens, ex.String(), dErr)
 		}
+		if dErr := delExchangeInfo(tx, ex, tokens); dErr != nil {
+			return fmt.Errorf("cannot remove exchange info of tokens %v-ETH from exchange %s, error: %s", tokens, ex.String(), dErr)
+		}
 	}
 	return nil
 }
@@ -308,6 +311,26 @@ func putExchangeInfo(tx *bolt.Tx, ex settings.ExchangeName, exInfo common.Exchan
 		return uErr
 	}
 	return b.Put(boltutil.Uint64ToBytes(uint64(ex)), dataJSON)
+}
+
+func delExchangeInfo(tx *bolt.Tx, ex settings.ExchangeName, tokens []string) error {
+	b := tx.Bucket([]byte(ExchangeInfo))
+	if b == nil {
+		return fmt.Errorf("bucket %s hasn't existed yet", ExchangeInfo)
+	}
+	data := b.Get(boltutil.Uint64ToBytes(uint64(ex)))
+	if data == nil {
+		return settings.ErrExchangeRecordNotFound
+	}
+	var currExInfo common.ExchangeInfo
+	if err := json.Unmarshal(data, &currExInfo); err != nil {
+		return err
+	}
+	for _, tokenID := range tokens {
+		ethPair := common.NewTokenPairID(tokenID, "ETH")
+		delete(currExInfo, ethPair)
+	}
+	return putExchangeInfo(tx, ex, currExInfo)
 }
 
 func (s *BoltSettingStorage) StoreExchangeInfo(ex settings.ExchangeName, exInfo common.ExchangeInfo, timestamp uint64) error {

@@ -3,7 +3,6 @@ package storage
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/boltdb/bolt"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
@@ -656,9 +656,15 @@ func (bs *BoltStorage) StoreRate(data common.AllRateEntry, timepoint uint64) err
 			}
 			return b.Put(boltutil.Uint64ToBytes(timepoint), dataJSON)
 		}
-		return fmt.Errorf("rejected storing rates with smaller block number: %d, stored: %d",
-			data.BlockNumber,
-			lastEntry.BlockNumber)
+
+		// It is common that two nodes return different block number
+		// But if the gap is too big we should log it
+		if lastEntry.BlockNumber >= data.BlockNumber+2 {
+			return errors.Errorf("rejected storing rates with smaller block number: %d, stored: %d",
+				data.BlockNumber,
+				lastEntry.BlockNumber)
+		}
+		return nil
 	})
 	return err
 }

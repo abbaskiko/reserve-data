@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/getsentry/raven-go"
 	"github.com/gin-contrib/cors"
@@ -35,6 +36,7 @@ var (
 	errDataSizeExceed = errors.New("the data size must be less than 1 MB")
 )
 
+// Server object
 type Server struct {
 	app            reserve.Data
 	core           reserve.Core
@@ -206,8 +208,10 @@ func (s *Server) AuthData(c *gin.Context) {
 	if !ok {
 		return
 	}
-
-	data, err := s.app.GetAuthData(getTimePoint(c, true))
+	now := common.GetTimepoint()
+	tp := getTimePoint(c, true)
+	updateWindow := uint64(30000) // auth data get update every 10s, but we allow it get late at max 30s
+	data, err := s.app.GetAuthData(tp)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -216,6 +220,9 @@ func (s *Server) AuthData(c *gin.Context) {
 			"timestamp": data.Timestamp,
 			"data":      data.Data,
 		}))
+		if now-uint64(data.Version) > updateWindow {
+			s.l.Warnw("auth data not updated", "now", now, "version", data.Version, "requested_time_point", tp)
+		}
 	}
 }
 
@@ -248,6 +255,42 @@ func (s *Server) GetRate(c *gin.Context) {
 	}
 }
 
+func tokenExisted(tokenAddr ethereum.Address, tokens []common.Token) bool {
+	exist := false
+	for _, token := range tokens {
+		if token.Address == tokenAddr.Hex() {
+			exist = true
+			break
+		}
+	}
+	return exist
+}
+
+func (s *Server) checkTokenDelisted(tokens []common.Token, bigBuys, bigSells, bigAfpMid []*big.Int) ([]common.Token, []*big.Int, []*big.Int, []*big.Int, error) {
+	listedTokens, err := s.blockchain.GetListedTokens()
+	if err != nil {
+		// error might be from node, return just for warning
+		return tokens, bigBuys, bigSells, bigAfpMid, err
+	}
+	if len(listedTokens) <= len(tokens) {
+		return tokens, bigBuys, bigSells, bigAfpMid, nil
+	}
+
+	for _, tokenAddr := range listedTokens {
+		if !tokenExisted(tokenAddr, tokens) {
+			tokens = append(tokens, common.Token{
+				Address: tokenAddr.Hex(),
+			})
+			bigBuys = append(bigBuys, big.NewInt(0))
+			bigSells = append(bigSells, big.NewInt(0))
+			bigAfpMid = append(bigAfpMid, big.NewInt(0))
+		}
+	}
+
+	return tokens, bigBuys, bigSells, bigAfpMid, nil
+}
+
+// SetRate call set rate token to blockchain
 func (s *Server) SetRate(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"tokens", "buys", "sells", "block", "afp_mid", "msgs"}, []Permission{RebalancePermission})
 	if !ok {
@@ -300,6 +343,13 @@ func (s *Server) SetRate(c *gin.Context) {
 		}
 		bigAfpMid = append(bigAfpMid, r)
 	}
+	// check if token delist from reserve backend but still exist in reserve contract
+	// then set its rate to 0
+	tokens, bigBuys, bigSells, bigAfpMid, err = s.checkTokenDelisted(tokens, bigBuys, bigSells, bigAfpMid)
+	if err != nil {
+		s.l.Warnw("failed to check delisted token", "error", err.Error())
+	}
+
 	id, err := s.core.SetRates(tokens, bigBuys, bigSells, big.NewInt(intBlock), bigAfpMid, msgs)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
