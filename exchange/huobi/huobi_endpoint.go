@@ -124,6 +124,7 @@ func (ep *Endpoint) GetAccounts() (exchange.HuobiAccounts, error) {
 	return result, err
 }
 
+// GetDepthOnePair get depth one pair on huobi
 func (ep *Endpoint) GetDepthOnePair(
 	baseID, quoteID string) (exchange.HuobiDepth, error) {
 
@@ -144,6 +145,7 @@ func (ep *Endpoint) GetDepthOnePair(
 	return respData, err
 }
 
+// Trade create a new order on huobi
 func (ep *Endpoint) Trade(tradeType string, base, quote common.Token, rate, amount float64, timepoint uint64) (exchange.HuobiTrade, error) {
 	result := exchange.HuobiTrade{}
 	symbol := strings.ToLower(base.ID) + strings.ToLower(quote.ID)
@@ -232,6 +234,7 @@ func (ep *Endpoint) DepositHistory(tokens []common.Token) (exchange.HuobiDeposit
 	return result, err
 }
 
+// CancelOrder cancel open order on huobi
 func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.HuobiCancel, error) {
 	result := exchange.HuobiCancel{}
 	respBody, err := ep.GetResponse(
@@ -254,6 +257,7 @@ func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.HuobiCancel,
 	return result, err
 }
 
+// OrderStatus check order status on huobi
 func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.HuobiOrder, error) {
 	result := exchange.HuobiOrder{}
 	respBody, err := ep.GetResponse(
@@ -276,6 +280,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.HuobiOrder, 
 	return result, err
 }
 
+// Withdraw token from huobi
 func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethereum.Address) (string, error) {
 	result := exchange.HuobiWithdraw{}
 	respBody, err := ep.GetResponse(
@@ -301,6 +306,7 @@ func (ep *Endpoint) Withdraw(token common.Token, amount *big.Int, address ethere
 	return "", errors.New("Withdraw rejected by Huobi")
 }
 
+// GetInfo return exchange info
 func (ep *Endpoint) GetInfo() (exchange.HuobiInfo, error) {
 	result := exchange.HuobiInfo{}
 	accounts, err := ep.GetAccounts()
@@ -322,6 +328,7 @@ func (ep *Endpoint) GetInfo() (exchange.HuobiInfo, error) {
 	return result, err
 }
 
+// GetAccountTradeHistory return account trade history
 func (ep *Endpoint) GetAccountTradeHistory(
 	base, quote common.Token) (exchange.HuobiTradeHistory, error) {
 	result := exchange.HuobiTradeHistory{}
@@ -348,7 +355,7 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.HuobiDepositAddres
 		"GET",
 		fmt.Sprintf("%s/v2/account/deposit/address", ep.interf.AuthenticatedEndpoint()),
 		map[string]string{
-			"currency": asset,
+			"currency": strings.ToLower(asset),
 		},
 		true,
 	)
@@ -363,6 +370,7 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.HuobiDepositAddres
 	return result, err
 }
 
+// GetExchangeInfo get huobi exchange info
 func (ep *Endpoint) GetExchangeInfo() (exchange.HuobiExchangeInfo, error) {
 	result := exchange.HuobiExchangeInfo{}
 	respBody, err := ep.GetResponse(
