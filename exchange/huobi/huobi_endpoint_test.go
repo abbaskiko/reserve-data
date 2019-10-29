@@ -18,5 +18,5 @@ func TestGetDepositAddress(t *testing.T) {
 	depositAddress, err := ep.GetDepositAddress("knc")
 	assert.NoError(t, err)
 
-	log.Printf(depositAddress.Data[0].Address)
+	log.Printf("deposit address: %+v", depositAddress.Data)
 }

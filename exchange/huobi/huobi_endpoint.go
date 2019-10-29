@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -77,18 +76,12 @@ func (ep *Endpoint) GetResponse(
 		params["Timestamp"] = timestamp
 		params["op"] = "auth"
 	}
-	var sortedParams []string
-	for k := range params {
-		sortedParams = append(sortedParams, k)
-	}
-	sort.Strings(sortedParams)
-	for _, k := range sortedParams {
-		q.Add(k, params[k])
+	for k, v := range params {
+		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
 	ep.fillRequest(req, signNeeded)
 	var respBody []byte
-	//log.Printf("request to huobi: %s\n", req.URL)
 	resp, err := client.Do(req)
 	if err != nil {
 		return respBody, err
