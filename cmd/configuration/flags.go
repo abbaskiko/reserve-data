@@ -2,10 +2,11 @@ package configuration
 
 import (
 	"fmt"
-	"log"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
@@ -37,6 +38,20 @@ const (
 	huobiAuthenticatedEndpointValue = "https://api.huobi.pro"
 
 	defaultDB = "reserve_data"
+
+	orderBookFetchingIntervalFlag    = "order-book-fetching-interval"
+	authDataFetchingIntervalFlag     = "auth-data-fetching-interval"
+	rateFetchingIntervalFlag         = "rate-fetching-interval"
+	blockFetchingIntervalFlag        = "block-fetching-interval"
+	globalDataFetchingIntervalFlag   = "global-data-fetching-interval"
+	tradeHistoryFetchingIntervalFlag = "trade-history-fetching-interval"
+
+	defaultOrderBookFetchingInterval    = 7 * time.Second
+	defaultAuthDataFetchingInterval     = 5 * time.Second
+	defaultRateFetchingInterval         = 3 * time.Second
+	defaultBlockFetchingInterval        = 5 * time.Second
+	defaultGlobalDataFetchingInterval   = 10 * time.Second
+	defaultTradeHistoryFetchingInterval = 10 * time.Minute
 )
 
 // NewBinanceCliFlags returns new configuration flags for Binance.
@@ -120,6 +135,60 @@ func NewHTTPAddressFromContext(c *cli.Context) string {
 	return c.GlobalString(httpAddressFlag)
 }
 
+// NewRunnerFlags return cli flag for runner configuration.
+func NewRunnerFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.DurationFlag{
+			Name:   orderBookFetchingIntervalFlag,
+			Usage:  "time interval fetch order book",
+			EnvVar: "ORDER_BOOK_FETCHING_INTERVAL",
+			Value:  defaultOrderBookFetchingInterval,
+		},
+		cli.DurationFlag{
+			Name:   authDataFetchingIntervalFlag,
+			Usage:  "time interval fetch auth data",
+			EnvVar: "AUTH_DATA_FETCHING_INTERVAL",
+			Value:  defaultAuthDataFetchingInterval,
+		},
+		cli.DurationFlag{
+			Name:   rateFetchingIntervalFlag,
+			Usage:  "time interval fetch rate",
+			EnvVar: "RATE_FETCHING_INTERVAL",
+			Value:  defaultRateFetchingInterval,
+		},
+		cli.DurationFlag{
+			Name:   blockFetchingIntervalFlag,
+			Usage:  "time interval fetch block",
+			EnvVar: "BLOCK_FETCHING_INTERVAL",
+			Value:  defaultBlockFetchingInterval,
+		},
+		cli.DurationFlag{
+			Name:   globalDataFetchingIntervalFlag,
+			Usage:  "time interval fetch global data",
+			EnvVar: "GLOBAL_DATA_FETCHING_INTERVAL",
+			Value:  defaultGlobalDataFetchingInterval,
+		},
+		cli.DurationFlag{
+			Name:   tradeHistoryFetchingIntervalFlag,
+			Usage:  "time interval fetch trade history",
+			EnvVar: "TRADE_HISTORY_FETCHING_INTERVAL",
+			Value:  defaultTradeHistoryFetchingInterval,
+		},
+	}
+}
+
+// NewTickerRunnerFromContext return TickerRunner from cli configs
+func NewTickerRunnerFromContext(c *cli.Context) *fetcher.TickerRunner {
+	return fetcher.NewTickerRunner(
+		c.Duration(orderBookFetchingIntervalFlag),
+		c.Duration(authDataFetchingIntervalFlag),
+		c.Duration(rateFetchingIntervalFlag),
+		c.Duration(blockFetchingIntervalFlag),
+		c.Duration(globalDataFetchingIntervalFlag),
+		c.Duration(tradeHistoryFetchingIntervalFlag),
+	)
+}
+
 // NewCliFlags returns all cli flags of reserve core service.
 func NewCliFlags() []cli.Flag {
 	var flags []cli.Flag
@@ -135,6 +204,7 @@ func NewCliFlags() []cli.Flag {
 	flags = append(flags, NewExchangeCliFlag())
 	flags = append(flags, NewPostgreSQLFlags(defaultDB)...)
 	flags = append(flags, NewHTTPAddressFlag())
+	flags = append(flags, NewRunnerFlags()...)
 
 	return flags
 }
@@ -144,6 +214,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 	var (
 		bc  *blockchain.Blockchain
 		err error
+		l   = zap.S()
 	)
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
@@ -151,7 +222,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 		config.SettingStorage,
 	)
 	if err != nil {
-		log.Printf("failed to create block chain err=%s", err.Error())
+		l.Errorw("failed to create block chain", "err", err)
 		return nil, err
 	}
 
@@ -159,7 +230,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	assets, err := config.SettingStorage.GetTransferableAssets()
 	if err != nil {
-		log.Printf("Can't get the list of Internal Tokens for indices: %s", err.Error())
+		l.Errorw("Can't get the list of Internal Tokens for indices", "err", err)
 		return nil, err
 	}
 
@@ -172,7 +243,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 
 	err = bc.LoadAndSetTokenIndices(assetAddrs)
 	if err != nil {
-		log.Printf("Can't load and set token indices: %s", err.Error())
+		l.Errorw("Can't load and set token indices", "err", err)
 		return nil, err
 	}
 
@@ -180,7 +251,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 }
 
 // CreateDataCore create reserve data component
-func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
+func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain, l *zap.SugaredLogger) (*data.ReserveData, *core.ReserveCore) {
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
@@ -213,7 +284,7 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 }
 
 // NewConfigurationFromContext returns the Configuration object from cli context.
-func NewConfigurationFromContext(c *cli.Context) (*Config, error) {
+func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config, error) {
 	dpl, err := deployment.NewDeploymentFromContext(c)
 	if err != nil {
 		return nil, err

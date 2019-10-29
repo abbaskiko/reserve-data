@@ -17,8 +17,8 @@ type Version uint64
 // Timestamp is data fetched timestamp
 type Timestamp string
 
-// MustToUint64 return uint64 of timestamp
-func (ts Timestamp) MustToUint64() uint64 {
+// Millis return uint64 of timestamp
+func (ts Timestamp) Millis() uint64 {
 	res, err := strconv.ParseUint(string(ts), 10, 64)
 	//  this should never happen. Timestamp is never manually entered.
 	if err != nil {
@@ -29,24 +29,22 @@ func (ts Timestamp) MustToUint64() uint64 {
 
 // GetTimestamp return timestamp
 func GetTimestamp() Timestamp {
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-	return Timestamp(strconv.Itoa(int(timestamp)))
+	return Timestamp(strconv.FormatUint(NowInMillis(), 10))
 }
 
-// GetTimepoint return time by millisecond
-func GetTimepoint() uint64 {
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-	return uint64(timestamp)
+// NowInMillis return time by millisecond
+func NowInMillis() uint64 {
+	return TimeToMillis(time.Now())
 }
 
-// TimeToTimepoint convert timestamp from time.Time to milliseoncd (timepoint)
-func TimeToTimepoint(t time.Time) uint64 {
+// TimeToMillis convert timestamp from time.Time to milliseoncd (timepoint)
+func TimeToMillis(t time.Time) uint64 {
 	timestamp := t.UnixNano() / int64(time.Millisecond)
 	return uint64(timestamp)
 }
 
-// TimepointToTime convert timepoint (millisecond) to time.Time
-func TimepointToTime(t uint64) time.Time {
+// MillisToTime convert timepoint (millisecond) to time.Time
+func MillisToTime(t uint64) time.Time {
 	return time.Unix(0, int64(t)*int64(time.Millisecond))
 }
 

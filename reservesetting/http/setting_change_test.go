@@ -105,7 +105,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 			RebalanceThreshold: 1.0,
 			Reserve:            1.0,
 			Total:              100.0,
-		})
+		}, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -116,6 +116,8 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 func TestServer_SettingChangeBasic(t *testing.T) {
 	const (
 		settingChangePath = "/v3/setting-change-main"
+
+		expectedAskSpread = 34.1
 	)
 
 	var (
@@ -139,7 +141,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, "", supportedExchanges, nil)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 
 	var tests = []testCase{
 		{
@@ -260,11 +262,28 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								B: 34,
 								C: 24,
 							},
+							StableParam: &common.StableParam{
+								AskSpread: expectedAskSpread,
+							},
 						},
 					},
 				},
 			},
 			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm setting change",
+			endpoint: fmt.Sprint(settingChangePath, "/", 2),
+			method:   http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				asset, err := s.GetAssetBySymbol("KNC")
+				require.NoError(t, err)
+				asset, err = s.GetAsset(asset.ID)
+				require.NoError(t, err)
+				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
+				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+			},
 		},
 	}
 
@@ -315,7 +334,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(asset)
 
-	server := NewServer(s, "", supportedExchanges, nil)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 
 	var tests = []testCase{
 		{
@@ -592,7 +611,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 
 	exchangeID := uint64(1)
 	// pre-insert exchange
-	server := NewServer(s, "", nil, nil)
+	server := NewServer(s, "", nil, nil, "")
 	const updateExchange = "/v3/setting-change-update-exchange"
 	var updateExchID uint64
 	var tests = []testCase{
@@ -721,7 +740,7 @@ func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", supportedExchanges, nil)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 	const changeAssetAddress = "/v3/setting-change-main"
 	var changeID uint64
 	var tests = []testCase{
@@ -815,7 +834,7 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", supportedExchanges, nil)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
@@ -893,11 +912,9 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 		exchange := v1common.TestExchange{}
 		supportedExchanges[exchangeID] = exchange
 	}
-
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-
-	server := NewServer(s, "", supportedExchanges, nil)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
@@ -985,7 +1002,7 @@ func TestCreateTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	id, err := createSampleAsset(s)
 	require.NoError(t, err)
-	server := NewServer(s, "", supportedExchanges, nil)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 	c := apiClient{s: server}
 	quote := uint64(1) // ETH
 	postRes, err := c.createSettingChange(common.SettingChange{ChangeList: []common.SettingChangeEntry{

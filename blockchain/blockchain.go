@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"path/filepath"
 	"sync"
@@ -10,6 +9,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
@@ -24,7 +24,10 @@ const (
 )
 
 var (
-	Big0   = big.NewInt(0)
+	// Big0 zero in big.Int
+	Big0 = big.NewInt(0)
+
+	// BigMax max big.Int
 	BigMax = big.NewInt(10).Exp(big.NewInt(10), big.NewInt(33), nil)
 )
 
@@ -46,6 +49,7 @@ func newTBIndex(bulkIndex, indexInBulk uint64) tbindex {
 	return tbindex{BulkIndex: bulkIndex, IndexInBulk: indexInBulk}
 }
 
+// Blockchain object for interact with blockchain
 type Blockchain struct {
 	*blockchain.BaseBlockchain
 	wrapper      *blockchain.Contract
@@ -58,8 +62,10 @@ type Blockchain struct {
 	setRateNonceTimestamp uint64
 	contractAddress       *common.ContractAddressConfiguration
 	sr                    storage.SettingReader
+	l                     *zap.SugaredLogger
 }
 
+// StandardGasPrice get stand gas price from node
 func (bc *Blockchain) StandardGasPrice() float64 {
 	// we use node's recommended gas price because gas station is not returning
 	// correct gas price now
@@ -70,6 +76,7 @@ func (bc *Blockchain) StandardGasPrice() float64 {
 	return common.BigToFloat(price, 9)
 }
 
+// CheckTokenIndices check if token is listed
 func (bc *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
 	opts := bc.GetCallOpts(0)
 	pricingAddr := bc.contractAddress.Pricing
@@ -86,6 +93,7 @@ func (bc *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
 	return nil
 }
 
+// LoadAndSetTokenIndices load and set token indices
 func (bc *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error {
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
@@ -106,17 +114,19 @@ func (bc *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) erro
 			indicesInBulk[i].Uint64(),
 		)
 	}
-	log.Printf("Token indices: %+v", bc.tokenIndices)
+	bc.l.Infof("Token indices: %+v", bc.tokenIndices)
 	return nil
 }
 
+// RegisterPricingOperator add address as reserve operator for set token rates
 func (bc *Blockchain) RegisterPricingOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
-	log.Printf("reserve pricing address: %s", signer.GetAddress().Hex())
+	bc.l.Infow("reserve pricing address", "address", signer.GetAddress().Hex())
 	bc.MustRegisterOperator(pricingOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
+// RegisterDepositOperator add address as depostor for reserve
 func (bc *Blockchain) RegisterDepositOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
-	log.Printf("reserve depositor address: %s", signer.GetAddress().Hex())
+	bc.l.Infow("reserve depositor address", "address", signer.GetAddress().Hex())
 	bc.MustRegisterOperator(depositOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
@@ -130,10 +140,11 @@ func readablePrint(data map[ethereum.Address]byte) string {
 
 //====================== Write calls ===============================
 
-// TODO: Need better test coverage
+// SetRates set token rate to reserve
 // we got a bug when compact is not set to old compact
 // or when one of buy/sell got overflowed, it discards
 // the other's compact
+// TODO: Need better test coverage
 func (bc *Blockchain) SetRates(
 	tokens []ethereum.Address,
 	buys []*big.Int,
@@ -185,7 +196,7 @@ func (bc *Blockchain) SetRates(
 	)
 	opts, err := bc.GetTxOpts(pricingOP, nonce, gasPrice, nil)
 	if err != nil {
-		log.Printf("Getting transaction opts failed, err: %s", err)
+		bc.l.Infow("Getting transaction opts failed", "err", err)
 		return nil, err
 	}
 	var tx *types.Transaction
@@ -195,7 +206,7 @@ func (bc *Blockchain) SetRates(
 			opts, baseTokens, newBBuys, newBSells,
 			bbuys, bsells, block, indices)
 		if tx != nil {
-			log.Printf(
+			bc.l.Infof(
 				"broadcasting setbase tx %s, target buys(%s), target sells(%s), old base buy(%s) || old base sell(%s) || new base buy(%s) || new base sell(%s) || new compact buy(%s) || new compact sell(%s) || new buy bulk(%v) || new sell bulk(%v) || indices(%v)",
 				tx.Hash().Hex(),
 				buys, sells,
@@ -210,7 +221,7 @@ func (bc *Blockchain) SetRates(
 		tx, err = bc.GeneratedSetCompactData(
 			opts, bbuys, bsells, block, indices)
 		if tx != nil {
-			log.Printf(
+			bc.l.Infof(
 				"broadcasting setcompact tx %s, target buys(%s), target sells(%s), old base buy(%s) || old base sell(%s) || new compact buy(%s) || new compact sell(%s) || new buy bulk(%v) || new sell bulk(%v) || indices(%v)",
 				tx.Hash().Hex(),
 				buys, sells,
@@ -227,6 +238,7 @@ func (bc *Blockchain) SetRates(
 
 }
 
+// Send withdraw token from reserve to another address (here is cex)
 func (bc *Blockchain) Send(
 	asset commonv3.Asset,
 	amount *big.Int,
@@ -247,33 +259,9 @@ func (bc *Blockchain) Send(
 	return bc.SignAndBroadcast(tx, depositOP)
 }
 
-func (bc *Blockchain) SetImbalanceStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := bc.GetTxOpts(pricingOP, nil, nil, nil)
-	if err != nil {
-		log.Printf("Getting transaction opts failed, err: %s", err)
-		return nil, err
-	}
-	tx, err := bc.GeneratedSetImbalanceStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
-	if err != nil {
-		return nil, err
-	}
-	return bc.SignAndBroadcast(tx, pricingOP)
-}
-
-func (bc *Blockchain) SetQtyStepFunction(token ethereum.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
-	opts, err := bc.GetTxOpts(pricingOP, nil, nil, nil)
-	if err != nil {
-		log.Printf("Getting transaction opts failed, err: %s", err)
-		return nil, err
-	}
-	tx, err := bc.GeneratedSetQtyStepFunction(opts, token, xBuy, yBuy, xSell, ySell)
-	if err != nil {
-		return nil, err
-	}
-	return bc.SignAndBroadcast(tx, pricingOP)
-}
-
 //====================== Readonly calls ============================
+
+// FetchBalanceData return token balance on reserve
 func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
 	result := map[string]common.BalanceEntry{}
 	tokens := []ethereum.Address{}
@@ -288,7 +276,7 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 	opts := bc.GetCallOpts(atBlock)
 	balances, err := bc.GeneratedGetBalances(opts, reserve, tokens)
 	returnTime := common.GetTimestamp()
-	log.Printf("Fetcher ------> balances: %v, err: %v", balances, err)
+	bc.l.Infow("Fetcher ------> balances", "balances", balances, "err", err)
 	if err != nil {
 		for _, token := range assets {
 			// TODO: should store token id instead of symbol
@@ -303,7 +291,8 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 		for i, tok := range assets {
 			if balances[i].Cmp(Big0) == 0 || balances[i].Cmp(BigMax) > 0 {
 				// TODO: log asset_id instead of token
-				log.Printf("Fetcher ------> balances of token %s is invalid", tok.Symbol)
+				bc.l.Infow("balances of token is invalid", "token_symbol", tok.Symbol, "balances",
+					balances[i].String())
 				// TODO: should store token id instead of symbol
 				result[tok.Symbol] = common.BalanceEntry{
 					Valid:      false,
@@ -326,6 +315,7 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 	return result, nil
 }
 
+// FetchRates return token rates with eth
 func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.AllRateEntry, error) {
 	result := common.AllRateEntry{}
 	tokenAddrs := []ethereum.Address{}
@@ -368,6 +358,7 @@ func (bc *Blockchain) FetchRates(atBlock uint64, currentBlock uint64) (common.Al
 	return result, nil
 }
 
+// GetPrice return token rates
 func (bc *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceType string, qty *big.Int, atBlock uint64) (*big.Int, error) {
 	opts := bc.GetCallOpts(atBlock)
 	if priceType == "buy" {
@@ -395,44 +386,46 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 		return nonceFromNode, err
 	}
 	if nonceFromNode < bc.localSetRateNonce {
-		log.Printf("SET_RATE_MINED_NONCE: nonce returned from node %d is smaller than cached nonce: %d",
-			nonceFromNode, bc.localSetRateNonce)
-		if common.GetTimepoint()-bc.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
-			log.Printf("SET_RATE_MINED_NONCE: cached nonce %d stalled, overwriting with nonce from node %d",
-				bc.localSetRateNonce, nonceFromNode)
+		bc.l.Infow("SET_RATE_MINED_NONCE: nonce returned from node is smaller than cached nonce",
+			"node_value", nonceFromNode, "cached_value", bc.localSetRateNonce)
+		if common.NowInMillis()-bc.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
+			bc.l.Infow("SET_RATE_MINED_NONCE: cached nonce stalled, overwriting with nonce from node",
+				"cached_value", bc.localSetRateNonce, "node_value", nonceFromNode)
 			bc.localSetRateNonce = nonceFromNode
-			bc.setRateNonceTimestamp = common.GetTimepoint()
+			bc.setRateNonceTimestamp = common.NowInMillis()
 			return nonceFromNode, nil
 		}
-		log.Printf("SET_RATE_MINED_NONCE: using cached nonce %d instead of nonce from node %d",
-			bc.localSetRateNonce, nonceFromNode)
+		bc.l.Infow("SET_RATE_MINED_NONCE: using cached nonce instead of nonce from node",
+			"cached_value", bc.localSetRateNonce, "node_value", nonceFromNode)
 		return bc.localSetRateNonce, nil
 	}
 
-	log.Printf("SET_RATE_MINED_NONCE: updating cached nonce, current: %d, new: %d",
-		bc.localSetRateNonce, nonceFromNode)
+	bc.l.Infow("SET_RATE_MINED_NONCE: updating cached nonce",
+		"current", bc.localSetRateNonce, "new", nonceFromNode)
 	bc.localSetRateNonce = nonceFromNode
-	bc.setRateNonceTimestamp = common.GetTimepoint()
+	bc.setRateNonceTimestamp = common.NowInMillis()
 	return nonceFromNode, nil
 }
 
+// NewBlockchain return new blockchain object to to interact with blockchain
 func NewBlockchain(base *blockchain.BaseBlockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
 	sr storage.SettingReader,
 ) (*Blockchain, error) {
-	log.Printf("wrapper address: %s", contractAddressConf.Wrapper.Hex())
+	l := zap.S()
+	l.Infow("wrapper address", "address", contractAddressConf.Wrapper.Hex())
 	wrapper := blockchain.NewContract(
 		contractAddressConf.Wrapper,
 		filepath.Join(common.CurrentDir(), "wrapper.abi"),
 	)
 
-	log.Printf("reserve address: %s", contractAddressConf.Reserve.Hex())
+	l.Infow("reserve address", "address", contractAddressConf.Reserve.Hex())
 	reserve := blockchain.NewContract(
 		contractAddressConf.Reserve,
 		filepath.Join(common.CurrentDir(), "reserve.abi"),
 	)
 
-	log.Printf("pricing address: %s", contractAddressConf.Pricing.Hex())
+	l.Infow("pricing address", "address", contractAddressConf.Pricing.Hex())
 	pricing := blockchain.NewContract(
 		contractAddressConf.Pricing,
 		filepath.Join(common.CurrentDir(), "pricing.abi"),
@@ -445,6 +438,7 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 		reserve:         reserve,
 		contractAddress: contractAddressConf,
 		sr:              sr,
+		l:               l,
 	}, nil
 }
 
@@ -476,4 +470,10 @@ func (bc *Blockchain) GetInternalNetworkAddress() ethereum.Address {
 // GetNetworkAddress return network address
 func (bc *Blockchain) GetNetworkAddress() ethereum.Address {
 	return bc.contractAddress.Network
+}
+
+// GetListedTokens return listed tokens on reserve
+func (bc *Blockchain) GetListedTokens() ([]ethereum.Address, error) {
+	opts := bc.GetCallOpts(0)
+	return bc.GeneratedGetListedTokens(opts)
 }

@@ -3,18 +3,19 @@ package httprunner
 import (
 	"context"
 	"errors"
-	"log"
 	"math"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/http/httputil"
 	raven "github.com/getsentry/raven-go"
 	"github.com/gin-contrib/sentry"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/http/httputil"
 )
 
 // maxTimeSpot is the default time point to return in case the
@@ -35,13 +36,14 @@ type Server struct {
 // getTimePoint returns the timepoint from query parameter.
 // If no timestamp parameter is supplied, or it is invalid, returns the default one.
 func getTimePoint(c *gin.Context) uint64 {
+	l := zap.S()
 	timestamp := c.DefaultQuery("timestamp", "")
 	timepoint, err := strconv.ParseUint(timestamp, 10, 64)
 	if err != nil {
-		log.Printf("Interpreted timestamp(%s) to default - %d\n", timestamp, maxTimeSpot)
+		l.Infof("Interpreted timestamp(%s) to default - %d\n", timestamp, maxTimeSpot)
 		return maxTimeSpot
 	}
-	log.Printf("Interpreted timestamp(%s) to %d\n", timestamp, timepoint)
+	l.Infof("Interpreted timestamp(%s) to %d\n", timestamp, timepoint)
 	return timepoint
 }
 
@@ -49,7 +51,7 @@ func getTimePoint(c *gin.Context) uint64 {
 func newTickerHandler(ch chan time.Time) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		timepoint := getTimePoint(c)
-		ch <- common.TimepointToTime(timepoint)
+		ch <- common.MillisToTime(timepoint)
 		httputil.ResponseSuccess(c)
 	}
 }
@@ -68,6 +70,7 @@ func (s *Server) register() {
 	s.r.GET("/rtick", newTickerHandler(s.runner.rticker))
 	s.r.GET("/btick", newTickerHandler(s.runner.bticker))
 	s.r.GET("/gtick", newTickerHandler(s.runner.globalDataTicker))
+	s.r.GET("/htick", newTickerHandler(s.runner.hTicker))
 }
 
 // Start creates the HTTP server if needed and starts it.

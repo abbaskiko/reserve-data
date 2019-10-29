@@ -149,7 +149,7 @@ func TestNotAllowDeposit(t *testing.T) {
 			Updated:            time.Now(),
 		},
 		big.NewInt(10),
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err == nil {
 		t.Fatalf("Expected to return an error protecting user from deposit when there is another pending deposit")
@@ -175,7 +175,7 @@ func TestNotAllowDeposit(t *testing.T) {
 			Updated:            time.Now(),
 		},
 		big.NewInt(10),
-		common.GetTimepoint(),
+		common.NowInMillis(),
 	)
 	if err != nil {
 		t.Fatalf("Expected to be able to deposit different token")

@@ -3,10 +3,9 @@ package http
 import (
 	"testing"
 
+	eth "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	eth "github.com/ethereum/go-ethereum/common"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
@@ -30,14 +29,12 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
-
-	server := NewServer(s, "", supportedExchanges, nil)
+	server := NewServer(s, "", supportedExchanges, nil, "")
 	c := apiClient{s: server}
 	assetResp, err := c.getAsset(assetID)
 	require.NoError(t, err)

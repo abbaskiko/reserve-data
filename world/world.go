@@ -1,19 +1,23 @@
 package world
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
-//TheWorld is the concrete implementation of fetcher.TheWorld interface.
+// TheWorld is the concrete implementation of fetcher.TheWorld interface.
 type TheWorld struct {
 	endpoint Endpoint
+	l        *zap.SugaredLogger
 }
 
 func (tw *TheWorld) getPublic(url string, dst interface{}) error {
@@ -27,17 +31,17 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 		return err
 	}
 
-	log.Printf("%s fetch %s", caller, url)
+	tw.l.Infof("%s fetch %s", caller, url)
 
 	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("request on %s failed, %v\n", caller, err)
+		tw.l.Errorf("request on %s failed, %v\n", caller, err)
 		return err
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("failed to close response body: %s", cErr.Error())
+			tw.l.Warnf("failed to close response body: %s", cErr.Error())
 		}
 	}()
 
@@ -45,8 +49,15 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 		return fmt.Errorf("unexpected return code: %d", resp.StatusCode)
 	}
 
-	if err = json.NewDecoder(resp.Body).Decode(dst); err != nil {
-		log.Printf("%s decode failed, %v\n", caller, err)
+	body, err := ioutil.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		tw.l.Errorw("failed to read body", "caller", caller, "err", err)
+		return fmt.Errorf("failed to read response body")
+	}
+
+	if err = json.NewDecoder(bytes.NewBuffer(body)).Decode(dst); err != nil {
+		tw.l.Errorf("%s decode failed, %v, body=%s", caller, err, body)
 		return err
 	}
 
@@ -153,9 +164,9 @@ func NewTheWorld(dpl deployment.Deployment, keyfile string) (*TheWorld, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &TheWorld{endpoint}, nil
+		return &TheWorld{endpoint: endpoint, l: zap.S()}, nil
 	case deployment.Simulation:
-		return &TheWorld{SimulatedEndpoint{}}, nil
+		return &TheWorld{endpoint: SimulatedEndpoint{}, l: zap.S()}, nil
 	}
 	panic("unsupported environment")
 }

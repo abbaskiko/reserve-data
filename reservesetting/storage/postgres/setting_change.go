@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -38,7 +37,7 @@ func (s *Storage) CreateSettingChange(cat common.ChangeCatalog, obj common.Setti
 			return 0, fmt.Errorf("unknown returned err=%s", err.Error())
 		}
 
-		log.Printf("failed to create new setting change err=%s", pErr.Message)
+		s.l.Infow("failed to create new setting change", "err", pErr.Message)
 		if pErr.Code == errCodeUniqueViolation && pErr.Constraint == settingChangeCatUnique {
 			return 0, common.ErrSettingChangeExists
 		}
@@ -47,7 +46,7 @@ func (s *Storage) CreateSettingChange(cat common.ChangeCatalog, obj common.Setti
 	if err = tx.Commit(); err != nil {
 		return 0, err
 	}
-	log.Printf("create setting change success with id=%d\n", id)
+	s.l.Infow("create setting change success", "id", id)
 	return id, nil
 }
 
@@ -84,14 +83,13 @@ func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChange
 	err := sts.Get(&dbResult, id, nil)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("setting change not found in database id=%d\n", id)
 			return common.SettingChangeResponse{}, common.ErrNotFound
 		}
 		return common.SettingChangeResponse{}, err
 	}
 	res, err := dbResult.ToCommon()
 	if err != nil {
-		log.Printf("failed to convert to common setting change, err=%v\n", err)
+		s.l.Errorw("failed to convert to common setting change", "err", err)
 		return common.SettingChangeResponse{}, err
 	}
 	return res, nil
@@ -137,7 +135,7 @@ func (s *Storage) RejectSettingChange(id uint64) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("reject setting change success with id=%d\n", id)
+	s.l.Infow("reject setting change success", "id", id)
 	return nil
 }
 
@@ -147,75 +145,64 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 	case *common.ChangeAssetAddressEntry:
 		err = s.changeAssetAddress(tx, e.ID, e.Address)
 		if err != nil {
-			msg := fmt.Sprintf("change asset address %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("change asset address", "index", i, "err", err)
 			return err
 		}
 	case *common.CreateAssetEntry:
 		_, err = s.createAsset(tx, e.Symbol, e.Name, e.Address, e.Decimals, e.Transferable, e.SetRate, e.Rebalance,
-			e.IsQuote, e.PWI, e.RebalanceQuadratic, e.Exchanges, e.Target)
+			e.IsQuote, e.PWI, e.RebalanceQuadratic, e.Exchanges, e.Target, e.StableParam)
 		if err != nil {
-			msg := fmt.Sprintf("create asset %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("create asset", "index", i, "err", err)
 			return err
 		}
 	case *common.CreateAssetExchangeEntry:
 		_, err = s.createAssetExchange(tx, e.ExchangeID, e.AssetID, e.Symbol, e.DepositAddress, e.MinDeposit,
 			e.WithdrawFee, e.TargetRecommended, e.TargetRatio, e.TradingPairs)
 		if err != nil {
-			msg := fmt.Sprintf("create asset exchange %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("create asset exchange", "index", i, "err", err)
 			return err
 		}
 	case *common.CreateTradingPairEntry:
 		_, err = s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
 			e.AmountLimitMax, e.PriceLimitMin, e.PriceLimitMax, e.MinNotional, e.AssetID)
 		if err != nil {
-			msg := fmt.Sprintf("create trading pair %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("create trading pair", "index", i, "err", err)
 			return err
 		}
 	case *common.UpdateAssetEntry:
 		err = s.updateAsset(tx, e.AssetID, *e)
 		if err != nil {
-			msg := fmt.Sprintf("update asset %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("update asset", "index", i, "err", err)
 			return err
 		}
 	case *common.UpdateAssetExchangeEntry:
 		err = s.updateAssetExchange(tx, e.ID, *e)
 		if err != nil {
-			msg := fmt.Sprintf("update asset exchange at %d failed, err = %v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("update asset exchange", "index", i, "err", err)
 			return err
 		}
 	case *common.UpdateExchangeEntry:
 		err = s.updateExchange(tx, e.ExchangeID, *e)
 		if err != nil {
-			msg := fmt.Sprintf("update exchange %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("update exchange", "index", i, "err", err)
 			return err
 		}
 	case *common.DeleteAssetExchangeEntry:
 		err = s.deleteAssetExchange(tx, e.AssetExchangeID)
 		if err != nil {
-			msg := fmt.Sprintf("delete asset exchange id=%d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("delete asset exchange", "index", i, "err", err)
 			return err
 		}
-	// case common.ChangeTypeDeleteTradingBy:
 	case *common.DeleteTradingPairEntry:
 		err = s.deleteTradingPair(tx, e.TradingPairID)
 		if err != nil {
-			msg := fmt.Sprintf("delete trading pair %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("delete trading pair", "index", i, "err", err)
 			return err
 		}
 	case *common.UpdateStableTokenParamsEntry:
 		err = s.updateStableTokenParams(tx, e.Params)
 		if err != nil {
-			msg := fmt.Sprintf("update stable token params %d, err=%v\n", i, err)
-			log.Println(msg)
+			s.l.Infow("update stable token params", "index", i, "err", err)
 			return err
 		}
 	default:
@@ -247,12 +234,12 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 	}
 	if commit {
 		if err := tx.Commit(); err != nil {
-			log.Printf("setting change id=%d has been failed to confirm, err=%v\n", id, err)
+			s.l.Infow("setting change has been failed to confirm", "id", id, "err", err)
 			return err
 		}
-		log.Printf("setting change has been confirmed successfully, id=%d\n", id)
+		s.l.Infow("setting change has been confirmed successfully", "id", id)
 		return nil
 	}
-	log.Printf("setting change will be reverted due commit=false, id=%d\n", id)
+	s.l.Infow("setting change will be reverted due commit flag not set", "id", id)
 	return nil
 }

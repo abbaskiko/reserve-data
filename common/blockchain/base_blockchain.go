@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -18,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 )
@@ -43,6 +43,7 @@ type BaseBlockchain struct {
 	chainType      string
 	contractCaller *ContractCaller
 	erc20abi       abi.ABI
+	l              *zap.SugaredLogger
 }
 
 func (b *BaseBlockchain) OperatorAddresses() map[string]ethereum.Address {
@@ -107,9 +108,10 @@ func (b *BaseBlockchain) SignAndBroadcast(tx *types.Transaction, from string) (*
 		return nil, err
 	}
 	failures, ok := b.broadcaster.Broadcast(signedTx)
-	log.Printf("Rebroadcasting failures: %s", failures)
+	b.l.Infof("Rebroadcasting failures: %s", failures)
 	if !ok {
-		log.Printf("Broadcasting transaction failed! nonce: %d, gas price: %s, retry failures: %s", tx.Nonce(), tx.GasPrice().Text(10), failures)
+		b.l.Warnf("Broadcasting transaction failed! tx: %s nonce: %d, gas price: %s, retry failures: %s",
+			tx.Hash().String(), tx.Nonce(), tx.GasPrice().Text(10), failures)
 		if signedTx != nil {
 			return signedTx, fmt.Errorf("broadcasting transaction %s failed, retry failures: %s", tx.Hash().Hex(), failures)
 		}
@@ -284,7 +286,7 @@ func (b *BaseBlockchain) BuildSendERC20Tx(opts TxOpts, amount *big.Int, to ether
 	defer cancel()
 	gasLimit, err := b.client.EstimateGas(timeout, msg)
 	if err != nil {
-		log.Printf("Cannot estimate gas limit: %v", err)
+		b.l.Warnf("Cannot estimate gas limit: %v", err)
 		return nil, err
 	}
 	gasLimit += 50000
@@ -316,12 +318,17 @@ func (b *BaseBlockchain) TransactionByHash(ctx context.Context, hash ethereum.Ha
 	err = b.rpcClient.CallContext(ctx, &json, "eth_getTransactionByHash", hash)
 	if err != nil {
 		return nil, false, err
-	} else if json == nil {
+	}
+	if json == nil {
 		return nil, false, ether.NotFound
-	} else if _, r, _ := json.tx.RawSignatureValues(); r == nil {
+	}
+	if json.BlockHash == nil {
+		return json, true, nil
+	}
+	if _, r, _ := json.tx.RawSignatureValues(); r == nil {
 		return nil, false, errors.New("server returned transaction without signature")
 	}
-	setSenderFromServer(json.tx, json.From, json.BlockHash)
+	setSenderFromServer(json.tx, json.From, *json.BlockHash)
 	return json, json.BlockNumber().Cmp(ethereum.Big0) == 0, nil
 }
 
@@ -397,5 +404,6 @@ func NewBaseBlockchain(
 		chainType:      chainType,
 		erc20abi:       packabi,
 		contractCaller: contractcaller,
+		l:              zap.S(),
 	}
 }

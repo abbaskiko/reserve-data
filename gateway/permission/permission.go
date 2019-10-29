@@ -2,12 +2,12 @@ package permission
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"regexp"
 
 	"github.com/casbin/casbin"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 const (
@@ -40,7 +40,7 @@ func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 		if !p.checkPermission(c.Request) {
 			err := ErrNotPermit
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"reason": err.Error()})
-			log.Printf("Abort with error get error: %s", err.Error())
+			zap.S().Errorf("Abort with error get error: %s", err.Error())
 			return
 		}
 	}

@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"log"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
@@ -81,8 +80,7 @@ func (s *Storage) GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Ad
 // GetMinNotional return min notional
 func (s *Storage) GetMinNotional(exchangeID, baseID, quoteID uint64) (float64, error) {
 	var minNotional float64
-	log.Printf("getting min notional for exchange=%d base=%d quote=%d",
-		exchangeID, baseID, quoteID)
+	s.l.Infow("getting min notional", "exchange", exchangeID, "base", baseID, "quote", quoteID)
 	if err := s.stmts.getMinNotional.Get(&minNotional,
 		exchangeID, baseID, quoteID); err == sql.ErrNoRows {
 		return 0, common.ErrNotFound

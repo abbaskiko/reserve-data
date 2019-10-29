@@ -2,10 +2,10 @@ package postgres
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	v3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
@@ -15,6 +15,7 @@ import (
 // Storage is an implementation of storage.Interface that use PostgreSQL as database system.
 type Storage struct {
 	db    *sqlx.DB
+	l     *zap.SugaredLogger
 	stmts *preparedStmts
 }
 
@@ -67,6 +68,7 @@ func (s *Storage) initAssets() error {
 
 // NewStorage creates a new Storage instance from given configuration.
 func NewStorage(db *sqlx.DB) (*Storage, error) {
+	l := zap.S()
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("failed to intialize database schema err=%s", err.Error())
 	}
@@ -82,7 +84,7 @@ func NewStorage(db *sqlx.DB) (*Storage, error) {
 		return nil, fmt.Errorf("failed to preprare statements err=%s", err.Error())
 	}
 
-	s := &Storage{db: db, stmts: stmts}
+	s := &Storage{db: db, stmts: stmts, l: l}
 
 	exchanges, err := s.GetExchanges()
 	if err != nil {
@@ -90,7 +92,7 @@ func NewStorage(db *sqlx.DB) (*Storage, error) {
 	}
 
 	if len(exchanges) == 0 {
-		log.Printf("database is empty, initializing exchanges and assets")
+		l.Infow("database is empty, initializing exchanges and assets")
 
 		if err = s.initExchanges(); err != nil {
 			return nil, fmt.Errorf("failed to initialize exchanges err=%s", err.Error())

@@ -41,7 +41,7 @@ func NewServer(addr string,
 	options ...Option,
 ) (*Server, error) {
 	r := gin.Default()
-	r.Use(libhttputil.MiddlewareHandler)
+	r.Use(libhttputil.MiddlewareHandler) // TODO: remove this as we have already have zap logger?
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")

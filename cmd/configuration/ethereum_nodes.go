@@ -2,9 +2,9 @@ package configuration
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 )
@@ -112,10 +112,11 @@ func NewEthereumNodeConfigurationFromContext(c *cli.Context) (*EthereumNodeConfi
 		conf        = &EthereumNodeConfiguration{}
 		mainNode    = c.GlobalString(ethereumMainNodeFlag)
 		backupNodes = c.StringSlice(ethereumBackupNodeFlag)
+		l           = zap.S()
 	)
 
 	if len(mainNode) != 0 && len(backupNodes) != 0 {
-		log.Printf("using provided Ethereum main node %s and backup nodes %v", mainNode, backupNodes)
+		l.Infow("using provided Ethereum", "main_node", mainNode, "backup_node", backupNodes)
 		return NewEthereumNodeConfiguration(mainNode, backupNodes), nil
 	}
 
@@ -130,14 +131,14 @@ func NewEthereumNodeConfigurationFromContext(c *cli.Context) (*EthereumNodeConfi
 	}
 
 	if len(backupNodes) != 0 {
-		log.Printf("using provided Ethereum backup nodes %v", backupNodes)
+		l.Infow("using provided Ethereum backup nodes", "nodes", backupNodes)
 		conf.Backup = backupNodes
 	} else {
 		conf.Backup = defaultConf.Backup
 	}
 
 	if len(mainNode) != 0 {
-		log.Printf("using provided Ethereum main node %s", mainNode)
+		l.Infow("using provided Ethereum main node", "main_node", mainNode)
 		conf.Main = mainNode
 		// transaction broadcasting only use backup nodes, prepend the provided node
 		// to make sure it has the highest priority

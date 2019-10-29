@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -35,13 +36,14 @@ func NewDataFileCliFlags() []cli.Flag {
 // NewDataFileFromContext returns the configured main data file from cli context.
 func NewDataFileFromContext(c *cli.Context) (string, error) {
 	var dataFile = c.GlobalString(dataFileFlag)
+	l := zap.S()
 	if len(dataFile) == 0 {
 		dpl, err := deployment.NewDeploymentFromContext(c)
 		if err != nil {
 			return "", err
 		}
 		defaultDataFile := filepath.Join(common.CmdDirLocation(), fmt.Sprintf("%s.db", dpl))
-		log.Printf("using default data file location %s", defaultDataFile)
+		l.Infow("using default data file", "location", defaultDataFile)
 		return defaultDataFile, nil
 	}
 	return dataFile, nil

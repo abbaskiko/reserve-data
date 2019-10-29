@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 )
 
 type Signer struct {
@@ -17,7 +16,7 @@ type Signer struct {
 func (s Signer) Sign(msg string) string {
 	mac := hmac.New(sha256.New, []byte(s.Secret))
 	if _, err := mac.Write([]byte(msg)); err != nil {
-		log.Printf("Encode message error: %s", err.Error())
+		panic(err) // should never happen
 	}
 	result := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	return result

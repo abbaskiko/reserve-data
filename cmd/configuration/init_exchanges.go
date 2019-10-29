@@ -3,10 +3,10 @@ package configuration
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -23,26 +23,28 @@ import (
 
 type ExchangePool struct {
 	Exchanges map[common.ExchangeID]interface{}
+	l         *zap.SugaredLogger
 }
 
 func updateTradingPairConf(
 	assetStorage storage.Interface,
 	ex common.Exchange, exchangeID uint64) {
+	l := zap.S()
 	pairs, err := assetStorage.GetTradingPairs(exchangeID)
 	if err != nil {
-		log.Printf("failed to get trading pairs exchange_id=%d err=%s ", exchangeID, err.Error())
+		l.Warnw("failed to get trading pairs", "exchange_id", exchangeID, "err", err.Error())
 		return
 	}
 	exInfo, err := ex.GetLiveExchangeInfos(pairs)
 	if err != nil {
-		log.Printf("failed to get pair configuration for binance err=%s", err.Error())
+		l.Warnw("failed to get pair configuration for binance", "err", err.Error())
 		return
 	}
 
 	for _, pair := range pairs {
 		pairConf, ok := exInfo[pair.ID]
 		if !ok {
-			log.Printf("no configuration found for trading pair %d", pair.ID)
+			l.Warnw("no configuration found for trading pair", "pair_id", pair.ID)
 			return
 		}
 
@@ -56,7 +58,7 @@ func updateTradingPairConf(
 			minNotional     = pairConf.MinNotional
 		)
 
-		log.Printf("updating pair configuration id=%d exchange_id=%d", pair.ID, exchangeID)
+		l.Infof("updating pair configuration id=%d exchange_id=%d", pair.ID, exchangeID)
 		err = assetStorage.UpdateTradingPair(pair.ID, storage.UpdateTradingPairOpts{
 			PricePrecision:  &pricePrecision,
 			AmountPrecision: &amountPrecision,
@@ -67,39 +69,34 @@ func updateTradingPairConf(
 			MinNotional:     &minNotional,
 		})
 		if err != nil {
-			log.Printf("failed to update trading pair id=%d exchange_id=%d err=%s", pair.ID, exchangeID, err.Error())
+			l.Warn("failed to update trading pair", "pair_id", pair.ID, "exchange_id", exchangeID, "err", err.Error())
 			return
 		}
 	}
 }
 
-func updateDepositAddress(
-	assetStorage storage.Interface,
-	be exchange.BinanceInterface,
-	he exchange.HuobiInterface) {
+func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInterface, he exchange.HuobiInterface) {
+	l := zap.S()
 	assets, err := assetStorage.GetTransferableAssets()
 	if err != nil {
-		log.Printf("failed to get transferable assets err=%s", err.Error())
+		l.Warnw("failed to get transferable assets", "err", err.Error())
 		return
 	}
 	for _, asset := range assets {
 		for _, ae := range asset.Exchanges {
 			switch ae.ExchangeID {
 			case uint64(common.Binance):
-				log.Printf("updating deposit address for asset id=%d exchange=%s symbol=%s",
-					asset.ID,
-					common.Binance.String(),
-					ae.Symbol)
+				l.Warnw("updating deposit address for asset", "asset_id", asset.ID,
+					"exchange", common.Binance.String(), "symbol", ae.Symbol)
 				if be == nil {
-					log.Printf("abort updating deposit address due binance exchange disabled")
+					l.Warnw("abort updating deposit address due binance exchange disabled")
 					continue
 				}
 				depositAddress, err := be.GetDepositAddress(ae.Symbol)
 				if err != nil {
-					log.Printf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
-						asset.ID,
-						common.Binance.String(),
-						ae.Symbol, err.Error())
+					l.Warnw("failed to get deposit address for asset",
+						"asset_id", asset.ID,
+						"exchange", common.Binance.String(), "symbol", ae.Symbol, "err", err.Error())
 					continue
 				}
 				err = assetStorage.UpdateDepositAddress(
@@ -107,24 +104,24 @@ func updateDepositAddress(
 					uint64(common.Binance),
 					ethereum.HexToAddress(depositAddress.Address))
 				if err != nil {
-					log.Printf("assetStorage.UpdateDepositAddress err=%s", err.Error())
+					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
 					continue
 				}
 			case uint64(common.Huobi):
-				log.Printf("updating deposit address for asset id=%d exchange=%s symbol=%s",
-					asset.ID,
-					common.Huobi.String(),
-					ae.Symbol)
+				l.Warnw("updating deposit address for asset",
+					"asset_id", asset.ID,
+					"exchange", common.Huobi.String(),
+					"symbol", ae.Symbol)
 				if he == nil {
-					log.Printf("abort updating deposit address due huobi exchange disabled")
+					l.Warnw("abort updating deposit address due huobi exchange disabled")
 					continue
 				}
 				depositAddress, err := he.GetDepositAddress(ae.Symbol)
 				if err != nil {
-					log.Printf("failed to get deposit address for asset id=%d exchange=%s symbol=%s err=%s",
-						asset.ID,
-						common.Huobi.String(),
-						ae.Symbol, err.Error())
+					l.Warnw("failed to get deposit address for asset",
+						"asset_id", asset.ID,
+						"exchange", common.Huobi.String(),
+						"symbol", ae.Symbol, "err", err)
 					continue
 				}
 				err = assetStorage.UpdateDepositAddress(
@@ -132,7 +129,7 @@ func updateDepositAddress(
 					uint64(common.Huobi),
 					ethereum.HexToAddress(depositAddress.Address))
 				if err != nil {
-					log.Printf("assetStorage.UpdateDepositAddress err=%s", err.Error())
+					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
 					continue
 				}
 			}
@@ -154,6 +151,7 @@ func NewExchangePool(
 		be      exchange.BinanceInterface
 		he      exchange.HuobiInterface
 		bin, hb common.Exchange
+		s       = zap.S()
 	)
 
 	enabledExchanges, err := NewExchangesFromContext(c)
@@ -169,7 +167,7 @@ func NewExchangePool(
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.StableExchange:
-			stableEx, err := exchange.NewStableEx()
+			stableEx, err := exchange.NewStableEx(s)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange stable_exchange: (%s)", err.Error())
 			}
@@ -198,7 +196,7 @@ func NewExchangePool(
 			}
 			intermediatorSigner, err := HuobiIntermediatorSignerFromFile(secretConfigFile)
 			if err != nil {
-				log.Printf("failed to get itermediator signer from file err=%s", err.Error())
+				s.Errorw("failed to get intermediator signer from file", "err", err)
 				return nil, err
 			}
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
@@ -224,7 +222,10 @@ func NewExchangePool(
 	if hb != nil {
 		go updateTradingPairConf(assetStorage, hb, uint64(common.Huobi))
 	}
-	return &ExchangePool{exchanges}, nil
+	return &ExchangePool{
+		Exchanges: exchanges,
+		l:         s,
+	}, nil
 }
 
 func (ep *ExchangePool) FetcherExchanges() ([]fetcher.Exchange, error) {

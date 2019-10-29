@@ -5,12 +5,14 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/http"
+	"github.com/KyberNetwork/reserve-data/lib/app"
 )
 
 func main() {
@@ -35,30 +37,37 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
-	conf, err := configuration.NewConfigurationFromContext(c)
+	l, flusher, err := app.NewSugaredLogger(c)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		flusher()
+	}()
+	zap.ReplaceGlobals(l.Desugar())
+	conf, err := configuration.NewConfigurationFromContext(c, l)
 	if err != nil {
 		return err
 	}
 
 	bc, err := configuration.CreateBlockchain(conf)
 	if err != nil {
-		log.Printf("Can not create blockchain: (%s)", err)
+		l.Errorw("Can not create blockchain", "err", err)
 		return err
 	}
 
 	dryRun := configuration.NewDryRunFromContext(c)
 
-	rData, rCore := configuration.CreateDataCore(conf, dpl, bc)
+	rData, rCore := configuration.CreateDataCore(conf, dpl, bc, l)
 	if !dryRun {
 		if dpl != deployment.Simulation {
 			if err = rData.RunStorageController(); err != nil {
-				log.Printf("failed to run storage controller err=%s", err.Error())
+				l.Errorw("failed to run storage controller", "err", err)
 				return err
 			}
 		}
 		if err = rData.Run(); err != nil {
-			log.Printf("failed to run data service err=%s", err.Error())
+			l.Errorw("failed to run data service", "err", err)
 			return err
 		}
 	}
@@ -82,7 +91,7 @@ func run(c *cli.Context) error {
 	if !dryRun {
 		server.Run()
 	} else {
-		log.Printf("Dry run finished. All configs are corrected")
+		l.Infow("Dry run finished. All configs are corrected")
 	}
 
 	return err

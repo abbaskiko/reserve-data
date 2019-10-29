@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -52,6 +51,12 @@ type createAssetParams struct {
 	TargetReserve            *float64 `db:"target_reserve"`
 	TargetRebalanceThreshold *float64 `db:"target_rebalance_threshold"`
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
+
+	PriceUpdateThreshold float64 `db:"stable_param_price_update_threshold"`
+	AskSpread            float64 `db:"stable_param_ask_spread"`
+	BidSpread            float64 `db:"stable_param_bid_spread"`
+	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_spread"`
+	MultipleFeedsMaxDiff float64 `db:"stable_param_multiple_feeds_max_diff"`
 }
 
 // CreateAsset create a new asset
@@ -66,6 +71,7 @@ func (s *Storage) CreateAsset(
 	rb *common.RebalanceQuadratic,
 	exchanges []common.AssetExchange,
 	target *common.AssetTarget,
+	stableParam *common.StableParam,
 ) (uint64, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -73,21 +79,8 @@ func (s *Storage) CreateAsset(
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 
-	id, err := s.createAsset(
-		tx,
-		symbol,
-		name,
-		address,
-		decimals,
-		transferable,
-		setRate,
-		rebalance,
-		isQuote,
-		pwi,
-		rb,
-		exchanges,
-		target,
-	)
+	id, err := s.createAsset(tx, symbol, name, address, decimals, transferable,
+		setRate, rebalance, isQuote, pwi, rb, exchanges, target, stableParam)
 	if err != nil {
 		return 0, err
 	}
@@ -157,7 +150,7 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 		if !ok {
 			return 0, fmt.Errorf("unknown returned err=%s", err.Error())
 		}
-		log.Printf("failed to create new asset exchange err=%s", pErr.Message)
+		s.l.Infow("failed to create new asset exchange", "err", pErr.Message)
 		switch pErr.Code {
 		case errForeignKeyViolation:
 			switch pErr.Constraint {
@@ -186,7 +179,7 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID, assetID uint64, s
 			assetID,
 		)
 		if err != nil {
-			log.Printf("failed to create trading pair, err=%v\n", err)
+			s.l.Infow("failed to create trading pair", "err", err)
 			return 0, err
 		}
 	}
@@ -221,11 +214,11 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, updateOpts storage
 	}
 
 	if len(updateMsgs) == 0 {
-		log.Printf("nothing set for update asset exchange, skip now")
+		s.l.Infow("nothing set for update asset exchange, skip now")
 		return nil
 	}
 
-	log.Printf("updating asset_exchange %d %s", id, strings.Join(updateMsgs, " "))
+	s.l.Infow("updating asset_exchange", "id", id, "fields", strings.Join(updateMsgs, " "))
 	var updatedID uint64
 	err := s.stmts.updateAssetExchange.Get(&updatedID,
 		struct {
@@ -247,7 +240,7 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id uint64, updateOpts storage
 		},
 	)
 	if err == sql.ErrNoRows {
-		log.Printf("asset_exchange not found in database id=%d", id)
+		s.l.Infow("asset_exchange not found in database", "id", id)
 		return common.ErrNotFound
 	} else if err != nil {
 		return fmt.Errorf("failed to update asset_exchange, err=%s", err)
@@ -267,7 +260,9 @@ func (s *Storage) createAsset(
 	rb *common.RebalanceQuadratic,
 	exchanges []common.AssetExchange,
 	target *common.AssetTarget,
+	stableParam *common.StableParam,
 ) (uint64, error) {
+	// create new asset
 	var assetID uint64
 
 	if transferable && common.IsZeroAddress(address) {
@@ -280,7 +275,7 @@ func (s *Storage) createAsset(
 		}
 	}
 
-	log.Printf("creating new asset symbol=%s adress=%s", symbol, address.String())
+	s.l.Infow("creating new asset", "symbol", symbol, "address", address.String())
 
 	var addressParam *string
 	if !common.IsZeroAddress(address) {
@@ -313,17 +308,17 @@ func (s *Storage) createAsset(
 
 	if rebalance {
 		if rb == nil {
-			log.Printf("rebalance is enabled but rebalance quadratic is invalid symbol=%s", symbol)
+			s.l.Infow("rebalance is enabled but rebalance quadratic is invalid", "symbol", symbol)
 			return 0, common.ErrRebalanceQuadraticMissing
 		}
 
 		if len(exchanges) == 0 {
-			log.Printf("rebalance is enabled but no exchange configuration is provided symbol=%s", symbol)
+			s.l.Infow("rebalance is enabled but no exchange configuration is provided", "symbol", symbol)
 			return 0, common.ErrAssetExchangeMissing
 		}
 
 		if target == nil {
-			log.Printf("rebalance is enabled but target configuration is invalid symbol=%s", symbol)
+			s.l.Infow("rebalance is enabled but target configuration is invalid", "symbol", symbol)
 			return 0, common.ErrAssetTargetMissing
 		}
 	}
@@ -341,13 +336,21 @@ func (s *Storage) createAsset(
 		arg.TargetTransferThreshold = &target.TransferThreshold
 	}
 
+	if stableParam != nil {
+		arg.PriceUpdateThreshold = stableParam.PriceUpdateThreshold
+		arg.AskSpread = stableParam.AskSpread
+		arg.BidSpread = stableParam.BidSpread
+		arg.SingleFeedMaxSpread = stableParam.SingleFeedMaxSpread
+		arg.MultipleFeedsMaxDiff = stableParam.MultipleFeedsMaxDiff
+	}
+
 	if err := tx.NamedStmt(s.stmts.newAsset).Get(&assetID, arg); err != nil {
 		pErr, ok := err.(*pq.Error)
 		if !ok {
 			return 0, fmt.Errorf("unknown returned err=%s", err.Error())
 		}
 
-		log.Printf("failed to create new asset err=%s", pErr.Message)
+		s.l.Infow("failed to create new asset", "err", pErr.Message)
 		switch pErr.Code {
 		case errCodeUniqueViolation:
 			switch pErr.Constraint {
@@ -363,7 +366,7 @@ func (s *Storage) createAsset(
 		}
 		return 0, pErr
 	}
-
+	// create new asset exchange
 	for _, exchange := range exchanges {
 		var (
 			assetExchangeID     uint64
@@ -397,8 +400,8 @@ func (s *Storage) createAsset(
 			return 0, err
 		}
 
-		log.Printf("asset exchange is created id=%d", assetExchangeID)
-
+		s.l.Infow("asset exchange is created", "id", assetExchangeID)
+		// create new trading pair
 		for _, pair := range exchange.TradingPairs {
 			var (
 				tradingPairID uint64
@@ -407,10 +410,7 @@ func (s *Storage) createAsset(
 			)
 
 			if baseID != 0 && quoteID != 0 {
-				log.Printf(
-					"both base and quote are provided asset_symbol=%s exchange_id=%d",
-					symbol,
-					exchange.ExchangeID)
+				s.l.Infow("both base and quote are provided asset_symbol=%s exchange_id=%d", symbol, exchange.ExchangeID)
 				return 0, common.ErrBadTradingPairConfiguration
 			}
 
@@ -455,22 +455,16 @@ func (s *Storage) createAsset(
 
 				switch pErr.Code {
 				case errForeignKeyViolation:
-					log.Printf("failed to create trading pair as assertion failed symbol=%s exchange_id=%d err=%s",
-						symbol,
-						exchange.ExchangeID,
-						pErr.Message)
+					s.l.Infow("failed to create trading pair as assertion failed", "symbol", symbol,
+						"exchange_id", exchange.ExchangeID, "err", pErr.Message)
 					return 0, common.ErrBadTradingPairConfiguration
 				case errBaseInvalid:
-					log.Printf("failed to create trading pair as check base failed symbol=%s exchange_id=%d err=%s",
-						symbol,
-						exchange.ExchangeID,
-						pErr.Message)
+					s.l.Infow("failed to create trading pair as check base failed", "symbol", symbol,
+						"exchange_id", exchange.ExchangeID, "err", pErr.Message)
 					return 0, common.ErrBaseAssetInvalid
 				case errQuoteInvalid:
-					log.Printf("failed to create trading pair as check quote failed symbol=%s exchange_id=%d err=%s",
-						symbol,
-						exchange.ExchangeID,
-						pErr.Message)
+					s.l.Infow("failed to create trading pair as check quote failed", "symbol", symbol,
+						"exchange_id", exchange.ExchangeID, "err", pErr.Message)
 					return 0, common.ErrQuoteAssetInvalid
 				}
 
@@ -480,14 +474,14 @@ func (s *Storage) createAsset(
 					pErr.Message,
 				)
 			}
-			log.Printf("trading pair created id=%d", tradingPairID)
+			s.l.Infow("trading pair created", "id", tradingPairID)
 
 			atpID, err := s.createTradingBy(tx, assetID, tradingPairID)
 			if err != nil {
 				return 0, fmt.Errorf("failed to create asset trading pair for asset %d, tradingpair %d, err=%v",
 					assetID, tradingPairID, err)
 			}
-			log.Printf("asset trading pair created %d\n", atpID)
+			s.l.Infow("asset trading by created", "id", atpID)
 		}
 	}
 
@@ -557,6 +551,12 @@ type assetDB struct {
 	TargetReserve            *float64 `db:"target_reserve"`
 	TargetRebalanceThreshold *float64 `db:"target_rebalance_threshold"`
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
+
+	PriceUpdateThreshold float64 `db:"stable_param_price_update_threshold"`
+	AskSpread            float64 `db:"stable_param_ask_spread"`
+	BidSpread            float64 `db:"stable_param_bid_spread"`
+	SingleFeedMaxSpread  float64 `db:"stable_param_single_feed_max_spread"`
+	MultipleFeedsMaxDiff float64 `db:"stable_param_multiple_feeds_max_diff"`
 
 	Created time.Time `db:"created"`
 	Updated time.Time `db:"updated"`
@@ -637,7 +637,13 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 			TransferThreshold:  *adb.TargetTransferThreshold,
 		}
 	}
-
+	result.StableParam = common.StableParam{
+		PriceUpdateThreshold: adb.PriceUpdateThreshold,
+		AskSpread:            adb.AskSpread,
+		BidSpread:            adb.BidSpread,
+		SingleFeedMaxSpread:  adb.SingleFeedMaxSpread,
+		MultipleFeedsMaxDiff: adb.MultipleFeedsMaxDiff,
+	}
 	return result, nil
 }
 
@@ -763,11 +769,10 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 		}
 	}
 
-	log.Printf("getting asset id=%d", id)
+	s.l.Infow("getting asset", "id", id)
 	err = tx.Stmtx(s.stmts.getAsset).Get(&assetDBResult, id, nil)
 	switch err {
 	case sql.ErrNoRows:
-		log.Printf("asset not found id=%d", id)
 		return common.Asset{}, common.ErrNotFound
 	case nil:
 		result, err := assetDBResult.ToCommon()
@@ -793,11 +798,10 @@ func (s *Storage) GetAssetBySymbol(symbol string) (common.Asset, error) {
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 
-	log.Printf("getting asset symbol=%s", symbol)
+	s.l.Infow("getting assetBySymbol", "symbol", symbol)
 	err = tx.Stmtx(s.stmts.getAssetBySymbol).Get(&result, symbol)
 	switch err {
 	case sql.ErrNoRows:
-		log.Printf("asset not found symbol=%s", symbol)
 		return result, common.ErrNotFound
 	case nil:
 		return result, nil
@@ -841,6 +845,12 @@ type updateAssetParam struct {
 	TargetReserve            *float64 `db:"target_reserve"`
 	TargetRebalanceThreshold *float64 `db:"target_rebalance_threshold"`
 	TargetTransferThreshold  *float64 `db:"target_transfer_threshold"`
+
+	PriceUpdateThreshold *float64 `db:"stable_param_price_update_threshold"`
+	AskSpread            *float64 `db:"stable_param_ask_spread"`
+	BidSpread            *float64 `db:"stable_param_bid_spread"`
+	SingleFeedMaxSpread  *float64 `db:"stable_param_single_feed_max_spread"`
+	MultipleFeedsMaxDiff *float64 `db:"stable_param_multiple_feeds_max_diff"`
 }
 
 func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts) error {
@@ -916,8 +926,17 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 		updateMsgs = append(updateMsgs, fmt.Sprintf("target=%+v", target))
 	}
 
+	if uo.StableParam != nil {
+		arg.PriceUpdateThreshold = uo.StableParam.PriceUpdateThreshold
+		arg.AskSpread = uo.StableParam.AskSpread
+		arg.BidSpread = uo.StableParam.BidSpread
+		arg.SingleFeedMaxSpread = uo.StableParam.SingleFeedMaxSpread
+		arg.MultipleFeedsMaxDiff = uo.StableParam.MultipleFeedsMaxDiff
+		updateMsgs = append(updateMsgs, fmt.Sprintf("StableParam=%+v", target))
+	}
+
 	if len(updateMsgs) == 0 {
-		log.Printf("nothing set for update asset, skip now")
+		s.l.Infow("nothing set for update asset")
 		return nil
 	}
 	var sts = s.stmts.updateAsset
@@ -925,11 +944,10 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 		sts = tx.NamedStmt(s.stmts.updateAsset)
 	}
 
-	log.Printf("updating asset %d %s", id, strings.Join(updateMsgs, " "))
+	s.l.Infow("updating asset", "id", id, "fields", strings.Join(updateMsgs, " "))
 	var updatedID uint64
 	err := sts.Get(&updatedID, arg)
 	if err == sql.ErrNoRows {
-		log.Printf("asset not found in database id=%d", id)
 		return common.ErrNotFound
 	} else if err != nil {
 		pErr, ok := err.(*pq.Error)
@@ -940,16 +958,16 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 		if pErr.Code == errCodeUniqueViolation {
 			switch pErr.Constraint {
 			case "assets_symbol_key":
-				log.Printf("conflict symbol when updating asset id=%d err=%s", id, pErr.Message)
+				s.l.Infow("conflict symbol when updating asset", "id", id, "err", pErr.Message)
 				return common.ErrSymbolExists
 			case addressesUniqueConstraint:
-				log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
+				s.l.Infow("conflict address when updating asset", "id", id, "err", pErr.Message)
 				return common.ErrAddressExists
 
 			}
 		}
 		if pErr.Code == errCodeCheckViolation {
-			log.Printf("conflict address when updating asset id=%d err=%s", id, pErr.Message)
+			s.l.Infow("conflict address when updating asset", "id", id, "err", pErr.Message)
 			switch pErr.Constraint {
 			case "address_id_check":
 				return common.ErrDepositAddressMissing
@@ -972,15 +990,15 @@ func (s *Storage) ChangeAssetAddress(id uint64, address ethereum.Address) error 
 
 	err := s.changeAssetAddress(nil, id, address)
 	if err != nil {
-		log.Printf("change address error, err=%v\n", err)
+		s.l.Infow("change address error", "err", err)
 		return err
 	}
-	log.Printf("change asset address successfully id=%d\n", id)
+	s.l.Infow("change asset address successfully", "id", id)
 	return nil
 }
 
 func (s *Storage) changeAssetAddress(tx *sqlx.Tx, id uint64, address ethereum.Address) error {
-	log.Printf("changing address of asset id=%d new_address=%s", id, address.String())
+	s.l.Infow("changing address", "asset_id", id, "new_address", address.String())
 	sts := s.stmts.changeAssetAddress
 	if tx != nil {
 		sts = tx.Stmtx(sts)
@@ -995,11 +1013,11 @@ func (s *Storage) changeAssetAddress(tx *sqlx.Tx, id uint64, address ethereum.Ad
 		switch pErr.Code {
 		case errCodeUniqueViolation:
 			if pErr.Constraint == addressesUniqueConstraint {
-				log.Printf("conflict address when changing asset address id=%d err=%s", id, pErr.Message)
+				s.l.Infow("conflict address when changing asset address id=%d err=%s", id, pErr.Message)
 				return common.ErrAddressExists
 			}
 		case errAssertFailure:
-			log.Printf("asset not found in database id=%d err=%s", id, pErr.Message)
+			s.l.Infow("asset not found in database", "id", id, "err", pErr.Message)
 			return common.ErrNotFound
 		}
 		return fmt.Errorf("failed to update asset err=%s", pErr)
@@ -1015,8 +1033,7 @@ func (s *Storage) UpdateDepositAddress(assetID, exchangeID uint64, address ether
 	case sql.ErrNoRows:
 		return common.ErrNotFound
 	case nil:
-		log.Printf("asset deposit address is updated asset_exchange_id=%d deposit_address=%s",
-			updated, address.Hex())
+		s.l.Infow("asset deposit address is updated", "asset_exchange_id", updated, "deposit_address", address.Hex())
 		return nil
 	default:
 		return fmt.Errorf("failed to update deposit address asset_id=%d exchange_id=%d err=%s", assetID, exchangeID, err.Error())

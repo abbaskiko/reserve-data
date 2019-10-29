@@ -6,14 +6,17 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
+	"github.com/KyberNetwork/reserve-data/cmd/mode"
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
+	libapp "github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/lib/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
 	"github.com/KyberNetwork/reserve-data/reservesetting/http"
@@ -28,7 +31,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "HTTP gateway for reserve core"
 	app.Action = run
-
+	app.Flags = append(app.Flags, mode.NewCliFlag())
 	app.Flags = append(app.Flags, deployment.NewCliFlag())
 	app.Flags = append(app.Flags, configuration.NewBinanceCliFlags()...)
 	app.Flags = append(app.Flags, configuration.NewHuobiCliFlags()...)
@@ -38,6 +41,7 @@ func main() {
 	app.Flags = append(app.Flags, profiler.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewWrapperAddressFlag()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, libapp.NewSentryFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -45,6 +49,15 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		flusher()
+	}()
+	zap.ReplaceGlobals(sugar.Desugar())
+
 	host := httputil.NewHTTPAddressFromContext(c)
 	db, err := configuration.NewDBFromContext(c)
 	if err != nil {
@@ -100,8 +113,8 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
-	server := http.NewServer(sr, host, liveExchanges, newBlockchain)
+	sentryDSN := libapp.SentryDSNFromFlag(c)
+	server := http.NewServer(sr, host, liveExchanges, newBlockchain, sentryDSN)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}

@@ -53,9 +53,15 @@ CREATE TABLE IF NOT EXISTS "assets"
     target_reserve                FLOAT     NULL,
     target_rebalance_threshold    FLOAT     NULL,
     target_transfer_threshold     FLOAT     NULL,
+	
+	stable_param_price_update_threshold 	FLOAT	DEFAULT 0,
+	stable_param_ask_spread					FLOAT	DEFAULT	0,
+	stable_param_bid_spread					FLOAT	DEFAULT	0,
+	stable_param_single_feed_max_spread		FLOAT	DEFAULT	0,
+	stable_param_multiple_feeds_max_diff 	FLOAT	DEFAULT 0,
 
-    created                       TIMESTAMP NOT NULL,
-    updated                       TIMESTAMP NOT NULL,
+    created                       TIMESTAMPTZ NOT NULL,
+    updated                       TIMESTAMPTZ NOT NULL,
     -- if set_rate strategy is defined, pwi columns are required
     CONSTRAINT pwi_check CHECK (
             set_rate = 'not_set'
@@ -84,6 +90,21 @@ CREATE TABLE IF NOT EXISTS "assets"
              target_rebalance_threshold IS NOT NULL AND
              target_transfer_threshold IS NOT NULL))
 );
+
+-- alter table for compatibility
+DO $$
+	BEGIN
+		BEGIN
+			ALTER TABLE "assets" 	ADD COLUMN stable_param_price_update_threshold	FLOAT 	DEFAULT	0,
+									ADD COLUMN stable_param_ask_spread				FLOAT 	DEFAULT	0,
+									ADD COLUMN stable_param_bid_spread				FLOAT 	DEFAULT	0,
+									ADD COLUMN stable_param_single_feed_max_spread	FLOAT 	DEFAULT	0,
+									ADD COLUMN stable_param_multiple_feeds_max_diff	FLOAT 	DEFAULT	0;
+		EXCEPTION 
+			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
+		END;
+	END;
+$$;
 
 CREATE TABLE IF NOT EXISTS "asset_old_addresses"
 (
@@ -147,7 +168,7 @@ $$;
 CREATE TABLE IF NOT EXISTS setting_change
 (
     id      SERIAL PRIMARY KEY,
-    created TIMESTAMP                 NOT NULL,
+    created TIMESTAMPTZ                 NOT NULL,
     cat     setting_change_cat UNIQUE NOT NULL,
     data    JSON                      NOT NULL
 );
@@ -162,21 +183,21 @@ CREATE TABLE IF NOT EXISTS price_factor
 CREATE TABLE IF NOT EXISTS set_rate_control
 (
     id        SERIAL PRIMARY KEY,
-    timepoint TIMESTAMP NOT NULL,
+    timepoint TIMESTAMPTZ NOT NULL,
     status    BOOLEAN   NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS rebalance_control
 (
     id        SERIAL PRIMARY KEY,
-    timepoint TIMESTAMP NOT NULL,
+    timepoint TIMESTAMPTZ NOT NULL,
     status    BOOLEAN   NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS stable_token_params_control
 (
     id        SERIAL PRIMARY KEY,
-    timepoint TIMESTAMP NOT NULL,
+    timepoint TIMESTAMPTZ NOT NULL,
     data      JSON      NOT NULL
 );
 
@@ -257,7 +278,13 @@ CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _target_total assets.target_total%TYPE,
                                      _target_reserve assets.target_reserve%TYPE,
                                      _target_rebalance_threshold assets.target_rebalance_threshold%TYPE,
-                                     _target_transfer_threshold assets.target_total%TYPE)
+                                     _target_transfer_threshold assets.target_total%TYPE,
+									 _stable_param_price_update_threshold assets.stable_param_price_update_threshold%TYPE,
+									 _stable_param_ask_spread assets.stable_param_ask_spread%TYPE,
+									 _stable_param_bid_spread assets.stable_param_bid_spread%TYPE,
+									 _stable_param_single_feed_max_spread assets.stable_param_single_feed_max_spread%TYPE,
+									 _stable_param_multiple_feeds_max_diff assets.stable_param_multiple_feeds_max_diff%TYPE
+									)
     RETURNS int AS
 $$
 DECLARE
@@ -294,6 +321,11 @@ BEGIN
                 target_reserve,
                 target_rebalance_threshold,
                 target_transfer_threshold,
+				stable_param_price_update_threshold,
+				stable_param_ask_spread,
+				stable_param_bid_spread,
+				stable_param_single_feed_max_spread,
+				stable_param_multiple_feeds_max_diff,
                 created,
                 updated)
     VALUES (_symbol,
@@ -321,6 +353,11 @@ BEGIN
             _target_reserve,
             _target_rebalance_threshold,
             _target_transfer_threshold,
+			_stable_param_price_update_threshold,
+			_stable_param_ask_spread,
+			_stable_param_bid_spread,
+			_stable_param_single_feed_max_spread,
+			_stable_param_multiple_feeds_max_diff,
             now(),
             now()) RETURNING id INTO _id;
 

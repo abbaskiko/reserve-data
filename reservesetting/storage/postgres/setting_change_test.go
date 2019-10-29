@@ -118,6 +118,12 @@ func initData(t *testing.T, s *Storage) {
 					},
 				},
 				Target: nil,
+				StableParam: &common.StableParam{
+					PriceUpdateThreshold: 10,
+					AskSpread:            11,
+					BidSpread:            12,
+					SingleFeedMaxSpread:  13,
+				},
 			},
 		},
 		{
@@ -525,7 +531,6 @@ func TestStorage_GetDepositAddresses(t *testing.T) {
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
-
 	s, err := NewStorage(db)
 	assert.NoError(t, err)
 	initData(t, s)
