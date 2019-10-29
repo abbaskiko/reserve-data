@@ -296,11 +296,15 @@ func (s *Server) SetRate(c *gin.Context) {
 	if !ok {
 		return
 	}
+	const (
+		actionFillZero = "fill_zero"
+	)
 	tokenAddrs := postForm.Get("tokens")
 	buys := postForm.Get("buys")
 	sells := postForm.Get("sells")
 	block := postForm.Get("block")
 	afpMid := postForm.Get("afp_mid")
+	absentTokenAction := postForm.Get("absent_action") // action to do if the token is missing in core, but exists in contract.
 	msgs := strings.Split(postForm.Get("msgs"), "-")
 	tokens := []common.Token{}
 	for _, tok := range strings.Split(tokenAddrs, "-") {
@@ -343,11 +347,18 @@ func (s *Server) SetRate(c *gin.Context) {
 		}
 		bigAfpMid = append(bigAfpMid, r)
 	}
-	// check if token delist from reserve backend but still exist in reserve contract
-	// then set its rate to 0
-	tokens, bigBuys, bigSells, bigAfpMid, err = s.checkTokenDelisted(tokens, bigBuys, bigSells, bigAfpMid)
-	if err != nil {
-		s.l.Warnw("failed to check delisted token", "error", err)
+	switch absentTokenAction {
+	case "":
+	case actionFillZero:
+		// check if token delist from reserve backend but still exist in reserve contract
+		// then set its rate to 0
+		tokens, bigBuys, bigSells, bigAfpMid, err = s.checkTokenDelisted(tokens, bigBuys, bigSells, bigAfpMid)
+		if err != nil {
+			s.l.Warnw("failed to check delisted token", "error", err.Error())
+		}
+	default:
+		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("absent_action %s not supported", absentTokenAction)))
+		return
 	}
 
 	id, err := s.core.SetRates(tokens, bigBuys, bigSells, big.NewInt(intBlock), bigAfpMid, msgs)
