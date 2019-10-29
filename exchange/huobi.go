@@ -51,9 +51,8 @@ func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 	if err != nil || len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
 		if err != nil {
 			h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: (%v). Check the currently available address instead", tokenID, err)
-		}
-		if len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
-			h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: the replied address is empty. Check the currently available address instead", tokenID, err)
+		} else {
+			h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: the replied address is empty. Check the currently available address instead", tokenID)
 		}
 		addrs, uErr := h.setting.GetDepositAddresses(settings.Huobi)
 		if uErr != nil {
@@ -86,7 +85,11 @@ func (h *Huobi) Address(token common.Token) (ethereum.Address, bool) {
 func (h *Huobi) UpdateDepositAddress(token common.Token, address string) error {
 	liveAddress, err := h.interf.GetDepositAddress(token.ID)
 	if err != nil || len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
-		h.l.Warnf("Get Huobi live deposit address for token %s failed: (%v) or the replied address is empty. Check the currently available address instead", token.ID, err)
+		if err != nil {
+			h.l.Warnf("Get Huobi live deposit address for token %s failed: (%v). Check the currently available address instead", token.ID, err)
+		} else {
+			h.l.Warnf("Get Huobi live deposit address for token %s failed: the replied address is empty. Check the currently available address instead", token.ID)
+		}
 		addrs := common.NewExchangeAddresses()
 		addrs.Update(token.ID, ethereum.HexToAddress(address))
 		return h.setting.UpdateDepositAddress(settings.Huobi, *addrs, common.GetTimepoint())
