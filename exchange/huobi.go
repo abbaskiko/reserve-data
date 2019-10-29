@@ -49,7 +49,12 @@ func (h *Huobi) MarshalText() (text []byte, err error) {
 func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 	liveAddress, err := h.interf.GetDepositAddress(tokenID)
 	if err != nil || len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
-		h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: (%v) or the replied address is empty. Check the currently available address instead", tokenID, err)
+		if err != nil {
+			h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: (%v). Check the currently available address instead", tokenID, err)
+		}
+		if len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
+			h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: the replied address is empty. Check the currently available address instead", tokenID, err)
+		}
 		addrs, uErr := h.setting.GetDepositAddresses(settings.Huobi)
 		if uErr != nil {
 			return ethereum.Address{}, uErr
