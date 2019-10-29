@@ -127,7 +127,7 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 				err = assetStorage.UpdateDepositAddress(
 					asset.ID,
 					uint64(common.Huobi),
-					ethereum.HexToAddress(depositAddress.Address))
+					ethereum.HexToAddress(depositAddress.Data[0].Address))
 				if err != nil {
 					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
 					continue
