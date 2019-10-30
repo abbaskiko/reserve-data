@@ -306,7 +306,7 @@ func (s *Server) SetRate(c *gin.Context) {
 	afpMid := postForm.Get("afp_mid")
 	absentTokenAction := postForm.Get("absent_action") // action to do if the token is missing in core, but exists in contract.
 	msgs := strings.Split(postForm.Get("msgs"), "-")
-	tokens := []common.Token{}
+	var tokens []common.Token
 	for _, tok := range strings.Split(tokenAddrs, "-") {
 		token, err := s.setting.GetInternalTokenByID(tok)
 		if err != nil {
@@ -315,7 +315,7 @@ func (s *Server) SetRate(c *gin.Context) {
 		}
 		tokens = append(tokens, token)
 	}
-	bigBuys := []*big.Int{}
+	var bigBuys []*big.Int
 	for _, rate := range strings.Split(buys, "-") {
 		r, err := hexutil.DecodeBig(rate)
 		if err != nil {
@@ -324,7 +324,7 @@ func (s *Server) SetRate(c *gin.Context) {
 		}
 		bigBuys = append(bigBuys, r)
 	}
-	bigSells := []*big.Int{}
+	var bigSells []*big.Int
 	for _, rate := range strings.Split(sells, "-") {
 		r, err := hexutil.DecodeBig(rate)
 		if err != nil {
@@ -338,7 +338,7 @@ func (s *Server) SetRate(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	bigAfpMid := []*big.Int{}
+	var bigAfpMid []*big.Int
 	for _, rate := range strings.Split(afpMid, "-") {
 		var r *big.Int
 		if r, err = hexutil.DecodeBig(rate); err != nil {
@@ -354,7 +354,7 @@ func (s *Server) SetRate(c *gin.Context) {
 		// then set its rate to 0
 		tokens, bigBuys, bigSells, bigAfpMid, err = s.checkTokenDelisted(tokens, bigBuys, bigSells, bigAfpMid)
 		if err != nil {
-			s.l.Warnw("failed to check delisted token", "error", err.Error())
+			s.l.Warnw("failed to check delisted token", "err", err)
 		}
 	default:
 		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("absent_action %s not supported", absentTokenAction)))
