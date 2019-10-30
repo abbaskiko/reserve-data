@@ -11,6 +11,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	pe "github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -48,8 +49,12 @@ func (h *Huobi) MarshalText() (text []byte, err error) {
 // It should only be used to send 2nd transaction.
 func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 	liveAddress, err := h.interf.GetDepositAddress(tokenID)
-	if err != nil || liveAddress.Address == "" {
-		h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: (%v) or the replied address is empty. Check the currently available address instead", tokenID, err)
+	if err != nil || len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
+		if err != nil {
+			h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: (%v). Check the currently available address instead", tokenID, err)
+		} else {
+			h.l.Warnf("WARNING: Get Huobi live deposit address for token %s failed: the replied address is empty. Check the currently available address instead", tokenID)
+		}
 		addrs, uErr := h.setting.GetDepositAddresses(settings.Huobi)
 		if uErr != nil {
 			return ethereum.Address{}, uErr
@@ -60,7 +65,7 @@ func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 		}
 		return result, nil
 	}
-	return ethereum.HexToAddress(liveAddress.Address), nil
+	return ethereum.HexToAddress(liveAddress.Data[0].Address), nil
 }
 
 // Address return the deposit address of a token in Huobi exchange.
@@ -80,15 +85,19 @@ func (h *Huobi) Address(token common.Token) (ethereum.Address, bool) {
 // It will prioritize the live address over the input address
 func (h *Huobi) UpdateDepositAddress(token common.Token, address string) error {
 	liveAddress, err := h.interf.GetDepositAddress(token.ID)
-	if err != nil || liveAddress.Address == "" {
-		h.l.Warnf("Get Huobi live deposit address for token %s failed: (%v) or the replied address is empty. Check the currently available address instead", token.ID, err)
+	if err != nil || len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
+		if err != nil {
+			h.l.Warnf("Get Huobi live deposit address for token %s failed: (%v). Check the currently available address instead", token.ID, err)
+		} else {
+			h.l.Warnf("Get Huobi live deposit address for token %s failed: the replied address is empty. Check the currently available address instead", token.ID)
+		}
 		addrs := common.NewExchangeAddresses()
 		addrs.Update(token.ID, ethereum.HexToAddress(address))
 		return h.setting.UpdateDepositAddress(settings.Huobi, *addrs, common.GetTimepoint())
 	}
 	h.l.Infof("Got Huobi live deposit address for token %s, attempt to update it to current setting", token.ID)
 	addrs := common.NewExchangeAddresses()
-	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
+	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Data[0].Address))
 	return h.setting.UpdateDepositAddress(settings.Huobi, *addrs, common.GetTimepoint())
 }
 
@@ -622,7 +631,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 					common.GetTimestamp(),
 				)
 				if err = h.storage.StoreIntermediateTx(id, data); err != nil {
-					h.l.Warnf("Huobi Trying to store intermediate tx to huobi storage, error: %s. Ignore it and try later", err.Error())
+					h.l.Warnf("Huobi Trying to store intermediate tx to huobi storage, error: %+v. Ignore it and try later", err)
 					return "", nil
 				}
 				return exchangeStatusDone, nil
@@ -735,7 +744,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 				common.GetTimestamp(),
 			)
 			if err = h.storage.StoreIntermediateTx(id, data); err != nil {
-				h.l.Infof("Huobi Trying to store intermediate tx failed, error: %s. Ignore it and treat it like it is still pending", err.Error())
+				h.l.Infof("Huobi Trying to store intermediate tx failed, error: %+v. Ignore it and treat it like it is still pending", err)
 				return "", nil
 			}
 			h.l.Infof("Huobi The tx is not found for over 15mins, it is considered as lost and the deposit failed")
@@ -752,11 +761,11 @@ func (h *Huobi) WithdrawStatus(
 	withdrawID, _ := strconv.ParseUint(id, 10, 64)
 	tokens, err := h.setting.GetAllTokens()
 	if err != nil {
-		return "", "", fmt.Errorf("huobi Can't get list of token from setting (%s)", err)
+		return "", "", pe.Wrap(err, "huobi Can't get list of token from setting")
 	}
 	withdraws, err := h.interf.WithdrawHistory(tokens)
 	if err != nil {
-		return "", "", fmt.Errorf("can't get withdraw history from huobi: %s", err.Error())
+		return "", "", pe.Wrap(err, "can't get withdraw history from huobi")
 	}
 	h.l.Infof("Huobi Withdrawal id: %d", withdrawID)
 	for _, withdraw := range withdraws.Data {

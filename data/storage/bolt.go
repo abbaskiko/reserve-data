@@ -365,7 +365,7 @@ func (bs *BoltStorage) ExportExpiredAuthData(currentTime uint64, fileName string
 	}
 	defer func() {
 		if cErr := outFile.Close(); cErr != nil {
-			bs.l.Warnf("Close file error: %s", cErr.Error())
+			bs.l.Warnf("Close file error: %+v", cErr)
 		}
 	}()
 
@@ -1349,7 +1349,7 @@ func (bs *BoltStorage) StorePendingTargetQtyV2(value []byte) error {
 	)
 
 	if err = json.Unmarshal(value, &pendingData); err != nil {
-		return fmt.Errorf("rejected: Data could not be unmarshalled to defined format: %s", err.Error())
+		return fmt.Errorf("rejected: Data could not be unmarshalled to defined format: %v", err)
 	}
 	err = bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(pendingTargetQuantityV2))

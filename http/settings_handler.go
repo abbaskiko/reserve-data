@@ -9,6 +9,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
+	pe "github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
@@ -134,7 +135,7 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 	data := []byte(postForm.Get("data"))
 	tokenUpdates := make(map[string]common.TokenUpdate)
 	if err := json.Unmarshal(data, &tokenUpdates); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("cant not unmarshall token request (%s)", err.Error())))
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("cant not unmarshall token request (%+v)", err)))
 		return
 	}
 
@@ -170,7 +171,7 @@ func (s *Server) SetTokenUpdate(c *gin.Context) {
 		// if the token is internal, it must come with PWIEq, targetQty and QuadraticEquation and exchange setting
 		if token.Internal {
 			if uErr := s.ensureInternalSetting(tokenUpdate); uErr != nil {
-				httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is internal, required more setting (%s)", token.ID, uErr.Error())))
+				httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Token %s is internal, required more setting (%+v)", token.ID, uErr)))
 				return
 			}
 			//skip ETH for fill pair ETH-ETH
@@ -265,7 +266,7 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 	}
 	pendingTLS, err := s.setting.GetPendingTokenUpdates()
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not get pending token listing (%s)", err.Error())))
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not get pending token listing (%+v)", err)))
 		return
 	}
 
@@ -302,17 +303,17 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 	//reload token indices and apply metric changes if the token is Internal
 	if hasInternal {
 		if err = s.updateInternalTokensIndices(tokenUpdates); err != nil {
-			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update internal token indices (%s)", err.Error())))
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update internal token indices (%+v)", err)))
 			return
 		}
 		if err = s.metric.ConfirmTokenUpdateInfo(tarQty, pws, quadEq); err != nil {
-			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update metric data (%s)", err.Error())))
+			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update metric data (%+v)", err)))
 			return
 		}
 	}
 	// Apply the change into setting database
 	if err = s.setting.ApplyTokenWithExchangeSetting(preparedToken, preparedExchangeSetting, timestamp); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not apply token and exchange setting for token listing (%s). Metric data and token indices changes has to be manually revert", err.Error())))
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not apply token and exchange setting for token listing (%+v). Metric data and token indices changes has to be manually revert", err)))
 		return
 	}
 
@@ -407,7 +408,7 @@ func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 	token := tokenUpdate.Token
 	if !token.IsETH() { // TokenIndices doesn't contains ETH
 		if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
-			return fmt.Errorf("cannot get token indice from smart contract (%s) ", uErr.Error())
+			return pe.Wrap(uErr, "cannot get token indice from smart contract (%+v) ")
 		}
 	}
 	if tokenUpdate.Exchanges == nil {
