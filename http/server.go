@@ -105,7 +105,7 @@ func eligible(ups, allowedPerms []Permission) bool {
 func (s *Server) Authenticated(c *gin.Context, requiredParams []string, perms []Permission) (url.Values, bool) {
 	err := c.Request.ParseForm()
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Malformed request package: %s", err.Error())))
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Malformed request package: %+v", err)))
 		return c.Request.Form, false
 	}
 
@@ -347,7 +347,7 @@ func (s *Server) SetRate(c *gin.Context) {
 	// then set its rate to 0
 	tokens, bigBuys, bigSells, bigAfpMid, err = s.checkTokenDelisted(tokens, bigBuys, bigSells, bigAfpMid)
 	if err != nil {
-		s.l.Warnw("failed to check delisted token", "error", err.Error())
+		s.l.Warnw("failed to check delisted token", "error", err)
 	}
 
 	id, err := s.core.SetRates(tokens, bigBuys, bigSells, big.NewInt(intBlock), bigAfpMid, msgs)

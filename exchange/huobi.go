@@ -11,6 +11,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	pe "github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -630,7 +631,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 					common.GetTimestamp(),
 				)
 				if err = h.storage.StoreIntermediateTx(id, data); err != nil {
-					h.l.Warnf("Huobi Trying to store intermediate tx to huobi storage, error: %s. Ignore it and try later", err.Error())
+					h.l.Warnf("Huobi Trying to store intermediate tx to huobi storage, error: %+v. Ignore it and try later", err)
 					return "", nil
 				}
 				return exchangeStatusDone, nil
@@ -743,7 +744,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 				common.GetTimestamp(),
 			)
 			if err = h.storage.StoreIntermediateTx(id, data); err != nil {
-				h.l.Infof("Huobi Trying to store intermediate tx failed, error: %s. Ignore it and treat it like it is still pending", err.Error())
+				h.l.Infof("Huobi Trying to store intermediate tx failed, error: %+v. Ignore it and treat it like it is still pending", err)
 				return "", nil
 			}
 			h.l.Infof("Huobi The tx is not found for over 15mins, it is considered as lost and the deposit failed")
@@ -760,11 +761,11 @@ func (h *Huobi) WithdrawStatus(
 	withdrawID, _ := strconv.ParseUint(id, 10, 64)
 	tokens, err := h.setting.GetAllTokens()
 	if err != nil {
-		return "", "", fmt.Errorf("huobi Can't get list of token from setting (%s)", err)
+		return "", "", pe.Wrap(err, "huobi Can't get list of token from setting")
 	}
 	withdraws, err := h.interf.WithdrawHistory(tokens)
 	if err != nil {
-		return "", "", fmt.Errorf("can't get withdraw history from huobi: %s", err.Error())
+		return "", "", pe.Wrap(err, "can't get withdraw history from huobi")
 	}
 	h.l.Infof("Huobi Withdrawal id: %d", withdrawID)
 	for _, withdraw := range withdraws.Data {

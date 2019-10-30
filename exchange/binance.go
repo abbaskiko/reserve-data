@@ -49,7 +49,7 @@ func (bn *Binance) Address(token common.Token) (ethereum.Address, bool) {
 		bn.l.Warnf("Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
 		addrs, uErr := bn.setting.GetDepositAddresses(settings.Binance)
 		if uErr != nil {
-			bn.l.Warnf("get address of token %s in Binance exchange failed:(%s), it will be considered as not supported", token.ID, err.Error())
+			bn.l.Warnf("get address of token %s in Binance exchange failed:(%+v), it will be considered as not supported", token.ID, err)
 			return ethereum.Address{}, false
 		}
 		return addrs.Get(token.ID)

@@ -26,7 +26,7 @@ func (s *S3Archive) UploadFile(bucketName string, awsfolderPath string, filePath
 	file, err := os.Open(filePath)
 	defer func() {
 		if cErr := file.Close(); cErr != nil {
-			s.l.Warnf("File close error: %s", cErr.Error())
+			s.l.Warnf("File close error: %+v", cErr)
 		}
 	}()
 	if err != nil {
