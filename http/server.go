@@ -105,7 +105,7 @@ func eligible(ups, allowedPerms []Permission) bool {
 func (s *Server) Authenticated(c *gin.Context, requiredParams []string, perms []Permission) (url.Values, bool) {
 	err := c.Request.ParseForm()
 	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Malformed request package: %v", err)))
+		httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Malformed request package: %+v", err)))
 		return c.Request.Form, false
 	}
 

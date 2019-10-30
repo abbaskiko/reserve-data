@@ -11,6 +11,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	pe "github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
@@ -760,11 +761,11 @@ func (h *Huobi) WithdrawStatus(
 	withdrawID, _ := strconv.ParseUint(id, 10, 64)
 	tokens, err := h.setting.GetAllTokens()
 	if err != nil {
-		return "", "", fmt.Errorf("huobi Can't get list of token from setting (%s)", err)
+		return "", "", pe.Wrap(err, "huobi Can't get list of token from setting")
 	}
 	withdraws, err := h.interf.WithdrawHistory(tokens)
 	if err != nil {
-		return "", "", fmt.Errorf("can't get withdraw history from huobi: %v", err)
+		return "", "", pe.Wrap(err, "can't get withdraw history from huobi")
 	}
 	h.l.Infof("Huobi Withdrawal id: %d", withdrawID)
 	for _, withdraw := range withdraws.Data {

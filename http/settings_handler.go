@@ -9,6 +9,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
+	pe "github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
@@ -407,7 +408,7 @@ func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 	token := tokenUpdate.Token
 	if !token.IsETH() { // TokenIndices doesn't contains ETH
 		if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
-			return fmt.Errorf("cannot get token indice from smart contract (%+v) ", uErr)
+			return pe.Wrap(uErr, "cannot get token indice from smart contract (%+v) ")
 		}
 	}
 	if tokenUpdate.Exchanges == nil {
