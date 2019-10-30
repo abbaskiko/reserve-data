@@ -630,7 +630,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 					common.GetTimestamp(),
 				)
 				if err = h.storage.StoreIntermediateTx(id, data); err != nil {
-					h.l.Warnf("Huobi Trying to store intermediate tx to huobi storage, error: %s. Ignore it and try later", err.Error())
+					h.l.Warnf("Huobi Trying to store intermediate tx to huobi storage, error: %+v. Ignore it and try later", err)
 					return "", nil
 				}
 				return exchangeStatusDone, nil
@@ -743,7 +743,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash, currency string, se
 				common.GetTimestamp(),
 			)
 			if err = h.storage.StoreIntermediateTx(id, data); err != nil {
-				h.l.Infof("Huobi Trying to store intermediate tx failed, error: %s. Ignore it and treat it like it is still pending", err.Error())
+				h.l.Infof("Huobi Trying to store intermediate tx failed, error: %+v. Ignore it and treat it like it is still pending", err)
 				return "", nil
 			}
 			h.l.Infof("Huobi The tx is not found for over 15mins, it is considered as lost and the deposit failed")
@@ -764,7 +764,7 @@ func (h *Huobi) WithdrawStatus(
 	}
 	withdraws, err := h.interf.WithdrawHistory(tokens)
 	if err != nil {
-		return "", "", fmt.Errorf("can't get withdraw history from huobi: %s", err.Error())
+		return "", "", fmt.Errorf("can't get withdraw history from huobi: %v", err)
 	}
 	h.l.Infof("Huobi Withdrawal id: %d", withdrawID)
 	for _, withdraw := range withdraws.Data {

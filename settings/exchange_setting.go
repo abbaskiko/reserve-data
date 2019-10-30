@@ -76,7 +76,7 @@ func (s *Settings) savePreconfigFee(exFeeConfig map[string]common.ExchangeFees) 
 		}
 		//Check if the current database has a record for such exchange
 		if _, err := s.Exchange.Storage.GetFee(exName); err != nil {
-			s.l.Warnf("Exchange %s is in KYBER_EXCHANGES but can't load fee in Database (%s). atempt to load it from config file", exName.String(), err.Error())
+			s.l.Warnf("Exchange %s is in KYBER_EXCHANGES but can't load fee in Database (%+v). atempt to load it from config file", exName.String(), err)
 			//Check if the config file has config for such exchange
 			exFee, ok := exFeeConfig[ex]
 			if !ok {

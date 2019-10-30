@@ -394,12 +394,12 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	)
 	minedNonce, err = rc.blockchain.SetRateMinedNonce()
 	if err != nil {
-		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%s)", err.Error())
+		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
 	}
 	oldNonce, initPrice, count, err = rc.pendingSetrateInfo(minedNonce)
 	rc.l.Infof("old nonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
 	if err != nil {
-		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%s). Please try later", err.Error())
+		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%+v). Please try later", err)
 	}
 	if oldNonce != nil {
 		newPrice := calculateNewGasPrice(initPrice, count)

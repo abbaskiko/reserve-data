@@ -54,7 +54,7 @@ var errNotCached = errors.New("sender not cached")
 func setSenderFromServer(tx *types.Transaction, addr ethereum.Address, block ethereum.Hash) {
 	// Use types.Sender for side-effect to store our signer into the cache.
 	if _, err := types.Sender(&senderFromServer{addr, block}, tx); err != nil {
-		zap.S().Warnf("Type sender error: %s", err.Error())
+		zap.S().Warnf("Type sender error: %+v", err)
 	}
 }
 

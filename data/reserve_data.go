@@ -309,7 +309,7 @@ func (rd ReserveData) ControlAuthDataSize() error {
 
 	defer func() {
 		if rErr := os.RemoveAll(tmpDir); rErr != nil {
-			rd.l.Warnf("failed to cleanup temp dir: %s, err : %s", tmpDir, rErr.Error())
+			rd.l.Warnf("failed to cleanup temp dir: %s, err : %+v", tmpDir, rErr)
 		}
 	}()
 
