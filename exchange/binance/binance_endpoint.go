@@ -375,6 +375,7 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair common.TokenPair) (exchange.Binaor
 	return result, nil
 }
 
+// GetDepositAddress get deposit address of token from binance
 func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress, error) {
 	result := exchange.Binadepositaddress{}
 	respBody, err := ep.GetResponse(
@@ -394,6 +395,8 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress
 			err = errors.New(result.Msg)
 		}
 	}
+	// log response for debugging
+	ep.l.Errorw("failed to get deposit address from Binance", "asset", asset, "response", respBody)
 	return result, err
 }
 
