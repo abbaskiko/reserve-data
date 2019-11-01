@@ -18,9 +18,27 @@ func main() {
 	flag.StringVar(&settingDB, "setting-db", "settings.db", "path to setting db file")
 	flag.StringVar(&token, "token", "", "token to unlist")
 	flag.StringVar(&exchanges, "exchanges", "binance,huobi,stable_exchange", "a list of exchanges to unlist")
+
 	flag.Parse()
+
 	if token == "" {
 		log.Println("need a token to process")
+		bs, err := storage.NewBoltSettingStorage(settingDB)
+		if err != nil {
+			log.Panicln(err)
+		}
+		tokens, err := bs.GetAllTokens()
+		if err != nil {
+			log.Panicln(err)
+		}
+		log.Println("follow is list of all NOT internal token, can consider to be unlist")
+		log.Printf("ID\tName\tAddress\tIsActive\n")
+		for _, tk := range tokens {
+			if !tk.Internal {
+				log.Printf("%s\t%s\t%s\t%v\n", tk.ID, tk.Name, tk.Address, tk.Active)
+			}
+		}
+		return
 	}
 	var err error
 	var db *bolt.DB
