@@ -389,6 +389,8 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
+			// log response for debugging
+			ep.l.Errorw("failed to get deposit address from Binance", "asset", asset, "response", respBody)
 			return result, err
 		}
 		if !result.Success {
