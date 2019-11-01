@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetDepositAddress(t *testing.T) {
-	// t.Skip()                                     // skip as external test
+	t.Skip()     // skip as external test
 	key := ""    // enter only once for test
 	secret := "" // enter only once for test
 	signer := NewSigner(key, secret)
