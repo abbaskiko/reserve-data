@@ -15,8 +15,11 @@ func TestGetDepositAddress(t *testing.T) {
 	interf := NewRealInterface()
 	ep := NewHuobiEndpoint(*signer, interf)
 
-	depositAddress, err := ep.GetDepositAddress("knc")
-	assert.NoError(t, err)
+	listTokens := []string{"LBA", "ZIL", "DTA", "EKO", "POLY", "CVC", "BIX"}
+	for _, token := range listTokens {
+		depositAddress, err := ep.GetDepositAddress(token)
+		assert.NoError(t, err)
 
-	log.Printf("deposit address: %+v", depositAddress.Data)
+		log.Printf("deposit address %s: %+v", token, depositAddress.Data)
+	}
 }

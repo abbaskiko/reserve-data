@@ -354,12 +354,15 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.HuobiDepositAddres
 	)
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
+			ep.l.Errorw("failed to get deposit address from Huobi", "token", asset, "response", string(respBody))
 			return result, err
 		}
 		if result.Code != 200 {
 			err = fmt.Errorf("get Huobi deposit address failed: %s", result.Message)
 		}
 	}
+	// log response for debugging
+	ep.l.Errorw("failed to get deposit address from Huobi", "token", asset, "response", string(respBody))
 	return result, err
 }
 
