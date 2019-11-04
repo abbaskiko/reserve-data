@@ -21,10 +21,6 @@ import (
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
-const (
-	huobiDepositEndpoint = "https://www.hbg.com/-/x/pro/"
-)
-
 //Endpoint endpoint object
 type Endpoint struct {
 	signer Signer
@@ -353,13 +349,14 @@ func (ep *Endpoint) GetAccountTradeHistory(
 	return result, err
 }
 
+// GetDepositAddress return deposit address
 func (ep *Endpoint) GetDepositAddress(asset string) (exchange.HuobiDepositAddress, error) {
 	result := exchange.HuobiDepositAddress{}
 	respBody, err := ep.GetResponse(
 		"GET",
-		huobiDepositEndpoint+"v1/dw/deposit-virtual/addresses",
+		ep.interf.AuthenticatedEndpoint()+"/v2/account/deposit/address",
 		map[string]string{
-			"currency": asset,
+			"currency": strings.ToLower(asset),
 		},
 		true,
 	)
@@ -367,8 +364,8 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.HuobiDepositAddres
 		if err = json.Unmarshal(respBody, &result); err != nil {
 			return result, err
 		}
-		if !result.Success {
-			err = fmt.Errorf("get Huobi deposit address failed: %s", result.Reason)
+		if result.Code != 200 {
+			err = fmt.Errorf("get Huobi deposit address failed: %s", result.Message)
 		}
 	}
 	return result, err
