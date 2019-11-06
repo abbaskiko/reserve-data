@@ -487,9 +487,9 @@ func (s *Storage) createAsset(
 		}
 	}
 	// remove old feed weigt
-	if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(); err != nil {
+	if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(assetID); err != nil {
 		if err != sql.ErrNoRows {
-			return assetID, fmt.Errorf("failed to remove old feed weight")
+			return assetID, fmt.Errorf("failed to remove old feed weight: %s", err.Error())
 		}
 	}
 
@@ -1043,9 +1043,9 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 	}
 
 	// remove old feed weigt
-	if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(); err != nil {
+	if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(uo.AssetID); err != nil {
 		if err != sql.ErrNoRows {
-			return fmt.Errorf("failed to remove old feed weight")
+			return fmt.Errorf("failed to remove old feed weight: %s", err.Error())
 		}
 	}
 	// create new feed weights
