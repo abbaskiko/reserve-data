@@ -486,6 +486,12 @@ func (s *Storage) createAsset(
 			s.l.Infow("asset trading by created", "id", atpID)
 		}
 	}
+	// remove old feed weigt
+	if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(); err != nil {
+		if err != sql.ErrNoRows {
+			return assetID, fmt.Errorf("failed to remove old feed weight")
+		}
+	}
 
 	// create new feed weights
 	for feed, weight := range feedWeight {
@@ -1034,6 +1040,33 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 		}
 
 		return fmt.Errorf("failed to update asset err=%s", pErr)
+	}
+
+	// remove old feed weigt
+	if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(); err != nil {
+		if err != sql.ErrNoRows {
+			return fmt.Errorf("failed to remove old feed weight")
+		}
+	}
+	// create new feed weights
+	for feed, weight := range uo.FeedWeight {
+		var (
+			feedWeightID uint64
+		)
+		if err := tx.NamedStmt(s.stmts.newFeedWeight).Get(&feedWeightID,
+			struct {
+				AssetID uint64  `db:"asset_id"`
+				Feed    string  `db:"feed"`
+				Weight  float64 `db:"weight"`
+			}{
+				AssetID: uo.AssetID,
+				Feed:    feed,
+				Weight:  weight,
+			}); err != nil {
+			return fmt.Errorf("failed to update feed weight for asset %d, feed %s, weight %f, err=%v",
+				uo.AssetID, feed, weight, err)
+		}
+		s.l.Infow("feed weight created", "id", feedWeightID)
 	}
 	return nil
 }

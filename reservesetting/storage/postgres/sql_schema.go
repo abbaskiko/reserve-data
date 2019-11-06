@@ -210,20 +210,6 @@ CREATE TABLE IF NOT EXISTS stable_token_params_control
 );
 
 
-CREATE OR REPLACE FUNCTION new_feed_weight(_asset_id feed_weight.asset_id%TYPE,
-                                           _feed feed_weight.feed%TYPE,
-                                           _weight feed_weight.weight%TYPE)
-    RETURNS int AS
-$$
-DECLARE
-    _id feed_weight.id%TYPE;
-BEGIN
-    DELETE FROM feed_weight;
-    INSERT INTO feed_weight(asset_id, feed, weight) VALUES (_asset_id, _feed, _weight) RETURNING id INTO _id;
-    RETURN _id;
-END
-
-$$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION new_stable_token_params_control(_data stable_token_params_control.data%TYPE)
     RETURNS int AS
