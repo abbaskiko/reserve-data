@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -105,7 +106,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 			RebalanceThreshold: 1.0,
 			Reserve:            1.0,
 			Total:              100.0,
-		}, nil)
+		}, nil, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -284,6 +285,174 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
 				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
 			},
+		},
+		{
+			msg:      "create asset with feed weight",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAsset,
+						Data: common.CreateAssetEntry{
+							Symbol:    "OMG",
+							Name:      "Omisego",
+							Address:   eth.HexToAddress("0xd26114cd6ee289accf82350c8d8487fedb8a0c07"),
+							Decimals:  18,
+							SetRate:   common.BTCFeed,
+							IsQuote:   true,
+							Rebalance: true,
+							PWI: &common.AssetPWI{
+								Ask: common.PWIEquation{
+									A:                   234,
+									B:                   23,
+									C:                   12,
+									MinMinSpread:        234,
+									PriceMultiplyFactor: 123,
+								},
+								Bid: common.PWIEquation{
+									A:                   23,
+									B:                   234,
+									C:                   234,
+									MinMinSpread:        234,
+									PriceMultiplyFactor: 234,
+								},
+							},
+							Target: &common.AssetTarget{
+								Total:              12,
+								Reserve:            24,
+								TransferThreshold:  34,
+								RebalanceThreshold: 1,
+							},
+							Exchanges: []common.AssetExchange{
+								{
+									Symbol:      "OMG",
+									ExchangeID:  binance,
+									MinDeposit:  34,
+									WithdrawFee: 34,
+									TargetRatio: 34,
+									TradingPairs: []common.TradingPair{
+										{
+											Quote: 1,
+										},
+									},
+									DepositAddress:    eth.HexToAddress("0x3f105f78359ad80562b4c34296a87b8e66c584c5"),
+									TargetRecommended: 234,
+								},
+							},
+							RebalanceQuadratic: &common.RebalanceQuadratic{
+								A: 12,
+								B: 34,
+								C: 24,
+							},
+							StableParam: &common.StableParam{
+								AskSpread: expectedAskSpread,
+							},
+							FeedWeight: common.FeedWeight{
+								"GeminiBTC":   3.0,
+								"CoinbaseBTC": 1.2,
+							},
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm setting change with feed weight",
+			endpoint: fmt.Sprint(settingChangePath, "/", 3),
+			method:   http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				asset, err := s.GetAssetBySymbol("OMG")
+				require.NoError(t, err)
+				asset, err = s.GetAsset(asset.ID)
+				log.Printf("assets: %s", resp.Body)
+				require.NoError(t, err)
+				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
+				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+			},
+		},
+		{
+			msg:      "get asset",
+			endpoint: fmt.Sprint("/v3/asset"),
+			method:   http.MethodGet,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				log.Printf("response: %s", resp.Body)
+				httputil.ExpectSuccess(t, resp)
+			},
+		},
+		{
+			msg:      "create asset with feed weight failed",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeCreateAsset,
+						Data: common.CreateAssetEntry{
+							Symbol:    "SNT",
+							Name:      "Status",
+							Address:   eth.HexToAddress("0x744d70fdbe2ba4cf95131626614a1763df805b9e"),
+							Decimals:  18,
+							SetRate:   common.BTCFeed,
+							IsQuote:   true,
+							Rebalance: true,
+							PWI: &common.AssetPWI{
+								Ask: common.PWIEquation{
+									A:                   234,
+									B:                   23,
+									C:                   12,
+									MinMinSpread:        234,
+									PriceMultiplyFactor: 123,
+								},
+								Bid: common.PWIEquation{
+									A:                   23,
+									B:                   234,
+									C:                   234,
+									MinMinSpread:        234,
+									PriceMultiplyFactor: 234,
+								},
+							},
+							Target: &common.AssetTarget{
+								Total:              12,
+								Reserve:            24,
+								TransferThreshold:  34,
+								RebalanceThreshold: 1,
+							},
+							Exchanges: []common.AssetExchange{
+								{
+									Symbol:      "SNT",
+									ExchangeID:  binance,
+									MinDeposit:  34,
+									WithdrawFee: 34,
+									TargetRatio: 34,
+									TradingPairs: []common.TradingPair{
+										{
+											Quote: 1,
+										},
+									},
+									DepositAddress:    eth.HexToAddress("0x3f105f78359ad80562b4c34296a87b8e66c584c5"),
+									TargetRecommended: 234,
+								},
+							},
+							RebalanceQuadratic: &common.RebalanceQuadratic{
+								A: 12,
+								B: 34,
+								C: 24,
+							},
+							StableParam: &common.StableParam{
+								AskSpread: expectedAskSpread,
+							},
+							FeedWeight: common.FeedWeight{
+								"CoinBTC":   1.2,
+								"GeminiBTC": 3.0,
+							},
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectFailure,
 		},
 	}
 

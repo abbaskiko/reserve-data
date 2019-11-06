@@ -21,6 +21,8 @@ type preparedStmts struct {
 	updateAssetExchange *sqlx.NamedStmt
 	deleteAssetExchange *sqlx.Stmt
 	newTradingPair      *sqlx.NamedStmt
+	newFeedWeight       *sqlx.NamedStmt
+	getFeedWeight       *sqlx.Stmt
 
 	getAsset                 *sqlx.Stmt
 	getAssetBySymbol         *sqlx.Stmt
@@ -82,6 +84,22 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
+	const newFeedWeightQuery = `SELECT new_feed_weight 
+									FROM new_feed_weight(:asset_id,
+									                      :feed,
+									                      :weight)`
+	newFeedWeight, err := db.PrepareNamed(newFeedWeightQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to prepare newTradingPair")
+	}
+
+	const getFeedWeightQuery = `SELECT id, asset_id, feed, weight FROM feed_weight
+								WHERE asset_id = coalesce($1, asset_id)`
+	getFeedWeight, err := db.Preparex(getFeedWeightQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	const getMinNotionalQuery = `SELECT min_notional
 									FROM trading_pairs
 									WHERE exchange_id = $1
@@ -131,6 +149,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &preparedStmts{
 		getExchanges:        getExchanges,
 		getExchange:         getExchange,
@@ -140,6 +159,8 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		newAssetExchange:    newAssetExchange,
 		updateAssetExchange: updateAssetExchange,
 		deleteAssetExchange: deleteAssetExchangeStmt,
+		newFeedWeight:       newFeedWeight,
+		getFeedWeight:       getFeedWeight,
 
 		newTradingPair:  tradingPairStmts.newStmt,
 		newTradingBy:    newTradingBy,

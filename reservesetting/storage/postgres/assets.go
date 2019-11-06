@@ -72,6 +72,7 @@ func (s *Storage) CreateAsset(
 	exchanges []common.AssetExchange,
 	target *common.AssetTarget,
 	stableParam *common.StableParam,
+	feedWeight common.FeedWeight,
 ) (uint64, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -80,7 +81,7 @@ func (s *Storage) CreateAsset(
 	defer pgutil.RollbackUnlessCommitted(tx)
 
 	id, err := s.createAsset(tx, symbol, name, address, decimals, transferable,
-		setRate, rebalance, isQuote, pwi, rb, exchanges, target, stableParam)
+		setRate, rebalance, isQuote, pwi, rb, exchanges, target, stableParam, feedWeight)
 	if err != nil {
 		return 0, err
 	}
@@ -261,6 +262,7 @@ func (s *Storage) createAsset(
 	exchanges []common.AssetExchange,
 	target *common.AssetTarget,
 	stableParam *common.StableParam,
+	feedWeight common.FeedWeight,
 ) (uint64, error) {
 	// create new asset
 	var assetID uint64
@@ -485,6 +487,27 @@ func (s *Storage) createAsset(
 		}
 	}
 
+	// create new feed weights
+	for feed, weight := range feedWeight {
+		var (
+			feedWeightID uint64
+		)
+		if err := tx.NamedStmt(s.stmts.newFeedWeight).Get(&feedWeightID,
+			struct {
+				AssetID uint64  `db:"asset_id"`
+				Feed    string  `db:"feed"`
+				Weight  float64 `db:"weight"`
+			}{
+				AssetID: assetID,
+				Feed:    feed,
+				Weight:  weight,
+			}); err != nil {
+			return assetID, fmt.Errorf("failed to create feed weight for asset %d, feed %s, weight %f, err=%v",
+				assetID, feed, weight, err)
+		}
+		s.l.Infow("feed weight created", "id", feedWeightID)
+	}
+
 	return assetID, nil
 }
 
@@ -673,12 +696,20 @@ func toTradingPairMap(tps []tradingPairDB) map[uint64]tradingPairDB {
 	return res
 }
 
+type feedWeightDB struct {
+	ID      uint64  `db:"id"`
+	AssetID uint64  `db:"asset_id"`
+	Feed    string  `db:"feed"`
+	Weight  float64 `db:"weight"`
+}
+
 func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	var (
 		allAssetDBs       []assetDB
 		allAssetExchanges []assetExchangeDB
 		allTradingPairs   []tradingPairDB
 		allTradingBy      []tradingByDB
+		allFeedWeights    []feedWeightDB
 		results           []common.Asset
 	)
 
@@ -697,6 +728,10 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 	}
 
 	if err := tx.Stmtx(s.stmts.getTradingPair).Select(&allTradingPairs, nil); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Stmtx(s.stmts.getFeedWeight).Select(&allFeedWeights, nil); err != nil {
 		return nil, err
 	}
 
@@ -725,6 +760,13 @@ func (s *Storage) getAssets(transferable *bool) ([]common.Asset, error) {
 				result.Exchanges = append(result.Exchanges, exchange)
 			}
 		}
+		feeds := make(map[string]float64)
+		for _, feed := range allFeedWeights {
+			if feed.AssetID == assetDBResult.ID {
+				feeds[feed.Feed] = feed.Weight
+			}
+		}
+		result.FeedWeight = feeds
 
 		results = append(results, result)
 	}
@@ -739,6 +781,7 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 		assetExchangeResults []assetExchangeDB
 		tradingPairResults   []tradingPairDB
 		exchanges            []common.AssetExchange
+		feedWeightResult     []feedWeightDB
 	)
 
 	tx, err := s.db.Beginx()
@@ -769,6 +812,15 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 		}
 	}
 
+	// get feed weight
+	if err := tx.Stmtx(s.stmts.getFeedWeight).Select(&feedWeightResult, id); err != nil {
+		return common.Asset{}, fmt.Errorf("failed to get feed weight for asset: %d, error: %s", id, err.Error())
+	}
+	feeds := make(map[string]float64)
+	for _, feed := range feedWeightResult {
+		feeds[feed.Feed] = feed.Weight
+	}
+
 	s.l.Infow("getting asset", "id", id)
 	err = tx.Stmtx(s.stmts.getAsset).Get(&assetDBResult, id, nil)
 	switch err {
@@ -780,6 +832,7 @@ func (s *Storage) GetAsset(id uint64) (common.Asset, error) {
 			return common.Asset{}, fmt.Errorf("invalid database record for asset id=%d err=%s", assetDBResult.ID, err.Error())
 		}
 		result.Exchanges = exchanges
+		result.FeedWeight = feeds
 		return result, nil
 	default:
 		return common.Asset{}, fmt.Errorf("failed to get asset from database id=%d err=%s", id, err.Error())

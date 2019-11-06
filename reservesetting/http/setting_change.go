@@ -11,6 +11,7 @@ import (
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/world"
 )
 
 func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType common.ChangeType) error {
@@ -429,6 +430,32 @@ func getAssetExchange(assets []common.Asset, assetID, exchangeID uint64) (common
 	return common.AssetExchange{}, fmt.Errorf("AssetExchange not found, asset=%d exchange=%d", assetID, exchangeID)
 }
 
+func feedWeightExist(feed string, feeds []string) bool {
+	for _, v := range feeds {
+		if v == feed {
+			return true
+		}
+	}
+	return false
+}
+
+func checkFeedWeight(setrate common.SetRate, feedWeight common.FeedWeight) error {
+	if setrate == common.BTCFeed {
+		for k := range feedWeight {
+			if !feedWeightExist(k, world.BTCFeeds) {
+				return fmt.Errorf("%s feed is not supported", k)
+			}
+		}
+	} else {
+		for k := range feedWeight {
+			if !feedWeightExist(k, world.USDFeeds) {
+				return fmt.Errorf("%s feed is not supported", k)
+			}
+		}
+	}
+	return nil
+}
+
 func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) error {
 	if createEntry.Transferable {
 		if s.blockchain == nil {
@@ -448,6 +475,12 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 
 	if createEntry.SetRate != common.SetRateNotSet && createEntry.PWI == nil {
 		return common.ErrPWIMissing
+	}
+
+	if createEntry.SetRate == common.GoldFeed || createEntry.SetRate == common.BTCFeed {
+		if err := checkFeedWeight(createEntry.SetRate, createEntry.FeedWeight); err != nil {
+			return err
+		}
 	}
 
 	for _, exchange := range createEntry.Exchanges {
