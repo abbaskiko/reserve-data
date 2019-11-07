@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -145,6 +144,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	server := NewServer(s, "", supportedExchanges, nil, "")
 
 	emptyFeedWeight := make(common.FeedWeight)
+	btcFeed := common.BTCFeed
 
 	var tests = []testCase{
 		{
@@ -369,7 +369,6 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				asset, err := s.GetAssetBySymbol("OMG")
 				require.NoError(t, err)
 				asset, err = s.GetAsset(asset.ID)
-				log.Printf("assets: %s", resp.Body)
 				require.NoError(t, err)
 				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
 				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
@@ -385,6 +384,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 					{
 						Type: common.ChangeTypeUpdateAsset,
 						Data: common.UpdateAssetEntry{
+							SetRate: &btcFeed,
 							AssetID: 6,
 							FeedWeight: &common.FeedWeight{
 								"GeminiBTC": 3.0,
