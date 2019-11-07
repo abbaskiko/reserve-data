@@ -487,6 +487,13 @@ func (s *Storage) createAsset(
 		}
 	}
 
+	if err := s.createNewFeedWeight(tx, assetID, feedWeight); err != nil {
+		return assetID, err
+	}
+	return assetID, nil
+}
+
+func (s Storage) createNewFeedWeight(tx *sqlx.Tx, assetID uint64, feedWeight *common.FeedWeight) error {
 	// create new feed weights
 	if feedWeight != nil {
 		for feed, weight := range *feedWeight {
@@ -503,14 +510,13 @@ func (s *Storage) createAsset(
 					Feed:    feed,
 					Weight:  weight,
 				}); err != nil {
-				return assetID, fmt.Errorf("failed to create feed weight for asset %d, feed %s, weight %f, err=%v",
+				return fmt.Errorf("failed to create feed weight for asset %d, feed %s, weight %f, err=%v",
 					assetID, feed, weight, err)
 			}
 			s.l.Infow("feed weight created", "id", feedWeightID)
 		}
 	}
-
-	return assetID, nil
+	return nil
 }
 
 type tradingPairDB struct {
@@ -1041,35 +1047,19 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 
 		return fmt.Errorf("failed to update asset err=%s", pErr)
 	}
-
+	// remove old feed weight
 	if uo.FeedWeight != nil {
-		// remove old feed weight
 		if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(uo.AssetID); err != nil {
 			if err != sql.ErrNoRows {
 				return fmt.Errorf("failed to remove old feed weight: %s", err.Error())
 			}
 		}
-		// create new feed weights
-		for feed, weight := range *uo.FeedWeight {
-			var (
-				feedWeightID uint64
-			)
-			if err := tx.NamedStmt(s.stmts.newFeedWeight).Get(&feedWeightID,
-				struct {
-					AssetID uint64  `db:"asset_id"`
-					Feed    string  `db:"feed"`
-					Weight  float64 `db:"weight"`
-				}{
-					AssetID: uo.AssetID,
-					Feed:    feed,
-					Weight:  weight,
-				}); err != nil {
-				return fmt.Errorf("failed to update feed weight for asset %d, feed %s, weight %f, err=%v",
-					uo.AssetID, feed, weight, err)
-			}
-			s.l.Infow("feed weight created", "id", feedWeightID)
-		}
 	}
+
+	if err := s.createNewFeedWeight(tx, uo.AssetID, uo.FeedWeight); err != nil {
+		return err
+	}
+
 	return nil
 }
 

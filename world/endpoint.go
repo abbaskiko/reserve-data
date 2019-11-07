@@ -19,14 +19,7 @@ var (
 	}
 
 	// USDFeeds list of supported usd feeds
-	USDFeeds = []string{
-		"DGX",
-		"OneForgeETH",
-		"OneForgeUSD",
-		"GDAX",
-		"Kraken",
-		"Gemini",
-	}
+	USDFeeds = []string{}
 
 	// BTCFeeds list of supported btc feeds
 	BTCFeeds = []string{

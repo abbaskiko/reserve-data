@@ -28,6 +28,8 @@ const (
 	GoldFeed // gold_feed
 	// BTCFeed is used when asset rate is set from fetching Bitcoin prices.
 	BTCFeed // btc_feed
+	// USDFeed is used when asset rate is set from fetching usd prices.
+	USDFeed // usd_feed
 )
 
 var validSetRateTypes = map[string]SetRate{
@@ -35,6 +37,7 @@ var validSetRateTypes = map[string]SetRate{
 	ExchangeFeed.String():  ExchangeFeed,
 	GoldFeed.String():      GoldFeed,
 	BTCFeed.String():       BTCFeed,
+	USDFeed.String():       USDFeed,
 }
 
 // SetRateFromString returns the SetRate value from its string presentation, if exists.

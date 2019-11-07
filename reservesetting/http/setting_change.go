@@ -477,7 +477,7 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 		return common.ErrPWIMissing
 	}
 
-	if createEntry.SetRate == common.GoldFeed || createEntry.SetRate == common.BTCFeed {
+	if createEntry.SetRate == common.USDFeed || createEntry.SetRate == common.BTCFeed {
 		if err := checkFeedWeight(createEntry.SetRate, *createEntry.FeedWeight); err != nil {
 			return err
 		}
