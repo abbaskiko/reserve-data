@@ -144,6 +144,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 
 	server := NewServer(s, "", supportedExchanges, nil, "")
 
+	emptyFeedWeight := make(common.FeedWeight)
+
 	var tests = []testCase{
 		{
 			msg:      "create asset exchange",
@@ -348,7 +350,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
 							},
-							FeedWeight: common.FeedWeight{
+							FeedWeight: &common.FeedWeight{
 								"GeminiBTC":   3.0,
 								"CoinbaseBTC": 1.2,
 							},
@@ -371,15 +373,105 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
 				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+				assert.Equal(t, 2, len(*asset.FeedWeight))
 			},
 		},
 		{
-			msg:      "get asset",
-			endpoint: fmt.Sprint("/v3/asset"),
-			method:   http.MethodGet,
+			msg:      "update asset with feed weight",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID: 6,
+							FeedWeight: &common.FeedWeight{
+								"GeminiBTC": 3.0,
+							},
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm update change with feed weight",
+			endpoint: fmt.Sprint(settingChangePath, "/", 4),
+			method:   http.MethodPut,
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				log.Printf("response: %s", resp.Body)
 				httputil.ExpectSuccess(t, resp)
+				asset, err := s.GetAssetBySymbol("OMG")
+				require.NoError(t, err)
+				asset, err = s.GetAsset(asset.ID)
+				require.NoError(t, err)
+				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
+				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+				assert.Equal(t, 1, len(*asset.FeedWeight))
+			},
+		},
+		{
+			msg:      "update asset with ignoring feed weight",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID: 6,
+							IsQuote: common.BoolPointer(false),
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm update change with ignoring feed weight",
+			endpoint: fmt.Sprint(settingChangePath, "/", 5),
+			method:   http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				asset, err := s.GetAssetBySymbol("OMG")
+				require.NoError(t, err)
+				asset, err = s.GetAsset(asset.ID)
+				require.NoError(t, err)
+				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
+				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+				assert.Equal(t, 1, len(*asset.FeedWeight))
+			},
+		},
+		{
+			msg:      "update asset remove feed weight",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:    6,
+							FeedWeight: &emptyFeedWeight,
+						},
+					},
+				},
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm update change remove feed weight",
+			endpoint: fmt.Sprint(settingChangePath, "/", 6),
+			method:   http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				asset, err := s.GetAssetBySymbol("OMG")
+				require.NoError(t, err)
+				asset, err = s.GetAsset(asset.ID)
+				require.NoError(t, err)
+				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
+				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+				assert.Equal(t, 0, len(*asset.FeedWeight))
 			},
 		},
 		{
@@ -444,7 +536,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
 							},
-							FeedWeight: common.FeedWeight{
+							FeedWeight: &common.FeedWeight{
 								"CoinBTC":   1.2,
 								"GeminiBTC": 3.0,
 							},
