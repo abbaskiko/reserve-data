@@ -346,10 +346,8 @@ func (s *Server) checkUpdateAssetParams(updateEntry common.UpdateAssetEntry) err
 		}
 	}
 
-	if updateEntry.SetRate != nil && (*updateEntry.SetRate == common.USDFeed || *updateEntry.SetRate == common.BTCFeed) {
-		if err := checkFeedWeight(*updateEntry.SetRate, updateEntry.FeedWeight); err != nil {
-			return err
-		}
+	if err := checkFeedWeight(updateEntry.SetRate, updateEntry.FeedWeight); err != nil {
+		return err
 	}
 	return nil
 }
@@ -445,11 +443,22 @@ func feedWeightExist(feed string, feeds []string) bool {
 	return false
 }
 
-func checkFeedWeight(setrate common.SetRate, feedWeight *common.FeedWeight) error {
+func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) error {
 	if feedWeight == nil {
 		return nil
 	}
-	if setrate == common.BTCFeed {
+
+	if setrate == nil {
+		if len(*feedWeight) == 0 {
+			return nil
+		}
+	}
+
+	if *setrate != common.BTCFeed && *setrate != common.USDFeed {
+		return fmt.Errorf("setrate type %s does not support feed weight", setrate.String())
+	}
+
+	if *setrate == common.BTCFeed {
 		for k := range *feedWeight {
 			if !feedWeightExist(k, world.BTCFeeds) {
 				return fmt.Errorf("%s feed is not supported", k)
@@ -462,6 +471,7 @@ func checkFeedWeight(setrate common.SetRate, feedWeight *common.FeedWeight) erro
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -486,10 +496,8 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 		return common.ErrPWIMissing
 	}
 
-	if createEntry.SetRate == common.USDFeed || createEntry.SetRate == common.BTCFeed {
-		if err := checkFeedWeight(createEntry.SetRate, createEntry.FeedWeight); err != nil {
-			return err
-		}
+	if err := checkFeedWeight(&createEntry.SetRate, createEntry.FeedWeight); err != nil {
+		return err
 	}
 
 	for _, exchange := range createEntry.Exchanges {
