@@ -444,26 +444,27 @@ func feedWeightExist(feed string, feeds []string) bool {
 }
 
 func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) error {
-	if setrate != nil && (*setrate == common.BTCFeed || *setrate == common.USDFeed) {
-		if feedWeight == nil {
+	// if feedWight is nil
+	if feedWeight == nil {
+		if setrate != nil && (*setrate == common.BTCFeed || *setrate == common.USDFeed) {
 			return fmt.Errorf("setrate %s is required feed weight != nil", *setrate)
 		}
-	}
-
-	if feedWeight == nil {
+		// if setrate == nil or setrate != BTCFeed and setrate != USDFeed
+		// then we don't have to check feedWeight
 		return nil
 	}
 
+	// now feedWeight != nil
 	if setrate == nil {
-		if len(*feedWeight) == 0 {
-			return nil
-		}
+		return errors.New("feed weight is not nil then setrate cannot be nil")
 	}
 
+	// feedWeight only supprot for BTCFeed and USDFeed
 	if *setrate != common.BTCFeed && *setrate != common.USDFeed {
 		return fmt.Errorf("setrate type %s does not support feed weight", setrate.String())
 	}
 
+	// check if FeedWeight is correctly supported
 	if *setrate == common.BTCFeed {
 		for k := range *feedWeight {
 			if !feedWeightExist(k, world.BTCFeeds) {
