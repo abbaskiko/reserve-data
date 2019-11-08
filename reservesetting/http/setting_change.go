@@ -449,6 +449,7 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 			return fmt.Errorf("setrate %s is required feed weight != nil", *setrate)
 		}
 	}
+
 	if feedWeight == nil {
 		return nil
 	}
