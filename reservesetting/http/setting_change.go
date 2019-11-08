@@ -455,8 +455,10 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 	}
 
 	// now feedWeight != nil
+	// it's possible to update feedWeight without specify Setrate
+	// if setrate already set with valid value in DB
 	if setrate == nil {
-		return errors.New("feed weight is not nil then setrate cannot be nil")
+		return errors.New("set FeedWeight requires specify Setrate type")
 	}
 
 	// feedWeight only support for BTCFeed and USDFeed
