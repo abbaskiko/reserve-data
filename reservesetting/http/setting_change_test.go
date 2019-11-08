@@ -451,6 +451,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 					{
 						Type: common.ChangeTypeUpdateAsset,
 						Data: common.UpdateAssetEntry{
+							SetRate:    &btcFeed,
 							AssetID:    6,
 							FeedWeight: &emptyFeedWeight,
 						},
