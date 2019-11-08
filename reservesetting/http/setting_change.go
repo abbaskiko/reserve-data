@@ -444,6 +444,11 @@ func feedWeightExist(feed string, feeds []string) bool {
 }
 
 func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) error {
+	if setrate != nil && (*setrate == common.BTCFeed || *setrate == common.USDFeed) {
+		if feedWeight == nil {
+			return fmt.Errorf("setrate %s is required feed weight != nil", *setrate)
+		}
+	}
 	if feedWeight == nil {
 		return nil
 	}
