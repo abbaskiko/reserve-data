@@ -11,6 +11,7 @@ import (
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/world"
 )
 
 func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType common.ChangeType) error {
@@ -344,6 +345,10 @@ func (s *Server) checkUpdateAssetParams(updateEntry common.UpdateAssetEntry) err
 			}
 		}
 	}
+
+	if err := checkFeedWeight(updateEntry.SetRate, updateEntry.FeedWeight); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -429,6 +434,56 @@ func getAssetExchange(assets []common.Asset, assetID, exchangeID uint64) (common
 	return common.AssetExchange{}, fmt.Errorf("AssetExchange not found, asset=%d exchange=%d", assetID, exchangeID)
 }
 
+func feedWeightExist(feed string, feeds []string) bool {
+	for _, v := range feeds {
+		if v == feed {
+			return true
+		}
+	}
+	return false
+}
+
+func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) error {
+	// if feedWeight is nil
+	if feedWeight == nil {
+		if setrate != nil && (*setrate == common.BTCFeed || *setrate == common.USDFeed) {
+			return fmt.Errorf("setrate %s is required feed weight != nil", *setrate)
+		}
+		// if setrate == nil or setrate != BTCFeed and setrate != USDFeed
+		// then we don't have to check feedWeight
+		return nil
+	}
+
+	// now feedWeight != nil
+	// it's possible to update feedWeight without specify Setrate
+	// if setrate already set with valid value in DB
+	if setrate == nil {
+		return errors.New("set FeedWeight requires specify Setrate type")
+	}
+
+	// feedWeight only support for BTCFeed and USDFeed
+	if *setrate != common.BTCFeed && *setrate != common.USDFeed {
+		return fmt.Errorf("setrate type %s does not support feed weight", setrate.String())
+	}
+
+	// check if FeedWeight is correctly supported
+	if *setrate == common.BTCFeed {
+		for k := range *feedWeight {
+			if !feedWeightExist(k, world.BTCFeeds) {
+				return fmt.Errorf("%s feed is not supported", k)
+			}
+		}
+	} else {
+		for k := range *feedWeight {
+			if !feedWeightExist(k, world.USDFeeds) {
+				return fmt.Errorf("%s feed is not supported", k)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) error {
 	if createEntry.Transferable {
 		if s.blockchain == nil {
@@ -448,6 +503,10 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 
 	if createEntry.SetRate != common.SetRateNotSet && createEntry.PWI == nil {
 		return common.ErrPWIMissing
+	}
+
+	if err := checkFeedWeight(&createEntry.SetRate, createEntry.FeedWeight); err != nil {
+		return err
 	}
 
 	for _, exchange := range createEntry.Exchanges {

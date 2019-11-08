@@ -4,9 +4,9 @@ package common
 
 import "strconv"
 
-const _SetRate_name = "not_setexchange_feedgold_feedbtc_feed"
+const _SetRate_name = "not_setexchange_feedgold_feedbtc_feedusd_feed"
 
-var _SetRate_index = [...]uint8{0, 7, 20, 29, 37}
+var _SetRate_index = [...]uint8{0, 7, 20, 29, 37, 45}
 
 func (i SetRate) String() string {
 	if i < 0 || i >= SetRate(len(_SetRate_index)-1) {

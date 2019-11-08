@@ -106,6 +106,14 @@ DO $$
 	END;
 $$;
 
+CREATE TABLE IF NOT EXISTS "feed_weight"
+(
+    id SERIAL PRIMARY KEY,
+    asset_id  INT NOT NULL REFERENCES assets (id),
+    feed      TEXT NOT NULL,
+    weight    FLOAT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS "asset_old_addresses"
 (
     id         SERIAL PRIMARY KEY,
@@ -200,6 +208,8 @@ CREATE TABLE IF NOT EXISTS stable_token_params_control
     timepoint TIMESTAMPTZ NOT NULL,
     data      JSON      NOT NULL
 );
+
+
 
 CREATE OR REPLACE FUNCTION new_stable_token_params_control(_data stable_token_params_control.data%TYPE)
     RETURNS int AS
