@@ -49,7 +49,10 @@ type Server struct {
 	blockchain     Blockchain
 	setting        Setting
 	l              *zap.SugaredLogger
-	listedTokens   []ethereum.Address
+	// listedTokens store all tokens already listed on our reserve
+	// in case any token have been delisted from dashboard, but not yet delisted from reserve
+	// we use this list and set its base rate to 0
+	listedTokens []ethereum.Address
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {

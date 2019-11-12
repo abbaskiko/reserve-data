@@ -414,6 +414,7 @@ func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 		// update listed token for server
 		listedTokens, err := s.blockchain.GetListedTokens()
 		if err != nil {
+			s.l.Errorw("failed to get listed token from blockchain", "error", err)
 			return err
 		}
 		s.listedTokens = listedTokens
