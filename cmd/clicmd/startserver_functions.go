@@ -152,12 +152,13 @@ func configLog(stdoutLog bool) io.Writer {
 		MaxAge:     0, //days
 		// Compress:   true, // disabled by default
 	}
+	var mw io.Writer
 	if stdoutLog {
-		mw := io.MultiWriter(os.Stdout, logger)
-		log.SetOutput(mw)
+		mw = io.MultiWriter(os.Stdout, logger)
 	} else {
-		log.SetOutput(logger)
+		mw = io.MultiWriter(logger)
 	}
+	log.SetOutput(mw)
 
 	c := cron.New()
 	err := c.AddFunc("@daily", func() {
@@ -169,7 +170,7 @@ func configLog(stdoutLog bool) io.Writer {
 		panic(fmt.Sprintf("error add log cron daily: %v", err))
 	}
 	c.Start()
-	return logger
+	return mw
 }
 
 func InitInterface() {
