@@ -410,6 +410,13 @@ func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 		if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
 			return pe.Wrap(uErr, "cannot get token indice from smart contract (%+v) ")
 		}
+
+		// update listed token for server
+		listedTokens, err := s.blockchain.GetListedTokens()
+		if err != nil {
+			return err
+		}
+		s.listedTokens = listedTokens
 	}
 	if tokenUpdate.Exchanges == nil {
 		return errors.New("there is no exchange setting")
@@ -421,6 +428,7 @@ func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 	if reflect.DeepEqual(emptyTarget, tokenUpdate.TargetQty) {
 		return errors.New("there is no target quantity setting or its values are all 0")
 	}
+
 	return nil
 }
 
