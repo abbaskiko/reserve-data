@@ -49,6 +49,10 @@ type Server struct {
 	blockchain     Blockchain
 	setting        Setting
 	l              *zap.SugaredLogger
+	// listedTokens store all tokens already listed on our reserve
+	// in case any token have been delisted from dashboard, but not yet delisted from reserve
+	// we use this list and set its base rate to 0
+	listedTokens []ethereum.Address
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -72,6 +76,7 @@ func getTimePoint(c *gin.Context, useDefault bool) uint64 {
 	return timepoint
 }
 
+// IsIntime check if request time is in range of 30s, otherwise the request is invalid
 func IsIntime(l *zap.SugaredLogger, nonce string) bool {
 	serverTime := common.GetTimepoint()
 	nonceInt, err := strconv.ParseInt(nonce, 10, 64)
@@ -141,6 +146,7 @@ func (s *Server) Authenticated(c *gin.Context, requiredParams []string, perms []
 	return params, false
 }
 
+// AllPricesVersion return current version all price
 func (s *Server) AllPricesVersion(c *gin.Context) {
 	s.l.Infof("Getting all prices version")
 	data, err := s.app.CurrentPriceVersion(getTimePoint(c, true))
@@ -151,6 +157,7 @@ func (s *Server) AllPricesVersion(c *gin.Context) {
 	}
 }
 
+// AllPrices return all prices of token
 func (s *Server) AllPrices(c *gin.Context) {
 	s.l.Infof("Getting all prices \n")
 	data, err := s.app.GetAllPrices(getTimePoint(c, true))
@@ -166,6 +173,7 @@ func (s *Server) AllPrices(c *gin.Context) {
 	}
 }
 
+// Price return price for a certain pair of token
 func (s *Server) Price(c *gin.Context) {
 	base := c.Param("base")
 	quote := c.Param("quote")
@@ -187,6 +195,7 @@ func (s *Server) Price(c *gin.Context) {
 	}
 }
 
+// AuthDataVersion return current version of auth data
 func (s *Server) AuthDataVersion(c *gin.Context) {
 	s.l.Infof("Getting current auth data snapshot version")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -202,6 +211,10 @@ func (s *Server) AuthDataVersion(c *gin.Context) {
 	}
 }
 
+// AuthData return authenticated data
+// include: reserve balance on blockchain
+// reserve balance on centralized exchanges
+// pending activities (set rates, buy, sell, deposit, withdraw)
 func (s *Server) AuthData(c *gin.Context) {
 	s.l.Infof("Getting current auth data snapshot \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -226,6 +239,7 @@ func (s *Server) AuthData(c *gin.Context) {
 	}
 }
 
+// GetRates return all rates
 func (s *Server) GetRates(c *gin.Context) {
 	s.l.Infof("Getting all rates")
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
@@ -241,6 +255,7 @@ func (s *Server) GetRates(c *gin.Context) {
 	}
 }
 
+// GetRate return all rates
 func (s *Server) GetRate(c *gin.Context) {
 	s.l.Infof("Getting all rates")
 	data, err := s.app.GetRate(getTimePoint(c, true))
@@ -258,7 +273,7 @@ func (s *Server) GetRate(c *gin.Context) {
 func tokenExisted(tokenAddr ethereum.Address, tokens []common.Token) bool {
 	exist := false
 	for _, token := range tokens {
-		if token.Address == tokenAddr.Hex() {
+		if ethereum.HexToAddress(token.Address) == tokenAddr {
 			exist = true
 			break
 		}
@@ -267,16 +282,11 @@ func tokenExisted(tokenAddr ethereum.Address, tokens []common.Token) bool {
 }
 
 func (s *Server) checkTokenDelisted(tokens []common.Token, bigBuys, bigSells, bigAfpMid []*big.Int) ([]common.Token, []*big.Int, []*big.Int, []*big.Int, error) {
-	listedTokens, err := s.blockchain.GetListedTokens()
-	if err != nil {
-		// error might be from node, return just for warning
-		return tokens, bigBuys, bigSells, bigAfpMid, err
-	}
-	if len(listedTokens) <= len(tokens) {
+	if len(s.listedTokens) <= len(tokens) {
 		return tokens, bigBuys, bigSells, bigAfpMid, nil
 	}
 
-	for _, tokenAddr := range listedTokens {
+	for _, tokenAddr := range s.listedTokens {
 		if !tokenExisted(tokenAddr, tokens) {
 			tokens = append(tokens, common.Token{
 				Address: tokenAddr.Hex(),
@@ -296,15 +306,11 @@ func (s *Server) SetRate(c *gin.Context) {
 	if !ok {
 		return
 	}
-	const (
-		actionFillZero = "fill_zero"
-	)
 	tokenAddrs := postForm.Get("tokens")
 	buys := postForm.Get("buys")
 	sells := postForm.Get("sells")
 	block := postForm.Get("block")
 	afpMid := postForm.Get("afp_mid")
-	absentTokenAction := postForm.Get("absent_action") // action to do if the token is missing in core, but exists in contract.
 	msgs := strings.Split(postForm.Get("msgs"), "-")
 	var tokens []common.Token
 	for _, tok := range strings.Split(tokenAddrs, "-") {
@@ -347,17 +353,9 @@ func (s *Server) SetRate(c *gin.Context) {
 		}
 		bigAfpMid = append(bigAfpMid, r)
 	}
-	switch absentTokenAction {
-	case "":
-	case actionFillZero:
-		// check if token delist from reserve backend but still exist in reserve contract
-		// then set its rate to 0
-		tokens, bigBuys, bigSells, bigAfpMid, err = s.checkTokenDelisted(tokens, bigBuys, bigSells, bigAfpMid)
-		if err != nil {
-			s.l.Warnw("failed to check delisted token", "err", err)
-		}
-	default:
-		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("absent_action %s not supported", absentTokenAction)))
+	tokens, bigBuys, bigSells, bigAfpMid, err = s.checkTokenDelisted(tokens, bigBuys, bigSells, bigAfpMid)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
@@ -369,6 +367,7 @@ func (s *Server) SetRate(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+// Trade do trade action to centralize exchanges
 func (s *Server) Trade(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"base", "quote", "amount", "rate", "type"}, []Permission{RebalancePermission})
 	if !ok {
@@ -426,6 +425,7 @@ func (s *Server) Trade(c *gin.Context) {
 	}))
 }
 
+// CancelOrder cancel an open order on exchanges
 func (s *Server) CancelOrder(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"order_id"}, []Permission{RebalancePermission})
 	if !ok {
@@ -454,6 +454,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// Withdraw withdraw token from exchanges
 func (s *Server) Withdraw(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"token", "amount"}, []Permission{RebalancePermission})
 	if !ok {
@@ -488,6 +489,7 @@ func (s *Server) Withdraw(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+// Deposit token to exchange
 func (s *Server) Deposit(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"amount", "token"}, []Permission{RebalancePermission})
 	if !ok {
@@ -522,6 +524,8 @@ func (s *Server) Deposit(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+// GetActivities return all activities record
+// in a time frame
 func (s *Server) GetActivities(c *gin.Context) {
 	s.l.Infof("Getting all activity records \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -542,6 +546,7 @@ func (s *Server) GetActivities(c *gin.Context) {
 	}
 }
 
+// StopFetcher request to stop fetcher
 func (s *Server) StopFetcher(c *gin.Context) {
 	err := s.app.Stop()
 	if err != nil {
@@ -551,6 +556,7 @@ func (s *Server) StopFetcher(c *gin.Context) {
 	}
 }
 
+// ImmediatePendingActivities return current pending activities
 func (s *Server) ImmediatePendingActivities(c *gin.Context) {
 	s.l.Infof("Getting all immediate pending activity records \n")
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
@@ -566,6 +572,7 @@ func (s *Server) ImmediatePendingActivities(c *gin.Context) {
 	}
 }
 
+// Metrics return metrics
 func (s *Server) Metrics(c *gin.Context) {
 	response := common.MetricResponse{
 		Timestamp: common.GetTimepoint(),
@@ -608,6 +615,7 @@ func (s *Server) Metrics(c *gin.Context) {
 	}))
 }
 
+// StoreMetrics store token metrics
 func (s *Server) StoreMetrics(c *gin.Context) {
 	s.l.Infof("Storing metrics")
 	postForm, ok := s.Authenticated(c, []string{"timestamp", "data"}, []Permission{RebalancePermission})
@@ -716,6 +724,7 @@ func (s *Server) GetExchangeInfo(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(exchangeInfo.GetData()))
 }
 
+// GetFee return centralized exchanges fee config
 func (s *Server) GetFee(c *gin.Context) {
 	data := map[string]common.ExchangeFees{}
 	for _, exchange := range common.SupportedExchanges {
@@ -729,6 +738,7 @@ func (s *Server) GetFee(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// GetMinDeposit return min deposit config of centralized echanges
 func (s *Server) GetMinDeposit(c *gin.Context) {
 	data := map[string]common.ExchangesMinDeposit{}
 	for _, exchange := range common.SupportedExchanges {
@@ -742,6 +752,7 @@ func (s *Server) GetMinDeposit(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// GetTradeHistory return trade history in centralized exchanges
 func (s *Server) GetTradeHistory(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
@@ -758,10 +769,12 @@ func (s *Server) GetTradeHistory(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// GetTimeServer return current time server
 func (s *Server) GetTimeServer(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(common.GetTimestamp()))
 }
 
+// GetRebalanceStatus return rebalance configuration status (enabled, disabled)
 func (s *Server) GetRebalanceStatus(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
@@ -775,6 +788,7 @@ func (s *Server) GetRebalanceStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data.Status))
 }
 
+// HoldRebalance disable rebalance - notify analytics to stop sending rebalance request
 func (s *Server) HoldRebalance(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -787,6 +801,7 @@ func (s *Server) HoldRebalance(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// EnableRebalance enable rebalance request
 func (s *Server) EnableRebalance(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -798,6 +813,7 @@ func (s *Server) EnableRebalance(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetSetrateStatus return set rate status configuration (enabled, disabled)
 func (s *Server) GetSetrateStatus(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
@@ -811,6 +827,7 @@ func (s *Server) GetSetrateStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data.Status))
 }
 
+// HoldSetrate turn setrate config into disabled
 func (s *Server) HoldSetrate(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -822,6 +839,7 @@ func (s *Server) HoldSetrate(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// EnableSetrate turn set rate configuration to enabled
 func (s *Server) EnableSetrate(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -833,6 +851,7 @@ func (s *Server) EnableSetrate(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// ValidateTimeInput validate from-to time value
 func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	fromTime, ok := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	if ok != nil {
@@ -846,6 +865,8 @@ func (s *Server) ValidateTimeInput(c *gin.Context) (uint64, uint64, bool) {
 	return fromTime, toTime, true
 }
 
+// GetExchangesStatus return exchange status (enabled, disabled)
+// analytics component will only request for enabled exchanges
 func (s *Server) GetExchangesStatus(c *gin.Context) {
 	data, err := s.app.GetExchangeStatus()
 	if err != nil {
@@ -855,6 +876,7 @@ func (s *Server) GetExchangesStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// UpdateExchangeStatus update exchange status (enable, disable)
 func (s *Server) UpdateExchangeStatus(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"exchange", "status", "timestamp"}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -884,6 +906,7 @@ func (s *Server) UpdateExchangeStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// ExchangeNotification get exchange notification config
 func (s *Server) ExchangeNotification(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{
 		"exchange", "action", "token", "fromTime", "toTime", "isWarning"}, []Permission{RebalancePermission})
@@ -907,6 +930,7 @@ func (s *Server) ExchangeNotification(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetNotifications get notifications
 func (s *Server) GetNotifications(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
@@ -920,6 +944,7 @@ func (s *Server) GetNotifications(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// SetStableTokenParams set stable token params
 func (s *Server) SetStableTokenParams(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfigurePermission})
 	if !ok {
@@ -938,6 +963,7 @@ func (s *Server) SetStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// ConfirmStableTokenParams confirm change to stable token params
 func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -956,6 +982,7 @@ func (s *Server) ConfirmStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// RejectStableTokenParams reject request changes stable token params
 func (s *Server) RejectStableTokenParams(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -969,6 +996,7 @@ func (s *Server) RejectStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetPendingStableTokenParams return pending change stable token params
 func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
 	if !ok {
@@ -983,6 +1011,7 @@ func (s *Server) GetPendingStableTokenParams(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// GetStableTokenParams return stable token params
 func (s *Server) GetStableTokenParams(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
 	if !ok {
@@ -1030,6 +1059,7 @@ func (s *Server) SetTargetQtyV2(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetPendingTargetQtyV2 get pending change target quantity
 func (s *Server) GetPendingTargetQtyV2(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
 	if !ok {
@@ -1044,6 +1074,7 @@ func (s *Server) GetPendingTargetQtyV2(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
 
+// ConfirmTargetQtyV2 confirm change target quantity
 func (s *Server) ConfirmTargetQtyV2(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -1061,6 +1092,7 @@ func (s *Server) ConfirmTargetQtyV2(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// CancelTargetQtyV2 cancel update target quantity request
 func (s *Server) CancelTargetQtyV2(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
 	if !ok {
@@ -1074,6 +1106,7 @@ func (s *Server) CancelTargetQtyV2(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+// GetTargetQtyV2 return target quantity with v2 format
 func (s *Server) GetTargetQtyV2(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
 	if !ok {
@@ -1184,6 +1217,7 @@ func (s *Server) register() {
 	}
 }
 
+// Run the server
 func (s *Server) Run() {
 	s.register()
 	if len(s.profilerPrefix) != 0 {
@@ -1194,6 +1228,7 @@ func (s *Server) Run() {
 	}
 }
 
+// NewHTTPServer create new server instance
 func NewHTTPServer(
 	app reserve.Data,
 	core reserve.Core,
@@ -1225,7 +1260,7 @@ func NewHTTPServer(
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
 
-	return &Server{
+	s := &Server{
 		app:            app,
 		core:           core,
 		metric:         metric,
@@ -1238,4 +1273,14 @@ func NewHTTPServer(
 		setting:        setting,
 		l:              zap.S(),
 	}
+
+	// initiate listedTokens
+
+	listedTokens, err := s.blockchain.GetListedTokens()
+	if err != nil {
+		s.l.Errorw("cannot initiate listed token", "listed token", err)
+	}
+	s.listedTokens = listedTokens
+
+	return s
 }

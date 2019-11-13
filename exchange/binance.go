@@ -46,7 +46,11 @@ func (bn *Binance) MarshalText() (text []byte, err error) {
 func (bn *Binance) Address(token common.Token) (ethereum.Address, bool) {
 	liveAddress, err := bn.interf.GetDepositAddress(token.ID)
 	if err != nil || liveAddress.Address == "" {
-		bn.l.Warnf("Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
+		if err != nil {
+			bn.l.Warnf("Get Binance live deposit address for token %s failed: err: (%v). Use the currently available address instead", token.ID, err)
+		} else {
+			bn.l.Warnf("Get Binance live deposit address for token %s failed: The address repplied is empty . Use the currently available address instead", token.ID)
+		}
 		addrs, uErr := bn.setting.GetDepositAddresses(settings.Binance)
 		if uErr != nil {
 			bn.l.Warnf("get address of token %s in Binance exchange failed:(%+v), it will be considered as not supported", token.ID, err)
@@ -63,10 +67,15 @@ func (bn *Binance) Address(token common.Token) (ethereum.Address, bool) {
 	return ethereum.HexToAddress(liveAddress.Address), true
 }
 
+// UpdateDepositAddress update deposit address from binance api
 func (bn *Binance) UpdateDepositAddress(token common.Token, address string) error {
 	liveAddress, err := bn.interf.GetDepositAddress(token.ID)
 	if err != nil || liveAddress.Address == "" {
-		bn.l.Warnf("Get Binance live deposit address for token %s failed: err: (%v) or the address repplied is empty . Use the currently available address instead", token.ID, err)
+		if err != nil {
+			bn.l.Warnf("Get Binance live deposit address for token %s failed: err: (%v). Use the currently available address instead", token.ID, err)
+		} else {
+			bn.l.Warnf("Get Binance live deposit address for token %s failed: The address repplied is empty . Use the currently available address instead", token.ID)
+		}
 		addrs := common.NewExchangeAddresses()
 		addrs.Update(token.ID, ethereum.HexToAddress(address))
 		return bn.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint())
