@@ -59,3 +59,19 @@ type GeminiData struct {
 	Volume GeminiDataVolume `json:"volume"`
 	Last   string           `json:"last"`
 }
+
+// BitFinexData is the data return by BitFinex
+type BitFinexData struct {
+	Valid           bool
+	Error           string
+	Bid             float64 `json:"bid"`
+	BidSize         float64 `json:"bid_size"`
+	Ask             float64 `json:"ask"`
+	AskSize         float64 `json:"ask_size"`
+	DailyChange     float64 `json:"daily_change"`
+	DailyChangePerc float64 `json:"daily_change_perc"`
+	LastPrice       float64 `json:"last_price"`
+	Volume          float64 `json:"volume"`
+	High            float64 `json:"high"`
+	Low             float64 `json:"low"`
+}

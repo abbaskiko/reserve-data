@@ -9,4 +9,5 @@ import (
 type TheWorld interface {
 	GetGoldInfo() (common.GoldData, error)
 	GetBTCInfo() (common.BTCData, error)
+	GetUSDInfo() (common.USDData, error)
 }
