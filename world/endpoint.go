@@ -18,7 +18,6 @@ var (
 		"GeminiBTC",
 
 		"CoinbaseUSD",
-		"BinanceUSD",
 
 		"CoinbaseUSDC",
 		"BinanceUSDC",
