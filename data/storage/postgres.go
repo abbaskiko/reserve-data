@@ -23,7 +23,7 @@ $$
     BEGIN
         IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'fetch_data_type') THEN
             CREATE TYPE fetch_data_type AS ENUM ('price', 'rate',
-                'auth_data','gold', 'btc');
+                'auth_data','gold', 'btc', 'usd');
         END IF;
     END
 $$;
@@ -110,6 +110,8 @@ func getDataType(data interface{}) fetchDataType {
 		return btcDataType
 	case common.GoldData, *common.GoldData:
 		return goldDataType
+	case common.USDData, *common.USDData:
+		return usdDataType
 	case common.AllPriceEntry, *common.AllPriceEntry:
 		return priceDataType
 	case common.AllRateEntry, *common.AllRateEntry:

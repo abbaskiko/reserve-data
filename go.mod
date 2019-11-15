@@ -67,7 +67,6 @@ require (
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/appengine v1.2.0 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
