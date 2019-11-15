@@ -418,4 +418,145 @@ func TestGoldData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBTCData(t *testing.T) {}
+func TestBTCData(t *testing.T) {
+	db, teardown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		require.NoError(t, teardown())
+	}()
+
+	ps, err := NewPostgresStorage(db)
+	require.NoError(t, err)
+
+	btcTest := common.BTCData{
+		Timestamp: 1573788299000,
+		Coinbase: common.CoinbaseData{
+			TradeID: 8544259,
+			Price:   "0.02129",
+			Size:    "2",
+			Time:    "2019-11-15T03:22:51.126Z",
+			Bid:     "0.02129",
+			Ask:     "0.0213",
+			Volume:  "9018.21928763",
+		},
+		Gemini: common.GeminiData{
+			Bid: "0.02129",
+			Ask: "0.0213",
+			Volume: common.GeminiDataVolume{
+				ETH:       "904.59371255",
+				BTC:       "19.3047430451109",
+				Timestamp: 1573788300000,
+			},
+			Last: "0.02124",
+		},
+	}
+	err = ps.StoreBTCInfo(btcTest)
+	assert.NoError(t, err)
+}
+
+func TestUSDData(t *testing.T) {
+	db, teardown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		require.NoError(t, teardown())
+	}()
+
+	ps, err := NewPostgresStorage(db)
+	require.NoError(t, err)
+
+	usdTest := common.USDData{
+		CoinbaseUSD: common.CoinbaseData{
+			TradeID: 309230,
+			Price:   "182.31",
+			Size:    "0.10697894",
+			Time:    "2019-11-15T07:20:18.433Z",
+			Bid:     "182.31",
+			Ask:     "182.39",
+			Volume:  "3382.10669068",
+		},
+		GeminiUSD: common.GeminiGoldData{
+			Bid: "182.35",
+			Ask: "182.36",
+			Volume: struct {
+				ETH       string `json:"ETH"`
+				USD       string `json:"USD"`
+				Timestamp uint64 `json:"timestamp"`
+			}{
+				ETH:       "7633.16020108",
+				USD:       "1402216.1627546342",
+				Timestamp: 1573802400000,
+			},
+			Last: "182.40",
+		}, // USD and Gold use the same url
+		CoinbaseUSDC: common.CoinbaseData{
+			TradeID: 309230,
+			Price:   "182.31",
+			Size:    "0.10697894",
+			Time:    "2019-11-15T07:20:18.433Z",
+			Bid:     "182.31",
+			Ask:     "182.39",
+			Volume:  "3382.10669068",
+		},
+		CoinbaseDAI: common.CoinbaseData{
+			TradeID: 309230,
+			Price:   "182.31",
+			Size:    "0.10697894",
+			Time:    "2019-11-15T07:20:18.433Z",
+			Bid:     "182.31",
+			Ask:     "182.39",
+			Volume:  "3382.10669068",
+		},
+		BinanceUSDC: common.BinanceData{
+			Symbol:   "ETHUSDC",
+			BidPrice: "182.43000000",
+			BidQty:   "27.00000000",
+			AskPrice: "182.54000000",
+			AskQty:   "4.00000000",
+		},
+		BinanceUSDT: common.BinanceData{
+			Symbol:   "ETHUSDT",
+			BidPrice: "182.98000000",
+			BidQty:   "0.27320000",
+			AskPrice: "183.00000000",
+			AskQty:   "27.22601000",
+		},
+		BinancePAX: common.BinanceData{
+			Symbol:   "ETHPAX",
+			BidPrice: "182.42000000",
+			BidQty:   "4.75001000",
+			AskPrice: "182.63000000",
+			AskQty:   "5.00000000",
+		},
+		BinanceTUSD: common.BinanceData{
+			Symbol:   "ETHTUSD",
+			BidPrice: "182.40000000",
+			BidQty:   "0.98270000",
+			AskPrice: "182.68000000",
+			AskQty:   "4.22871000",
+		},
+		HitDAI: common.HitData{
+			Ask:         "182.195",
+			Bid:         "181.638",
+			Last:        "182.042",
+			Open:        "184.691",
+			Low:         "179.778",
+			High:        "185.474",
+			Volume:      "5239.2112",
+			VolumeQuote: "960500.2438935",
+			Timestamp:   "2019-11-15T07:34:27.024Z",
+			Symbol:      "ETHDAI",
+		},
+		BitFinex: common.BitFinexData{
+			Bid:             182.88,
+			BidSize:         949.2862453,
+			Ask:             182.91,
+			AskSize:         1129.0389414699998,
+			DailyChange:     -3.06,
+			DailyChangePerc: -0.0164,
+			LastPrice:       183,
+			Volume:          33814.09021745,
+			High:            186.64,
+			Low:             180.80213703,
+		},
+	}
+	err = ps.StoreUSDInfo(usdTest)
+	assert.NoError(t, err)
+}
