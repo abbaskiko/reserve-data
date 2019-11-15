@@ -111,6 +111,16 @@ func (f *Fetcher) FetchGlobalData(timepoint uint64) {
 	if err = f.globalStorage.StoreBTCInfo(btcData); err != nil {
 		f.l.Infof("Storing BTC info failed: %s", err.Error())
 	}
+
+	usdData, err := f.theworld.GetUSDInfo()
+	if err != nil {
+		f.l.Warnf("failed to fetch USD info, %+v", err)
+		return
+	}
+	usdData.Timestamp = common.NowInMillis()
+	if err = f.globalStorage.StoreUSDInfo(usdData); err != nil {
+		f.l.Warnf("Store USD info failed, %v", err)
+	}
 }
 
 func (f *Fetcher) RunBlockFetcher() {

@@ -35,6 +35,7 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 
 		g.GET("/gold-feed", coreProxyMW)
 		g.GET("/btc-feed", coreProxyMW)
+		g.GET("/usd-feed", coreProxyMW)
 		g.POST("/set-feed-configuration", coreProxyMW)
 		g.GET("/get-feed-configuration", coreProxyMW)
 

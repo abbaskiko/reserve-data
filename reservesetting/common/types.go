@@ -28,6 +28,8 @@ const (
 	GoldFeed // gold_feed
 	// BTCFeed is used when asset rate is set from fetching Bitcoin prices.
 	BTCFeed // btc_feed
+	// USDFeed is used when asset rate is set from fetching usd prices.
+	USDFeed // usd_feed
 )
 
 var validSetRateTypes = map[string]SetRate{
@@ -35,6 +37,7 @@ var validSetRateTypes = map[string]SetRate{
 	ExchangeFeed.String():  ExchangeFeed,
 	GoldFeed.String():      GoldFeed,
 	BTCFeed.String():       BTCFeed,
+	USDFeed.String():       USDFeed,
 }
 
 // SetRateFromString returns the SetRate value from its string presentation, if exists.
@@ -151,6 +154,9 @@ type UpdateStableParam struct {
 	MultipleFeedsMaxDiff *float64 `json:"multiple_feeds_max_diff"`
 }
 
+// FeedWeight is feed weight configuration for stable token feed like
+type FeedWeight map[string]float64
+
 // Asset represents an asset in centralized exchange, eg: ETH, KNC, Bitcoin...
 type Asset struct {
 	ID                 uint64              `json:"id"`
@@ -170,6 +176,7 @@ type Asset struct {
 	StableParam        StableParam         `json:"stable_param"`
 	Created            time.Time           `json:"created"`
 	Updated            time.Time           `json:"updated"`
+	FeedWeight         *FeedWeight         `json:"feed_weight,omitempty"`
 }
 
 // TODO: write custom marshal json for created/updated fields
@@ -217,9 +224,10 @@ type CreateAssetEntry struct {
 	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
 	Target             *AssetTarget        `json:"target"`
 	StableParam        *StableParam        `json:"stable_param"`
+	FeedWeight         *FeedWeight         `json:"feed_weight,omitempty"`
 }
 
-// UpdateAssetEntry
+// UpdateAssetEntry entry object for update asset
 type UpdateAssetEntry struct {
 	settingChangeMarker
 	AssetID            uint64              `json:"asset_id" binding:"required"`
@@ -235,6 +243,7 @@ type UpdateAssetEntry struct {
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
 	Target             *AssetTarget        `json:"target"`
 	StableParam        *UpdateStableParam  `json:"stable_param"`
+	FeedWeight         *FeedWeight         `json:"feed_weight,omitempty"`
 }
 
 type UpdateExchangeEntry struct {

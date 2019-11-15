@@ -102,13 +102,16 @@ type HuobiOrder struct {
 	Reason string `json:"err-msg"`
 }
 
+// HuobiDepositAddress return deposit address
 type HuobiDepositAddress struct {
-	Msg        string `json:"msg"`
-	Address    string `json:"address"`
-	Success    bool   `json:"success"`
-	AddressTag string `json:"addressTag"`
-	Asset      string `json:"asset"`
-	Reason     string `json:"err-msg"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    []struct {
+		Currency   string `json:"currency"`
+		Address    string `json:"address"`
+		AddressTag string `json:"addressTag"`
+		Chain      string `json:"chain"`
+	} `json:"data"`
 }
 
 type HuobiAccounts struct {

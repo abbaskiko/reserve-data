@@ -23,7 +23,7 @@ $$
     BEGIN
         IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'fetch_data_type') THEN
             CREATE TYPE fetch_data_type AS ENUM ('price', 'rate',
-                'auth_data','gold', 'btc');
+                'auth_data','gold', 'btc', 'usd');
         END IF;
     END
 $$;
@@ -72,6 +72,7 @@ const (
 	authDataType                       // auth_data
 	goldDataType                       // gold
 	btcDataType                        // btc
+	usdDataType                        // usd
 )
 
 // PostgresStorage struct
@@ -109,6 +110,8 @@ func getDataType(data interface{}) fetchDataType {
 		return btcDataType
 	case common.GoldData, *common.GoldData:
 		return goldDataType
+	case common.USDData, *common.USDData:
+		return usdDataType
 	case common.AllPriceEntry, *common.AllPriceEntry:
 		return priceDataType
 	case common.AllRateEntry, *common.AllRateEntry:
@@ -475,6 +478,12 @@ func (ps *PostgresStorage) StoreBTCInfo(btcData common.BTCData) error {
 	return ps.storeFetchData(btcData, timepoint)
 }
 
+// StoreUSDInfo store btc info into database
+func (ps *PostgresStorage) StoreUSDInfo(usdData common.USDData) error {
+	timepoint := usdData.Timestamp
+	return ps.storeFetchData(usdData, timepoint)
+}
+
 // GetGoldInfo return gold info
 func (ps *PostgresStorage) GetGoldInfo(v common.Version) (common.GoldData, error) {
 	var (
@@ -493,6 +502,15 @@ func (ps *PostgresStorage) GetBTCInfo(v common.Version) (common.BTCData, error) 
 	return btcData, err
 }
 
+// GetUSDInfo return USD info
+func (ps *PostgresStorage) GetUSDInfo(v common.Version) (common.USDData, error) {
+	var (
+		usdData common.USDData
+	)
+	err := ps.getData(&usdData, v)
+	return usdData, err
+}
+
 // CurrentGoldInfoVersion return btc info version
 func (ps *PostgresStorage) CurrentGoldInfoVersion(timepoint uint64) (common.Version, error) {
 	return ps.currentVersion(goldDataType, timepoint)
@@ -501,6 +519,11 @@ func (ps *PostgresStorage) CurrentGoldInfoVersion(timepoint uint64) (common.Vers
 // CurrentBTCInfoVersion return current btc info version
 func (ps *PostgresStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Version, error) {
 	return ps.currentVersion(btcDataType, timepoint)
+}
+
+// CurrentUSDInfoVersion return current btc info version
+func (ps *PostgresStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Version, error) {
+	return ps.currentVersion(usdDataType, timepoint)
 }
 
 // UpdateFeedConfiguration return false if there is an error

@@ -4,9 +4,9 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
-func (tw *TheWorld) getCoinbaseInfo() common.CoinbaseData {
+func (tw *TheWorld) getCoinbaseInfo(ep string) common.CoinbaseData {
 	var (
-		url    = tw.endpoint.CoinbaseBTCEndpoint()
+		url    = ep
 		result = common.CoinbaseData{
 			Valid: true,
 		}
@@ -18,9 +18,9 @@ func (tw *TheWorld) getCoinbaseInfo() common.CoinbaseData {
 	return result
 }
 
-func (tw *TheWorld) getGeminiInfo() common.GeminiData {
+func (tw *TheWorld) getGeminiInfo(endpoint string) common.GeminiData {
 	var (
-		url    = tw.endpoint.GeminiBTCEndpoint()
+		url    = endpoint
 		result = common.GeminiData{
 			Valid: true,
 		}
@@ -32,9 +32,10 @@ func (tw *TheWorld) getGeminiInfo() common.GeminiData {
 	return result
 }
 
+// GetBTCInfo return btc info
 func (tw *TheWorld) GetBTCInfo() (common.BTCData, error) {
 	return common.BTCData{
-		Coinbase: tw.getCoinbaseInfo(),
-		Gemini:   tw.getGeminiInfo(),
+		Coinbase: tw.getCoinbaseInfo(tw.endpoint.CoinbaseBTCEndpoint()),
+		Gemini:   tw.getGeminiInfo(tw.endpoint.GeminiBTCEndpoint()),
 	}, nil
 }

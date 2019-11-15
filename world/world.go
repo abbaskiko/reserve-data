@@ -170,3 +170,19 @@ func NewTheWorld(dpl deployment.Deployment, keyfile string) (*TheWorld, error) {
 	}
 	panic("unsupported environment")
 }
+
+func (tw *TheWorld) getBinanceInfo(ep string) common.BinanceData {
+	var (
+		url    = ep
+		result = common.BinanceData{}
+	)
+
+	err := tw.getPublic(url, &result)
+	if err != nil {
+		result.Error = err.Error()
+		result.Valid = false
+	} else {
+		result.Valid = true
+	}
+	return result
+}

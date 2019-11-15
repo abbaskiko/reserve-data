@@ -110,10 +110,11 @@ func (ep *Endpoint) GetResponse(
 	return respBody, err
 }
 
+// GetDepthOnePair return list of orderbook for one pair of token
 func (ep *Endpoint) GetDepthOnePair(baseID, quoteID string) (exchange.Binaresp, error) {
 
 	respBody, err := ep.GetResponse(
-		"GET", ep.interf.PublicEndpoint()+"/api/v1/depth",
+		"GET", ep.interf.PublicEndpoint()+"/api/v3/depth",
 		map[string]string{
 			"symbol": fmt.Sprintf("%s%s", baseID, quoteID),
 			"limit":  "100",
@@ -171,12 +172,13 @@ func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, ra
 	return result, err
 }
 
+// GetTradeHistory Return trade history
 func (ep *Endpoint) GetTradeHistory(symbol string) (exchange.BinanceTradeHistory, error) {
 	result := exchange.BinanceTradeHistory{}
 	timepoint := common.NowInMillis()
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.PublicEndpoint()+"/api/v1/trades",
+		ep.interf.PublicEndpoint()+"/api/v3/trades",
 		map[string]string{
 			"symbol": symbol,
 			"limit":  "500",
@@ -190,6 +192,7 @@ func (ep *Endpoint) GetTradeHistory(symbol string) (exchange.BinanceTradeHistory
 	return result, err
 }
 
+// GetAccountTradeHistory return our account trades
 func (ep *Endpoint) GetAccountTradeHistory(
 	baseSymbol, quoteSymbol string,
 	fromID string) (exchange.BinaAccountTradeHistory, error) {
@@ -405,11 +408,14 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress
 	return result, err
 }
 
+// GetExchangeInfo return exchange info
+// including base, quote precision for tokens
+// min, max price, min notional
 func (ep *Endpoint) GetExchangeInfo() (exchange.BinanceExchangeInfo, error) {
 	result := exchange.BinanceExchangeInfo{}
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.PublicEndpoint()+"/api/v1/exchangeInfo",
+		ep.interf.PublicEndpoint()+"/api/v3/exchangeInfo",
 		map[string]string{},
 		false,
 		common.NowInMillis(),
@@ -424,7 +430,7 @@ func (ep *Endpoint) getServerTime() (uint64, error) {
 	result := exchange.BinaServerTime{}
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.PublicEndpoint()+"/api/v1/time",
+		ep.interf.PublicEndpoint()+"/api/v3/time",
 		map[string]string{},
 		false,
 		common.NowInMillis(),

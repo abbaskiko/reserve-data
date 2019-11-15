@@ -9,9 +9,9 @@ import (
 	"fmt"
 )
 
-const _fetchDataTypeName = "pricerateauth_datagoldbtc"
+const _fetchDataTypeName = "pricerateauth_datagoldbtcusd"
 
-var _fetchDataTypeIndex = [...]uint8{0, 5, 9, 18, 22, 25}
+var _fetchDataTypeIndex = [...]uint8{0, 5, 9, 18, 22, 25, 28}
 
 func (i fetchDataType) String() string {
 	if i < 0 || i >= fetchDataType(len(_fetchDataTypeIndex)-1) {
@@ -20,7 +20,7 @@ func (i fetchDataType) String() string {
 	return _fetchDataTypeName[_fetchDataTypeIndex[i]:_fetchDataTypeIndex[i+1]]
 }
 
-var _fetchDataTypeValues = []fetchDataType{0, 1, 2, 3, 4}
+var _fetchDataTypeValues = []fetchDataType{0, 1, 2, 3, 4, 5}
 
 var _fetchDataTypeNameToValueMap = map[string]fetchDataType{
 	_fetchDataTypeName[0:5]:   0,
@@ -28,6 +28,7 @@ var _fetchDataTypeNameToValueMap = map[string]fetchDataType{
 	_fetchDataTypeName[9:18]:  2,
 	_fetchDataTypeName[18:22]: 3,
 	_fetchDataTypeName[22:25]: 4,
+	_fetchDataTypeName[25:28]: 5,
 }
 
 // fetchDataTypeString retrieves an enum value from the enum constants string name.
