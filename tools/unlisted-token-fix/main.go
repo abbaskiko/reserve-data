@@ -58,12 +58,8 @@ func removeTokenInfo(cmd *cobra.Command, args []string) {
 			panic(fmt.Sprintf("exchange not supported %s", e))
 		}
 	}
-	argsNew := make([]string, 0, len(args))
-	for _, a := range args {
-		argsNew = append(argsNew, strings.ToLower(a))
-	}
 	err = db.Update(func(tx *bolt.Tx) error {
-		return storage.RemoveTokensFromExchanges(tx, argsNew, exs)
+		return storage.RemoveTokensFromExchanges(tx, args, exs)
 	})
 	if err != nil {
 		panic(err)
