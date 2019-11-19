@@ -55,12 +55,20 @@ type Blockchain struct {
 	pricing      *blockchain.Contract
 	reserve      *blockchain.Contract
 	tokenIndices map[string]tbindex
+	// ListedTokens is for check fill zero as delisted token
+	// should have zero rate
+	listedTokens []ethereum.Address
 	mu           sync.RWMutex
 
 	localSetRateNonce     uint64
 	setRateNonceTimestamp uint64
 	setting               Setting
 	l                     *zap.SugaredLogger
+}
+
+//ListedTokens return listed tokens
+func (b *Blockchain) ListedTokens() []ethereum.Address {
+	return b.listedTokens
 }
 
 // StandardGasPrice return standard gas price
@@ -88,14 +96,11 @@ func (b *Blockchain) CheckTokenIndices(tokenAddr ethereum.Address) error {
 		pricingAddr,
 		tokenAddrs,
 	)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // LoadAndSetTokenIndices load and set token indices
-func (b *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error {
+func (b *Blockchain) LoadAndSetTokenIndices() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.tokenIndices = map[string]tbindex{}
@@ -106,6 +111,16 @@ func (b *Blockchain) LoadAndSetTokenIndices(tokenAddrs []ethereum.Address) error
 	if err != nil {
 		return err
 	}
+
+	// we used to load token indices for only internal token
+	// in setting database, but as we need to set rate for delisted token
+	// to 0 also, then we decided load all listed tokens
+	tokenAddrs, err := b.getListedTokensFromPricingContract()
+	if err != nil {
+		return err
+	}
+	b.listedTokens = tokenAddrs
+
 	bulkIndices, indicesInBulk, err := b.GeneratedGetTokenIndicies(
 		opts,
 		pricingAddr,
@@ -198,11 +213,15 @@ func (b *Blockchain) SetRates(
 			newCBuys[token] = compactBuy.Compact
 		}
 	}
-	bbuys, bsells, indices := BuildCompactBulk(
+	bbuys, bsells, indices, err := BuildCompactBulk(
 		newCBuys,
 		newCSells,
 		b.tokenIndices,
 	)
+	if err != nil {
+		b.l.Warnf("failed to build compact bulk, err: %s", err)
+		return nil, err
+	}
 	opts, err := b.GetTxOpts(pricingOP, nonce, gasPrice, nil)
 	if err != nil {
 		b.l.Warnf("Getting transaction opts failed, err: %s", err)
@@ -468,8 +487,8 @@ func (b *Blockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return b.MustGetOperator(huobiblockchain.HuobiOP).Address
 }
 
-// GetListedTokens return listed token in reserve contract
-func (b *Blockchain) GetListedTokens() ([]ethereum.Address, error) {
+// getListedTokensFromPricingContract return listed token in reserve contract
+func (b *Blockchain) getListedTokensFromPricingContract() ([]ethereum.Address, error) {
 	opts := b.GetCallOpts(0)
 	return b.GeneratedGetListedTokens(opts)
 }

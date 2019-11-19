@@ -445,6 +445,10 @@ func TestHTTPServerUpdateToken(t *testing.T) {
 
 type testHTTPBlockchain struct{}
 
+func (tbc testHTTPBlockchain) ListedTokens() []ethereum.Address {
+	return nil
+}
+
 func (tbc testHTTPBlockchain) CheckTokenIndices(addr ethereum.Address) error {
 	const correctAddrstr = "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
 	correctAddr := ethereum.HexToAddress(correctAddrstr)
@@ -454,7 +458,7 @@ func (tbc testHTTPBlockchain) CheckTokenIndices(addr ethereum.Address) error {
 	return errors.New("wrong address")
 }
 
-func (tbc testHTTPBlockchain) LoadAndSetTokenIndices(addrs []ethereum.Address) error {
+func (tbc testHTTPBlockchain) LoadAndSetTokenIndices() error {
 	return nil
 }
 
@@ -468,8 +472,4 @@ func (tbc testHTTPBlockchain) GetDepositOPAddress() ethereum.Address {
 
 func (tbc testHTTPBlockchain) GetIntermediatorOPAddress() ethereum.Address {
 	return ethereum.Address{}
-}
-
-func (tbc testHTTPBlockchain) GetListedTokens() ([]ethereum.Address, error) {
-	return nil, nil
 }

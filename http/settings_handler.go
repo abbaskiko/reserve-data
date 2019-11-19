@@ -24,24 +24,6 @@ const (
 	ETHID                     = "ETH"
 )
 
-func (s *Server) updateInternalTokensIndices(tokenUpdates map[string]common.TokenUpdate) error {
-	tokens, err := s.setting.GetInternalTokens()
-	if err != nil {
-		return err
-	}
-	for tokenSymbol, tokenUpdate := range tokenUpdates {
-		token := tokenUpdate.Token
-		// No need to load and set for ETH
-		if token.Internal && tokenSymbol != ETHID {
-			tokens = append(tokens, token)
-		}
-	}
-	if err = s.blockchain.LoadAndSetTokenIndices(common.GetTokenAddressesList(tokens)); err != nil {
-		return err
-	}
-	return nil
-}
-
 // ensureRunningExchange makes sure that the exchange input is avaialbe in current deployment
 func (s *Server) ensureRunningExchange(ex string) (settings.ExchangeName, error) {
 	exName, ok := settings.ExchangeTypeValues()[ex]
@@ -302,7 +284,8 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 	}
 	//reload token indices and apply metric changes if the token is Internal
 	if hasInternal {
-		if err = s.updateInternalTokensIndices(tokenUpdates); err != nil {
+		if err = s.blockchain.LoadAndSetTokenIndices(); err != nil {
+			s.l.Errorw("failed to reload token indices", "err", err)
 			httputil.ResponseFailure(c, httputil.WithReason(fmt.Sprintf("Can not update internal token indices (%+v)", err)))
 			return
 		}
@@ -410,14 +393,6 @@ func (s *Server) ensureInternalSetting(tokenUpdate common.TokenUpdate) error {
 		if uErr := s.blockchain.CheckTokenIndices(ethereum.HexToAddress(token.Address)); uErr != nil {
 			return pe.Wrap(uErr, "cannot get token indice from smart contract (%+v) ")
 		}
-
-		// update listed token for server
-		listedTokens, err := s.blockchain.GetListedTokens()
-		if err != nil {
-			s.l.Errorw("failed to get listed token from blockchain", "error", err)
-			return err
-		}
-		s.listedTokens = listedTokens
 	}
 	if tokenUpdate.Exchanges == nil {
 		return errors.New("there is no exchange setting")
