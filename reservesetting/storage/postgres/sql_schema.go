@@ -106,6 +106,17 @@ DO $$
 	END;
 $$;
 
+-- alter table for compatibility - add column is_enabled
+DO $$
+	BEGIN
+		BEGIN
+            ALTER TABLE "assets" 	ADD COLUMN is_enabled   BOOLEAN   NOT NULL;
+		EXCEPTION 
+			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
+		END;
+	END;
+$$;
+
 CREATE TABLE IF NOT EXISTS "feed_weight"
 (
     id SERIAL PRIMARY KEY,
@@ -272,6 +283,7 @@ CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _set_rate assets.set_rate%TYPE,
                                      _rebalance assets.rebalance%TYPE,
                                      _is_quote assets.is_quote%TYPE,
+                                     _is_enabled assets.is_enabled%TYPE,
                                      _pwi_ask_a assets.pwi_ask_a%TYPE,
                                      _pwi_ask_b assets.pwi_ask_b%TYPE,
                                      _pwi_ask_c assets.pwi_ask_c%TYPE,
@@ -314,6 +326,7 @@ BEGIN
                 set_rate,
                 rebalance,
                 is_quote,
+                is_enabled,
                 pwi_ask_a,
                 pwi_ask_b,
                 pwi_ask_c,
@@ -346,6 +359,7 @@ BEGIN
             _set_rate,
             _rebalance,
             _is_quote,
+            _is_enabled,
             _pwi_ask_a,
             _pwi_ask_b,
             _pwi_ask_c,
