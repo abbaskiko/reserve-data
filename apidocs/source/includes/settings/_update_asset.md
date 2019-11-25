@@ -16,6 +16,7 @@ curl -X POST "https://gateway.local/v3/setting-change-main" \
             "set_rate": "exchange_feed",
             "rebalance": true,
             "is_quote": true,
+            "is_enabled": false,
             "pwi": {
                 "ask": {
                     "a": 0.3241,
