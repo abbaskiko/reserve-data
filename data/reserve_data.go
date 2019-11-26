@@ -350,6 +350,7 @@ func (rd ReserveData) GetRate(timepoint uint64) (common.AllRateResponse, error) 
 }
 
 // GetRecords return all records
+// params: fromTime, toTime milisecond
 func (rd ReserveData) GetRecords(fromTime, toTime uint64) ([]common.ActivityRecord, error) {
 	return rd.storage.GetAllRecords(fromTime, toTime)
 }
