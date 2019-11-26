@@ -49,7 +49,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 	}
 
 	id, err := store.CreateAsset("ABC", "ABC", eth.HexToAddress("0x00000000000000001"),
-		18, true, common.ExchangeFeed, true, false, &common.AssetPWI{
+		18, true, common.ExchangeFeed, true, false, true, &common.AssetPWI{
 			Bid: common.PWIEquation{
 				A:                   0,
 				B:                   0,

@@ -31,6 +31,7 @@ type createAssetParams struct {
 	SetRate      string  `db:"set_rate"`
 	Rebalance    bool    `db:"rebalance"`
 	IsQuote      bool    `db:"is_quote"`
+	IsEnabled    bool    `db:"is_enabled"`
 
 	AskA                   *float64 `db:"ask_a"`
 	AskB                   *float64 `db:"ask_b"`
@@ -66,7 +67,7 @@ func (s *Storage) CreateAsset(
 	decimals uint64,
 	transferable bool,
 	setRate common.SetRate,
-	rebalance, isQuote bool,
+	rebalance, isQuote, isEnabled bool,
 	pwi *common.AssetPWI,
 	rb *common.RebalanceQuadratic,
 	exchanges []common.AssetExchange,
@@ -81,7 +82,7 @@ func (s *Storage) CreateAsset(
 	defer pgutil.RollbackUnlessCommitted(tx)
 
 	id, err := s.createAsset(tx, symbol, name, address, decimals, transferable,
-		setRate, rebalance, isQuote, pwi, rb, exchanges, target, stableParam, feedWeight)
+		setRate, rebalance, isQuote, isEnabled, pwi, rb, exchanges, target, stableParam, feedWeight)
 	if err != nil {
 		return 0, err
 	}
@@ -256,7 +257,7 @@ func (s *Storage) createAsset(
 	decimals uint64,
 	transferable bool,
 	setRate common.SetRate,
-	rebalance, isQuote bool,
+	rebalance, isQuote, isEnabled bool,
 	pwi *common.AssetPWI,
 	rb *common.RebalanceQuadratic,
 	exchanges []common.AssetExchange,
@@ -293,6 +294,7 @@ func (s *Storage) createAsset(
 		SetRate:      setRate.String(),
 		Rebalance:    rebalance,
 		IsQuote:      isQuote,
+		IsEnabled:    isEnabled,
 	}
 
 	if pwi != nil {
@@ -886,6 +888,7 @@ type updateAssetParam struct {
 	SetRate      *string `db:"set_rate"`
 	Rebalance    *bool   `db:"rebalance"`
 	IsQuote      *bool   `db:"is_quote"`
+	IsEnabled    *bool   `db:"is_enabled"`
 
 	AskA                   *float64 `db:"ask_a"`
 	AskB                   *float64 `db:"ask_b"`
@@ -923,6 +926,7 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 		Transferable: uo.Transferable,
 		Rebalance:    uo.Rebalance,
 		IsQuote:      uo.IsQuote,
+		IsEnabled:    uo.IsEnabled,
 	}
 
 	var updateMsgs []string
@@ -953,6 +957,9 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 	}
 	if uo.IsQuote != nil {
 		updateMsgs = append(updateMsgs, fmt.Sprintf("is_quote=%t", *uo.IsQuote))
+	}
+	if uo.IsEnabled != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("is_enabled=%t", *uo.IsEnabled))
 	}
 	pwi := uo.PWI
 	if pwi != nil {
