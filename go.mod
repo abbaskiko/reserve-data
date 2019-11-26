@@ -40,7 +40,7 @@ require (
 	github.com/howeyc/fsnotify v0.9.0 // indirect
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.7.7 // indirect
-	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
+	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/julienschmidt/httprouter v1.2.0 // indirect
 	github.com/karalabe/usb v0.0.0-20190613070255-4d6ba34a8414 // indirect
@@ -68,11 +68,9 @@ require (
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
 	golang.org/x/text v0.3.2 // indirect
-	google.golang.org/appengine v1.2.0 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190213234257-ec84240a7772 // indirect
-	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 )
 
 go 1.13

@@ -346,8 +346,8 @@ func (s *Server) Deposit(c *gin.Context) {
 }
 
 type getActivitiesRequest struct {
-	FromTime uint64 `json:"fromTime" binding:"required"`
-	ToTime   uint64 `json:"toTime" binding:"required"`
+	FromTime uint64 `form:"fromTime" binding:"required"`
+	ToTime   uint64 `form:"toTime" binding:"required"`
 }
 
 // GetActivities return all activities record
@@ -356,10 +356,12 @@ func (s *Server) GetActivities(c *gin.Context) {
 	s.l.Infow("Getting all activity records")
 	if err := c.ShouldBindQuery(&query); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 
 	if query.ToTime-query.FromTime > defaultTimeRange {
 		httputil.ResponseFailure(c, httputil.WithReason("time range to big, it should be < 86400000 milisecond"))
+		return
 	}
 
 	data, err := s.app.GetRecords(query.FromTime, query.ToTime)
