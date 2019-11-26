@@ -74,5 +74,3 @@ require (
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20190213234257-ec84240a7772 // indirect
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 )
-
-go 1.13
