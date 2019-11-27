@@ -309,7 +309,7 @@ func (rd ReserveData) ControlAuthDataSize() error {
 
 	defer func() {
 		if rErr := os.RemoveAll(tmpDir); rErr != nil {
-			rd.l.Warnf("failed to cleanup temp dir: %s, err : %+v", tmpDir, rErr)
+			rd.l.Warnw("failed to cleanup temp dir", "tmpDir", tmpDir, "err", rErr)
 		}
 	}()
 
@@ -321,26 +321,26 @@ func (rd ReserveData) ControlAuthDataSize() error {
 		fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC()))
 		nRecord, err := rd.storage.ExportExpiredAuthData(common.TimeToTimepoint(t), fileName)
 		if err != nil {
-			rd.l.Warnf("DataPruner export AuthData operation failed: %+v", err)
+			rd.l.Warnw("DataPruner export AuthData operation failed", "err", err)
 		} else {
 			var integrity bool
 			if nRecord > 0 {
 				err = rd.storageController.Arch.UploadFile(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 				if err != nil {
-					rd.l.Warnf("DataPruner: Upload file failed: %+v", err)
+					rd.l.Warnw("DataPruner: Upload file failed", "err", err)
 				} else {
 					integrity, err = rd.storageController.Arch.CheckFileIntergrity(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 					if err != nil {
-						rd.l.Warnf("DataPruner: error in file integrity check (%+v):", err)
+						rd.l.Warnw("DataPruner: error in file integrity check", "err", err)
 					} else if !integrity {
-						rd.l.Warnf("DataPruner: file upload corrupted")
+						rd.l.Warnw("DataPruner: file upload corrupted")
 
 					}
 					if err != nil || !integrity {
 						//if the intergrity check failed, remove the remote file.
 						removalErr := rd.storageController.Arch.RemoveFile(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 						if removalErr != nil {
-							rd.l.Warnf("DataPruner: cannot remove remote file %+v", removalErr)
+							rd.l.Warnw("DataPruner: cannot remove remote file", "err", removalErr)
 							return err
 						}
 					}
@@ -350,12 +350,12 @@ func (rd ReserveData) ControlAuthDataSize() error {
 				nPrunedRecords, err := rd.storage.PruneExpiredAuthData(common.TimeToTimepoint(t))
 				switch {
 				case err != nil:
-					rd.l.Warnf("DataPruner: Can not prune Auth Data %+v", err)
+					rd.l.Warnw("DataPruner: Can not prune Auth Data", "err", err)
 					return err
 				case nPrunedRecords != nRecord:
-					rd.l.Warnf("DataPruner: Number of Exported Data is %d, which is different from number of pruned data %d", nRecord, nPrunedRecords)
+					rd.l.Warnw("DataPruner: Number of Exported Data is different from number of pruned data", "exportRecord", nRecord, "prunedRecord", nPrunedRecords)
 				default:
-					rd.l.Warnf("DataPruner: exported and pruned %d expired records from AuthData", nRecord)
+					rd.l.Warnw("DataPruner: exported and pruned expired records from AuthData", "record", nRecord)
 				}
 			}
 		}
@@ -392,11 +392,11 @@ func (rd ReserveData) GetAllFetcherConfiguration() (common.FetcherConfiguration,
 
 func (rd ReserveData) RunStorageController() error {
 	if err := rd.storageController.Runner.Start(); err != nil {
-		rd.l.Warnf("Storage controller runner error: %+v", err)
+		rd.l.Warnw("Storage controller runner error", "err", err)
 	}
 	go func() {
 		if err := rd.ControlAuthDataSize(); err != nil {
-			rd.l.Warnf("Control auth data size error: %s", err)
+			rd.l.Warnw("Control auth data size", "err", err)
 		}
 	}()
 	return nil

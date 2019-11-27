@@ -95,7 +95,7 @@ func (bs *Storage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTrad
 				pairHistory := common.TradeHistory{}
 				err = json.Unmarshal(history, &pairHistory)
 				if err != nil {
-					bs.l.Warnf("Cannot unmarshal history: %+v", err)
+					bs.l.Warnw("Cannot unmarshal history", "err", err)
 					return err
 				}
 				pairsHistory = append(pairsHistory, pairHistory)
@@ -116,14 +116,14 @@ func (bs *Storage) GetLastIDTradeHistory(pair string) (string, error) {
 		b := tx.Bucket([]byte(tradeHistory))
 		pairBk, err := b.CreateBucketIfNotExists([]byte(pair))
 		if err != nil {
-			bs.l.Warnf("Cannot get pair bucket: %s", err)
+			bs.l.Warnw("Cannot get pair bucket", "err", err)
 			return err
 		}
 		k, v := pairBk.Cursor().Last()
 		if k != nil {
 			err = json.Unmarshal(v, &history)
 			if err != nil {
-				bs.l.Warnf("Cannot unmarshal history: %s", err)
+				bs.l.Warnw("Cannot unmarshal history", "err", err)
 				return err
 			}
 		}

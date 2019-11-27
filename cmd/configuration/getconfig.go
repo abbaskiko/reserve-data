@@ -141,7 +141,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, cliAddress com
 	for _, ep := range bkEndpoints {
 		client, err := common.NewEthClient(ep)
 		if err != nil {
-			l.Warnf("Cannot connect to %s, err %s, ignore it.", ep, err)
+			l.Warnw("Cannot connect to RPC,ignore it.", "endpoint", ep, "err", err)
 			continue
 		}
 		callClients = append(callClients, client)
@@ -159,7 +159,7 @@ func GetConfig(kyberENV string, authEnbl bool, endpointOW string, cliAddress com
 	)
 
 	if !authEnbl {
-		l.Warnf("\nWARNING: No authentication mode\n")
+		l.Warnw("WARNING: No authentication mode")
 	}
 	awsConf, err := archive.GetAWSconfigFromFile(setPath.secretPath)
 	if err != nil {

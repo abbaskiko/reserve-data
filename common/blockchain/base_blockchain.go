@@ -111,7 +111,7 @@ func (b *BaseBlockchain) SignAndBroadcast(tx *types.Transaction, from string) (*
 	failures, ok := b.broadcaster.Broadcast(signedTx)
 	b.l.Infof("Rebroadcasting failures: %s", failures)
 	if !ok {
-		b.l.Warnf("Broadcasting transaction failed! nonce: %d, gas price: %s, retry failures: %s", tx.Nonce(), tx.GasPrice().Text(10), failures)
+		b.l.Warnw("Broadcasting transaction failed!", "nonce", tx.Nonce(), "gas_price", tx.GasPrice().Text(10), "retry_failures", failures)
 		if signedTx != nil {
 			return signedTx, fmt.Errorf("broadcasting transaction %s failed, retry failures: %s", tx.Hash().Hex(), failures)
 		}
@@ -286,7 +286,7 @@ func (b *BaseBlockchain) BuildSendERC20Tx(opts TxOpts, amount *big.Int, to ether
 	defer cancel()
 	gasLimit, err := b.client.EstimateGas(timeout, msg)
 	if err != nil {
-		b.l.Warnf("Cannot estimate gas limit: %+v", err)
+		b.l.Warnw("Cannot estimate gas limit", "err", err)
 		return nil, err
 	}
 	gasLimit += 50000

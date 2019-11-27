@@ -88,7 +88,7 @@ func (ep *Endpoint) GetResponse(
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			ep.l.Warnf("Response body close error: %v", cErr)
+			ep.l.Warnw("Response body", "err", cErr)
 		}
 	}()
 	switch resp.StatusCode {

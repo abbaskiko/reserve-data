@@ -30,7 +30,7 @@ func AsyncUpdateDepositAddress(ex common.Exchange, tokenID, addr string, wait *s
 		l.Panicf("Can't get token %s. Error: %+v", tokenID, err)
 	}
 	if err := ex.UpdateDepositAddress(token, addr); err != nil {
-		l.Warnf("Cant not update deposit address for token %s on exchange %s, err=%+v, this will need to be manually update", tokenID, ex.ID(), err)
+		l.Warnw("Cant not update deposit address for token, this will need to be manually update", "tokenID", tokenID, "exchangeID", ex.ID(), "err", err)
 	}
 }
 
