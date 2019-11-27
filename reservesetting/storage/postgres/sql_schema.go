@@ -110,7 +110,7 @@ $$;
 DO $$
 	BEGIN
 		BEGIN
-            ALTER TABLE "assets" 	ADD COLUMN is_enabled   BOOLEAN   NOT NULL;
+            ALTER TABLE "assets" ADD COLUMN is_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 		EXCEPTION 
 			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
 		END;
