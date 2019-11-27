@@ -164,11 +164,19 @@ func (rc ReserveCore) Deposit(
 	}
 	recordActivity := func(status, txhex, txnonce, txprice string, err error) error {
 		uid := uidGenerator(txhex)
-		rc.l.Warnw(
-			"Core ----------> Deposit",
-			"exchangeID", exchange.ID(), "tokenID", token.ID, "amount", amount.Text(10),
-			"timepoint", timepoint, "tx", txhex, "err", err,
-		)
+		if err == nil {
+			rc.l.Infow(
+				"Core ----------> Deposit",
+				"exchangeID", exchange.ID(), "tokenID", token.ID, "amount", amount.Text(10),
+				"timepoint", timepoint, "tx", txhex,
+			)
+		} else {
+			rc.l.Warnw(
+				"Core ----------> Deposit",
+				"exchangeID", exchange.ID(), "tokenID", token.ID, "amount", amount.Text(10),
+				"timepoint", timepoint, "tx", txhex, "err", err,
+			)
+		}
 
 		return rc.activityStorage.Record(
 			common.ActionDeposit,

@@ -740,7 +740,8 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			// long time. We will just consider it as a failed activity.
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
-				f.l.Warnw("Activity has invalid timestamp. Just ignore it.", "activity", activity)
+				f.l.Warnw("Activity has invalid timestamp. Just ignore it.", "activity", activity,
+					"err", err1, "timestamp", activity.Timestamp)
 			} else {
 				if common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 					result[id] = common.NewActivityStatus(common.ExchangeStatusFailed, tx, blockNum, activity.MiningStatus, err)
@@ -751,7 +752,8 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 		} else {
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
-				f.l.Warnw("Activity has invalid timestamp", "activity", activity)
+				f.l.Warnw("Activity has invalid timestamp", "activity", activity,
+					"err", err1, "timestamp", activity.Timestamp)
 			} else if activity.Destination == string(exchange.ID()) &&
 				activity.ExchangeStatus == common.ExchangeStatusDone &&
 				common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {

@@ -791,7 +791,7 @@ func (bs *BoltStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Activity
 func interfaceConverstionToUint64(l *zap.SugaredLogger, intf interface{}) uint64 {
 	numString, ok := intf.(string)
 	if !ok {
-		l.Warnw("can't be converted to type string", "value", intf)
+		l.Warnw("can't be converted to type string", "value", fmt.Sprintf("%+v", intf))
 		return 0
 	}
 	num, err := strconv.ParseUint(numString, 10, 64)
