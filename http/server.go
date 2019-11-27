@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	maxTimespot uint64 = 4124425154000
+	maxTimespot      uint64 = 4124425154000
+	defaultTimeRange uint64 = 86400000
 )
 
 // Server struct for http package
@@ -344,16 +345,26 @@ func (s *Server) Deposit(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+type getActivitiesRequest struct {
+	FromTime uint64 `form:"fromTime" binding:"required"`
+	ToTime   uint64 `form:"toTime" binding:"required"`
+}
+
 // GetActivities return all activities record
 func (s *Server) GetActivities(c *gin.Context) {
+	var query getActivitiesRequest
 	s.l.Infow("Getting all activity records")
-	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	if toTime == 0 {
-		toTime = common.NowInMillis()
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
 	}
 
-	data, err := s.app.GetRecords(fromTime*1000000, toTime*1000000)
+	if query.ToTime-query.FromTime > defaultTimeRange {
+		httputil.ResponseFailure(c, httputil.WithReason("time range to big, it should be < 86400000 milisecond"))
+		return
+	}
+
+	data, err := s.app.GetRecords(query.FromTime, query.ToTime)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {

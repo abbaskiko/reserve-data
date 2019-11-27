@@ -18,6 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
+	"github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
 )
 
@@ -205,6 +206,7 @@ func NewCliFlags() []cli.Flag {
 	flags = append(flags, NewPostgreSQLFlags(defaultDB)...)
 	flags = append(flags, NewHTTPAddressFlag())
 	flags = append(flags, NewRunnerFlags()...)
+	flags = append(flags, app.NewSentryFlags()...)
 
 	return flags
 }

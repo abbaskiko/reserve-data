@@ -220,6 +220,7 @@ type CreateAssetEntry struct {
 	SetRate            SetRate             `json:"set_rate"`
 	Rebalance          bool                `json:"rebalance"`
 	IsQuote            bool                `json:"is_quote"`
+	IsEnabled          bool                `json:"is_enabled"`
 	PWI                *AssetPWI           `json:"pwi"`
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
 	Exchanges          []AssetExchange     `json:"exchanges" binding:"dive"`
@@ -240,6 +241,7 @@ type UpdateAssetEntry struct {
 	SetRate            *SetRate            `json:"set_rate"`
 	Rebalance          *bool               `json:"rebalance"`
 	IsQuote            *bool               `json:"is_quote"`
+	IsEnabled          *bool               `json:"is_enabled"`
 	PWI                *AssetPWI           `json:"pwi"`
 	RebalanceQuadratic *RebalanceQuadratic `json:"rebalance_quadratic"`
 	Target             *AssetTarget        `json:"target"`

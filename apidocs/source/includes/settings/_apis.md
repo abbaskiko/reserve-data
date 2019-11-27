@@ -20,6 +20,7 @@ curl -X GET "https://gateway.local/v3/asset/1"
         "set_rate": "not_set",
         "rebalance": true,
         "is_quote": true,
+        "is_enabled": true,
         "pwi": {
             "ask": {
                 "a": 13.88888,
@@ -162,6 +163,7 @@ curl -X GET "https://gateway.local/v3/asset"
             "set_rate": "not_set",
             "rebalance": true,
             "is_quote": true,
+            "is_enabled": true,
             "pwi": {
                 "ask": {
                     "a": 13.88888,
@@ -233,6 +235,7 @@ curl -X GET "https://gateway.local/v3/asset"
             "set_rate": "not_set",
             "rebalance": true,
             "is_quote": true,
+            "is_enabled": true,
             "rebalance_quadratic": {
                 "a": 0.000001754386,
                 "b": 0.0004894737,
