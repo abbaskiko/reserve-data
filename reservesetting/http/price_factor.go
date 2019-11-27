@@ -32,7 +32,7 @@ type getPriceFactorParams struct {
 
 func convertToPriceFactorResponse(in []common.PriceFactorAtTime) []*common.AssetPriceFactorListResponse {
 	var assetToPriceList = map[uint64]*common.AssetPriceFactorListResponse{}
-	var res []*common.AssetPriceFactorListResponse
+	var res = make([]*common.AssetPriceFactorListResponse, 0)
 	for _, assetList := range in {
 		for _, asset := range assetList.Data {
 			var e *common.AssetPriceFactorListResponse
