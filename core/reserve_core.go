@@ -89,6 +89,18 @@ func (rc ReserveCore) Trade(
 			finished, err,
 		)
 
+		activityResult := common.ActivityResult{
+			ID:        id,
+			Done:      done,
+			Remaining: remaining,
+			Finished:  finished,
+			Error:     "",
+		}
+
+		if err != nil {
+			activityResult.Error = err.Error()
+		}
+
 		return rc.activityStorage.Record(
 			common.ActionTrade,
 			uid,
@@ -102,13 +114,7 @@ func (rc ReserveCore) Trade(
 				Amount:    amount,
 				Timepoint: timepoint,
 			},
-			common.ActivityResult{
-				ID:        id,
-				Done:      done,
-				Remaining: remaining,
-				Finished:  finished,
-				Error:     fmt.Sprintf("%v", err),
-			},
+			activityResult,
 			status,
 			"",
 			timepoint,
@@ -173,6 +179,17 @@ func (rc ReserveCore) Deposit(
 			exchange.ID().String(), asset.Symbol, amount.Text(10), timepoint, txhex, err,
 		)
 
+		activityResult := common.ActivityResult{
+			Tx:       txhex,
+			Nonce:    txnonce,
+			GasPrice: txprice,
+			Error:    "",
+		}
+
+		if err != nil {
+			activityResult.Error = err.Error()
+		}
+
 		return rc.activityStorage.Record(
 			common.ActionDeposit,
 			uid,
@@ -183,12 +200,7 @@ func (rc ReserveCore) Deposit(
 				Amount:    amountFloat,
 				Timepoint: timepoint,
 			},
-			common.ActivityResult{
-				Tx:       txhex,
-				Nonce:    txnonce,
-				GasPrice: txprice,
-				Error:    fmt.Sprintf("%v", err),
-			},
+			activityResult,
 			"",
 			status,
 			timepoint,
@@ -254,6 +266,17 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 		rc.l.Infof("Core ----------> Withdraw from %s: asset: %d, amount: %s, timestamp: %d ==> Result: id: %s, error: %s",
 			exchange.ID().String(), asset.ID, amount.Text(10), timepoint, id, err,
 		)
+		acitivityResult := common.ActivityResult{
+			ID: id,
+			// this field will be updated with real tx when data fetcher can fetch it
+			// from exchanges
+			Tx:    "",
+			Error: "",
+		}
+		// omitempty if err == nil
+		if err != nil {
+			acitivityResult.Error = err.Error()
+		}
 		return rc.activityStorage.Record(
 			common.ActionWithdraw,
 			uid,
@@ -264,13 +287,7 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 				Amount:    common.BigToFloat(amount, int64(asset.Decimals)),
 				Timepoint: timepoint,
 			},
-			common.ActivityResult{
-				Error: fmt.Sprintf("%v", err),
-				ID:    id,
-				// this field will be updated with real tx when data fetcher can fetch it
-				// from exchanges
-				Tx: "",
-			},
+			acitivityResult,
 			status,
 			"",
 			timepoint,
@@ -450,6 +467,15 @@ func (rc ReserveCore) SetRates(
 	for _, asset := range assets {
 		assetsID = append(assetsID, asset.ID)
 	}
+	activityResult := common.ActivityResult{
+		Tx:       txhex,
+		Nonce:    txnonce,
+		GasPrice: txprice,
+		Error:    "",
+	}
+	if err != nil {
+		activityResult.Error = err.Error()
+	}
 	sErr := rc.activityStorage.Record(
 		common.ActionSetRate,
 		uid,
@@ -462,12 +488,7 @@ func (rc ReserveCore) SetRates(
 			AFPMid: afpMids,
 			Msgs:   additionalMsgs,
 		},
-		common.ActivityResult{
-			Tx:       txhex,
-			Nonce:    txnonce,
-			GasPrice: txprice,
-			Error:    fmt.Sprintf("%v", err),
-		},
+		activityResult,
 		"",
 		miningStatus,
 		common.NowInMillis(),
