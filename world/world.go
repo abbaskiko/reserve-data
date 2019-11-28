@@ -45,13 +45,13 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		tw.l.Warnw("unexpected return code, response text", "code", resp.StatusCode, "body", body)
+		tw.l.Warnw("unexpected status code", "code", resp.StatusCode, "body", string(body))
 		return errors.New("unexpected return code")
 	}
 	d := json.NewDecoder(bytes.NewBuffer(body))
 	d.DisallowUnknownFields()
 	if err = d.Decode(dst); err != nil {
-		tw.l.Warnw("unmarshal failed", "caller", caller, "err", err, "body", body)
+		tw.l.Warnw("unmarshal failed", "caller", caller, "err", err, "body", string(body))
 		return errors.Wrap(err, "unmarshal failed")
 	}
 	return nil
