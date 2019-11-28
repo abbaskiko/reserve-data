@@ -35,7 +35,7 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		tw.l.Warnw("request failed, %v", "caller", caller, "err", err)
+		tw.l.Warnw("request failed", "caller", caller, "err", err)
 		return err
 	}
 	body, err := ioutil.ReadAll(resp.Body)
