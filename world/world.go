@@ -35,23 +35,23 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		tw.l.Warnf("request on %s failed, %v", caller, err)
+		tw.l.Warnw("request failed, %v", "caller", caller, "err", err)
 		return err
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		tw.l.Warnf("%s read response error %v", caller, err)
+		tw.l.Warnw("read response error", "caller", caller, "err", err)
 		return errors.Wrap(err, "read response error")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		tw.l.Warnf("unexpected return code: %d, response text %s", resp.StatusCode, body)
+		tw.l.Warnw("unexpected return code, response text", "code", resp.StatusCode, "body", body)
 		return errors.New("unexpected return code")
 	}
 	d := json.NewDecoder(bytes.NewBuffer(body))
 	d.DisallowUnknownFields()
 	if err = d.Decode(dst); err != nil {
-		tw.l.Warnf("%s unmarshal failed, err = %v, response text %s", caller, err, body)
+		tw.l.Warnw("unmarshal failed", "caller", caller, "err", err, "body", body)
 		return errors.Wrap(err, "unmarshal failed")
 	}
 	return nil

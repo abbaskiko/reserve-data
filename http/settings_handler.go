@@ -228,17 +228,17 @@ func (s *Server) ConfirmTokenUpdate(c *gin.Context) {
 	if hasInternal {
 		pws, err = s.metric.GetPWIEquationV2()
 		if err != nil {
-			s.l.Warnf("There is no current PWS equation in database, creating new instance...")
+			s.l.Warnw("There is no current PWS equation in database, creating new instance...")
 			pws = make(common.PWIEquationRequestV2)
 		}
 		tarQty, err = s.metric.GetTargetQtyV2()
 		if err != nil {
-			s.l.Warnf("There is no current target quantity in database, creating new instance...")
+			s.l.Warnw("There is no current target quantity in database, creating new instance...")
 			tarQty = make(common.TokenTargetQtyV2)
 		}
 		quadEq, err = s.metric.GetRebalanceQuadratic()
 		if err != nil {
-			s.l.Warnf("WARNING: There is no current quadratic equation in database, creating new instance...")
+			s.l.Warnw("WARNING: There is no current quadratic equation in database, creating new instance...")
 			quadEq = make(common.RebalanceQuadraticRequest)
 		}
 		if s.hasMetricPending() {
