@@ -561,7 +561,7 @@ func (h *Huobi) Send2ndTransaction(amount float64, token common.Token, exchangeA
 		tx, err = h.blockchain.SendTokenFromAccountToExchange(IAmount, exchangeAddress, ethereum.HexToAddress(token.Address))
 	}
 	if err != nil {
-		h.l.Warnw("Can not send transaction to exchange", "err", err)
+		h.l.Warnw("Can not send transaction to exchange", "err", err, "token_id", token.ID)
 		return nil, err
 	}
 	h.l.Infof("Transaction submitted. Tx is: %v", tx)

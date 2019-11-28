@@ -321,26 +321,26 @@ func (rd ReserveData) ControlAuthDataSize() error {
 		fileName := filepath.Join(tmpDir, fmt.Sprintf("ExpiredAuthData_at_%s", time.Unix(int64(timepoint/1000), 0).UTC()))
 		nRecord, err := rd.storage.ExportExpiredAuthData(common.TimeToTimepoint(t), fileName)
 		if err != nil {
-			rd.l.Warnw("DataPruner export AuthData operation failed", "err", err)
+			rd.l.Warnw("DataPruner export AuthData operation failed", "err", err, "file", fileName)
 		} else {
 			var integrity bool
 			if nRecord > 0 {
 				err = rd.storageController.Arch.UploadFile(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 				if err != nil {
-					rd.l.Warnw("DataPruner: Upload file failed", "err", err)
+					rd.l.Warnw("DataPruner: Upload file failed", "err", err, "file", fileName)
 				} else {
 					integrity, err = rd.storageController.Arch.CheckFileIntergrity(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 					if err != nil {
-						rd.l.Warnw("DataPruner: error in file integrity check", "err", err)
+						rd.l.Warnw("DataPruner: error in file integrity check", "err", err, "file", fileName)
 					} else if !integrity {
-						rd.l.Warnw("DataPruner: file upload corrupted")
+						rd.l.Warnw("DataPruner: file upload corrupted", "file", fileName)
 
 					}
 					if err != nil || !integrity {
 						//if the intergrity check failed, remove the remote file.
 						removalErr := rd.storageController.Arch.RemoveFile(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 						if removalErr != nil {
-							rd.l.Warnw("DataPruner: cannot remove remote file", "err", removalErr)
+							rd.l.Warnw("DataPruner: cannot remove remote file", "err", removalErr, "file", fileName)
 							return err
 						}
 					}

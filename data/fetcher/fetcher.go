@@ -173,7 +173,7 @@ func (f *Fetcher) FetchRate(timepoint uint64) {
 
 	data, err = f.blockchain.FetchRates(atBlock, f.currentBlock)
 	if err != nil {
-		f.l.Warnw("Fetching rates from blockchain failed", "err", err)
+		f.l.Warnw("Fetching rates from blockchain failed", "err", err, "at_block", atBlock, "current_block", f.currentBlock)
 		return
 	}
 
@@ -292,6 +292,7 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 		if unchanged(preStatuses, statuses) {
 			break
 		}
+		f.l.Infow("preStatuses and statuses are not match exactly, retrying")
 	}
 	for k, v := range balances {
 		allBalances[k] = v
