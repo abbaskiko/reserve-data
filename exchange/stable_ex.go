@@ -39,7 +39,7 @@ func (se *StableEx) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 }
 
 func (se *StableEx) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols) (common.ExchangeInfo, error) {
-	se.l.Warnf("stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
+	se.l.Warnw("stabel_exchange shouldn't come with live exchange info. Return an all 0 result...")
 	result := make(common.ExchangeInfo)
 	for _, pair := range pairs {
 		result[pair.ID] = common.ExchangePrecisionLimit{
