@@ -1,8 +1,9 @@
 # build stage
+ARG CMHASH
 FROM golang:stretch AS build-env
 COPY . /go/src/github.com/KyberNetwork/reserve-data
 WORKDIR /go
-RUN go install -v github.com/KyberNetwork/reserve-data/cmd
+RUN go install -v -ldflags "-X common.AppVersion=`date -u +.%Y%m%d.%H%M%S`_${CMHASH}" github.com/KyberNetwork/reserve-data/cmd
 
 # final stage
 FROM debian:stretch
