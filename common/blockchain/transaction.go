@@ -35,7 +35,7 @@ func (tx *RPCTransaction) BlockNumber() *big.Int {
 	}
 	blockno, err := hexutil.DecodeBig(*tx.txExtraInfo.BlockNumber)
 	if err != nil {
-		zap.S().Errorf("Error decoding block number: %v", err)
+		zap.S().Errorw("Error decoding block number", "err", err)
 		return big.NewInt(0)
 	}
 	return blockno
@@ -54,7 +54,7 @@ var errNotCached = errors.New("sender not cached")
 func setSenderFromServer(tx *types.Transaction, addr ethereum.Address, block ethereum.Hash) {
 	// Use types.Sender for side-effect to store our signer into the cache.
 	if _, err := types.Sender(&senderFromServer{addr, block}, tx); err != nil {
-		zap.S().Errorf("Type sender error: %s", err.Error())
+		zap.S().Errorw("Type sender error", "err", err)
 	}
 }
 

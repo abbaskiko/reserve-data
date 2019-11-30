@@ -83,7 +83,7 @@ func (ep *Endpoint) GetResponse(
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			ep.l.Warnf("Response body close error: %s", cErr.Error())
+			ep.l.Warnw("Response body close failed", "err", cErr)
 		}
 	}()
 	switch resp.StatusCode {
@@ -105,7 +105,7 @@ func (ep *Endpoint) GetResponse(
 		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
 	if err != nil || len(respBody) == 0 {
-		ep.l.Warnf("request to %s, got response from binance: %s, err: %v", req.URL, common.TruncStr(respBody), err)
+		ep.l.Warnw("request got response from binance", "url", req.URL, "body", string(common.TruncStr(respBody)), "err", err)
 	}
 	return respBody, err
 }

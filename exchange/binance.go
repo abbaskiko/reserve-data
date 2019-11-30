@@ -50,10 +50,10 @@ func (bn *Binance) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 	}
 	liveAddress, err := bn.interf.GetDepositAddress(symbol)
 	if err != nil || liveAddress.Address == "" {
-		bn.l.Warnf("Get Binance live deposit address for token %d failed: err: (%v) or the address repplied is empty . Use the currently available address instead", asset.ID, err)
+		bn.l.Warnw("Get Binance live deposit address for token failed or the address replied is empty . Use the currently available address instead", "assetID", asset.ID, "err", err)
 		addrs, uErr := bn.sr.GetDepositAddresses(uint64(common.Binance))
 		if uErr != nil {
-			bn.l.Warnf("get address of token %d in Binance exchange failed:(%s), it will be considered as not supported", asset.ID, err.Error())
+			bn.l.Warnw("get address of token in Binance exchange failed, it will be considered as not supported", "assetID", asset.ID, "err", err)
 			return ethereum.Address{}, false
 		}
 		depositAddr, ok := addrs[symbol]
@@ -64,7 +64,7 @@ func (bn *Binance) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 		asset.ID,
 		uint64(common.Binance),
 		ethereum.HexToAddress(liveAddress.Address)); err != nil {
-		bn.l.Warnf("failed to update deposit address err=%s", err.Error())
+		bn.l.Warnw("failed to update deposit address", "err", err)
 		return ethereum.Address{}, false
 
 	}
@@ -298,7 +298,7 @@ func (bn *Binance) FetchOnePairTradeHistory(pair commonv3.TradingPairSymbols) ([
 func (bn *Binance) FetchTradeHistory() {
 	pairs, err := bn.TokenPairs()
 	if err != nil {
-		bn.l.Warnf("Binance Get Token pairs setting failed (%s)", err.Error())
+		bn.l.Warnw("Binance Get Token pairs setting failed", "err", err)
 		return
 	}
 	var (
@@ -315,7 +315,8 @@ func (bn *Binance) FetchTradeHistory() {
 				defer wait.Done()
 				histories, err := bn.FetchOnePairTradeHistory(pair)
 				if err != nil {
-					bn.l.Warnf("Cannot fetch data for pair %s%s: %s", pair.BaseSymbol, pair.QuoteSymbol, err.Error())
+					bn.l.Warnw("Cannot fetch data for pair",
+						"pair", fmt.Sprintf("%s%s", pair.BaseSymbol, pair.QuoteSymbol), "err", err)
 					return
 				}
 				guard.Lock()
@@ -328,7 +329,7 @@ func (bn *Binance) FetchTradeHistory() {
 	}
 
 	if err := bn.storage.StoreTradeHistory(result); err != nil {
-		bn.l.Warnf("Binance Store trade history error: %s", err.Error())
+		bn.l.Warnw("Binance Store trade history error", "err", err)
 	}
 }
 
@@ -351,7 +352,8 @@ func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID ui
 			return "", nil
 		}
 	}
-	bn.l.Warnf("Binance Deposit is not found in deposit list returned from Binance. This might cause by wrong start/end time, please check again.")
+	bn.l.Warnw("Binance Deposit is not found in deposit list returned from Binance. " +
+		"This might cause by wrong start/end time, please check again.")
 	return "", nil
 }
 
