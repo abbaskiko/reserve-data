@@ -1103,6 +1103,10 @@ func (s *Server) CancelTargetQtyV2(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+func (s *Server) getVersion(c *gin.Context) {
+	httputil.ResponseSuccess(c, httputil.WithField("version", common.AppVersion))
+}
+
 // GetTargetQtyV2 return target quantity with v2 format
 func (s *Server) GetTargetQtyV2(c *gin.Context) {
 	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
@@ -1211,6 +1215,7 @@ func (s *Server) register() {
 
 		s.r.POST("/set-fetcher-configuration", s.UpdateFetcherConfiguration)
 		s.r.GET("/get-all-fetcher-configuration", s.GetAllFetcherConfiguration)
+		s.r.GET("/version", s.getVersion)
 	}
 }
 
