@@ -365,7 +365,7 @@ func (bs *BoltStorage) ExportExpiredAuthData(currentTime uint64, fileName string
 	}
 	defer func() {
 		if cErr := outFile.Close(); cErr != nil {
-			bs.l.Warnf("Close file error: %+v", cErr)
+			bs.l.Warnw("Close file", "err", cErr)
 		}
 	}()
 
@@ -518,7 +518,7 @@ func (bs *BoltStorage) StorePrice(data common.AllPriceEntry, timepoint uint64) e
 		// remove outdated data from bucket
 		bs.l.Infof("Version number: %d", bs.GetNumberOfVersion(tx, priceBucket))
 		if uErr = bs.PruneOutdatedData(tx, priceBucket); uErr != nil {
-			bs.l.Warnf("Prune out data: %+v", uErr)
+			bs.l.Warnw("Prune out data", "err", uErr)
 			return uErr
 		}
 
@@ -791,12 +791,12 @@ func (bs *BoltStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Activity
 func interfaceConverstionToUint64(l *zap.SugaredLogger, intf interface{}) uint64 {
 	numString, ok := intf.(string)
 	if !ok {
-		l.Warnf("(%v) can't be converted to type string", intf)
+		l.Warnw("can't be converted to type string", "value", fmt.Sprintf("%+v", intf))
 		return 0
 	}
 	num, err := strconv.ParseUint(numString, 10, 64)
 	if err != nil {
-		l.Warnf("ERROR: parsing error %s, inteface conversion to uint64 will set to 0", err)
+		l.Warnw("ERROR: parsing error, interface conversion to uint64 will set to 0", "err", err)
 		return 0
 	}
 	return num
@@ -937,7 +937,7 @@ func (bs *BoltStorage) HasPendingDeposit(token common.Token, exchange common.Exc
 			if record.Action == common.ActionDeposit {
 				tokenID, ok := record.Params["token"].(string)
 				if !ok {
-					bs.l.Warnf("record Params token (%v) can not be converted to string", record.Params["token"])
+					bs.l.Warnw("record Params token can not be converted to string", "token", record.Params["token"])
 					continue
 				}
 				if tokenID == token.ID && record.Destination == string(exchange.ID()) {

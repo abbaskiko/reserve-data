@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+// AppVersion store build version, which set on build
+var AppVersion string
+
 const truncLength int = 256
 
 func TruncStr(src []byte) []byte {

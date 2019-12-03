@@ -13,21 +13,21 @@ type AddressName int
 const (
 	//Reserve is the enumerated key for reserve
 	Reserve AddressName = iota //reserve
-	// Network address
-	Network //network
+	// Proxy address
+	// as we used to call it network
+	// we keep its string name as is so other component won't need to change
+	Proxy //network
 	//Wrapper is the enumberated key for wrapper
 	Wrapper //wrapper
 	//Pricing is the enumberated key for pricing
-	Pricing         //pricing
-	InternalNetwork //internal_network
+	Pricing //pricing
 )
 
 var addressNameValues = map[string]AddressName{
-	"reserve":          Reserve,
-	"wrapper":          Wrapper,
-	"network":          Network,
-	"pricing":          Pricing,
-	"internal_network": InternalNetwork,
+	"reserve": Reserve,
+	"wrapper": Wrapper,
+	"network": Proxy,
+	"pricing": Pricing,
 }
 
 // AddressNameValues returns the mapping of the string presentation
@@ -58,7 +58,6 @@ func (addrSetting *AddressSetting) saveAddressFromAddressConfig(addrs common.Add
 	addrSetting.Addresses[Reserve] = ethereum.HexToAddress(addrs.Reserve)
 	addrSetting.Addresses[Wrapper] = ethereum.HexToAddress(addrs.Wrapper)
 	addrSetting.Addresses[Pricing] = ethereum.HexToAddress(addrs.Pricing)
-	addrSetting.Addresses[Network] = ethereum.HexToAddress(addrs.Network)
-	addrSetting.Addresses[InternalNetwork] = ethereum.HexToAddress(addrs.InternalNetwork)
+	addrSetting.Addresses[Proxy] = ethereum.HexToAddress(addrs.Proxy)
 	return nil
 }

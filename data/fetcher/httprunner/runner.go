@@ -69,7 +69,7 @@ func (h *HTTPRunner) waitPingResponse() error {
 		case <-tickCh:
 			rsp, dErr := client.Do(req)
 			if dErr != nil {
-				h.l.Warnf("HTTP server is returning an error: %+v, retrying", dErr)
+				h.l.Warnw("HTTP server is returning an error, retrying", "err", dErr)
 				break
 			}
 			if rsp.StatusCode == http.StatusOK {

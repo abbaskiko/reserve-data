@@ -44,7 +44,7 @@ func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPa
 	err := c.AddFunc(cronTimeExpression, func() {
 		files, rErr := ioutil.ReadDir(logDir)
 		if rErr != nil {
-			l.Warnf("BACKUPLOG ERROR: Can not view log folder - %s", rErr)
+			l.Warnw("BACKUPLOG ERROR: Can not view log folder", "err", rErr)
 			return
 		}
 		for _, file := range files {
@@ -52,19 +52,19 @@ func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPa
 			if (!file.IsDir()) && (matched) && (err == nil) {
 				err := arch.UploadFile(arch.GetLogBucketName(), remoteLogPath, filepath.Join(logDir, file.Name()))
 				if err != nil {
-					l.Warnf("BACKUPLOG ERROR: Can not upload Log file %s", err)
+					l.Warnw("BACKUPLOG ERROR: Can not upload Log file", "err", err)
 				} else {
 					var err error
 					var ok bool
 					if file.Name() != logFileName {
 						ok, err = arch.CheckFileIntergrity(arch.GetLogBucketName(), remoteLogPath, filepath.Join(logDir, file.Name()))
 						if !ok || (err != nil) {
-							l.Warnf("BACKUPLOG ERROR: File intergrity is corrupted")
+							l.Warnw("BACKUPLOG ERROR: File intergrity is corrupted")
 						}
 						err = os.Remove(filepath.Join(logDir, file.Name()))
 					}
 					if err != nil {
-						l.Warnf("BACKUPLOG ERROR: Cannot remove local log file %s", err)
+						l.Warnw("BACKUPLOG ERROR: Cannot remove local log file", "err", err)
 					} else {
 						l.Infof("BACKUPLOG Log backup: backup file %s successfully", file.Name())
 					}
@@ -73,7 +73,7 @@ func backupLog(arch archive.Archive, cronTimeExpression string, fileNameRegrexPa
 		}
 	})
 	if err != nil {
-		l.Warnf("BACKUPLOG Cannot rotate log: %s", err)
+		l.Warnw("BACKUPLOG Cannot rotate log", "err", err)
 	}
 	c.Start()
 }

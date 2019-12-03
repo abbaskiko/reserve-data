@@ -72,7 +72,7 @@ func (f *Fetcher) AddExchange(exchange Exchange) {
 		}
 	}
 	if err := f.setting.UpdateExchangeStatus(exchangeStatus); err != nil {
-		f.l.Warnf("Update exchange status error: %+v", err)
+		f.l.Warnw("Update exchange status", "err", err)
 	}
 }
 
@@ -107,29 +107,29 @@ func (f *Fetcher) RunGlobalDataFetcher() {
 
 func (f *Fetcher) FetchGlobalData(timepoint uint64) {
 	if goldData, err := f.theworld.GetGoldInfo(); err != nil {
-		f.l.Warnf("failed to fetch Gold Info: %+v", err)
+		f.l.Warnw("failed to fetch Gold Info", "err", err)
 	} else {
 		goldData.Timestamp = common.GetTimepoint()
 		if err = f.globalStorage.StoreGoldInfo(goldData); err != nil {
-			f.l.Warnf("Storing gold info failed: %+v", err)
+			f.l.Warnw("Storing gold info failed", "err", err)
 		}
 	}
 
 	if btcData, err := f.theworld.GetBTCInfo(); err != nil {
-		f.l.Warnf("failed to fetch BTC Info: %+v", err)
+		f.l.Warnw("failed to fetch BTC Info", "err", err)
 	} else {
 		btcData.Timestamp = common.GetTimepoint()
 		if err = f.globalStorage.StoreBTCInfo(btcData); err != nil {
-			f.l.Warnf("Storing BTC info failed: %+v", err)
+			f.l.Warnw("Storing BTC info failed", "err", err)
 		}
 	}
 
 	if usdData, err := f.theworld.GetUSDInfo(); err != nil {
-		f.l.Warnf("failed to fetch USD info, %+v", err)
+		f.l.Warnw("failed to fetch USD info", "err", err)
 	} else {
 		usdData.Timestamp = common.GetTimepoint()
 		if err = f.globalStorage.StoreUSDInfo(usdData); err != nil {
-			f.l.Warnf("Store USD info failed, %v", err)
+			f.l.Warnw("Store USD info failed", "err", err)
 		}
 	}
 }
@@ -173,13 +173,13 @@ func (f *Fetcher) FetchRate(timepoint uint64) {
 
 	data, err = f.blockchain.FetchRates(atBlock, f.currentBlock)
 	if err != nil {
-		f.l.Warnf("Fetching rates from blockchain failed: %+v. Will not store it to storage.", err)
+		f.l.Warnw("Fetching rates from blockchain failed", "err", err, "at_block", atBlock, "current_block", f.currentBlock)
 		return
 	}
 
 	f.l.Infof("Got rates from blockchain: %+v", data)
 	if err = f.storage.StoreRate(data, timepoint); err != nil {
-		f.l.Warnf("Storing rates failed: %+v", err)
+		f.l.Warnw("Storing rates failed", "err", err)
 	}
 }
 
@@ -209,7 +209,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	bstatuses := sync.Map{}
 	pendings, err := f.storage.GetPendingActivities()
 	if err != nil {
-		f.l.Warnf("Getting pending activities failed: %+v", err)
+		f.l.Warnw("Getting pending activities failed", "err", err)
 		return
 	}
 	wait := sync.WaitGroup{}
@@ -232,13 +232,13 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		if found {
 			activityStatus, ok := status.(common.ActivityStatus)
 			if !ok {
-				f.l.Warnf("status from cexs cannot be asserted to common.ActivityStatus")
+				f.l.Warnw("status from cexs cannot be asserted to common.ActivityStatus")
 				continue
 			}
 			//Set activity result tx to tx from cexs if currently result tx is not nil an is an empty string
 			resultTx, ok := activity.Result["tx"].(string)
 			if !ok {
-				f.l.Warnf("Activity Result Tx (value %v) cannot be asserted to string", activity.Result["tx"])
+				f.l.Warnw("Activity Result Tx cannot be asserted to string", "tx", activity.Result["tx"])
 				continue
 			}
 			if resultTx == "" {
@@ -250,7 +250,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	if err = f.FetchAuthDataFromBlockchain(bbalances, &bstatuses, pendings); err != nil {
 		snapshot.Error = err.Error()
 		snapshot.Valid = false
-		f.l.Warnf("FetchAuthDataFromBlockchain failed with error %+v", err)
+		f.l.Warnw("FetchAuthDataFromBlockchain failed", "err", err)
 	}
 	snapshot.Block = f.currentBlock
 	snapshot.ReturnTime = common.GetTimestamp()
@@ -258,7 +258,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		&ebalances, bbalances, &estatuses, &bstatuses,
 		pendings, &snapshot, timepoint)
 	if err != nil {
-		f.l.Warnf("Storing auth data failed: %+v", err)
+		f.l.Warnw("Storing auth data failed", "err", err)
 		return
 	}
 }
@@ -278,20 +278,21 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 	for {
 		preStatuses, err = f.FetchStatusFromBlockchain(pendings)
 		if err != nil {
-			f.l.Warnf("Fetching blockchain pre statuses failed:  %+v, retrying", err)
+			f.l.Warnw("Fetching blockchain pre statuses failed, retrying", "err", err)
 		}
 		balances, err = f.FetchBalanceFromBlockchain()
 		if err != nil {
-			f.l.Warnf("Fetching blockchain balances failed: %+v", err)
+			f.l.Warnw("Fetching blockchain balances failed", "err", err)
 			return err
 		}
 		statuses, err = f.FetchStatusFromBlockchain(pendings)
 		if err != nil {
-			f.l.Warnf("Fetching blockchain statuses failed:  %+v, retrying", err)
+			f.l.Warnw("Fetching blockchain statuses failed, retrying", "err", err)
 		}
 		if unchanged(preStatuses, statuses) {
 			break
 		}
+		f.l.Infow("preStatuses and statuses are not match exactly, retrying")
 	}
 	for k, v := range balances {
 		allBalances[k] = v
@@ -305,7 +306,7 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 func (f *Fetcher) FetchCurrentBlock(timepoint uint64) {
 	block, err := f.blockchain.CurrentBlock()
 	if err != nil {
-		f.l.Warnf("Fetching current block failed: %+v. Ignored.", err)
+		f.l.Warnw("Fetching current block failed", "err", err)
 	} else {
 		// update currentBlockUpdateTime first to avoid race condition
 		// where fetcher is trying to fetch new rate
@@ -326,7 +327,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 	// SetRateMinedNonce might be slow, use closure to not invoke it every time
 	minedNonce, err := f.blockchain.SetRateMinedNonce()
 	if err != nil {
-		f.l.Warnf("Getting mined nonce failed: %+v", err)
+		f.l.Warnw("Getting mined nonce failed", "err", err)
 	}
 
 	return func(act common.ActivityRecord) bool {
@@ -344,7 +345,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 		}
 		nonce, err := strconv.ParseUint(actNonce, 10, 64)
 		if err != nil {
-			f.l.Warnf("convert act.Result[nonce] to Uint64 failed %+v", err)
+			f.l.Warnw("convert act.Result[nonce] to Uint64 failed", "err", err)
 			return false
 		}
 		return nonce < minedNonce
@@ -362,7 +363,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 			var err error
 			txStr, ok := activity.Result["tx"].(string)
 			if !ok {
-				f.l.Warnf("TX_STATUS:cannot convert activity.Result[tx] (value %v) to string type", activity.Result["tx"])
+				f.l.Warnw("TX_STATUS:cannot convert activity.Result[tx] to string type", "tx", activity.Result["tx"])
 				continue
 			}
 			tx := ethereum.HexToHash(txStr)
@@ -457,7 +458,7 @@ func (f *Fetcher) updateActivitywithBlockchainStatus(activity *common.ActivityRe
 
 	activityStatus, ok := status.(common.ActivityStatus)
 	if !ok {
-		f.l.Warnf("ERROR: status (%v) cannot be asserted to common.ActivityStatus", status)
+		f.l.Warnw("ERROR: status cannot be asserted to common.ActivityStatus", "status", status)
 		return
 	}
 	f.l.Infof("In PersistSnapshot: blockchain activity status for %+v: %+v", activity.ID, activityStatus)
@@ -482,12 +483,12 @@ func (f *Fetcher) updateActivitywithBlockchainStatus(activity *common.ActivityRe
 func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityRecord, estatuses *sync.Map, snapshot *common.AuthDataSnapshot) {
 	status, ok := estatuses.Load(activity.ID)
 	if !ok || status == nil {
-		f.l.Infof("exchange status for %s is nil or not existed ", activity.ID.String())
+		f.l.Infow("exchange status for %s is nil or not existed ", "activity", activity.ID.String())
 		return
 	}
 	activityStatus, ok := status.(common.ActivityStatus)
 	if !ok {
-		f.l.Warnf("status (%v) cannot be asserted to common.ActivityStatus", status)
+		f.l.Warnw("status cannot be asserted to common.ActivityStatus", "status", status)
 		return
 	}
 	f.l.Infof("In PersistSnapshot: exchange activity status for %+v: %+v", activity.ID, activityStatus)
@@ -499,7 +500,7 @@ func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityReco
 
 	resultTx, ok := activity.Result["tx"].(string)
 	if !ok {
-		f.l.Warnf("activity.Result[tx] (value %v) cannot be asserted to string type", activity.Result["tx"])
+		f.l.Warnw("activity.Result[tx] cannot be asserted to string type", "tx", activity.Result["tx"])
 	} else if ok && resultTx == "" {
 		activity.Result["tx"] = activityStatus.Tx
 	}
@@ -527,12 +528,12 @@ func (f *Fetcher) PersistSnapshot(
 		//if type conversion went wrong, continue to the next record
 		v, ok := value.(common.EBalanceEntry)
 		if !ok {
-			f.l.Warnf("value (%v) cannot be asserted to common.EbalanceEntry", v)
+			f.l.Warnw("value cannot be asserted to common.EbalanceEntry", "value", v)
 			return true
 		}
 		exID, ok := key.(common.ExchangeID)
 		if !ok {
-			f.l.Warnf("key (%v) cannot be asserted to common.ExchangeID", key)
+			f.l.Warnw("key cannot be asserted to common.ExchangeID", "key", key)
 			return true
 		}
 		allEBalances[exID] = v
@@ -618,13 +619,13 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 		preStatuses := f.FetchStatusFromExchange(exchange, pendings, timepoint)
 		balances, err = exchange.FetchEBalanceData(timepoint)
 		if err != nil {
-			f.l.Warnf("Fetching exchange balances from %s failed: %+v", exchange.Name(), err)
+			f.l.Warnw("Fetching exchange balances failed", "exchange", exchange.Name(), "err", err)
 			break
 		}
 		//Remove all token which is not in this exchange's token addresses
 		tokenAddress, err = exchange.TokenAddresses()
 		if err != nil {
-			f.l.Warnf("getting token address from %s failed: %+v", exchange.Name(), err)
+			f.l.Warnw("getting token address failed", "exchange", exchange.Name(), "err", err)
 			break
 		}
 		for tokenID := range balances.AvailableBalance {
@@ -675,12 +676,12 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				orderID := id.EID
 				base, ok := activity.Params["base"].(string)
 				if !ok {
-					f.l.Warnf("activity Params base (%v) can't be converted to type string", activity.Params["base"])
+					f.l.Warnw("activity Params base can't be converted to type string", "base", activity.Params["base"])
 					continue
 				}
 				quote, ok := activity.Params["quote"].(string)
 				if !ok {
-					f.l.Warnf("activity Params quote (%v) can't be converted to type string", activity.Params["quote"])
+					f.l.Warnw("activity Params quote can't be converted to type string", "quote", activity.Params["quote"])
 					continue
 				}
 				// we ignore error of order status because it doesn't affect
@@ -689,22 +690,22 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			case common.ActionDeposit:
 				txHash, ok := activity.Result["tx"].(string)
 				if !ok {
-					f.l.Warnf("activity Result tx (%v) can't be converted to type string", activity.Result["tx"])
+					f.l.Warnw("activity Result tx can't be converted to type string", "tx", activity.Result["tx"])
 					continue
 				}
 				amountStr, ok := activity.Params["amount"].(string)
 				if !ok {
-					f.l.Warnf("activity Params amount (%v) can't be converted to type string", activity.Params["amount"])
+					f.l.Warnw("activity Params amount can't be converted to type string", "amount", activity.Params["amount"])
 					continue
 				}
 				amount, uErr := strconv.ParseFloat(amountStr, 64)
 				if uErr != nil {
-					f.l.Warnf("can't parse activity Params amount %s to float64", amountStr)
+					f.l.Warnw("can't parse activity Params amount to float64", "amount", amountStr)
 					continue
 				}
 				currency, ok := activity.Params["token"].(string)
 				if !ok {
-					f.l.Warnf("activity Params token (%v) can't be converted to type string", activity.Params["token"])
+					f.l.Warnw("activity Params token can't be converted to type string", "token", activity.Params["token"])
 					continue
 				}
 				status, err = exchange.DepositStatus(id, txHash, currency, amount, timepoint)
@@ -712,22 +713,22 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			case common.ActionWithdraw:
 				amountStr, ok := activity.Params["amount"].(string)
 				if !ok {
-					f.l.Warnf("activity Params amount (%v) can't be converted to type string", activity.Params["amount"])
+					f.l.Warnw("activity Params amount can't be converted to type string", "amount", activity.Params["amount"])
 					continue
 				}
 				amount, uErr := strconv.ParseFloat(amountStr, 64)
 				if uErr != nil {
-					f.l.Warnf("can't parse activity Params amount %s to float64", amountStr)
+					f.l.Warnw("can't parse activity Params amount to float64", "amount", amountStr)
 					continue
 				}
 				currency, ok := activity.Params["token"].(string)
 				if !ok {
-					f.l.Warnf("activity Params token (%v) can't be converted to type string", activity.Params["token"])
+					f.l.Warnw("activity Params token can't be converted to type string", "token", activity.Params["token"])
 					continue
 				}
 				_, ok = activity.Result["tx"].(string)
 				if !ok {
-					f.l.Warnf("activity Result tx (%v) can't be converted to type string", activity.Result["tx"])
+					f.l.Warnw("activity Result tx can't be converted to type string", "tx", activity.Result["tx"])
 					continue
 				}
 				status, tx, err = exchange.WithdrawStatus(id.EID, currency, amount, timepoint)
@@ -740,7 +741,8 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			// long time. We will just consider it as a failed activity.
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
-				f.l.Warnf("Activity %v has invalid timestamp. Just ignore it.", activity)
+				f.l.Warnw("Activity has invalid timestamp. Just ignore it.", "activity", activity,
+					"err", err1, "timestamp", activity.Timestamp)
 			} else {
 				if common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 					result[id] = common.NewActivityStatus(common.ExchangeStatusFailed, tx, blockNum, activity.MiningStatus, err)
@@ -751,7 +753,8 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 		} else {
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
-				f.l.Warnf("Activity %v has invalid timestamp. Just ignore it.", activity)
+				f.l.Warnw("Activity has invalid timestamp", "activity", activity,
+					"err", err1, "timestamp", activity.Timestamp)
 			} else if activity.Destination == string(exchange.ID()) &&
 				activity.ExchangeStatus == common.ExchangeStatusDone &&
 				common.GetTimepoint()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
@@ -786,7 +789,7 @@ func (f *Fetcher) FetchOrderbook(timepoint uint64) {
 	data.SetBlockNumber(f.currentBlock)
 	err := f.storage.StorePrice(data.GetData(), timepoint)
 	if err != nil {
-		f.l.Warnf("Storing data failed: %", err)
+		f.l.Warnw("Storing data failed", "err", err)
 	}
 }
 
@@ -794,12 +797,12 @@ func (f *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, 
 	defer wg.Done()
 	fetchConfig, err := f.globalStorage.GetAllFetcherConfiguration()
 	if err != nil {
-		f.l.Warnf("cannot get btc fetcher configuration err=%+v", err)
+		f.l.Warnw("cannot get btc fetcher configuration", "err", err)
 		return
 	}
 	exdata, err := exchange.FetchPriceData(timepoint, fetchConfig.BTC)
 	if err != nil {
-		f.l.Warnf("Fetching data from %s failed: %+v", exchange.Name(), err)
+		f.l.Warnw("Fetching data failed", "exchange", exchange.Name(), "err", err)
 		return
 	}
 	for pair, exchangeData := range exdata {

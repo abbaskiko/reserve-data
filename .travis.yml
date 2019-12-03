@@ -25,7 +25,7 @@ script:
 
 after_success:
   - docker --version
-  - docker build -f Dockerfile.next -t kybernetwork/reserve-data:$TRAVIS_COMMIT .
+  - docker build -f Dockerfile.next -t kybernetwork/reserve-data:$TRAVIS_COMMIT --build-arg CMHASH=$TRAVIS_COMMIT .
 
 deploy:
   - provider: script

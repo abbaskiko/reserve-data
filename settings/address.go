@@ -6,14 +6,19 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-var ErrNoAddr = errors.New("cannot find the address")
+var (
+	// ErrNoAddr error cannot find the address
+	ErrNoAddr = errors.New("cannot find the address")
+)
 
+// GetAddress return address from address name
 func (s *Settings) GetAddress(name AddressName) (ethereum.Address, error) {
 	return s.Address.GetAddress(name)
 }
 
-func (addrsetting *AddressSetting) GetAddress(name AddressName) (ethereum.Address, error) {
-	addr, ok := addrsetting.Addresses[name]
+// GetAddress return address from address name
+func (addrSetting *AddressSetting) GetAddress(name AddressName) (ethereum.Address, error) {
+	addr, ok := addrSetting.Addresses[name]
 	if !ok {
 		return ethereum.Address{}, ErrNoAddr
 	}

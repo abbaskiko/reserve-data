@@ -219,12 +219,12 @@ func (b *Blockchain) SetRates(
 		b.tokenIndices,
 	)
 	if err != nil {
-		b.l.Warnf("failed to build compact bulk, err: %s", err)
+		b.l.Warnw("failed to build compact bulk", "err", err)
 		return nil, err
 	}
 	opts, err := b.GetTxOpts(pricingOP, nonce, gasPrice, nil)
 	if err != nil {
-		b.l.Warnf("Getting transaction opts failed, err: %s", err)
+		b.l.Warnw("Getting transaction opts failed", "err", err)
 		return nil, err
 	}
 	var tx *types.Transaction

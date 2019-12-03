@@ -48,7 +48,7 @@ func (se *StableEx) GetInfo() (common.ExchangeInfo, error) {
 }
 
 func (se *StableEx) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
-	zap.S().Warnf("stable_exchange shouldn't come with live exchange info. Return an all 0 result...")
+	zap.S().Warnw("stable_exchange shouldn't come with live exchange info. Return an all 0 result...")
 	result := make(common.ExchangeInfo)
 	for _, tokenPairID := range tokenPairIDs {
 		result[tokenPairID] = common.ExchangePrecisionLimit{

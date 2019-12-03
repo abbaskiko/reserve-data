@@ -22,12 +22,12 @@ func WithHandleEmptyToken(data map[string]common.Token) SettingOption {
 		allToks, err := setting.GetAllTokens()
 		if err != nil || len(allToks) < 1 {
 			if err != nil {
-				l.Warnf("Setting Init: Token DB is faulty (%s), attempt to load token from file", err)
+				l.Warnw("Setting Init: Token DB is faulty, attempt to load token from file", "err", err)
 			} else {
 				l.Infof("Setting Init: Token DB is empty, attempt to load token from file")
 			}
 			if err = setting.savePreconfigToken(data); err != nil {
-				l.Warnf("Setting Init: Can not load Token from file: %s, Token DB is needed to be updated manually", err)
+				l.Warnw("Setting Init: Can not load Token from file, Token DB is needed to be updated manually", "err", err)
 			}
 		}
 	}
@@ -39,7 +39,7 @@ func WithHandleEmptyFee(feeConfig map[string]common.ExchangeFees) SettingOption 
 	return func(setting *Settings) {
 		l := zap.S()
 		if err := setting.savePreconfigFee(feeConfig); err != nil {
-			l.Warnf("WARNING: Setting Init: cannot load Fee from file: %s, Fee is needed to be updated manually", err)
+			l.Warnw("WARNING: Setting Init: cannot load Fee from file, Fee is needed to be updated manually", "err", err)
 		}
 	}
 }
@@ -50,7 +50,7 @@ func WithHandleEmptyMinDeposit(data map[string]common.ExchangesMinDeposit) Setti
 	return func(setting *Settings) {
 		l := zap.S()
 		if err := setting.savePrecofigMinDeposit(data); err != nil {
-			l.Warnf("WARNING: Setting Init: cannot load MinDeposit from file: %s, Fee is needed to be updated manually", err)
+			l.Warnw("WARNING: Setting Init: cannot load MinDeposit from file, Fee is needed to be updated manually", "err", err)
 		}
 	}
 }
@@ -61,7 +61,7 @@ func WithHandleEmptyDepositAddress(data map[common.ExchangeID]common.ExchangeAdd
 	return func(setting *Settings) {
 		l := zap.S()
 		if err := setting.savePreconfigExchangeDepositAddress(data); err != nil {
-			l.Warnf("Setting Init: cannot load DepositAddress from file: %s, Fee is needed to be updated manually", err)
+			l.Warnw("Setting Init: cannot load DepositAddress from file, Fee is needed to be updated manually", "err", err)
 		}
 	}
 }
@@ -72,7 +72,7 @@ func WithHandleEmptyExchangeInfo() SettingOption {
 	return func(setting *Settings) {
 		l := zap.S()
 		if err := setting.handleEmptyExchangeInfo(); err != nil {
-			l.Panicf("Setting Init: cannot init Exchange info %s, this will stop the core function", err)
+			l.Panicw("Setting Init: cannot init Exchange info, this will stop the core function", "err", err)
 		}
 	}
 }

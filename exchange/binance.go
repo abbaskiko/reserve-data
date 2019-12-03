@@ -47,13 +47,13 @@ func (bn *Binance) Address(token common.Token) (ethereum.Address, bool) {
 	liveAddress, err := bn.interf.GetDepositAddress(token.ID)
 	if err != nil || liveAddress.Address == "" {
 		if err != nil {
-			bn.l.Warnf("Get Binance live deposit address for token %s failed: err: (%v). Use the currently available address instead", token.ID, err)
+			bn.l.Warnw("Get Binance live deposit address for token failed. Use the currently available address instead", "tokenID", token.ID, "err", err)
 		} else {
-			bn.l.Warnf("Get Binance live deposit address for token %s failed: The address repplied is empty . Use the currently available address instead", token.ID)
+			bn.l.Warnw("Get Binance live deposit address for token failed: The address replied is empty. Use the currently available address instead", "tokenID", token.ID)
 		}
 		addrs, uErr := bn.setting.GetDepositAddresses(settings.Binance)
 		if uErr != nil {
-			bn.l.Warnf("get address of token %s in Binance exchange failed:(%+v), it will be considered as not supported", token.ID, err)
+			bn.l.Warnw("get address of token in Binance exchange failed, it will be considered as not supported", "tokenID", token.ID, "err", err)
 			return ethereum.Address{}, false
 		}
 		return addrs.Get(token.ID)
@@ -62,7 +62,7 @@ func (bn *Binance) Address(token common.Token) (ethereum.Address, bool) {
 	addrs := common.NewExchangeAddresses()
 	addrs.Update(token.ID, ethereum.HexToAddress(liveAddress.Address))
 	if err = bn.setting.UpdateDepositAddress(settings.Binance, *addrs, common.GetTimepoint()); err != nil {
-		bn.l.Warnf("cannot update deposit address for token %s on Binance: (%v)", token.ID, err)
+		bn.l.Warnw("cannot update deposit address for token on Binance", "tokenID", token.ID, "err", err)
 	}
 	return ethereum.HexToAddress(liveAddress.Address), true
 }
@@ -72,9 +72,9 @@ func (bn *Binance) UpdateDepositAddress(token common.Token, address string) erro
 	liveAddress, err := bn.interf.GetDepositAddress(token.ID)
 	if err != nil || liveAddress.Address == "" {
 		if err != nil {
-			bn.l.Warnf("Get Binance live deposit address for token %s failed: err: (%v). Use the currently available address instead", token.ID, err)
+			bn.l.Warnw("Get Binance live deposit address for token failed. Use the currently available address instead", "tokenID", token.ID, "err", err)
 		} else {
-			bn.l.Warnf("Get Binance live deposit address for token %s failed: The address repplied is empty . Use the currently available address instead", token.ID)
+			bn.l.Warnw("Get Binance live deposit address for token failed. The address replied is empty. Use the currently available address instead", "tokenID", token.ID)
 		}
 		addrs := common.NewExchangeAddresses()
 		addrs.Update(token.ID, ethereum.HexToAddress(address))
@@ -410,7 +410,7 @@ func (bn *Binance) OpenOrdersForOnePair(
 		}
 		data.Store(pair.PairID(), orders)
 	} else {
-		bn.l.Warnf("Unsuccessful response from Binance: %v", err)
+		bn.l.Warnw("Unsuccessful response from Binance", "err", err)
 	}
 }
 
@@ -462,8 +462,7 @@ func (bn *Binance) FetchOnePairTradeHistory(
 	tokenPair := fmt.Sprintf("%s-%s", pair.Base.ID, pair.Quote.ID)
 	fromID, err := bn.storage.GetLastIDTradeHistory(tokenPair)
 	if err != nil {
-		bn.l.Warnf("Cannot get last ID trade history",
-			"err", err)
+		bn.l.Warnw("Cannot get last ID trade history", "err", err, "tokenPair", tokenPair)
 		return
 	}
 	resp, err := bn.interf.GetAccountTradeHistory(pair.Base, pair.Quote, fromID)
@@ -501,7 +500,7 @@ func (bn *Binance) FetchTradeHistory() {
 			data := sync.Map{}
 			pairs, err := bn.TokenPairs()
 			if err != nil {
-				bn.l.Warnf("Binance Get Token pairs setting failed (%v)", err)
+				bn.l.Warnw("Binance Get Token pairs setting failed", "err", err)
 				continue
 			}
 			wait := sync.WaitGroup{}
@@ -535,11 +534,11 @@ func (bn *Binance) FetchTradeHistory() {
 				return true
 			})
 			if !integrity {
-				bn.l.Warnf("Binance fetch trade history returns corrupted. Try again in 10 mins")
+				bn.l.Warnw("Binance fetch trade history returns corrupted. Try again in 10 mins")
 				continue
 			}
 			if err := bn.storage.StoreTradeHistory(result); err != nil {
-				bn.l.Warnf("Binance Store trade history error: %v", err)
+				bn.l.Warnw("Binance Store trade history", "err", err)
 			}
 			<-t.C
 		}
