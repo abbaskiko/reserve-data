@@ -38,7 +38,7 @@ var defaultAddressConfiguration = map[deployment.Deployment]common.ContractAddre
 		Reserve:         ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
 		Wrapper:         ethereum.HexToAddress("0x6172AFC8c00c46E0D07ce3AF203828198194620a"),
 		Pricing:         ethereum.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"),
-		InternalNetwork: ethereum.HexToAddress("0x91a502C678605fbCe581eae053319747482276b9"),
+		InternalNetwork: ethereum.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd"),
 		Network:         ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755"),
 	},
 	deployment.Ropsten: {
