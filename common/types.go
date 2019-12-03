@@ -731,11 +731,18 @@ type FetcherConfiguration struct {
 
 // AddressConfig type defines a list of address attribute available in core.
 type AddressConfig struct {
-	Reserve         string `json:"reserve"`
-	Wrapper         string `json:"wrapper"`
-	Pricing         string `json:"pricing"`
-	Network         string `json:"network"`
-	InternalNetwork string `json:"internal network"`
+	Reserve string `json:"reserve"`
+
+	// not officially shown but you can find it here: https://github.com/KyberNetwork/smart-contracts/blob/master/contracts/mock/Wrapper.sol
+	Wrapper string `json:"wrapper"`
+
+	// Pricing is ConversionRates contract
+	Pricing string `json:"pricing"`
+
+	// as we used to miscalling this contract as network
+	// we still keep its json name as network
+	// then other component won't be affect
+	Proxy string `json:"network"`
 }
 
 // RunnerConfig list configs for runner

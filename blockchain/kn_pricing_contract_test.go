@@ -35,11 +35,10 @@ func newTestSetting(t *testing.T, tmpDir string) *settings.Settings {
 	}
 	addressSetting := &settings.AddressSetting{
 		Addresses: map[settings.AddressName]ethereum.Address{
-			settings.Pricing:         ethereum.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"),
-			settings.Reserve:         ethereum.HexToAddress(""),
-			settings.Wrapper:         ethereum.HexToAddress(""),
-			settings.Network:         ethereum.HexToAddress(""),
-			settings.InternalNetwork: ethereum.HexToAddress(""),
+			settings.Pricing: ethereum.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"),
+			settings.Reserve: ethereum.HexToAddress(""),
+			settings.Wrapper: ethereum.HexToAddress(""),
+			settings.Proxy:   ethereum.HexToAddress(""),
 		},
 	}
 
