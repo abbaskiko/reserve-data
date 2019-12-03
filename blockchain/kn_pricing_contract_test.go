@@ -42,11 +42,10 @@ func TestGeneratedGetListedTokens(t *testing.T) {
 		contractCaller, // contract caller
 	)
 	contracts := common.ContractAddressConfiguration{
-		Reserve:         ethereum.Address{},
-		Wrapper:         ethereum.Address{},
-		Pricing:         ethereum.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"),
-		InternalNetwork: ethereum.Address{},
-		Network:         ethereum.Address{},
+		Reserve: ethereum.Address{},
+		Wrapper: ethereum.Address{},
+		Pricing: ethereum.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"),
+		Proxy:   ethereum.Address{},
 	}
 
 	blockchain, err := NewBlockchain(baseBlockchain, &contracts, nil)

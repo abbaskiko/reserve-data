@@ -13,7 +13,6 @@ type Blockchain interface {
 	GetDepositOPAddress() ethereum.Address
 	GetIntermediatorOPAddress() ethereum.Address
 	GetWrapperAddress() ethereum.Address
-	GetInternalNetworkAddress() ethereum.Address
-	GetNetworkAddress() ethereum.Address
+	GetProxyAddress() ethereum.Address
 	GetListedTokens() ([]ethereum.Address, error)
 }

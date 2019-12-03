@@ -464,14 +464,9 @@ func (bc *Blockchain) GetWrapperAddress() ethereum.Address {
 	return bc.contractAddress.Wrapper
 }
 
-// GetInternalNetworkAddress return internal network address
-func (bc *Blockchain) GetInternalNetworkAddress() ethereum.Address {
-	return bc.contractAddress.InternalNetwork
-}
-
-// GetNetworkAddress return network address
-func (bc *Blockchain) GetNetworkAddress() ethereum.Address {
-	return bc.contractAddress.Network
+// GetProxyAddress return network address
+func (bc *Blockchain) GetProxyAddress() ethereum.Address {
+	return bc.contractAddress.Proxy
 }
 
 // GetListedTokens return listed tokens on reserve
