@@ -48,7 +48,7 @@ Allow overwriting some parameter`,
 	startServer.Flags().StringVar(&cliAddress.Reserve, "reserve-addr", defaultValue.Reserve, "reserve contract address")
 	startServer.Flags().StringVar(&cliAddress.Wrapper, "wrapper-addr", defaultValue.Wrapper, "wrapper contract address")
 	startServer.Flags().StringVar(&cliAddress.Pricing, "pricing-addr", defaultValue.Pricing, "pricing contract address")
-	startServer.Flags().StringVar(&cliAddress.Proxy, "network-addr", defaultValue.Proxy, "network contract address")
+	startServer.Flags().StringVar(&cliAddress.Proxy, "network-addr", defaultValue.Proxy, "network proxy contract address")
 	startServer.Flags().StringVar(&profilerPrefix, "profiler-prefix", "", "set prefix for pprof http handler, eg: \"/debug/pprof\", profiler will be disabled if this flag value is empty. A secure token can be put into profiler-prefix to limit access")
 	startServer.Flags().StringVar(&sentryDSN, "sentry-dsn", "", "sentry-dsn address")
 	startServer.Flags().StringVar(&sentryLevel, "sentry-level", "warn", "sentry level [info,warn,error,fatal]")
