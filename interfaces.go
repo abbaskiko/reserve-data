@@ -30,7 +30,7 @@ type Data interface {
 
 	GetUSDData(timestamp uint64) (common.USDData, error)
 
-	UpdateFeedConfiguration(string, bool) error
+	UpdateFeedConfiguration(string, bool, float64) error
 	GetFeedConfiguration() ([]common.FeedConfiguration, error)
 
 	GetExchangeStatus() (common.ExchangesStatus, error)

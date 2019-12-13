@@ -61,8 +61,8 @@ func (rd ReserveData) GetUSDData(timestamp uint64) (common.USDData, error) {
 	return rd.globalStorage.GetUSDInfo(version)
 }
 
-func (rd ReserveData) UpdateFeedConfiguration(name string, enabled bool) error {
-	return rd.globalStorage.UpdateFeedConfiguration(name, enabled)
+func (rd ReserveData) UpdateFeedConfiguration(name string, enabled bool, baseVolatilitySpread float64) error {
+	return rd.globalStorage.UpdateFeedConfiguration(name, enabled, baseVolatilitySpread)
 }
 
 func (rd ReserveData) GetFeedConfiguration() ([]common.FeedConfiguration, error) {

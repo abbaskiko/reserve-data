@@ -42,6 +42,7 @@ const (
 	btcBucket                       string = "btc_feeds"
 	usdBucket                       string = "usd_feeds"
 	disabledFeedsBucket             string = "disabled_feeds"
+	feedConfigurationBucket         string = "feed_configuration"
 
 	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
 	pendingTargetQuantityV2 string = "pending_target_qty_v2"
@@ -109,6 +110,7 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			pendingRebalanceQuadratic,
 			rebalanceQuadratic,
 			fetcherConfigurationBucket,
+			feedConfigurationBucket,
 		}
 
 		for _, bucket := range buckets {
@@ -127,7 +129,39 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 		db: db,
 		l:  zap.S(),
 	}
+	if err = storage.migrateFeedConfiguration(); err != nil {
+		return nil, err
+	}
 	return storage, nil
+}
+
+type feedInfo struct {
+	Enabled              bool    `json:"enabled"`
+	BaseVolatilitySpread float64 `json:"base_volatility_spread"`
+}
+
+func (bs *BoltStorage) migrateFeedConfiguration() error {
+	var (
+		allFeeds = world.AllFeeds()
+	)
+	return bs.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(feedConfigurationBucket))
+		bdf := tx.Bucket([]byte(disabledFeedsBucket))
+		for _, feed := range allFeeds {
+			if dataBytes := b.Get([]byte(feed)); dataBytes == nil {
+				var fi feedInfo
+				if dataBytes := bdf.Get([]byte(feed)); dataBytes == nil {
+					fi.Enabled = true
+				}
+				dataJSON, err := json.Marshal(fi)
+				if err != nil {
+					return err
+				}
+				return b.Put([]byte(feed), dataJSON)
+			}
+		}
+		return nil
+	})
 }
 
 // reverseSeek returns the most recent time point to the given one in parameter.
@@ -224,8 +258,8 @@ func (bs *BoltStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Version, 
 	return common.Version(result), err
 }
 
-func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error {
-	const disableValue = "disabled"
+// UpdateFeedConfiguration ...
+func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool, baseVolatilitySpread float64) error {
 	var (
 		allFeeds = world.AllFeeds()
 		exists   = false
@@ -244,19 +278,15 @@ func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error 
 	}
 
 	return bs.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(disabledFeedsBucket))
-		if v := b.Get([]byte(name)); v == nil {
-			// feed does not exists in disabled feeds bucket yet
-			if !enabled {
-				return b.Put([]byte(name), []byte(disableValue))
-			}
-			return nil
+		dataJSON, err := json.Marshal(feedInfo{
+			Enabled:              enabled,
+			BaseVolatilitySpread: baseVolatilitySpread,
+		})
+		if err != nil {
+			return err
 		}
-
-		if enabled {
-			return b.Delete([]byte(name))
-		}
-		return nil
+		b := tx.Bucket([]byte(feedConfigurationBucket))
+		return b.Put([]byte(name), dataJSON)
 	})
 }
 
@@ -266,24 +296,27 @@ func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error
 		allFeeds = world.AllFeeds()
 		results  []common.FeedConfiguration
 	)
-
-	for _, feed := range allFeeds {
-		results = append(results, common.FeedConfiguration{Name: feed, Enabled: true})
-	}
-
 	err = bs.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(disabledFeedsBucket))
-		return b.ForEach(func(k, _ []byte) error {
-			for i := range results {
-				if strings.ToLower(results[i].Name) == string(k) {
-					results[i].Enabled = false
-					break
-				}
+		b := tx.Bucket([]byte(feedConfigurationBucket))
+		for _, feed := range allFeeds {
+			var (
+				fi feedInfo
+			)
+			dataBytes := b.Get([]byte(feed))
+			if dataBytes == nil {
+				return fmt.Errorf("cannot find feed config, feed=%s", feed)
 			}
-			return nil
-		})
+			if err := json.Unmarshal(dataBytes, &fi); err != nil {
+				return err
+			}
+			results = append(results, common.FeedConfiguration{
+				Name:                 feed,
+				Enabled:              fi.Enabled,
+				BaseVolatilitySpread: fi.BaseVolatilitySpread,
+			})
+		}
+		return nil
 	})
-
 	return results, err
 }
 
