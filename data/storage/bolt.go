@@ -157,7 +157,9 @@ func (bs *BoltStorage) migrateFeedConfiguration() error {
 				if err != nil {
 					return err
 				}
-				return b.Put([]byte(feed), dataJSON)
+				if err := b.Put([]byte(feed), dataJSON); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
