@@ -50,7 +50,7 @@ func (s *Server) UpdateFeedConfiguration(c *gin.Context) {
 		return
 	}
 
-	if err := s.app.UpdateFeedConfiguration(input.Data.Name, input.Data.Enabled); err != nil {
+	if err := s.app.UpdateFeedConfiguration(input.Data.Name, input.Data.Enabled, input.Data.BaseVolatilitySpread); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
