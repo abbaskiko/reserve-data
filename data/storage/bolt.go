@@ -129,6 +129,7 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 		db: db,
 		l:  zap.S(),
 	}
+	// TODO remove this migration after deploy, because we just use it once
 	if err = storage.migrateFeedConfiguration(); err != nil {
 		return nil, err
 	}
