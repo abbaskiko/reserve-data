@@ -190,7 +190,7 @@ func (bs *BoltStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Version, 
 }
 
 // UpdateFeedConfiguration upate feed configuration
-func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error {
+func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool, baseVolatilitySpread float64) error {
 	const disableValue = "disabled"
 	var (
 		allFeeds = world.AllFeeds()

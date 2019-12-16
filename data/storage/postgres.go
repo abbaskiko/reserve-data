@@ -55,6 +55,16 @@ CREATE TABLE IF NOT EXISTS "feed_configuration"
 	name TEXT UNIQUE NOT NULL,
 	enabled BOOLEAN NOT NULL
 );
+
+DO $$ 
+    BEGIN
+        BEGIN
+            ALTER TABLE "feed_configuration" ADD COLUMN base_volatility_spread FLOAT(32) DEFAULT 0;
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column base_volatility_spread already exists in feed_configuration.';
+        END;
+    END;
+$$;
 `
 	fetchDataTable         = "fetch_data" // data fetch from exchange and blockchain
 	activityTable          = "activity"
@@ -527,9 +537,9 @@ func (ps *PostgresStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Versi
 }
 
 // UpdateFeedConfiguration return false if there is an error
-func (ps *PostgresStorage) UpdateFeedConfiguration(name string, enabled bool) error {
-	query := fmt.Sprintf(`INSERT INTO %s (name, enabled) VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET enabled = EXCLUDED.enabled`, feedConfigurationTable)
-	if _, err := ps.db.Exec(query, name, enabled); err != nil {
+func (ps *PostgresStorage) UpdateFeedConfiguration(name string, enabled bool, baseVolatilitySpread float64) error {
+	query := fmt.Sprintf(`INSERT INTO %s (name, enabled, base_volatility_spread) VALUES ($1, $2, $3) ON CONFLICT (name) DO UPDATE SET enabled = EXCLUDED.enabled, base_volatility_spread = EXCLUDED.base_volatility_spread`, feedConfigurationTable)
+	if _, err := ps.db.Exec(query, name, enabled, baseVolatilitySpread); err != nil {
 		return err
 	}
 	return nil
@@ -540,7 +550,7 @@ func (ps *PostgresStorage) GetFeedConfiguration() ([]common.FeedConfiguration, e
 	var (
 		result []common.FeedConfiguration
 	)
-	query := fmt.Sprintf(`SELECT name, enabled FROM "%s"`, feedConfigurationTable)
+	query := fmt.Sprintf(`SELECT name, enabled, base_volatility_spread FROM "%s"`, feedConfigurationTable)
 	if err := ps.db.Select(&result, query); err != nil {
 		return nil, err
 	}
