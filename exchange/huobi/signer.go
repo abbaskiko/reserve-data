@@ -4,8 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
-	"io/ioutil"
+	"errors"
 
 	"go.uber.org/zap"
 )
@@ -28,19 +27,9 @@ func (s Signer) GetKey() string {
 	return s.Key
 }
 
-func NewSigner(key, secret string) *Signer {
-	return &Signer{key, secret}
-}
-
-func NewSignerFromFile(path string) Signer {
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(err)
+func NewSigner(key, secret string) (*Signer, error) {
+	if key == "" || secret == "" {
+		return nil, errors.New("key and secret must not empty")
 	}
-	signer := Signer{}
-	err = json.Unmarshal(raw, &signer)
-	if err != nil {
-		panic(err)
-	}
-	return signer
+	return &Signer{key, secret}, nil
 }
