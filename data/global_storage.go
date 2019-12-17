@@ -15,7 +15,7 @@ type GlobalStorage interface {
 	CurrentBTCInfoVersion(timepoint uint64) (common.Version, error)
 	CurrentUSDInfoVersion(timepoint uint64) (common.Version, error)
 
-	UpdateFeedConfiguration(string, bool, float64) error
+	UpdateFeedConfiguration(string, bool) error
 	GetFeedConfiguration() ([]common.FeedConfiguration, error)
 
 	UpdateFetcherConfiguration(common.FetcherConfiguration) error
