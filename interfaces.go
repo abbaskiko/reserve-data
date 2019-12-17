@@ -29,7 +29,7 @@ type Data interface {
 	GetBTCData(timepoint uint64) (common.BTCData, error)
 	GetUSDData(timepoint uint64) (common.USDData, error)
 
-	UpdateFeedConfiguration(string, bool, float64) error
+	UpdateFeedConfiguration(string, bool) error
 	GetFeedConfiguration() ([]common.FeedConfiguration, error)
 
 	GetTradeHistory(fromTime, toTime uint64) (common.AllTradeHistory, error)

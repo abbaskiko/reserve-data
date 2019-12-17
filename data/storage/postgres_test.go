@@ -280,7 +280,7 @@ func TestFeedConfiguration(t *testing.T) {
 	}
 
 	// test update feed
-	err = ps.UpdateFeedConfiguration("Gemini", false, 1.0)
+	err = ps.UpdateFeedConfiguration("Gemini", false)
 	assert.NoError(t, err)
 
 	feeds, err = ps.GetFeedConfiguration()
@@ -288,7 +288,6 @@ func TestFeedConfiguration(t *testing.T) {
 	for _, feed := range feeds {
 		if feed.Name == "Gemini" {
 			assert.False(t, feed.Enabled)
-			assert.Equal(t, 1.0, feed.BaseVolatilitySpread)
 			continue
 		}
 		assert.True(t, feed.Enabled)

@@ -74,8 +74,8 @@ func (rd ReserveData) GetUSDData(timestamp uint64) (common.USDData, error) {
 }
 
 // UpdateFeedConfiguration update feed configuration
-func (rd ReserveData) UpdateFeedConfiguration(name string, enabled bool, baseVolatilitySpread float64) error {
-	return rd.globalStorage.UpdateFeedConfiguration(name, enabled, baseVolatilitySpread)
+func (rd ReserveData) UpdateFeedConfiguration(name string, enabled bool) error {
+	return rd.globalStorage.UpdateFeedConfiguration(name, enabled)
 }
 
 // GetFeedConfiguration return configuration for feed (gold, btc)
