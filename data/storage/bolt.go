@@ -291,6 +291,15 @@ func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error
 	return results, err
 }
 
+func checkFeedExist(pendingFeed string, allFeeds []string) bool {
+	for _, feed := range allFeeds {
+		if feed == pendingFeed {
+			return true
+		}
+	}
+	return false
+}
+
 func (bs *BoltStorage) StorePendingFeedSetting(value []byte) error {
 	var (
 		err         error
@@ -303,13 +312,8 @@ func (bs *BoltStorage) StorePendingFeedSetting(value []byte) error {
 	}
 
 	for pendingFeed := range pendingData {
-		for index, feed := range allFeeds {
-			if pendingFeed == feed {
-				break
-			}
-			if index == len(allFeeds)-1 {
-				return fmt.Errorf("rejected: feed doesn't exist, feed=%s", pendingFeed)
-			}
+		if isExist := checkFeedExist(pendingFeed, allFeeds); !isExist {
+			return fmt.Errorf("rejected: feed doesn't exist, feed=%s", pendingFeed)
 		}
 	}
 
