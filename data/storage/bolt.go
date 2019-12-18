@@ -294,12 +294,25 @@ func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error
 func (bs *BoltStorage) StorePendingFeedSetting(value []byte) error {
 	var (
 		err         error
+		allFeeds    = world.AllFeeds()
 		pendingData common.MapFeedSetting
 	)
 
 	if err = json.Unmarshal(value, &pendingData); err != nil {
 		return fmt.Errorf("rejected: Data could not be unmarshalled to defined format: %v", err)
 	}
+
+	for pendingFeed := range pendingData {
+		for index, feed := range allFeeds {
+			if pendingFeed == feed {
+				break
+			}
+			if index == len(allFeeds)-1 {
+				return fmt.Errorf("rejected: feed doesn't exist, feed=%s", pendingFeed)
+			}
+		}
+	}
+
 	err = bs.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(pendingFeedSetting))
 		k := []byte("current_pending_feed_setting")
