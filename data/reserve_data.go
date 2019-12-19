@@ -65,6 +65,26 @@ func (rd ReserveData) UpdateFeedConfiguration(name string, enabled bool) error {
 	return rd.globalStorage.UpdateFeedConfiguration(name, enabled)
 }
 
+func (rd ReserveData) StorePendingFeedSetting(value []byte) error {
+	return rd.globalStorage.StorePendingFeedSetting(value)
+}
+
+func (rd ReserveData) ConfirmPendingFeedSetting(value []byte) error {
+	return rd.globalStorage.ConfirmPendingFeedSetting(value)
+}
+
+func (rd ReserveData) RejectPendingFeedSetting() error {
+	return rd.globalStorage.RejectPendingFeedSetting()
+}
+
+func (rd ReserveData) GetPendingFeedSetting() (common.MapFeedSetting, error) {
+	return rd.globalStorage.GetPendingFeedSetting()
+}
+
+func (rd ReserveData) GetFeedSetting() (common.MapFeedSetting, error) {
+	return rd.globalStorage.GetFeedSetting()
+}
+
 func (rd ReserveData) GetFeedConfiguration() ([]common.FeedConfiguration, error) {
 	return rd.globalStorage.GetFeedConfiguration()
 }

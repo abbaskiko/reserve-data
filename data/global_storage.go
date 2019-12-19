@@ -17,6 +17,11 @@ type GlobalStorage interface {
 
 	UpdateFeedConfiguration(string, bool) error
 	GetFeedConfiguration() ([]common.FeedConfiguration, error)
+	StorePendingFeedSetting(value []byte) error
+	ConfirmPendingFeedSetting(value []byte) error
+	RejectPendingFeedSetting() error
+	GetPendingFeedSetting() (common.MapFeedSetting, error)
+	GetFeedSetting() (common.MapFeedSetting, error)
 
 	UpdateFetcherConfiguration(common.FetcherConfiguration) error
 	GetAllFetcherConfiguration() (common.FetcherConfiguration, error)

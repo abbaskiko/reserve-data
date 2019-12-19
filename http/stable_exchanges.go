@@ -79,3 +79,85 @@ func (s *Server) GetFeedConfiguration(c *gin.Context) {
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(data))
 }
+
+//SetFeedSetting set BaseVolatilitySpread for feed configuration
+func (s *Server) SetFeedSetting(c *gin.Context) {
+	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfigurePermission})
+	if !ok {
+		return
+	}
+	value := []byte(postForm.Get("value"))
+	if len(value) > maxDataSize {
+		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
+		return
+	}
+	var feedSetting common.MapFeedSetting
+	if err := json.Unmarshal(value, &feedSetting); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	err := s.app.StorePendingFeedSetting(value)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c)
+}
+
+func (s *Server) GetPendingFeedSetting(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
+	if !ok {
+		return
+	}
+
+	data, err := s.app.GetPendingFeedSetting()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(data))
+}
+
+func (s *Server) ConfirmPendingFeedSetting(c *gin.Context) {
+	postForm, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	value := []byte(postForm.Get("value"))
+	if len(value) > maxDataSize {
+		httputil.ResponseFailure(c, httputil.WithReason(errDataSizeExceed.Error()))
+		return
+	}
+	err := s.app.ConfirmPendingFeedSetting(value)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c)
+}
+
+func (s *Server) RejectPendingFeedSetting(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	err := s.app.RejectPendingFeedSetting()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	httputil.ResponseSuccess(c)
+}
+
+func (s *Server) GetFeedSetting(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, ConfigurePermission, ConfirmConfPermission, RebalancePermission})
+	if !ok {
+		return
+	}
+
+	data, err := s.app.GetFeedSetting()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(data))
+}
