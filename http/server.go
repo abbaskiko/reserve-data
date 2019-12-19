@@ -1213,11 +1213,11 @@ func (s *Server) register() {
 		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
-		s.r.POST("/set-feed-setting", s.SetFeedSetting)
-		s.r.POST("/confirm-feed-setting", s.ConfirmPendingFeedSetting)
-		s.r.POST("/reject-feed-setting", s.RejectPendingFeedSetting)
-		s.r.GET("/pending-feed-setting", s.GetPendingFeedSetting)
-		s.r.GET("/feed-setting", s.GetFeedSetting)
+		v2.POST("/set-feed-setting", s.SetFeedSetting)
+		v2.POST("/confirm-feed-setting", s.ConfirmPendingFeedSetting)
+		v2.POST("/reject-feed-setting", s.RejectPendingFeedSetting)
+		v2.GET("/pending-feed-setting", s.GetPendingFeedSetting)
+		v2.GET("/feed-setting", s.GetFeedSetting)
 
 		s.r.POST("/set-fetcher-configuration", s.UpdateFetcherConfiguration)
 		s.r.GET("/get-all-fetcher-configuration", s.GetAllFetcherConfiguration)
