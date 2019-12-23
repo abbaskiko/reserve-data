@@ -647,13 +647,13 @@ response
 
 ### Cancel token target quantity (signing required)
 ```
-<host>:8000/confirmtargetqty
+<host>:8000/canceltargetqty
 POST request
 ```
 eg:
 ```
 curl -X POST \
-  http://localhost:8000/confirmtargetqty \
+  http://localhost:8000/canceltargetqty \
   -H 'content-type: multipart/form-data' \
 ```
 response
@@ -1504,6 +1504,106 @@ response:
   ],
   "success": true
 }
+```
+
+### Get pending feed setting (signing required)
+
+```shell
+<host>:8000/pending-feed-setting
+GET request
+```
+
+response:
+
+```json
+  {
+    "success": true,
+    "data":{"Gemini":{"base_volatility_spread": 1.123, "normal_spread": 1.0}, ...}
+  }
+```
+
+### Get feed setting (signing required)
+
+```shell
+<host>:8000/feed-setting
+GET request
+```
+
+response:
+
+```json
+  {
+    "success": true,
+    "data":{"CoinbaseUSD":{"base_volatility_spread": 1.123, "normal_spread": 1.0}, "GeminiUSD":{"base_volatility_spread": 1.123, "normal_spread": 1.0}, ...}
+  }
+```
+response if there no data yet:
+
+```
+  {
+    "success": false,
+    "reason": "<error>"
+  }
+```
+
+### Set feed setting (signing required)
+```
+<host>:8000/set-feed-setting
+POST request
+URL Params:
+  - value (string) : the json enconded string, represent a map (string : interface)
+```
+response:
+```
+on success:
+{
+  "success":true
+}
+on failure:
+{
+  "success":false,
+  "reason":<error>
+}
+```
+
+### Confirm feed setting (signing required)
+```
+<host>:8000/confirm-feed-setting
+POST request
+URL Params:
+  - value (string) : the json enconded string, represent a map (string : interface), must be equal to current pending.
+```
+
+
+response:
+```
+on success:
+{
+  "success":true
+}
+on failure:
+{
+  "success":false,
+  "reason":<error>
+}
+```
+
+### Reject feed setting (signing required)
+```
+<host>:8000/reject-feed-setting
+POST request
+```
+eg:
+```
+curl -X POST \
+  http://localhost:8000/reject-feed-setting
+
+```
+response
+```
+  {
+    "success": true,
+  }
 ```
 
 ### set target quantity v2 - (signing required)
