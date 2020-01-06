@@ -95,7 +95,7 @@ func (ep *Endpoint) GetResponse(
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			ep.l.Warnf("response body close error: %s", cErr.Error())
+			ep.l.Warnw("response body close failed", "err", cErr)
 		}
 	}()
 	switch resp.StatusCode {
@@ -304,7 +304,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 	if result.Status != "ok" {
 		return "", fmt.Errorf("withdraw from Huobi failed: %s", result.Reason)
 	}
-	ep.l.Warnf("withdraw id: %s", fmt.Sprintf("%v", result.ID))
+	ep.l.Infow("do withdraw", "id", result.ID)
 	return strconv.FormatUint(result.ID, 10), nil
 
 }

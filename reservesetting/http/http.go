@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -20,14 +19,14 @@ type Server struct {
 	storage            storage.Interface
 	r                  *gin.Engine
 	host               string
-	blockchain         *blockchain.Blockchain
 	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
 	l                  *zap.SugaredLogger
+	coreEndpoint       string
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
 func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange,
-	blockchain *blockchain.Blockchain, sentryDSN string) *Server {
+	sentryDSN, coreEndpoint string) *Server {
 	l := zap.S()
 	r := gin.Default()
 	if sentryDSN != "" {
@@ -43,9 +42,9 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 		storage:            storage,
 		r:                  r,
 		host:               host,
-		blockchain:         blockchain,
 		supportedExchanges: supportedExchanges,
 		l:                  l,
+		coreEndpoint:       coreEndpoint,
 	}
 	g := r.Group("/v3")
 
@@ -55,6 +54,7 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 	g.GET("/exchange", server.getExchanges)
 	g.GET("/trading-pair/:id", server.getTradingPair)
 	g.GET("/stable-token-params", server.getStableTokenParams)
+	g.GET("/feed-configurations", server.getFeedConfigurations)
 
 	// because we don't allow to create asset directly, it must go through pending operation
 	// so all 'create' operation mean to operate on pending object.
@@ -94,6 +94,12 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 	g.GET("/setting-change-update-exchange/:id", server.getSettingChange)
 	g.PUT("/setting-change-update-exchange/:id", server.confirmSettingChange)
 	g.DELETE("/setting-change-update-exchange/:id", server.rejectSettingChange)
+
+	g.POST("/setting-change-feed-configuration", server.createSettingChangeWithType(common.ChangeCatalogFeedConfiguration))
+	g.GET("/setting-change-feed-configuration", server.getSettingChangeWithType(common.ChangeCatalogFeedConfiguration))
+	g.GET("/setting-change-feed-configuration/:id", server.getSettingChange)
+	g.PUT("/setting-change-feed-configuration/:id", server.confirmSettingChange)
+	g.DELETE("/setting-change-feed-configuration/:id", server.rejectSettingChange)
 
 	g.GET("/price-factor", server.getPriceFactor)
 	g.POST("/price-factor", server.setPriceFactor)

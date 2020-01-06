@@ -97,6 +97,7 @@ func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChange
 
 // GetSettingChanges return list setting change.
 func (s *Storage) GetSettingChanges(cat common.ChangeCatalog) ([]common.SettingChangeResponse, error) {
+	s.l.Infow("get setting type", "catalog", cat)
 	var dbResult []settingChangeDB
 	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat.String())
 	if err != nil {
@@ -203,6 +204,12 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 		err = s.updateStableTokenParams(tx, e.Params)
 		if err != nil {
 			s.l.Infow("update stable token params", "index", i, "err", err)
+			return err
+		}
+	case *common.SetFeedConfigurationEntry:
+		err = s.setFeedConfiguration(tx, *e)
+		if err != nil {
+			s.l.Infow("set feed configuration", "index", i, "err", err)
 			return err
 		}
 	default:

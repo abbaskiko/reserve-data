@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/urfave/cli"
@@ -18,13 +20,14 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	libapp "github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/lib/httputil"
-	"github.com/KyberNetwork/reserve-data/reservesetting/blockchain"
-	"github.com/KyberNetwork/reserve-data/reservesetting/http"
+	settinghttp "github.com/KyberNetwork/reserve-data/reservesetting/http"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
 )
 
 const (
-	defaultDB = "reserve_data"
+	defaultDB           = "reserve_data"
+	coreEndpointFlag    = "core-endpoint"
+	defaultCoreEndpoint = "http://localhost:8000" // suppose to change
 )
 
 func main() {
@@ -39,9 +42,13 @@ func main() {
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.V3ServicePort)...)
 	app.Flags = append(app.Flags, configuration.NewExchangeCliFlag())
 	app.Flags = append(app.Flags, profiler.NewCliFlags()...)
-	app.Flags = append(app.Flags, blockchain.NewWrapperAddressFlag()...)
-	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, libapp.NewSentryFlags()...)
+	app.Flags = append(app.Flags, cli.StringFlag{
+		Name:   coreEndpointFlag,
+		Usage:  "core endpoint URL",
+		EnvVar: "CORE_ENDPOINT",
+		Value:  defaultCoreEndpoint,
+	})
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -89,32 +96,18 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("failed to initiate live exchanges: %s", err)
 	}
 
+	coreEndpoint := c.String(coreEndpointFlag)
+	if !checkCoreEndpoint(coreEndpoint) {
+		sugar.Error("core endpoint is not provided, if you create new asset, you cannot update token indice, please provide.")
+		return errors.New("core endpoint is required")
+	}
 	sr, err := postgres.NewStorage(db)
 	if err != nil {
 		return err
 	}
 
-	wrapperAddress, err := blockchain.NewWrapperAddressFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	rateAddress, err := blockchain.NewRateAddressFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
-	if err != nil {
-		return err
-	}
-
-	newBlockchain, err := blockchain.NewBlockchain(wrapperAddress, rateAddress, ethClient)
-	if err != nil {
-		return err
-	}
 	sentryDSN := libapp.SentryDSNFromFlag(c)
-	server := http.NewServer(sr, host, liveExchanges, newBlockchain, sentryDSN)
+	server := settinghttp.NewServer(sr, host, liveExchanges, sentryDSN, coreEndpoint)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}
@@ -137,4 +130,21 @@ func getLiveExchanges(enabledExchanges []v1common.ExchangeID, bi exchange.Binanc
 		}
 	}
 	return liveExchanges, nil
+}
+
+func checkCoreEndpoint(endpoint string) bool {
+	if endpoint == "" {
+		return true
+	}
+
+	resp, err := http.Get(fmt.Sprintf("%s/v3/timeserver", endpoint))
+	if err != nil {
+		return false
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+
+	return true
 }

@@ -76,7 +76,7 @@ func GetConfig(
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
 		if err != nil {
-			l.Warnf("Cannot connect to rpc endpoint", "endpoint", ep, "err", err)
+			l.Warnw("Cannot connect to rpc endpoint", "endpoint", ep, "err", err)
 		} else {
 			bkClients[ep] = bkClient
 			callClients = append(callClients, &common.EthClient{

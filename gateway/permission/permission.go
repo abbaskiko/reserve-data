@@ -40,7 +40,7 @@ func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 		if !p.checkPermission(c.Request) {
 			err := ErrNotPermit
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"reason": err.Error()})
-			zap.S().Errorf("Abort with error get error: %s", err.Error())
+			zap.S().Errorw("Abort with error get error", "err", err)
 			return
 		}
 	}

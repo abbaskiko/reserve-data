@@ -13,7 +13,6 @@ const (
 	depositOPAddressName      = "deposit_operator"
 	intermediateOPAddressName = "intermediate_operator"
 	wrapper                   = "wrapper"
-	internalNetwork           = "internal_network"
 	network                   = "network"
 )
 
@@ -26,8 +25,7 @@ func (s *Server) GetAddresses(c *gin.Context) {
 	addresses[depositOPAddressName] = s.blockchain.GetDepositOPAddress()
 	addresses[intermediateOPAddressName] = s.blockchain.GetIntermediatorOPAddress()
 	addresses[wrapper] = s.blockchain.GetWrapperAddress()
-	addresses[internalNetwork] = s.blockchain.GetInternalNetworkAddress()
-	addresses[network] = s.blockchain.GetNetworkAddress()
+	addresses[network] = s.blockchain.GetProxyAddress()
 	result := common.NewAddressesResponse(addresses)
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }

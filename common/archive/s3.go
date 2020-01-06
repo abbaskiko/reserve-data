@@ -26,7 +26,7 @@ func (a *S3Archive) UploadFile(bucketName string, awsfolderPath string, filePath
 	file, err := os.Open(filePath)
 	defer func() {
 		if cErr := file.Close(); cErr != nil {
-			a.l.Errorf("File close error: %s", cErr.Error())
+			a.l.Errorw("File close error", "err", cErr)
 		}
 	}()
 	if err != nil {
@@ -63,7 +63,7 @@ func (a *S3Archive) CheckFileIntergrity(bucketName string, awsfolderPath string,
 	file, err := os.Open(filePath)
 	defer func() {
 		if cErr := file.Close(); cErr != nil {
-			a.l.Errorf("File close error: %s", cErr.Error())
+			a.l.Errorw("File close error", "err", cErr)
 		}
 	}()
 	if err != nil {

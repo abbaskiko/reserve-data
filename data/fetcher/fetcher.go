@@ -114,12 +114,12 @@ func (f *Fetcher) FetchGlobalData(timepoint uint64) {
 
 	usdData, err := f.theworld.GetUSDInfo()
 	if err != nil {
-		f.l.Warnf("failed to fetch USD info, %+v", err)
+		f.l.Warnw("failed to fetch USD info", "err", err)
 		return
 	}
 	usdData.Timestamp = common.NowInMillis()
 	if err = f.globalStorage.StoreUSDInfo(usdData); err != nil {
-		f.l.Warnf("Store USD info failed, %v", err)
+		f.l.Warnw("Store USD info failed", "err", err)
 	}
 }
 
@@ -162,13 +162,13 @@ func (f *Fetcher) FetchRate(timepoint uint64) {
 
 	data, err = f.blockchain.FetchRates(atBlock, f.currentBlock)
 	if err != nil {
-		f.l.Warnf("Fetching rates from blockchain failed: %s. Will not store it to storage.", err.Error())
+		f.l.Warnw("Fetching rates from blockchain failed. Will not store it to storage.", "err", err)
 		return
 	}
 
 	f.l.Infof("Got rates from blockchain: %+v", data)
 	if err = f.storage.StoreRate(data, timepoint); err != nil {
-		f.l.Errorf("Storing rates failed: %s", err.Error())
+		f.l.Errorw("Storing rates failed", "err", err)
 	}
 }
 
@@ -197,7 +197,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	bstatuses := sync.Map{}
 	pendings, err := f.storage.GetPendingActivities()
 	if err != nil {
-		f.l.Errorf("Getting pending activites failed: %s\n", err)
+		f.l.Errorw("Getting pending activities failed", "err", err)
 		return
 	}
 	wait := sync.WaitGroup{}
@@ -220,7 +220,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		if found {
 			activityStatus, ok := status.(common.ActivityStatus)
 			if !ok {
-				f.l.Warnf("status from cexs cannot be asserted to common.ActivityStatus")
+				f.l.Warnw("status from cexs cannot be asserted to common.ActivityStatus")
 				continue
 			}
 			//Set activity result tx to tx from cexs if currently result tx is not nil an is an empty string
@@ -240,7 +240,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		&ebalances, bbalances, &estatuses, &bstatuses,
 		pendings, &snapshot, timepoint)
 	if err != nil {
-		f.l.Warnf("Storing exchange balances failed: %s", err)
+		f.l.Warnw("Storing exchange balances failed", "err", err)
 		return
 	}
 }
@@ -266,16 +266,16 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 	for {
 		preStatuses, err = f.FetchStatusFromBlockchain(pendings)
 		if err != nil {
-			f.l.Warnf("Fetching blockchain pre statuses failed: %v, retrying", err)
+			f.l.Warnw("Fetching blockchain pre statuses failed, retrying", "err", err)
 		}
 		balances, err = f.FetchBalanceFromBlockchain()
 		if err != nil {
-			f.l.Warnf("Fetching blockchain balances failed: %v", err)
+			f.l.Warnw("Fetching blockchain balances failed", "err", err)
 			return err
 		}
 		statuses, err = f.FetchStatusFromBlockchain(pendings)
 		if err != nil {
-			f.l.Warnf("Fetching blockchain statuses failed:  %v, retrying", err)
+			f.l.Warnw("Fetching blockchain statuses failed, retrying", "err", err)
 		}
 		if unchanged(preStatuses, statuses) {
 			break
@@ -293,7 +293,7 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 func (f *Fetcher) FetchCurrentBlock(timepoint uint64) {
 	block, err := f.blockchain.CurrentBlock()
 	if err != nil {
-		f.l.Warnf("Fetching current block failed: %v. Ignored.", err)
+		f.l.Warnw("Fetching current block failed, ignored.", "err", err)
 	} else {
 		// update currentBlockUpdateTime first to avoid race condition
 		// where fetcher is trying to fetch new rate
@@ -310,7 +310,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 	// SetRateMinedNonce might be slow, use closure to not invoke it every time
 	minedNonce, err := f.blockchain.SetRateMinedNonce()
 	if err != nil {
-		f.l.Warnf("Getting mined nonce failed: %s", err)
+		f.l.Warnw("Getting mined nonce failed", "err", err)
 	}
 
 	return func(act common.ActivityRecord) bool {
@@ -426,7 +426,7 @@ func (f *Fetcher) updateActivitywithBlockchainStatus(activity *common.ActivityRe
 
 	activityStatus, ok := status.(common.ActivityStatus)
 	if !ok {
-		f.l.Errorf("ERROR: status (%v) cannot be asserted to common.ActivityStatus", status)
+		f.l.Errorw("ERROR: status cannot be asserted to common.ActivityStatus", "status", status)
 		return
 	}
 	f.l.Infof("In PersistSnapshot: blockchain activity status for %+v: %+v", activity.ID, activityStatus)
@@ -456,7 +456,7 @@ func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityReco
 	}
 	activityStatus, ok := status.(common.ActivityStatus)
 	if !ok {
-		f.l.Errorf("ERROR: status (%v) cannot be asserted to common.ActivityStatus", status)
+		f.l.Errorw("ERROR: status cannot be asserted to common.ActivityStatus", "status", status)
 		return
 	}
 	f.l.Infof("In PersistSnapshot: exchange activity status for %+v: %+v", activity.ID, activityStatus)
@@ -494,12 +494,12 @@ func (f *Fetcher) PersistSnapshot(
 		//if type conversion went wrong, continue to the next record
 		v, ok := value.(common.EBalanceEntry)
 		if !ok {
-			f.l.Errorf("ERROR: value (%v) cannot be asserted to common.EbalanceEntry", v)
+			f.l.Errorw("ERROR: value cannot be asserted to common.EbalanceEntry", "value", v)
 			return true
 		}
 		exID, ok := key.(common.ExchangeID)
 		if !ok {
-			f.l.Errorf("key (%v) cannot be asserted to common.ExchangeID", key)
+			f.l.Errorw("key cannot be asserted to common.ExchangeID", "key", key)
 			return true
 		}
 		allEBalances[exID] = v
@@ -584,13 +584,13 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 		preStatuses := f.FetchStatusFromExchange(exchange, pendings, timepoint)
 		balances, err = exchange.FetchEBalanceData(timepoint)
 		if err != nil {
-			f.l.Warnf("Fetching exchange balances from %s failed: %v\n", exchange.ID().String(), err)
+			f.l.Warnw("Fetching exchange balances failed", "exchange", exchange.ID().String(), "err", err)
 			break
 		}
 		//Remove all token which is not in this exchange's token addresses
 		tokenAddress, err = exchange.TokenAddresses()
 		if err != nil {
-			f.l.Warnf("getting token address from %s failed: %v\n", exchange.ID().String(), err)
+			f.l.Warnw("getting token address failed: %v", "exchange", exchange.ID().String(), "err", err)
 			break
 		}
 		for tokenID := range balances.AvailableBalance {
@@ -711,7 +711,7 @@ func (f *Fetcher) FetchOrderbook(timepoint uint64) {
 	data.SetBlockNumber(f.currentBlock)
 	err := f.storage.StorePrice(data.GetData(), timepoint)
 	if err != nil {
-		f.l.Warnf("Storing data failed: %s", err)
+		f.l.Warnw("Storing data failed", "err", err)
 	}
 }
 
@@ -719,7 +719,7 @@ func (f *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, 
 	defer wg.Done()
 	exdata, err := exchange.FetchPriceData(timepoint)
 	if err != nil {
-		f.l.Warnf("Fetching data from %s failed: %v", exchange.ID().String(), err)
+		f.l.Warnw("Fetching data failed", "exchange", exchange.ID().String(), "err", err)
 		return
 	}
 	for pair, exchangeData := range exdata {

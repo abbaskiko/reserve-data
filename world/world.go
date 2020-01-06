@@ -36,12 +36,12 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		tw.l.Errorf("request on %s failed, %v\n", caller, err)
+		tw.l.Errorw("request on failed", "caller", caller, "err", err)
 		return err
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			tw.l.Warnf("failed to close response body: %s", cErr.Error())
+			tw.l.Warnw("failed to close response body", "err", cErr)
 		}
 	}()
 
@@ -57,7 +57,7 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 	}
 
 	if err = json.NewDecoder(bytes.NewBuffer(body)).Decode(dst); err != nil {
-		tw.l.Errorf("%s decode failed, %v, body=%s", caller, err, body)
+		tw.l.Errorw("decode failed", "caller", caller, "err", err, "body", string(common.TruncStr(body)))
 		return err
 	}
 

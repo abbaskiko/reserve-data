@@ -141,7 +141,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, "", supportedExchanges, nil, "")
+	server := NewServer(s, "", supportedExchanges, "", "")
 
 	emptyFeedWeight := make(common.FeedWeight)
 	btcFeed := common.BTCFeed
@@ -596,7 +596,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(asset)
 
-	server := NewServer(s, "", supportedExchanges, nil, "")
+	server := NewServer(s, "", supportedExchanges, "", "")
 
 	var tests = []testCase{
 		{
@@ -873,7 +873,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 
 	exchangeID := uint64(1)
 	// pre-insert exchange
-	server := NewServer(s, "", nil, nil, "")
+	server := NewServer(s, "", nil, "", "")
 	const updateExchange = "/v3/setting-change-update-exchange"
 	var updateExchID uint64
 	var tests = []testCase{
@@ -1002,7 +1002,7 @@ func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", supportedExchanges, nil, "")
+	server := NewServer(s, "", supportedExchanges, "", "")
 	const changeAssetAddress = "/v3/setting-change-main"
 	var changeID uint64
 	var tests = []testCase{
@@ -1096,7 +1096,7 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", supportedExchanges, nil, "")
+	server := NewServer(s, "", supportedExchanges, "", "")
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
@@ -1176,7 +1176,7 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 	}
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-	server := NewServer(s, "", supportedExchanges, nil, "")
+	server := NewServer(s, "", supportedExchanges, "", "")
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
@@ -1264,7 +1264,7 @@ func TestCreateTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	id, err := createSampleAsset(s)
 	require.NoError(t, err)
-	server := NewServer(s, "", supportedExchanges, nil, "")
+	server := NewServer(s, "", supportedExchanges, "", "")
 	c := apiClient{s: server}
 	quote := uint64(1) // ETH
 	postRes, err := c.createSettingChange(common.SettingChange{ChangeList: []common.SettingChangeEntry{
@@ -1297,4 +1297,96 @@ func TestCreateTradingPair(t *testing.T) {
 		}
 	}
 	assert.Equal(t, true, found)
+}
+
+func TestSetFeedConfiguration(t *testing.T) {
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	supportedExchanges := make(map[v1common.ExchangeID]v1common.LiveExchange)
+	server := NewServer(s, "", supportedExchanges, "", "")
+	var (
+		setFeedConfigurationEndpoint = "/v3/setting-change-feed-configuration"
+		setFeedConfigurationID       uint64
+
+		fname                 = "DGX"
+		fenabled              = false
+		fbaseVolatilitySpread = 1.1
+		fnormalSpread         = 1.2
+
+		expectFC = common.FeedConfiguration{
+			Name:                 fname,
+			Enabled:              fenabled,
+			BaseVolatilitySpread: fbaseVolatilitySpread,
+			NormalSpread:         fnormalSpread,
+		}
+	)
+
+	var tests = []testCase{
+		{
+			msg:      "test create set feed configuration",
+			endpoint: setFeedConfigurationEndpoint,
+			method:   http.MethodPost,
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeSetFeedConfiguration,
+						Data: common.SetFeedConfigurationEntry{
+							Name:                 fname,
+							Enabled:              &fenabled,
+							BaseVolatilitySpread: &fbaseVolatilitySpread,
+							NormalSpread:         &fnormalSpread,
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var idResponse struct {
+					ID      uint64 `json:"id"`
+					Success bool   `json:"success"`
+					Reason  string `json:"reason"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &idResponse)
+				require.NoError(t, err)
+				require.True(t, idResponse.Success)
+				setFeedConfigurationID = idResponse.ID
+			},
+		},
+		{
+			msg: "test get pending set feed configuration",
+			endpointExp: func() string {
+				return setFeedConfigurationEndpoint + fmt.Sprintf("/%d", setFeedConfigurationID)
+			},
+			method: http.MethodGet,
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg: "confirm set feed configuration",
+			endpointExp: func() string {
+				return setFeedConfigurationEndpoint + fmt.Sprintf("/%d", setFeedConfigurationID)
+			},
+			method: http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				var response struct {
+					Success bool   `json:"success"`
+					Reason  string `json:"reason"`
+				}
+				require.Equal(t, http.StatusOK, resp.Code)
+				err = json.Unmarshal(resp.Body.Bytes(), &response)
+				require.NoError(t, err)
+				require.Equal(t, true, response.Success)
+				newFC, err := s.GetFeedConfiguration(fname)
+				require.NoError(t, err)
+				require.Equal(t, expectFC, newFC)
+			},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, server.r) })
+	}
 }
