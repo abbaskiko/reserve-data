@@ -32,6 +32,11 @@ type Data interface {
 
 	UpdateFeedConfiguration(string, bool) error
 	GetFeedConfiguration() ([]common.FeedConfiguration, error)
+	StorePendingFeedSetting(value []byte) error
+	ConfirmPendingFeedSetting(value []byte) error
+	RejectPendingFeedSetting() error
+	GetPendingFeedSetting() (common.MapFeedSetting, error)
+	GetFeedSetting() (common.MapFeedSetting, error)
 
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error

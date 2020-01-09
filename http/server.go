@@ -41,7 +41,7 @@ type Server struct {
 	app            reserve.Data
 	core           reserve.Core
 	metric         metric.Storage
-	host           string
+	bindAddr       string
 	authEnabled    bool
 	auth           Authentication
 	profilerPrefix string
@@ -1213,6 +1213,12 @@ func (s *Server) register() {
 		s.r.POST("/set-feed-configuration", s.UpdateFeedConfiguration)
 		s.r.GET("/get-feed-configuration", s.GetFeedConfiguration)
 
+		v2.POST("/set-feed-setting", s.SetFeedSetting)
+		v2.POST("/confirm-feed-setting", s.ConfirmPendingFeedSetting)
+		v2.POST("/reject-feed-setting", s.RejectPendingFeedSetting)
+		v2.GET("/pending-feed-setting", s.GetPendingFeedSetting)
+		v2.GET("/feed-setting", s.GetFeedSetting)
+
 		s.r.POST("/set-fetcher-configuration", s.UpdateFetcherConfiguration)
 		s.r.GET("/get-all-fetcher-configuration", s.GetAllFetcherConfiguration)
 		s.r.GET("/version", s.getVersion)
@@ -1225,7 +1231,7 @@ func (s *Server) Run() {
 	if len(s.profilerPrefix) != 0 {
 		pprof.Register(s.r, s.profilerPrefix)
 	}
-	if err := s.r.Run(s.host); err != nil {
+	if err := s.r.Run(s.bindAddr); err != nil {
 		log.Panic(err)
 	}
 }
@@ -1235,7 +1241,7 @@ func NewHTTPServer(
 	app reserve.Data,
 	core reserve.Core,
 	metric metric.Storage,
-	host string,
+	bindAddr string,
 	enableAuth bool,
 	profilerPrefix string,
 	authEngine Authentication,
@@ -1266,7 +1272,7 @@ func NewHTTPServer(
 		app:            app,
 		core:           core,
 		metric:         metric,
-		host:           host,
+		bindAddr:       bindAddr,
 		authEnabled:    enableAuth,
 		auth:           authEngine,
 		profilerPrefix: profilerPrefix,
