@@ -42,6 +42,8 @@ const (
 	btcBucket                       string = "btc_feeds"
 	usdBucket                       string = "usd_feeds"
 	disabledFeedsBucket             string = "disabled_feeds"
+	feedSetting                     string = "feed_setting"
+	pendingFeedSetting              string = "pending_feed_setting"
 
 	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
 	pendingTargetQuantityV2 string = "pending_target_qty_v2"
@@ -109,6 +111,8 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 			pendingRebalanceQuadratic,
 			rebalanceQuadratic,
 			fetcherConfigurationBucket,
+			feedSetting,
+			pendingFeedSetting,
 		}
 
 		for _, bucket := range buckets {
@@ -284,6 +288,134 @@ func (bs *BoltStorage) GetFeedConfiguration() ([]common.FeedConfiguration, error
 		})
 	})
 
+	return results, err
+}
+
+func checkFeedExist(pendingFeed string, allFeeds []string) bool {
+	for _, feed := range allFeeds {
+		if feed == pendingFeed {
+			return true
+		}
+	}
+	return false
+}
+
+func (bs *BoltStorage) StorePendingFeedSetting(value []byte) error {
+	var (
+		err         error
+		allFeeds    = world.AllFeeds()
+		pendingData common.MapFeedSetting
+	)
+
+	if err = json.Unmarshal(value, &pendingData); err != nil {
+		return fmt.Errorf("rejected: Data could not be unmarshalled to defined format: %v", err)
+	}
+
+	for pendingFeed := range pendingData {
+		if isExist := checkFeedExist(pendingFeed, allFeeds); !isExist {
+			return fmt.Errorf("rejected: feed doesn't exist, feed=%s", pendingFeed)
+		}
+	}
+
+	err = bs.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(pendingFeedSetting))
+		k := []byte("current_pending_feed_setting")
+		if b.Get(k) != nil {
+			return fmt.Errorf("currently there is a pending record")
+		}
+		return b.Put(k, value)
+	})
+	return err
+}
+
+func (bs *BoltStorage) ConfirmPendingFeedSetting(value []byte) error {
+	var confirmFeedSetting common.MapFeedSetting
+	err := json.Unmarshal(value, &confirmFeedSetting)
+	if err != nil {
+		return fmt.Errorf("rejected: Data could not be unmarshalled to defined format: %s", err)
+	}
+
+	pending, err := bs.GetPendingFeedSetting()
+	if err != nil {
+		return err
+	}
+
+	if eq := reflect.DeepEqual(pending, confirmFeedSetting); !eq {
+		return fmt.Errorf("rejected: confiming data isn't consistent")
+	}
+
+	err = bs.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(feedSetting))
+		for k, v := range confirmFeedSetting {
+			dataJSON, err := json.Marshal(v)
+			if err != nil {
+				return err
+			}
+			if err := b.Put([]byte(k), dataJSON); err != nil {
+				return err
+			}
+		}
+		pendingBk := tx.Bucket([]byte(pendingFeedSetting))
+		pendingKey := []byte("current_pending_feed_setting")
+		return pendingBk.Delete(pendingKey)
+	})
+	return err
+}
+
+func (bs *BoltStorage) RejectPendingFeedSetting() error {
+	return bs.db.Update(func(tx *bolt.Tx) error {
+		pendingBk := tx.Bucket([]byte(pendingFeedSetting))
+		pendingKey := []byte("current_pending_feed_setting")
+		if pendingData := pendingBk.Get(pendingKey); pendingData == nil {
+			return errors.New("there are no pending feed setting")
+		}
+		return pendingBk.Delete(pendingKey)
+	})
+}
+
+func (bs *BoltStorage) GetPendingFeedSetting() (common.MapFeedSetting, error) {
+	var (
+		pendingData common.MapFeedSetting
+		err         error
+	)
+	if err = bs.db.View(func(tx *bolt.Tx) error {
+		pendingBk := tx.Bucket([]byte(pendingFeedSetting))
+		pendingKey := []byte("current_pending_feed_setting")
+		record := pendingBk.Get(pendingKey)
+		if record == nil {
+			return errors.New("there are no pending feed setting")
+		}
+		if err := json.Unmarshal(record, &pendingData); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return pendingData, err
+	}
+	return pendingData, nil
+}
+
+func (bs *BoltStorage) GetFeedSetting() (common.MapFeedSetting, error) {
+	var (
+		err      error
+		allFeeds = world.AllFeeds()
+		results  = make(common.MapFeedSetting)
+	)
+
+	err = bs.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(feedSetting))
+		for _, feed := range allFeeds {
+			var setting common.FeedSetting
+			record := b.Get([]byte(feed))
+			if record != nil {
+				if errU := json.Unmarshal(record, &setting); errU != nil {
+					return errU
+				}
+			}
+			results[feed] = setting
+		}
+		return nil
+	})
 	return results, err
 }
 

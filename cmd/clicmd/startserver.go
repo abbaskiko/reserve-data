@@ -1,39 +1,29 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
 	"runtime"
-	"time"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data"
 	"github.com/KyberNetwork/reserve-data/blockchain"
+	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/config"
 	"github.com/KyberNetwork/reserve-data/http"
 )
 
 const (
-	remoteLogPath  = "core-log"
-	defaultBaseURL = "http://127.0.0.1"
-
-	defaultOrderBookFetchingInterval  = 7 * time.Second
-	defaultAuthDataFetchingInterval   = 5 * time.Second
-	defaultRateFetchingInterval       = 3 * time.Second
-	defaultBlockFetchingInterval      = 5 * time.Second
-	defaultGlobalDataFetchingInterval = 10 * time.Second
+	remoteLogPath = "core-log"
 )
 
 var (
 	// logDir is located at base of this repository.
 	logDir         = filepath.Join(filepath.Dir(filepath.Dir(common.CurrentDir())), "log")
 	noAuthEnable   bool
-	servPort       = 8000
-	endpointOW     string
-	baseURL        string
 	stdoutLog      bool
 	dryRun         bool
 	profilerPrefix string
@@ -41,9 +31,7 @@ var (
 	sentryDSN   string
 	sentryLevel string
 	zapMode     string
-
-	cliAddress   common.AddressConfig
-	runnerConfig common.RunnerConfig
+	configFile  string
 )
 
 func serverStart(_ *cobra.Command, _ []string) {
@@ -57,15 +45,16 @@ func serverStart(_ *cobra.Command, _ []string) {
 	}
 	defer f()
 	zap.ReplaceGlobals(s.Desugar())
-
-	//get configuration from ENV variable
 	kyberENV := common.RunningMode()
-	InitInterface()
-	config := GetConfigFromENV(kyberENV)
+	var ac = config.DefaultAppConfig()
+	if err = config.LoadConfig(configFile, &ac); err != nil {
+		s.Panicw("failed to load config file", "err", err)
+	}
+	appState := configuration.InitAppState(!noAuthEnable, ac)
 	//backup other log daily
-	backupLog(config.Archive, "@daily", "core.+\\.log")
+	backupLog(appState.Archive, "@daily", "core.+\\.log")
 	//backup core.log every 2 hour
-	backupLog(config.Archive, "@every 2h", "core\\.log")
+	backupLog(appState.Archive, "@every 2h", "core\\.log")
 
 	var (
 		rData reserve.Data
@@ -73,12 +62,12 @@ func serverStart(_ *cobra.Command, _ []string) {
 		bc    *blockchain.Blockchain
 	)
 
-	bc, err = CreateBlockchain(config)
+	bc, err = CreateBlockchain(appState)
 	if err != nil {
 		log.Panicf("Can not create blockchain: (%s)", err)
 	}
 
-	rData, rCore = CreateDataCore(config, kyberENV, bc)
+	rData, rCore = CreateDataCore(appState, kyberENV, bc)
 	if !dryRun {
 		if kyberENV != common.SimulationMode {
 			if err = rData.RunStorageController(); err != nil {
@@ -89,23 +78,19 @@ func serverStart(_ *cobra.Command, _ []string) {
 			log.Panic(err)
 		}
 	}
-
-	//set static field supportExchange from common...
-	for _, ex := range config.Exchanges {
+	for _, ex := range appState.Exchanges {
 		common.SupportedExchanges[ex.ID()] = ex
 	}
 
-	//Create Server
-	servPortStr := fmt.Sprintf(":%d", servPort)
 	server := http.NewHTTPServer(
 		rData, rCore,
-		config.MetricStorage,
-		servPortStr,
-		config.EnableAuthentication,
+		appState.MetricStorage,
+		ac.HTTPAPIAddr,
+		appState.EnableAuthentication,
 		profilerPrefix,
-		config.AuthEngine,
+		appState.AuthEngine,
 		kyberENV,
-		bc, config.Setting,
+		bc, appState.Setting,
 	)
 
 	if !dryRun {
