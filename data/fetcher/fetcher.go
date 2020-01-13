@@ -502,7 +502,7 @@ func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityReco
 
 	resultTx, ok := activity.Result["tx"].(string)
 	if !ok {
-		f.l.Warnw("activity.Result[tx] cannot be asserted to string type", "tx", activity.Result["tx"])
+		f.l.Warnw("activity.Result[tx] cannot be asserted to string type", "tx", fmt.Sprintf("[%+v]", activity.Result["tx"]))
 	} else if ok && resultTx == "" {
 		activity.Result["tx"] = activityStatus.Tx
 	}
