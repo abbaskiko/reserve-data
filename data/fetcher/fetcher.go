@@ -363,9 +363,13 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 				status   string
 				err      error
 			)
-			txStr, ok := activity.Result["tx"].(string)
+			txID := activity.Result["tx"]
+			if txID == nil {
+				continue
+			}
+			txStr, ok := txID.(string)
 			if !ok {
-				f.l.Warnw("TX_STATUS:cannot convert activity.Result[tx] to string type", "tx", activity.Result["tx"])
+				f.l.Warnw("TX_STATUS:cannot convert activity.Result[tx] to string type", "tx", fmt.Sprintf("%+v", txID))
 				continue
 			}
 			tx := ethereum.HexToHash(txStr)
@@ -500,10 +504,7 @@ func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityReco
 		activity.ExchangeStatus = activityStatus.ExchangeStatus
 	}
 
-	resultTx, ok := activity.Result["tx"].(string)
-	if !ok {
-		f.l.Warnw("activity.Result[tx] cannot be asserted to string type", "tx", fmt.Sprintf("[%+v]", activity.Result["tx"]))
-	} else if ok && resultTx == "" {
+	if resultTx, ok := activity.Result["tx"].(string); ok && resultTx == "" {
 		activity.Result["tx"] = activityStatus.Tx
 	}
 
@@ -690,9 +691,13 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				// authdata. Analytic will ignore order status anyway.
 				status, _ = exchange.OrderStatus(orderID, base, quote)
 			case common.ActionDeposit:
-				txHash, ok := activity.Result["tx"].(string)
+				txID := activity.Result["tx"]
+				if txID == nil {
+					continue
+				}
+				txHash, ok := txID.(string)
 				if !ok {
-					f.l.Warnw("activity Result tx can't be converted to type string", "tx", activity.Result["tx"])
+					f.l.Warnw("activity Result tx can't be converted to type string", "tx", fmt.Sprintf("%+v", txID))
 					continue
 				}
 				amountStr, ok := activity.Params["amount"].(string)
