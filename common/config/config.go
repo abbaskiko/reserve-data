@@ -24,7 +24,7 @@ type WorldEndpoints struct {
 	GeminiData      SiteConfig `json:"gemini_data"`
 
 	CoinbaseBTC SiteConfig `json:"coinbase_btc"`
-	GeminiBTC   SiteConfig `json:"gemini_btc"`
+	BinanceBTC  SiteConfig `json:"binance_btc"`
 
 	CoinbaseUSDC SiteConfig `json:"coinbase_usdc"`
 	BinanceUSDC  SiteConfig `json:"binance_usdc"`
