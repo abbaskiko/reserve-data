@@ -1,4 +1,4 @@
-# Set Feed Configuration
+# Set feed configuration
 
 ## Create set feed configuration
 
