@@ -350,6 +350,9 @@ func (b *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error) {
 	var receipt *types.Receipt
 	receipt, err = b.client.TransactionReceipt(option, hash)
 	if err != nil {
+		if err == ether.NotFound {
+			return common.MiningStatusLost, 0, nil
+		}
 		// incompatibily between geth and parity
 		// so even err is not nil, receipt is still there
 		// and have valid fields
