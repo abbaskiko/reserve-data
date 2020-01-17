@@ -1,6 +1,6 @@
-# Setting change rebalance quadratic
+# Setting change rbquadratic (rebalance quadratic)
 
-## Create setting Rebalance Quadratic (rbquadratic)
+## Create setting rbquadratic
 
 ```shell
 curl -X POST "https://gateway.local/v3/setting-change-rbquadratic" \
@@ -49,10 +49,10 @@ curl -X POST "https://gateway.local/v3/setting-change-rbquadratic" \
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
-name | string | true | nil | name of feed will be updated
-enabled | bool | false | nil | 
-base_volatility_spread | float64 | false | nil | 
-normal_spread | float64 | false | nil |  
+asset_id | uint64 | true | nil | ID of asset
+a | float64 | false | nil | 
+b | float64 | false | nil | 
+c | float64 | false | nil | 
 <aside class="notice">Write key is required</aside>
 
 ## Get pending setting rbquadratic
