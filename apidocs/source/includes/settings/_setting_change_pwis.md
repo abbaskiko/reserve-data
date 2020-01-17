@@ -1,6 +1,6 @@
-# Setting change PWIS
+# Setting change pwis
 
-## Create setting PWIS
+## Create setting pwis
 
 ```shell
 curl -X POST "https://gateway.local/v3/setting-change-pwis" \
@@ -49,13 +49,15 @@ curl -X POST "https://gateway.local/v3/setting-change-pwis" \
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
-name | string | true | nil | name of feed will be updated
-enabled | bool | false | nil | 
-base_volatility_spread | float64 | false | nil | 
-normal_spread | float64 | false | nil |  
+asset_id | uint64 | true | nil | ID of asset
+a | float64 | false | nil | 
+b | float64 | false | nil | 
+c | float64 | false | nil | 
+min_min_spread | float64 | false | nil | 
+price_multiply_factor | float64 | false | nil | 
 <aside class="notice">Write key is required</aside>
 
-## Get pending setting PWIS
+## Get pending setting pwis
 
 
 ```shell
@@ -106,7 +108,7 @@ curl -X GET "https://gateway.local/v3/setting-change-pwis"
 `GET https://gateway.local/v3/setting-change-pwis`
 <aside class="notice">All keys are accepted</aside>
 
-## Confirm pending setting PWIS
+## Confirm pending setting pwis
 
 ```shell
 curl -X PUT "https://gateway.local/v3/setting-change-pwis/6"
@@ -125,7 +127,7 @@ curl -X PUT "https://gateway.local/v3/setting-change-pwis/6"
 `PUT https://gateway.local/v3/setting-change-pwis/:change_id`
 <aside class="notice">Confirm key is required</aside>
 
-## Reject pending setting PWIS
+## Reject pending setting pwis
 
 ```shell
 curl -X DELETE "https://gateway.local/v3/setting-change-pwis/6"
