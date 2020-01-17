@@ -20,7 +20,7 @@ includes:
   - settings/delete_trading_pair
   - settings/update_exchange
   - settings/setting_change_pwis
-  - settings/setting_change_rebalance_quadratic
+  - settings/setting_change_rbquadratic
   - settings/set_feed_configuration
   - reserve/rates
   - exchanges/exchanges
