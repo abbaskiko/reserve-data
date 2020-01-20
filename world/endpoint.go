@@ -3,6 +3,8 @@ package world
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/KyberNetwork/reserve-data/common"
 )
 
 var (
@@ -87,7 +89,7 @@ type Endpoint interface {
 
 // RealEndpoint return real endpoint
 type RealEndpoint struct {
-	OneForgeKey string `json:"oneforge"`
+	EPS common.WorldEndpoints `json:"eps"`
 }
 
 // SimulatedEndpoint for test
@@ -96,98 +98,100 @@ type SimulatedEndpoint struct {
 
 // NewRealEndpointFromFile real endpoint from file
 func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
+	result := &RealEndpoint{}
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	result := RealEndpoint{}
-	err = json.Unmarshal(data, &result)
-	return &result, err
+	if err = json.Unmarshal(data, result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GoldDataEndpoint real endpoint for gold
 func (re RealEndpoint) GoldDataEndpoint() string {
-	return "https://datafeed.digix.global/tick/"
+	return re.EPS.GoldData.URL
 }
 
 // OneForgeGoldETHDataEndpoint real OneForge endpoint for gold-eth
 func (re RealEndpoint) OneForgeGoldETHDataEndpoint() string {
-	return "https://api.1forge.com/convert?from=XAU&to=ETH&quantity=1&api_key=" + re.OneForgeKey
+	return re.EPS.OneForgeGoldETH.URL
 }
 
 // OneForgeGoldUSDDataEndpoint real OneForege endpoint for gold-usd
 func (re RealEndpoint) OneForgeGoldUSDDataEndpoint() string {
-	return "https://api.1forge.com/convert?from=XAU&to=USD&quantity=1&api_key=" + re.OneForgeKey
+	return re.EPS.OneForgeGoldUSD.URL
 }
 
 // GDAXDataEndpoint real endpoint for gdax for eht-usd
 func (re RealEndpoint) GDAXDataEndpoint() string {
-	return "https://api.pro.coinbase.com/products/eth-usd/ticker"
+	return re.EPS.GDAXData.URL
 }
 
 // KrakenDataEndpoint real kraken endpoint for eth-usd
 func (re RealEndpoint) KrakenDataEndpoint() string {
-	return "https://api.kraken.com/0/public/Ticker?pair=ETHUSD"
+	return re.EPS.KrakenData.URL
 }
 
 // GeminiDataEndpoint real gemini endpoint for eth-usd
 func (re RealEndpoint) GeminiDataEndpoint() string {
-	return "https://api.gemini.com/v1/pubticker/ethusd"
+	return re.EPS.GeminiData.URL
 }
 
 // CoinbaseBTCEndpoint real coinbase endpoint for eth-btc
 func (re RealEndpoint) CoinbaseBTCEndpoint() string {
-	return "https://api.pro.coinbase.com/products/eth-btc/ticker"
+	return re.EPS.CoinbaseBTC.URL
 }
 
 // GeminiBTCEndpoint real gemini endpoint for eth-btc
 func (re RealEndpoint) GeminiBTCEndpoint() string {
-	return "https://api.gemini.com/v1/pubticker/ethbtc"
+	return re.EPS.GeminiBTC.URL
 }
 
 // CoinbaseDAIEndpoint real endpoint fo Coinbase Dai
 func (re RealEndpoint) CoinbaseDAIEndpoint() string {
-	return "https://api.pro.coinbase.com/products/eth-dai/ticker"
+	return re.EPS.CoinbaseDAI.URL
 }
 
 // HitDaiEndpoint real endpoint for Hit DAI
 func (re RealEndpoint) HitDaiEndpoint() string {
-	return "https://api.hitbtc.com/api/2/public/ticker/ETHDAI"
+	return re.EPS.HitDai.URL
 }
 
 // CoinbaseUSDEndpoint real endpoint for Coinbase USD
 func (re RealEndpoint) CoinbaseUSDEndpoint() string {
-	return "https://api.pro.coinbase.com/products/eth-usd/ticker"
+	return re.EPS.CoinbaseUSD.URL
 }
 
 // CoinbaseUSDCEndpoint real endpoint Coinbase USDC
 func (re RealEndpoint) CoinbaseUSDCEndpoint() string {
-	return "https://api.pro.coinbase.com/products/eth-usdc/ticker"
+	return re.EPS.CoinbaseUSDC.URL
 }
 
 // BinanceUSDCEndpoint real endpoint
 func (re RealEndpoint) BinanceUSDCEndpoint() string {
-	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC"
+	return re.EPS.BinanceUSDC.URL
 }
 
 // BinanceUSDTEndpoint real endpoint for Binance USDT endpoint
 func (re RealEndpoint) BinanceUSDTEndpoint() string {
-	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDT"
+	return re.EPS.BinanceUSDT.URL
 }
 
 // BinancePAXEndpoint real endpoint for Binance PAX
 func (re RealEndpoint) BinancePAXEndpoint() string {
-	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHPAX"
+	return re.EPS.BinancePAX.URL
 }
 
 // BinanceTUSDEndpoint real endpoint for binance TUSD
 func (re RealEndpoint) BinanceTUSDEndpoint() string {
-	return "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHTUSD"
+	return re.EPS.BinanceTUSD.URL
 }
 
 // BitFinexUSDTEndpoint real endpoint for Bitfinex USDT
 func (re RealEndpoint) BitFinexUSDTEndpoint() string {
-	return "https://api-pub.bitfinex.com/v2/ticker/tETHUSD"
+	return re.EPS.BitFinexUSDT.URL
 }
 
 // GeminiDataEndpoint simulated endpoint

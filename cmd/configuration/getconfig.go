@@ -50,11 +50,12 @@ func GetConfig(
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
 	dataFile string,
+	configFile string,
 	secretConfigFile string,
 	settingStorage storage.Interface,
 ) (*Config, error) {
 	l := zap.S()
-	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
+	theWorld, err := world.NewTheWorld(dpl, configFile)
 	if err != nil {
 		l.Errorw("Can't init the world (which is used to get global data)", "err", err.Error())
 		return nil, err

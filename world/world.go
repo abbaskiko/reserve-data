@@ -151,7 +151,7 @@ func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 }
 
 //NewTheWorld return new world instance
-func NewTheWorld(dpl deployment.Deployment, keyfile string) (*TheWorld, error) {
+func NewTheWorld(dpl deployment.Deployment, configFile string) (*TheWorld, error) {
 	switch dpl {
 	case deployment.Development,
 		deployment.Production,
@@ -160,7 +160,7 @@ func NewTheWorld(dpl deployment.Deployment, keyfile string) (*TheWorld, error) {
 		deployment.Ropsten,
 		deployment.Analytic:
 		// TODO: make key file a cli flag
-		endpoint, err := NewRealEndpointFromFile(keyfile)
+		endpoint, err := NewRealEndpointFromFile(configFile)
 		if err != nil {
 			return nil, err
 		}

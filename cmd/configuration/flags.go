@@ -199,7 +199,7 @@ func NewCliFlags() []cli.Flag {
 	flags = append(flags, NewContractAddressCliFlags()...)
 	flags = append(flags, NewEthereumNodesCliFlags()...)
 	flags = append(flags, NewDataFileCliFlags()...)
-	flags = append(flags, NewSecretConfigCliFlag())
+	flags = append(flags, NewSecretConfigCliFlag()...)
 	flags = append(flags, NewExchangeCliFlag())
 	flags = append(flags, NewPostgreSQLFlags(defaultDB)...)
 	flags = append(flags, NewHTTPAddressFlag())
@@ -304,7 +304,7 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		return nil, err
 	}
 
-	secretConfigFile := NewSecretConfigFileFromContext(c)
+	configFile, secretConfigFile := NewConfigFilesFromContext(c)
 
 	config, err := GetConfig(
 		c,
@@ -314,6 +314,7 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		hi,
 		contractAddressConf,
 		dataFile,
+		configFile,
 		secretConfigFile,
 		sr,
 	)
