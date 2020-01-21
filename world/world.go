@@ -10,7 +10,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
@@ -151,24 +150,12 @@ func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 }
 
 //NewTheWorld return new world instance
-func NewTheWorld(dpl deployment.Deployment, configFile string) (*TheWorld, error) {
-	switch dpl {
-	case deployment.Development,
-		deployment.Production,
-		deployment.Kovan,
-		deployment.Staging,
-		deployment.Ropsten,
-		deployment.Analytic:
-		// TODO: make key file a cli flag
-		endpoint, err := NewRealEndpointFromFile(configFile)
-		if err != nil {
-			return nil, err
-		}
-		return &TheWorld{endpoint: endpoint, l: zap.S()}, nil
-	case deployment.Simulation:
-		return &TheWorld{endpoint: SimulatedEndpoint{}, l: zap.S()}, nil
+func NewTheWorld(configFile string) (*TheWorld, error) {
+	endpoint, err := NewRealEndpointFromFile(configFile)
+	if err != nil {
+		return nil, err
 	}
-	panic("unsupported environment")
+	return &TheWorld{endpoint: endpoint, l: zap.S()}, nil
 }
 
 func (tw *TheWorld) getBinanceInfo(ep string) common.BinanceData {

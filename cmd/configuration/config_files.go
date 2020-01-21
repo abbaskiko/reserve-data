@@ -1,12 +1,8 @@
 package configuration
 
 import (
-	"path/filepath"
-
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-data/common"
 )
 
 const (
@@ -21,13 +17,13 @@ func NewSecretConfigCliFlag() []cli.Flag {
 			Name:   secretConfigFileFlag,
 			Usage:  "location of secret config file",
 			EnvVar: "SECRET_CONFIG_FILE",
-			Value:  filepath.Join(common.CmdDirLocation(), "secret_config.json"),
+			Value:  "secret_config.json",
 		},
 		cli.StringFlag{
 			Name:   configFileFlag,
 			Usage:  "location of config file",
 			EnvVar: "CONFIG_FILE",
-			Value:  filepath.Join(common.CmdDirLocation(), "config.json"),
+			Value:  "config.json",
 		},
 	}
 }
