@@ -89,7 +89,7 @@ type Endpoint interface {
 
 // RealEndpoint return real endpoint
 type RealEndpoint struct {
-	EPS common.WorldEndpoints `json:"eps"`
+	Endpoints common.WorldEndpoints `json:"endpoints"`
 }
 
 // SimulatedEndpoint for test
@@ -111,85 +111,85 @@ func NewRealEndpointFromFile(path string) (*RealEndpoint, error) {
 
 // GoldDataEndpoint real endpoint for gold
 func (re RealEndpoint) GoldDataEndpoint() string {
-	return re.EPS.GoldData.URL
+	return re.Endpoints.GoldData.URL
 }
 
 // OneForgeGoldETHDataEndpoint real OneForge endpoint for gold-eth
 func (re RealEndpoint) OneForgeGoldETHDataEndpoint() string {
-	return re.EPS.OneForgeGoldETH.URL
+	return re.Endpoints.OneForgeGoldETH.URL
 }
 
 // OneForgeGoldUSDDataEndpoint real OneForege endpoint for gold-usd
 func (re RealEndpoint) OneForgeGoldUSDDataEndpoint() string {
-	return re.EPS.OneForgeGoldUSD.URL
+	return re.Endpoints.OneForgeGoldUSD.URL
 }
 
 // GDAXDataEndpoint real endpoint for gdax for eht-usd
 func (re RealEndpoint) GDAXDataEndpoint() string {
-	return re.EPS.GDAXData.URL
+	return re.Endpoints.GDAXData.URL
 }
 
 // KrakenDataEndpoint real kraken endpoint for eth-usd
 func (re RealEndpoint) KrakenDataEndpoint() string {
-	return re.EPS.KrakenData.URL
+	return re.Endpoints.KrakenData.URL
 }
 
 // GeminiDataEndpoint real gemini endpoint for eth-usd
 func (re RealEndpoint) GeminiDataEndpoint() string {
-	return re.EPS.GeminiData.URL
+	return re.Endpoints.GeminiData.URL
 }
 
 // CoinbaseBTCEndpoint real coinbase endpoint for eth-btc
 func (re RealEndpoint) CoinbaseBTCEndpoint() string {
-	return re.EPS.CoinbaseBTC.URL
+	return re.Endpoints.CoinbaseBTC.URL
 }
 
 // GeminiBTCEndpoint real gemini endpoint for eth-btc
 func (re RealEndpoint) GeminiBTCEndpoint() string {
-	return re.EPS.GeminiBTC.URL
+	return re.Endpoints.GeminiBTC.URL
 }
 
 // CoinbaseDAIEndpoint real endpoint fo Coinbase Dai
 func (re RealEndpoint) CoinbaseDAIEndpoint() string {
-	return re.EPS.CoinbaseDAI.URL
+	return re.Endpoints.CoinbaseDAI.URL
 }
 
 // HitDaiEndpoint real endpoint for Hit DAI
 func (re RealEndpoint) HitDaiEndpoint() string {
-	return re.EPS.HitDai.URL
+	return re.Endpoints.HitDai.URL
 }
 
 // CoinbaseUSDEndpoint real endpoint for Coinbase USD
 func (re RealEndpoint) CoinbaseUSDEndpoint() string {
-	return re.EPS.CoinbaseUSD.URL
+	return re.Endpoints.CoinbaseUSD.URL
 }
 
 // CoinbaseUSDCEndpoint real endpoint Coinbase USDC
 func (re RealEndpoint) CoinbaseUSDCEndpoint() string {
-	return re.EPS.CoinbaseUSDC.URL
+	return re.Endpoints.CoinbaseUSDC.URL
 }
 
 // BinanceUSDCEndpoint real endpoint
 func (re RealEndpoint) BinanceUSDCEndpoint() string {
-	return re.EPS.BinanceUSDC.URL
+	return re.Endpoints.BinanceUSDC.URL
 }
 
 // BinanceUSDTEndpoint real endpoint for Binance USDT endpoint
 func (re RealEndpoint) BinanceUSDTEndpoint() string {
-	return re.EPS.BinanceUSDT.URL
+	return re.Endpoints.BinanceUSDT.URL
 }
 
 // BinancePAXEndpoint real endpoint for Binance PAX
 func (re RealEndpoint) BinancePAXEndpoint() string {
-	return re.EPS.BinancePAX.URL
+	return re.Endpoints.BinancePAX.URL
 }
 
 // BinanceTUSDEndpoint real endpoint for binance TUSD
 func (re RealEndpoint) BinanceTUSDEndpoint() string {
-	return re.EPS.BinanceTUSD.URL
+	return re.Endpoints.BinanceTUSD.URL
 }
 
 // BitFinexUSDTEndpoint real endpoint for Bitfinex USDT
 func (re RealEndpoint) BitFinexUSDTEndpoint() string {
-	return re.EPS.BitFinexUSDT.URL
+	return re.Endpoints.BitFinexUSDT.URL
 }
