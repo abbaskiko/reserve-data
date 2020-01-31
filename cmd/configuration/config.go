@@ -50,7 +50,7 @@ type Config struct {
 // AddCoreConfig add config for core
 func (c *Config) AddCoreConfig(
 	cliCtx *cli.Context,
-	secretConfigFile string,
+	rcf rawConfig,
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
@@ -81,17 +81,6 @@ func (c *Config) AddCoreConfig(
 		dataControllerRunner = datapruner.NewStorageControllerTickerRunner(24 * time.Hour)
 	}
 
-	pricingSigner, err := PricingSignerFromConfigFile(secretConfigFile)
-	if err != nil {
-		l.Errorw("failed to get pricing signer from config file", "err", err.Error())
-		return err
-	}
-	depositSigner, err := DepositSignerFromConfigFile(secretConfigFile)
-	if err != nil {
-		l.Errorw("failed to get deposit signer from config file", "err", err.Error())
-		return err
-	}
-
 	c.ActivityStorage = dataStorage
 	c.DataStorage = dataStorage
 	c.DataGlobalStorage = dataStorage
@@ -99,13 +88,13 @@ func (c *Config) AddCoreConfig(
 	c.FetcherGlobalStorage = dataStorage
 	c.FetcherRunner = fetcherRunner
 	c.DataControllerRunner = dataControllerRunner
-	c.BlockchainSigner = pricingSigner
-	c.DepositSigner = depositSigner
+	c.BlockchainSigner = blockchain.NewEthereumSigner(rcf.PricingKeystore, rcf.PricingPassphrase)
+	c.DepositSigner = blockchain.NewEthereumSigner(rcf.DepositKeystore, rcf.DepositPassphrase)
 
 	// create Exchange pool
 	exchangePool, err := NewExchangePool(
 		cliCtx,
-		secretConfigFile,
+		rcf,
 		c.Blockchain,
 		dpl,
 		bi,

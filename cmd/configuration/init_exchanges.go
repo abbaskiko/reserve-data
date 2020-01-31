@@ -10,7 +10,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	blockchaincommon "github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange"
@@ -141,8 +141,8 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 
 func NewExchangePool(
 	c *cli.Context,
-	secretConfigFile string,
-	blockchain *blockchain.BaseBlockchain,
+	rcf rawConfig,
+	blockchain *blockchaincommon.BaseBlockchain,
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
@@ -175,7 +175,7 @@ func NewExchangePool(
 			}
 			exchanges[stableEx.ID()] = stableEx
 		case common.Binance:
-			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
+			binanceSigner := binance.NewSigner(rcf.BinanceKey, rcf.BinanceSecret)
 			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
@@ -190,17 +190,13 @@ func NewExchangePool(
 			}
 			exchanges[bin.ID()] = bin
 		case common.Huobi:
-			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
+			huobiSigner := huobi.NewSigner(rcf.HoubiKey, rcf.HoubiSecret)
 			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
 			huobistorage, err := huobiStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
-			intermediatorSigner, err := HuobiIntermediatorSignerFromFile(secretConfigFile)
-			if err != nil {
-				s.Errorw("failed to get intermediator signer from file", "err", err)
-				return nil, err
-			}
+			intermediatorSigner := blockchaincommon.NewEthereumSigner(rcf.IntermediatorKeystore, rcf.IntermediatorPassphrase)
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
 			hb, err = exchange.NewHuobi(
 				he,

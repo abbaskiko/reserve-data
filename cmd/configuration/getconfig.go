@@ -1,6 +1,9 @@
 package configuration
 
 import (
+	"encoding/json"
+	"io/ioutil"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/urfave/cli"
@@ -41,6 +44,33 @@ func GetChainType(dpl deployment.Deployment) string {
 	}
 }
 
+// rawConfig include all configs read from files
+type rawConfig struct {
+	WorldEndpoints common.WorldEndpoints `json:"world_endpoints"`
+	AWSConfig      archive.AWSConfig     `json:"aws_config"`
+
+	PricingKeystore   string `json:"keystore_path"`
+	PricingPassphrase string `json:"passphrase"`
+	DepositKeystore   string `json:"keystore_deposit_path"`
+	DepositPassphrase string `json:"passphrase_deposit"`
+
+	BinanceKey    string `json:"binance_key"`
+	BinanceSecret string `json:"binance_secret"`
+	HoubiKey      string `json:"huobi_key"`
+	HoubiSecret   string `json:"huobi_secret"`
+
+	IntermediatorKeystore   string `json:"keystore_intermediator_path"`
+	IntermediatorPassphrase string `json:"passphrase_intermediate_account"`
+}
+
+func loadConfigFromFile(path string, rcf *rawConfig) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, rcf)
+}
+
 // GetConfig return config for core
 func GetConfig(
 	cliCtx *cli.Context,
@@ -55,9 +85,11 @@ func GetConfig(
 	settingStorage storage.Interface,
 ) (*Config, error) {
 	l := zap.S()
-	theWorld, err := world.NewTheWorld(configFile)
-	if err != nil {
-		l.Errorw("Can't init the world (which is used to get global data)", "err", err.Error())
+	rcf := rawConfig{}
+	if err := loadConfigFromFile(configFile, &rcf); err != nil {
+		return nil, err
+	}
+	if err := loadConfigFromFile(secretConfigFile, &rcf); err != nil {
 		return nil, err
 	}
 
@@ -94,12 +126,9 @@ func GetConfig(
 		blockchain.NewContractCaller(callClients),
 	)
 
-	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
-	if err != nil {
-		l.Errorw("failed to load AWS config", "file", secretConfigFile)
-		return nil, err
-	}
-	s3archive := archive.NewS3Archive(awsConf)
+	s3archive := archive.NewS3Archive(rcf.AWSConfig)
+	theWorld := world.NewTheWorld(rcf.WorldEndpoints)
+
 	config := &Config{
 		Blockchain:              bc,
 		EthereumEndpoint:        nodeConf.Main,
@@ -111,7 +140,7 @@ func GetConfig(
 	}
 
 	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
+	if err = config.AddCoreConfig(cliCtx, rcf, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
 		return nil, err
 	}
 	return config, nil

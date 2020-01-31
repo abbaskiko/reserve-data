@@ -150,12 +150,13 @@ func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 }
 
 //NewTheWorld return new world instance
-func NewTheWorld(configFile string) (*TheWorld, error) {
-	endpoint, err := NewRealEndpointFromFile(configFile)
-	if err != nil {
-		return nil, err
+func NewTheWorld(worldEndpoints common.WorldEndpoints) *TheWorld {
+	return &TheWorld{
+		endpoint: RealEndpoint{
+			Endpoints: worldEndpoints,
+		},
+		l: zap.S(),
 	}
-	return &TheWorld{endpoint: endpoint, l: zap.S()}, nil
 }
 
 func (tw *TheWorld) getBinanceInfo(ep string) common.BinanceData {
