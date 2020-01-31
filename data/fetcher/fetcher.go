@@ -235,10 +235,14 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 				f.l.Warnw("status from cexs cannot be asserted to common.ActivityStatus")
 				continue
 			}
+			txID := activity.Result["tx"]
+			if txID == nil {
+				continue
+			}
 			//Set activity result tx to tx from cexs if currently result tx is not nil an is an empty string
-			resultTx, ok := activity.Result["tx"].(string)
+			resultTx, ok := txID.(string)
 			if !ok {
-				f.l.Warnw("Activity Result Tx cannot be asserted to string", "tx", activity.Result["tx"])
+				f.l.Warnw("Activity Result Tx cannot be asserted to string", "tx", fmt.Sprintf("%+v", txID))
 				continue
 			}
 			if resultTx == "" {
@@ -733,9 +737,12 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 					f.l.Warnw("activity Params token can't be converted to type string", "token", activity.Params["token"])
 					continue
 				}
-				_, ok = activity.Result["tx"].(string)
-				if !ok {
-					f.l.Warnw("activity Result tx can't be converted to type string", "tx", activity.Result["tx"])
+				txID := activity.Result["tx"]
+				if txID == nil {
+					continue
+				}
+				if _, ok = txID.(string); !ok {
+					f.l.Warnw("activity Result tx can't be converted to type string", "tx", fmt.Sprintf("%+v", txID))
 					continue
 				}
 				status, tx, err = exchange.WithdrawStatus(id.EID, currency, amount, timepoint)
