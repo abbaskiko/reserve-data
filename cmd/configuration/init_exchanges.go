@@ -141,7 +141,7 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 
 func NewExchangePool(
 	c *cli.Context,
-	rcf rawConfig,
+	rcf common.RawConfig,
 	blockchain *blockchaincommon.BaseBlockchain,
 	dpl deployment.Deployment,
 	bi binance.Interface,

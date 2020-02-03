@@ -1,9 +1,6 @@
 package configuration
 
 import (
-	"encoding/json"
-	"io/ioutil"
-
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/urfave/cli"
@@ -44,33 +41,6 @@ func GetChainType(dpl deployment.Deployment) string {
 	}
 }
 
-// rawConfig include all configs read from files
-type rawConfig struct {
-	WorldEndpoints common.WorldEndpoints `json:"world_endpoints"`
-	AWSConfig      archive.AWSConfig     `json:"aws_config"`
-
-	PricingKeystore   string `json:"keystore_path"`
-	PricingPassphrase string `json:"passphrase"`
-	DepositKeystore   string `json:"keystore_deposit_path"`
-	DepositPassphrase string `json:"passphrase_deposit"`
-
-	BinanceKey    string `json:"binance_key"`
-	BinanceSecret string `json:"binance_secret"`
-	HoubiKey      string `json:"huobi_key"`
-	HoubiSecret   string `json:"huobi_secret"`
-
-	IntermediatorKeystore   string `json:"keystore_intermediator_path"`
-	IntermediatorPassphrase string `json:"passphrase_intermediate_account"`
-}
-
-func loadConfigFromFile(path string, rcf *rawConfig) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, rcf)
-}
-
 // GetConfig return config for core
 func GetConfig(
 	cliCtx *cli.Context,
@@ -79,19 +49,10 @@ func GetConfig(
 	bi binance.Interface,
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
-	dataFile string,
-	configFile string,
-	secretConfigFile string,
 	settingStorage storage.Interface,
+	rcf common.RawConfig,
 ) (*Config, error) {
 	l := zap.S()
-	rcf := rawConfig{}
-	if err := loadConfigFromFile(configFile, &rcf); err != nil {
-		return nil, err
-	}
-	if err := loadConfigFromFile(secretConfigFile, &rcf); err != nil {
-		return nil, err
-	}
 
 	chainType := GetChainType(dpl)
 
@@ -140,7 +101,7 @@ func GetConfig(
 	}
 
 	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(cliCtx, rcf, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
+	if err = config.AddCoreConfig(cliCtx, rcf, dpl, bi, hi, contractAddressConf, settingStorage); err != nil {
 		return nil, err
 	}
 	return config, nil

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-data/common/archive"
 )
 
 // Version indicate fetched data version
@@ -701,4 +703,84 @@ type WorldEndpoints struct {
 	BinanceUSDT  SiteConfig `json:"binance_usdt"`
 	BinancePAX   SiteConfig `json:"binance_pax"`
 	BinanceTUSD  SiteConfig `json:"binance_tusd"`
+}
+
+// ContractAddresses ...
+type ContractAddresses struct {
+	Proxy   ethereum.Address `json:"proxy"`
+	Reserve ethereum.Address `json:"reserve"`
+	Wrapper ethereum.Address `json:"wrapper"`
+	Pricing ethereum.Address `json:"pricing"`
+}
+
+// ExchangeSiteConfig ...
+type ExchangeSiteConfig struct {
+	URL       string `json:"url"`
+	AuthenURL string `json:"authen_url"`
+}
+
+// ExchangeEndpoints ...
+type ExchangeEndpoints struct {
+	Binance ExchangeSiteConfig `json:"binance"`
+	Houbi   ExchangeSiteConfig `json:"houbi"`
+}
+
+// Nodes ...
+type Nodes struct {
+	Main   string   `json:"main"`
+	Backup []string `json:"backup"`
+}
+
+// HumanDuration ...
+type HumanDuration time.Duration
+
+// UnmarshalJSON ...
+func (d *HumanDuration) UnmarshalJSON(text []byte) error {
+	if len(text) < 2 || (text[0] != '"' || text[len(text)-1] != '"') {
+		return fmt.Errorf("expect value in double quote")
+	}
+	v, err := time.ParseDuration(string(text[1 : len(text)-1]))
+	if err != nil {
+		return err
+	}
+	*d = HumanDuration(v)
+	return nil
+}
+
+// FetcherDelay ...
+type FetcherDelay struct {
+	OrderBook     HumanDuration `json:"order_book"`
+	AuthData      HumanDuration `json:"auth_data"`
+	RateFetching  HumanDuration `json:"rate_fetching"`
+	BlockFetching HumanDuration `json:"block_fetching"`
+	GlobalData    HumanDuration `json:"global_data"`
+	TradeHistory  HumanDuration `json:"trade_history"`
+}
+
+// RawConfig include all configs read from files
+type RawConfig struct {
+	AWSConfig         archive.AWSConfig `json:"aws_config"`
+	WorldEndpoints    WorldEndpoints    `json:"world_endpoints"`
+	ContractAddresses ContractAddresses `json:"contract_addresses"`
+	ExchangeEndpoints ExchangeEndpoints `json:"exchange_endpoints"`
+	Nodes             Nodes             `json:"nodes"`
+	FetcherDelay      FetcherDelay      `json:"fetcher_delay"`
+
+	SettingDB            string `json:"setting_db"`
+	DataDB               string `json:"data_db"`
+	HTTPAPIAddr          string `json:"http_api_addr"`
+	SimulationRunnerAddr string `json:"http_simulation_runner_addr"`
+
+	PricingKeystore   string `json:"keystore_path"`
+	PricingPassphrase string `json:"passphrase"`
+	DepositKeystore   string `json:"keystore_deposit_path"`
+	DepositPassphrase string `json:"passphrase_deposit"`
+
+	BinanceKey    string `json:"binance_key"`
+	BinanceSecret string `json:"binance_secret"`
+	HoubiKey      string `json:"huobi_key"`
+	HoubiSecret   string `json:"huobi_secret"`
+
+	IntermediatorKeystore   string `json:"keystore_intermediator_path"`
+	IntermediatorPassphrase string `json:"passphrase_intermediate_account"`
 }

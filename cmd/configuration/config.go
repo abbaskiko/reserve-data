@@ -50,12 +50,11 @@ type Config struct {
 // AddCoreConfig add config for core
 func (c *Config) AddCoreConfig(
 	cliCtx *cli.Context,
-	rcf rawConfig,
+	rcf common.RawConfig,
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
-	dataFile string,
 	settingStore storagev3.Interface,
 ) error {
 	l := zap.S()
@@ -77,7 +76,14 @@ func (c *Config) AddCoreConfig(
 			return err
 		}
 	} else {
-		fetcherRunner = NewTickerRunnerFromContext(cliCtx)
+		fetcherRunner = fetcher.NewTickerRunner(
+			time.Duration(rcf.FetcherDelay.OrderBook),
+			time.Duration(rcf.FetcherDelay.AuthData),
+			time.Duration(rcf.FetcherDelay.RateFetching),
+			time.Duration(rcf.FetcherDelay.BlockFetching),
+			time.Duration(rcf.FetcherDelay.GlobalData),
+			time.Duration(rcf.FetcherDelay.TradeHistory),
+		)
 		dataControllerRunner = datapruner.NewStorageControllerTickerRunner(24 * time.Hour)
 	}
 

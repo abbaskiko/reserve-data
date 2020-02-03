@@ -1,15 +1,13 @@
 package configuration
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
+	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
@@ -21,9 +19,6 @@ import (
 )
 
 const (
-	httpAddressFlag  = "http-address"
-	portDefaultValue = 8000
-
 	dryRunFlag = "dry-run"
 
 	binancePublicEndpointFlag         = "binance-public-endpoint"
@@ -37,21 +32,21 @@ const (
 	huobiAuthenticatedEndpointValue = "https://api.huobi.pro"
 
 	defaultDB = "reserve_data"
-
-	orderBookFetchingIntervalFlag    = "order-book-fetching-interval"
-	authDataFetchingIntervalFlag     = "auth-data-fetching-interval"
-	rateFetchingIntervalFlag         = "rate-fetching-interval"
-	blockFetchingIntervalFlag        = "block-fetching-interval"
-	globalDataFetchingIntervalFlag   = "global-data-fetching-interval"
-	tradeHistoryFetchingIntervalFlag = "trade-history-fetching-interval"
-
-	defaultOrderBookFetchingInterval    = 7 * time.Second
-	defaultAuthDataFetchingInterval     = 5 * time.Second
-	defaultRateFetchingInterval         = 3 * time.Second
-	defaultBlockFetchingInterval        = 5 * time.Second
-	defaultGlobalDataFetchingInterval   = 10 * time.Second
-	defaultTradeHistoryFetchingInterval = 10 * time.Minute
 )
+
+// NewDryRunCliFlag returns cli flag for dry run configuration.
+func NewDryRunCliFlag() cli.Flag {
+	return cli.BoolFlag{
+		Name:   dryRunFlag,
+		Usage:  "only test if all the configs are set correctly, will not actually run core",
+		EnvVar: "DRY_RUN",
+	}
+}
+
+// NewDryRunFromContext returns whether the to run reserve core in dry run mode.
+func NewDryRunFromContext(c *cli.Context) bool {
+	return c.GlobalBool(dryRunFlag)
+}
 
 // NewBinanceCliFlags returns new configuration flags for Binance.
 func NewBinanceCliFlags() []cli.Flag {
@@ -105,105 +100,15 @@ func NewhuobiInterfaceFromContext(c *cli.Context) huobi.Interface {
 	)
 }
 
-// NewDryRunCliFlag returns cli flag for dry run configuration.
-func NewDryRunCliFlag() cli.Flag {
-	return cli.BoolFlag{
-		Name:   dryRunFlag,
-		Usage:  "only test if all the configs are set correctly, will not actually run core",
-		EnvVar: "DRY_RUN",
-	}
-}
-
-// NewDryRunFromContext returns whether the to run reserve core in dry run mode.
-func NewDryRunFromContext(c *cli.Context) bool {
-	return c.GlobalBool(dryRunFlag)
-}
-
-//NewHTTPAddressFlag new flag for http address
-func NewHTTPAddressFlag() cli.Flag {
-	return cli.StringFlag{
-		Name:   httpAddressFlag,
-		Usage:  "bind address for http interface",
-		EnvVar: "HTTP_ADDRESS",
-		Value:  fmt.Sprintf("127.0.0.1:%d", portDefaultValue),
-	}
-}
-
-//NewHTTPAddressFromContext return http listen address from context
-func NewHTTPAddressFromContext(c *cli.Context) string {
-	return c.GlobalString(httpAddressFlag)
-}
-
-// NewRunnerFlags return cli flag for runner configuration.
-func NewRunnerFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.DurationFlag{
-			Name:   orderBookFetchingIntervalFlag,
-			Usage:  "time interval fetch order book",
-			EnvVar: "ORDER_BOOK_FETCHING_INTERVAL",
-			Value:  defaultOrderBookFetchingInterval,
-		},
-		cli.DurationFlag{
-			Name:   authDataFetchingIntervalFlag,
-			Usage:  "time interval fetch auth data",
-			EnvVar: "AUTH_DATA_FETCHING_INTERVAL",
-			Value:  defaultAuthDataFetchingInterval,
-		},
-		cli.DurationFlag{
-			Name:   rateFetchingIntervalFlag,
-			Usage:  "time interval fetch rate",
-			EnvVar: "RATE_FETCHING_INTERVAL",
-			Value:  defaultRateFetchingInterval,
-		},
-		cli.DurationFlag{
-			Name:   blockFetchingIntervalFlag,
-			Usage:  "time interval fetch block",
-			EnvVar: "BLOCK_FETCHING_INTERVAL",
-			Value:  defaultBlockFetchingInterval,
-		},
-		cli.DurationFlag{
-			Name:   globalDataFetchingIntervalFlag,
-			Usage:  "time interval fetch global data",
-			EnvVar: "GLOBAL_DATA_FETCHING_INTERVAL",
-			Value:  defaultGlobalDataFetchingInterval,
-		},
-		cli.DurationFlag{
-			Name:   tradeHistoryFetchingIntervalFlag,
-			Usage:  "time interval fetch trade history",
-			EnvVar: "TRADE_HISTORY_FETCHING_INTERVAL",
-			Value:  defaultTradeHistoryFetchingInterval,
-		},
-	}
-}
-
-// NewTickerRunnerFromContext return TickerRunner from cli configs
-func NewTickerRunnerFromContext(c *cli.Context) *fetcher.TickerRunner {
-	return fetcher.NewTickerRunner(
-		c.Duration(orderBookFetchingIntervalFlag),
-		c.Duration(authDataFetchingIntervalFlag),
-		c.Duration(rateFetchingIntervalFlag),
-		c.Duration(blockFetchingIntervalFlag),
-		c.Duration(globalDataFetchingIntervalFlag),
-		c.Duration(tradeHistoryFetchingIntervalFlag),
-	)
-}
-
 // NewCliFlags returns all cli flags of reserve core service.
 func NewCliFlags() []cli.Flag {
 	var flags []cli.Flag
 
 	flags = append(flags, mode.NewCliFlag(), deployment.NewCliFlag())
-	flags = append(flags, NewBinanceCliFlags()...)
-	flags = append(flags, NewHuobiCliFlags()...)
 	flags = append(flags, NewDryRunCliFlag())
-	flags = append(flags, NewContractAddressCliFlags()...)
-	flags = append(flags, NewEthereumNodesCliFlags()...)
-	flags = append(flags, NewDataFileCliFlags()...)
 	flags = append(flags, NewSecretConfigCliFlag()...)
 	flags = append(flags, NewExchangeCliFlag())
 	flags = append(flags, NewPostgreSQLFlags(defaultDB)...)
-	flags = append(flags, NewHTTPAddressFlag())
-	flags = append(flags, NewRunnerFlags()...)
 	flags = append(flags, app.NewSentryFlags()...)
 
 	return flags
@@ -269,30 +174,23 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 }
 
 // NewConfigurationFromContext returns the Configuration object from cli context.
-func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config, error) {
+func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.SugaredLogger) (*Config, error) {
 	dpl, err := deployment.NewDeploymentFromContext(c)
 	if err != nil {
 		return nil, err
 	}
 
-	bi := NewBinanceInterfaceFromContext(c)
-	hi := NewhuobiInterfaceFromContext(c)
+	bi := binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL, rcf.ExchangeEndpoints.Binance.AuthenURL)
+	hi := huobi.NewRealInterface(rcf.ExchangeEndpoints.Houbi.URL, rcf.ExchangeEndpoints.Houbi.AuthenURL)
 
-	contractAddressConf, err := NewContractAddressConfigurationFromContext(c)
-	if err != nil {
-		return nil, err
+	contractAddressConf := &common.ContractAddressConfiguration{
+		Reserve: rcf.ContractAddresses.Reserve,
+		Proxy:   rcf.ContractAddresses.Proxy,
+		Wrapper: rcf.ContractAddresses.Wrapper,
+		Pricing: rcf.ContractAddresses.Pricing,
 	}
 
-	ethereumNodeConf, err := NewEthereumNodeConfigurationFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-
-	dataFile, err := NewDataFileFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-
+	ethereumNodeConf := NewEthereumNodeConfiguration(rcf.Nodes.Main, rcf.Nodes.Backup)
 	db, err := NewDBFromContext(c)
 	if err != nil {
 		return nil, err
@@ -304,8 +202,6 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		return nil, err
 	}
 
-	configFile, secretConfigFile := NewConfigFilesFromContext(c)
-
 	config, err := GetConfig(
 		c,
 		dpl,
@@ -313,10 +209,8 @@ func NewConfigurationFromContext(c *cli.Context, s *zap.SugaredLogger) (*Config,
 		bi,
 		hi,
 		contractAddressConf,
-		dataFile,
-		configFile,
-		secretConfigFile,
 		sr,
+		rcf,
 	)
 	if err != nil {
 		return nil, err
