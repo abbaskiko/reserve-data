@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	secretConfigFileFlag = "secret-config"
+	secretConfigFileFlag = "secret-file"
 	configFileFlag       = "config"
 )
 
@@ -16,8 +16,8 @@ func NewSecretConfigCliFlag() []cli.Flag {
 		cli.StringFlag{
 			Name:   secretConfigFileFlag,
 			Usage:  "location of secret config file",
-			EnvVar: "SECRET_CONFIG_FILE",
-			Value:  "secret_config.json",
+			EnvVar: "SECRET_FILE",
+			Value:  "secret.json",
 		},
 		cli.StringFlag{
 			Name:   configFileFlag,

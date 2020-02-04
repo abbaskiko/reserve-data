@@ -54,8 +54,6 @@ func GetConfig(
 ) (*Config, error) {
 	l := zap.S()
 
-	chainType := GetChainType(dpl)
-
 	//set client & endpoint
 	client, err := rpc.Dial(nodeConf.Main)
 	if err != nil {
@@ -83,7 +81,6 @@ func GetConfig(
 	bc := blockchain.NewBaseBlockchain(
 		client, mainClient, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
-		chainType,
 		blockchain.NewContractCaller(callClients),
 	)
 
