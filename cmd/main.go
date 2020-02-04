@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -45,7 +47,18 @@ func run(c *cli.Context) error {
 		flusher()
 	}()
 	zap.ReplaceGlobals(l.Desugar())
-	conf, err := configuration.NewConfigurationFromContext(c, l)
+
+	configFile, secretConfigFile := configuration.NewConfigFilesFromContext(c)
+
+	rcf := common.RawConfig{}
+	if err := loadConfigFromFile(configFile, &rcf); err != nil {
+		return err
+	}
+	if err := loadConfigFromFile(secretConfigFile, &rcf); err != nil {
+		return err
+	}
+
+	conf, err := configuration.NewConfigurationFromContext(c, rcf, l)
 	if err != nil {
 		return err
 	}
@@ -76,7 +89,7 @@ func run(c *cli.Context) error {
 		common.SupportedExchanges[ex.ID()] = ex
 	}
 
-	host := configuration.NewHTTPAddressFromContext(c)
+	host := rcf.HTTPAPIAddr
 	server := http.NewHTTPServer(
 		rData, rCore,
 		host,
@@ -95,4 +108,12 @@ func run(c *cli.Context) error {
 	}
 
 	return err
+}
+
+func loadConfigFromFile(path string, rcf *common.RawConfig) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, rcf)
 }

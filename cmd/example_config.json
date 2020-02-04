@@ -1,0 +1,87 @@
+{
+  "fetcher_delay": {
+    "order_book": "7s",
+    "auth_data": "5s",
+    "rate_fetching": "3s",
+    "block_fetching": "5s",
+    "global_data": "10s",
+    "trade_history": "10s"
+  },
+  "nodes": {
+    "main": "https://eth-mainnet.alchemyapi.io/jsonrpc/projetid",
+    "backup": [
+      "https://mainnet.infura.io/v3/proid",
+      "https://api.myetherwallet.com/eth"
+    ]
+  },
+  "http_api_addr": "localhost:8000",
+  "contract_addresses": {
+    "wrapper": "0x6172AFC8c00c46E0D07ce3AF203828198194620a",
+    "network_proxy": "0x818E6FECD516Ecc3849DAf6845e3EC868087B755",
+    "pricing": "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B",
+    "reserve": "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
+  },
+  "exchange_endpoints": {
+    "binance": {
+      "url": "https://api.binance.com",
+      "authen_url": "https://api.binance.com"
+    },
+    "houbi": {
+      "url": "https://api.huobi.pro",
+      "authen_url": "https://api.huobi.pro"
+    }
+  },
+  "world_endpoints": {
+    "gold_data": {
+      "url": "https://datafeed.digix.global/tick/"
+    },
+    "one_forge_gold_eth": {
+      "url": "https://api.1forge.com/convert?from=XAU&to=ETH&quantity=1&api_key=mykey"
+    },
+    "one_forge_gold_usd": {
+      "url": "https://api.1forge.com/convert?from=XAU&to=USD&quantity=1&api_key=mykey"
+    },
+    "gdax_data": {
+      "url": "https://api.pro.coinbase.com/products/eth-usd/ticker"
+    },
+    "kraken_data": {
+      "url": "https://api.kraken.com/0/public/Ticker?pair=ETHUSD"
+    },
+    "gemini_data": {
+      "url": "https://api.gemini.com/v1/pubticker/ethusd"
+    },
+    "coinbase_btc": {
+      "url": "https://api.pro.coinbase.com/products/eth-btc/ticker"
+    },
+    "gemini_btc": {
+      "url": "https://api.gemini.com/v1/pubticker/ethbtc"
+    },
+    "coinbase_usdc": {
+      "url": "https://api.pro.coinbase.com/products/eth-usdc/ticker"
+    },
+    "binance_usdc": {
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC"
+    },
+    "coinbase_usd": {
+      "url": "https://api.pro.coinbase.com/products/eth-usd/ticker"
+    },
+    "coinbase_dai": {
+      "url": "https://api.pro.coinbase.com/products/eth-dai/ticker"
+    },
+    "hit_dai": {
+      "url": "https://api.hitbtc.com/api/2/public/ticker/ETHDAI"
+    },
+    "bit_finex_usdt": {
+      "url": "https://api-pub.bitfinex.com/v2/ticker/tETHUSD"
+    },
+    "binance_usdt": {
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDT"
+    },
+    "binance_pax": {
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHPAX"
+    },
+    "binance_tusd": {
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHTUSD"
+    }
+  }
+}
