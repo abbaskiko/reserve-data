@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/getsentry/raven-go"
@@ -168,7 +169,10 @@ func (s *Server) GetRates(c *gin.Context) {
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
-		toTime = maxTimespot
+		toTime = common.TimeToMillis(time.Now())
+	}
+	if fromTime == 0 {
+		fromTime = toTime - defaultTimeRange
 	}
 	data, err := s.app.GetRates(fromTime, toTime)
 	if err != nil {

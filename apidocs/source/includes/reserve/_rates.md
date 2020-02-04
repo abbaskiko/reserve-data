@@ -10,84 +10,28 @@ curl -X -GET "http://gateway.local/v3/prices"
 
 ```json
 {
-    "data": {
-        "MCO-ETH": {
-            "bittrex": {
-                "Valid": true,
-                "Error": "",
-                "Timestamp": "1514114579228",
-                "Bids": [
-                    {
-                        "Quantity": 142.93534777,
-                        "Rate": 0.02437378
-                    },
-                    {
-                        "Quantity": 1.21116959,
-                        "Rate": 0.02437377
-                    },
-                    {
-                        "Quantity": 1.63701658,
-                        "Rate": 0.02437376
-                    }
-                ],
-                "Asks": [
-                    {
-                        "Quantity": 15.39680469,
-                        "Rate": 0.02503471
-                    },
-                    {
-                        "Quantity": 18.71484714,
-                        "Rate": 0.02503534
-                    },
-                    {
-                        "Quantity": 93.57423573,
-                        "Rate": 0.02503537
-                    }
-                ],
-                "ReturnTime": "1514114579481"
-            }
-        },
-        "OMG-ETH": {
-            "bittrex": {
-                "Valid": true,
-                "Error": "",
-                "Timestamp": "1514114579228",
-                "Bids": [
-                    {
-                        "Quantity": 5.49,
-                        "Rate": 0.019857
-                    },
-                    {
-                        "Quantity": 13.62550123,
-                        "Rate": 0.0197758
-                    },
-                    {
-                        "Quantity": 10,
-                        "Rate": 0.01976677
-                    },
-                    {
-                        "Quantity": 6.92629385,
-                        "Rate": 0.01970274
-                    }
-                ],
-                "Asks": [
-                    {
-                        "Quantity": 6.73770653,
-                        "Rate": 0.02025768
-                    },
-                    {
-                        "Quantity": 7.49193537,
-                        "Rate": 0.02025774
-                    },
-                    {
-                        "Quantity": 1.48831433,
-                        "Rate": 0.02025781
-                    }
-                ],
-                "ReturnTime": "1514114579575"
-            }
+    "block": 9290920,
+    "data": [
+        {
+            "base":     3,
+            "quote":    1,
+            "exchange": 1,
+            "bids": [
+                {
+                    "quantity": 31,
+                    "rate":     0.00123,
+                },
+                ...
+            ],
+            "asks": [
+                {
+                    "quantity": 31,
+                    "rate":     0.00123,
+                },
+                ...
+            ]
         }
-    },
+    ],
     "success": true,
     "timestamp": "1514114582015",
     "version": 64
@@ -114,7 +58,7 @@ curl -X GET "https://gateway.local/prices/omg/eth"
 ## Get token rates from blockchain
 
 ```shell
-curl -X GET "http://127.0.0.1:8000/v3/getrates"
+curl -X GET "http://gateway.local/v3/getrates"
 ```
 
 > sample response
@@ -122,42 +66,16 @@ curl -X GET "http://127.0.0.1:8000/v3/getrates"
 ```json
 {
     "data": {
-        "MCO": {
-            "Valid": true,
-            "Error": "",
-            "Timestamp": "1515412582435",
-            "ReturnTime": "1515412582710",
-            "BaseBuy": 63.99319226272073,
-            "CompactBuy": 21,
-            "BaseSell": 0.014716371218820246,
-            "CompactSell": -20,
+        "3": {
+            "Timestamp": "1579161010159",
+            "ReturnTime": "1579161010414",
+            "BaseBuy": 3.2992994010339163,
+            "CompactBuy": -32,
+            "BaseSell": 0.2994836524507138,
+            "CompactSell": 35,
             "Rate": 0,
-            "Block": 2420849
+            "Block": 9290940,
         },
-        "OMG": {
-            "Valid": true,
-            "Error": "",
-            "Timestamp": "1515412582435",
-            "ReturnTime": "1515412582710",
-            "BaseBuy": 44.45707162223901,
-            "CompactBuy": 30,
-            "BaseSell": 0.021183301968644246,
-            "CompactSell": -29,
-            "Rate": 0,
-            "Block": 2420849
-        },
-        "PAY": {
-            "Valid": true,
-            "Error": "",
-            "Timestamp": "1515412582435",
-            "ReturnTime": "1515412582710",
-            "BaseBuy": 295.08854913901575,
-            "CompactBuy": -13,
-            "BaseSell": 0.003191406699999999,
-            "CompactSell": 13,
-            "Rate": 0,
-            "Block": 2420849
-        }
     },
     "success": true,
     "timestamp": "1515412583215",
@@ -183,14 +101,10 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
     "data": [
         {
             "Version": 0,
-            "Valid": true,
-            "Error": "",
             "Timestamp": "1517280618739",
             "ReturnTime": "1517280619071",
             "Data": {
-                "SNT": {
-                    "Valid": true,
-                    "Error": "",
+                "3": {
                     "Timestamp": "1517280618739",
                     "ReturnTime": "1517280619071",
                     "BaseBuy": 4053.2170631085987,
@@ -204,14 +118,10 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
         },
         {
             "Version": 0,
-            "Valid": true,
-            "Error": "",
             "Timestamp": "1517280621738",
             "ReturnTime": "1517280622251",
             "Data": {
-                "EOS": {
-                    "Valid": true,
-                    "Error": "",
+                "1": {
                     "Timestamp": "1517280621738",
                     "ReturnTime": "1517280622251",
                     "BaseBuy": 87.21360760013062,
@@ -221,9 +131,7 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
                     "Rate": 0,
                     "Block": 5635245
                 },
-                "ETH": {
-                    "Valid": true,
-                    "Error": "",
+                "2": {
                     "Timestamp": "1517280621738",
                     "ReturnTime": "1517280622251",
                     "BaseBuy": 0,
@@ -233,9 +141,7 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
                     "Rate": 0,
                     "Block": 5635245
                 },
-                "KNC": {
-                    "Valid": true,
-                    "Error": "",
+                "3": {
                     "Timestamp": "1517280621738",
                     "ReturnTime": "1517280622251",
                     "BaseBuy": 307.05930436561505,
@@ -245,9 +151,7 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
                     "Rate": 0,
                     "Block": 5635245
                 },
-                "OMG": {
-                    "Valid": true,
-                    "Error": "",
+                "4": {
                     "Timestamp": "1517280621738",
                     "ReturnTime": "1517280622251",
                     "BaseBuy": 65.0580993582104,
@@ -257,9 +161,7 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
                     "Rate": 0,
                     "Block": 5635245
                 },
-                "SALT": {
-                    "Valid": true,
-                    "Error": "",
+                "5": {
                     "Timestamp": "1517280621738",
                     "ReturnTime": "1517280622251",
                     "BaseBuy": 152.3016783627643,
@@ -269,9 +171,7 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
                     "Rate": 0,
                     "Block": 5635245
                 },
-                "SNT": {
-                    "Valid": true,
-                    "Error": "",
+                "6": {
                     "Timestamp": "1517280621738",
                     "ReturnTime": "1517280622251",
                     "BaseBuy": 4053.2170631085987,
@@ -294,6 +194,5 @@ curl -X GET "https://gateway.local/v3/get-all-rates"
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
-fromTime | uint64 | false | nil | fromTime to get all rates
-toTime | uint64 | false | nil | toTime to get all rates
-
+fromTime | uint64 | false | 24 hours ago | fromTime to get all rates
+toTime | uint64 | false | current time | toTime to get all rates
