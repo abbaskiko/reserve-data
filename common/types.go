@@ -766,10 +766,7 @@ type RawConfig struct {
 	Nodes             Nodes             `json:"nodes"`
 	FetcherDelay      FetcherDelay      `json:"fetcher_delay"`
 
-	SettingDB            string `json:"setting_db"`
-	DataDB               string `json:"data_db"`
-	HTTPAPIAddr          string `json:"http_api_addr"`
-	SimulationRunnerAddr string `json:"http_simulation_runner_addr"`
+	HTTPAPIAddr string `json:"http_api_addr"`
 
 	PricingKeystore   string `json:"keystore_path"`
 	PricingPassphrase string `json:"passphrase"`
