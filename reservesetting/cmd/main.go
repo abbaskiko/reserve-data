@@ -122,12 +122,12 @@ func getLiveExchanges(enabledExchanges []v1common.ExchangeID, bi exchange.Binanc
 	)
 	for _, exchangeID := range enabledExchanges {
 		switch exchangeID {
-		case v1common.Binance:
+		case v1common.Binance, v1common.Binance2:
 			binanceLive := exchange.NewBinanceLive(bi)
-			liveExchanges[v1common.Binance] = binanceLive
+			liveExchanges[exchangeID] = binanceLive
 		case v1common.Huobi:
 			huobiLive := exchange.NewHuobiLive(hi)
-			liveExchanges[v1common.Huobi] = huobiLive
+			liveExchanges[exchangeID] = huobiLive
 		}
 	}
 	return liveExchanges, nil
@@ -140,6 +140,7 @@ func checkCoreEndpoint(endpoint string) bool {
 
 	resp, err := http.Get(fmt.Sprintf("%s/v3/timeserver", endpoint))
 	if err != nil {
+		log.Printf("Failed to check time server, error: %s", err.Error())
 		return false
 	}
 
