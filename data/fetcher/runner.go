@@ -23,12 +23,12 @@ type Runner interface {
 
 // TickerRunner is an implementation of FetcherRunner that use simple time ticker.
 type TickerRunner struct {
-	oduration          time.Duration
-	aduration          time.Duration
-	rduration          time.Duration
-	bduration          time.Duration
-	globalDataDuration time.Duration
-	hDuration          time.Duration
+	oduration          time.Duration // Order book ticker duration
+	aduration          time.Duration // Authdata ticker duration
+	rduration          time.Duration // Rate ticker duration
+	bduration          time.Duration // Block ticker duration
+	globalDataDuration time.Duration // GlobalData ticker duration
+	hDuration          time.Duration // Exchange trade history ticker duration
 
 	oclock          *time.Ticker
 	aclock          *time.Ticker
@@ -59,6 +59,7 @@ func (tr *TickerRunner) GetExchangeHistoryTicker() <-chan time.Time {
 	return tr.hClock.C
 }
 
+// Start start runner
 func (tr *TickerRunner) Start() error {
 	tr.oclock = time.NewTicker(tr.oduration)
 	tr.aclock = time.NewTicker(tr.aduration)
