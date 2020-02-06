@@ -81,10 +81,11 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("failed to get enabled exchanges: %s", err)
 	}
 
+	// QUESTION: should we keep using flag for this config or move it to config file?
 	bi := configuration.NewBinanceInterfaceFromContext(c)
 	// dummy signer as live infos does not need to sign
 	binanceSigner := binance.NewSigner("", "")
-	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
+	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl, v1common.Binance)
 	hi := configuration.NewhuobiInterfaceFromContext(c)
 
 	// dummy signer as live infos does not need to sign

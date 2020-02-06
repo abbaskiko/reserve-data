@@ -10,7 +10,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	blockchaincommon "github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange"
@@ -85,7 +85,7 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 	for _, asset := range assets {
 		for _, ae := range asset.Exchanges {
 			switch ae.ExchangeID {
-			case uint64(common.Binance):
+			case uint64(common.Binance), uint64(common.Binance2):
 				l.Warnw("updating deposit address for asset", "asset_id", asset.ID,
 					"exchange", common.Binance.String(), "symbol", ae.Symbol)
 				if be == nil {
@@ -101,7 +101,7 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 				}
 				err = assetStorage.UpdateDepositAddress(
 					asset.ID,
-					uint64(common.Binance),
+					ae.ExchangeID,
 					ethereum.HexToAddress(depositAddress.Address))
 				if err != nil {
 					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
@@ -141,8 +141,8 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 
 func NewExchangePool(
 	c *cli.Context,
-	secretConfigFile string,
-	blockchain *blockchain.BaseBlockchain,
+	rcf common.RawConfig,
+	blockchain *blockchaincommon.BaseBlockchain,
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
@@ -168,20 +168,18 @@ func NewExchangePool(
 
 	for _, exparam := range enabledExchanges {
 		switch exparam {
-		case common.StableExchange:
-			stableEx, err := exchange.NewStableEx(s)
-			if err != nil {
-				return nil, fmt.Errorf("can not create exchange stable_exchange: (%s)", err.Error())
+		case common.Binance, common.Binance2:
+			binanceSigner := binance.NewSigner(rcf.BinanceKey, rcf.BinanceSecret)
+			if exparam == common.Binance2 {
+				binanceSigner = binance.NewSigner(rcf.Binance2Key, rcf.Binance2Secret)
 			}
-			exchanges[stableEx.ID()] = stableEx
-		case common.Binance:
-			binanceSigner := binance.NewSignerFromFile(secretConfigFile)
-			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl)
+			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, exparam)
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
 			bin, err = exchange.NewBinance(
+				exparam,
 				be,
 				binancestorage,
 				assetStorage)
@@ -190,17 +188,13 @@ func NewExchangePool(
 			}
 			exchanges[bin.ID()] = bin
 		case common.Huobi:
-			huobiSigner := huobi.NewSignerFromFile(secretConfigFile)
+			huobiSigner := huobi.NewSigner(rcf.HoubiKey, rcf.HoubiSecret)
 			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
 			huobistorage, err := huobiStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
 			}
-			intermediatorSigner, err := HuobiIntermediatorSignerFromFile(secretConfigFile)
-			if err != nil {
-				s.Errorw("failed to get intermediator signer from file", "err", err)
-				return nil, err
-			}
+			intermediatorSigner := blockchaincommon.NewEthereumSigner(rcf.IntermediatorKeystore, rcf.IntermediatorPassphrase)
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
 			hb, err = exchange.NewHuobi(
 				he,

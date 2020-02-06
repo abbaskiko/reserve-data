@@ -49,18 +49,10 @@ func GetConfig(
 	bi binance.Interface,
 	hi huobi.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
-	dataFile string,
-	secretConfigFile string,
 	settingStorage storage.Interface,
+	rcf common.RawConfig,
 ) (*Config, error) {
 	l := zap.S()
-	theWorld, err := world.NewTheWorld(dpl, secretConfigFile)
-	if err != nil {
-		l.Errorw("Can't init the world (which is used to get global data)", "err", err.Error())
-		return nil, err
-	}
-
-	chainType := GetChainType(dpl)
 
 	//set client & endpoint
 	client, err := rpc.Dial(nodeConf.Main)
@@ -89,16 +81,12 @@ func GetConfig(
 	bc := blockchain.NewBaseBlockchain(
 		client, mainClient, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
-		chainType,
 		blockchain.NewContractCaller(callClients),
 	)
 
-	awsConf, err := archive.GetAWSconfigFromFile(secretConfigFile)
-	if err != nil {
-		l.Errorw("failed to load AWS config", "file", secretConfigFile)
-		return nil, err
-	}
-	s3archive := archive.NewS3Archive(awsConf)
+	s3archive := archive.NewS3Archive(rcf.AWSConfig)
+	theWorld := world.NewTheWorld(rcf.WorldEndpoints)
+
 	config := &Config{
 		Blockchain:              bc,
 		EthereumEndpoint:        nodeConf.Main,
@@ -110,7 +98,7 @@ func GetConfig(
 	}
 
 	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(cliCtx, secretConfigFile, dpl, bi, hi, contractAddressConf, dataFile, settingStorage); err != nil {
+	if err = config.AddCoreConfig(cliCtx, rcf, dpl, bi, hi, contractAddressConf, settingStorage); err != nil {
 		return nil, err
 	}
 	return config, nil
