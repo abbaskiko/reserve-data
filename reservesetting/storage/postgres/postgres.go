@@ -21,7 +21,7 @@ type Storage struct {
 func (s *Storage) initExchanges() error {
 	const query = `INSERT INTO "exchanges" (id, name)
 VALUES (unnest($1::INT[]),
-        unnest($2::TEXT[]))`
+        unnest($2::TEXT[])) ON CONFLICT(name) DO NOTHING;`
 
 	var (
 		idParams   []int
@@ -79,18 +79,16 @@ func NewStorage(db *sqlx.DB) (*Storage, error) {
 		return nil, fmt.Errorf("failed to init feed data, err=%s", err)
 	}
 
-	exchanges, err := s.GetExchanges()
+	assets, err := s.GetAssets()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get existing exchanges")
 	}
 
-	if len(exchanges) == 0 {
-		l.Infow("database is empty, initializing exchanges and assets")
+	if err = s.initExchanges(); err != nil {
+		return nil, fmt.Errorf("failed to initialize exchanges err=%s", err.Error())
+	}
 
-		if err = s.initExchanges(); err != nil {
-			return nil, fmt.Errorf("failed to initialize exchanges err=%s", err.Error())
-		}
-
+	if len(assets) == 0 {
 		if err = s.initAssets(); err != nil {
 			return nil, fmt.Errorf("failed to initialize assets err=%s", err.Error())
 		}
