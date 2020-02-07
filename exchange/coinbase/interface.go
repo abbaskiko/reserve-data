@@ -1,13 +1,13 @@
-package binance
+package coinbase
 
-// Interface is Binance exchange API endpoints interface.
+// Interface is Coinbase exchange API endpoints interface.
 type Interface interface {
-	// isBinance is a safe guard to make sure nothing outside this package can implement this interface.
-	isBinance()
+	// isHuobi is a safe guard to make sure nothing outside this package can implement this interface.
+	isCoinbase()
 	// PublicEndpoint returns the endpoint that does not requires authentication.
 	PublicEndpoint() string
 	// AuthenticatedEndpoint returns the endpoint that requires authentication.
-	// In simulation mode, authenticated endpoint is the Binance mock server.
+	// In simulation mode, authenticated endpoint is the Huobi mock server.
 	AuthenticatedEndpoint() string
 }
 
@@ -19,7 +19,7 @@ func NewRealInterface(publicEndpoint string) *RealInterface {
 	return &RealInterface{publicEndpoint: publicEndpoint}
 }
 
-func (r *RealInterface) isBinance() {}
+func (r *RealInterface) isCoinbase() {}
 
 func (r *RealInterface) PublicEndpoint() string {
 	return r.publicEndpoint

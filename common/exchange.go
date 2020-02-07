@@ -20,6 +20,8 @@ const (
 	Huobi //huobi
 	// Binance2 is second binance exchange
 	Binance2 // binance_2
+	// Coinbase
+	Coinbase // coinbase
 )
 
 // ValidExchangeNames returns all valid exchange names.
@@ -27,6 +29,7 @@ var ValidExchangeNames = map[string]ExchangeID{
 	Binance.String():  Binance,
 	Huobi.String():    Huobi,
 	Binance2.String(): Binance2,
+	Coinbase.String(): Coinbase,
 }
 
 // Exchange represents a centralized exchange like Binance, Huobi...

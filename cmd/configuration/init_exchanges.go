@@ -3,6 +3,8 @@ package configuration
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
@@ -16,6 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	binanceStorage "github.com/KyberNetwork/reserve-data/exchange/binance/storage"
+	"github.com/KyberNetwork/reserve-data/exchange/coinbase"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	huobiStorage "github.com/KyberNetwork/reserve-data/exchange/huobi/storage"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
@@ -146,6 +149,7 @@ func NewExchangePool(
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
+	cb coinbase.Interface,
 	assetStorage storage.Interface,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
@@ -165,7 +169,7 @@ func NewExchangePool(
 	if err != nil {
 		return nil, fmt.Errorf("can not init postgres storage: (%s)", err.Error())
 	}
-
+	httpClient := &http.Client{Timeout: time.Second * 30}
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.Binance, common.Binance2:
@@ -208,6 +212,10 @@ func NewExchangePool(
 				return nil, fmt.Errorf("can not create exchange Huobi: (%s)", err.Error())
 			}
 			exchanges[hb.ID()] = hb
+		case common.Coinbase:
+			ep := coinbase.NewCoinbaseEndpoint(cb, httpClient)
+			cbex := exchange.NewCoinbase(s, common.Coinbase, ep, assetStorage)
+			exchanges[common.Coinbase] = cbex
 		}
 	}
 
@@ -225,7 +233,7 @@ func NewExchangePool(
 }
 
 func (ep *ExchangePool) FetcherExchanges() ([]fetcher.Exchange, error) {
-	result := []fetcher.Exchange{}
+	var result []fetcher.Exchange
 	for _, ex := range ep.Exchanges {
 		fcEx, ok := ex.(fetcher.Exchange)
 		if !ok {
