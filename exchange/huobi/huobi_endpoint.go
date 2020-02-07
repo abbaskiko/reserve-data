@@ -375,7 +375,7 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.HuobiDepositAddres
 	return result, err
 }
 
-// GetExchangeInfo get huobi exchange info 
+// GetExchangeInfo get huobi exchange info
 func (ep *Endpoint) GetExchangeInfo() (exchange.HuobiExchangeInfo, error) {
 	result := exchange.HuobiExchangeInfo{}
 	respBody, err := ep.GetResponse(
