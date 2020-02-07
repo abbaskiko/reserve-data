@@ -122,6 +122,7 @@ func (ep *Endpoint) GetAccounts() (exchange.HuobiAccounts, error) {
 	return result, err
 }
 
+// GetDepthOnePair get order book for one pair of token
 func (ep *Endpoint) GetDepthOnePair(
 	baseID, quoteID string) (exchange.HuobiDepth, error) {
 
@@ -229,6 +230,7 @@ func (ep *Endpoint) DepositHistory(size int) (exchange.HuobiDeposits, error) {
 	return result, err
 }
 
+// CancelOrder cancel opening order
 func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.HuobiCancel, error) {
 	result := exchange.HuobiCancel{}
 	respBody, err := ep.GetResponse(
@@ -251,6 +253,7 @@ func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.HuobiCancel,
 	return result, err
 }
 
+// OrderStatus get status of current opening order
 func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.HuobiOrder, error) {
 	result := exchange.HuobiOrder{}
 	respBody, err := ep.GetResponse(
@@ -273,6 +276,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.HuobiOrder, 
 	return result, err
 }
 
+// Withdraw withdraw asset from huobi
 func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	var symbol string
 	for _, exchg := range asset.Exchanges {
@@ -307,6 +311,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 
 }
 
+// GetInfo get account info from huobi
 func (ep *Endpoint) GetInfo() (exchange.HuobiInfo, error) {
 	result := exchange.HuobiInfo{}
 	accounts, err := ep.GetAccounts()
@@ -328,6 +333,7 @@ func (ep *Endpoint) GetInfo() (exchange.HuobiInfo, error) {
 	return result, err
 }
 
+// GetAccountTradeHistory get account trade history from huobi
 func (ep *Endpoint) GetAccountTradeHistory(
 	baseSymbol, quoteSymbol string) (exchange.HuobiTradeHistory, error) {
 	result := exchange.HuobiTradeHistory{}
@@ -369,6 +375,7 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.HuobiDepositAddres
 	return result, err
 }
 
+// GetExchangeInfo get huobi exchange info 
 func (ep *Endpoint) GetExchangeInfo() (exchange.HuobiExchangeInfo, error) {
 	result := exchange.HuobiExchangeInfo{}
 	respBody, err := ep.GetResponse(
