@@ -26,11 +26,12 @@ func Execute() {
 		Short: "initiate the server with specific config",
 		Long: `Start reserve-data core server with preset Environment and
 Allow overwriting some parameter`,
-		Example: "KYBER_ENV=dev KYBER_EXCHANGES=binance ./cmd server --noauth",
+		Example: "KYBER_ENV=dev KYBER_EXCHANGES=binance ./cmd server --noauth --config config.json --secret-file secret.json",
 		Run:     serverStart,
 	}
 	// start server flags.
 	startServer.Flags().StringVar(&configFile, "config", "config.json", "path to config file")
+	startServer.Flags().StringVar(&secretFile, "secret-file", "secret.json", "path to secret file")
 	startServer.Flags().BoolVarP(&noAuthEnable, "noauth", "", false, "disable authentication")
 	startServer.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
 	startServer.Flags().BoolVarP(&dryRun, "dryrun", "", false, "only test if all the configs are set correctly, will not actually run core")

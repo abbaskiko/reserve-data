@@ -32,6 +32,7 @@ var (
 	sentryLevel string
 	zapMode     string
 	configFile  string
+	secretFile  string
 )
 
 func serverStart(_ *cobra.Command, _ []string) {
@@ -48,7 +49,10 @@ func serverStart(_ *cobra.Command, _ []string) {
 	kyberENV := common.RunningMode()
 	var ac = config.DefaultAppConfig()
 	if err = config.LoadConfig(configFile, &ac); err != nil {
-		s.Panicw("failed to load config file", "err", err)
+		s.Panicw("failed to load config file", "err", err, "file", configFile)
+	}
+	if err = config.LoadConfig(secretFile, &ac); err != nil {
+		s.Panicw("failed to load secret file", "err", err, "file", secretFile)
 	}
 	appState := configuration.InitAppState(!noAuthEnable, ac)
 	//backup other log daily
