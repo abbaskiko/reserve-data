@@ -177,7 +177,7 @@ func NewExchangePool(
 			if exparam == common.Binance2 {
 				binanceSigner = binance.NewSigner(rcf.Binance2Key, rcf.Binance2Secret)
 			}
-			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, exparam)
+			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient)
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
@@ -193,7 +193,7 @@ func NewExchangePool(
 			exchanges[bin.ID()] = bin
 		case common.Huobi:
 			huobiSigner := huobi.NewSigner(rcf.HoubiKey, rcf.HoubiSecret)
-			he = huobi.NewHuobiEndpoint(huobiSigner, hi)
+			he = huobi.NewHuobiEndpoint(huobiSigner, hi, httpClient)
 			huobistorage, err := huobiStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
