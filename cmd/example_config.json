@@ -23,12 +23,13 @@
   },
   "exchange_endpoints": {
     "binance": {
-      "url": "https://api.binance.com",
-      "authen_url": "https://api.binance.com"
+      "url": "https://api.binance.com"
     },
     "houbi": {
-      "url": "https://api.huobi.pro",
-      "authen_url": "https://api.huobi.pro"
+      "url": "https://api.huobi.pro"
+    },
+    "coinbase": {
+      "url": "https://api.pro.coinbase.com"
     }
   },
   "world_endpoints": {

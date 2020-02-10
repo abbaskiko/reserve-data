@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -85,12 +86,13 @@ func run(c *cli.Context) error {
 	bi := configuration.NewBinanceInterfaceFromContext(c)
 	// dummy signer as live infos does not need to sign
 	binanceSigner := binance.NewSigner("", "")
-	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl, v1common.Binance)
+	httpClient := &http.Client{Timeout: time.Second * 30}
+	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient)
 	hi := configuration.NewhuobiInterfaceFromContext(c)
 
 	// dummy signer as live infos does not need to sign
 	huobiSigner := huobi.NewSigner("", "")
-	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi)
+	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi, httpClient)
 
 	liveExchanges, err := getLiveExchanges(enableExchanges, binanceEndpoint, huobiEndpoint)
 	if err != nil {

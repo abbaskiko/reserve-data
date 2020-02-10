@@ -4,9 +4,19 @@ package common
 
 import "strconv"
 
-const _ExchangeID_name = "binancehuobibinance_2"
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[Binance-1]
+	_ = x[Huobi-2]
+	_ = x[Binance2-3]
+	_ = x[Coinbase-4]
+}
 
-var _ExchangeID_index = [...]uint8{0, 7, 12, 21}
+const _ExchangeID_name = "binancehuobibinance_2coinbase"
+
+var _ExchangeID_index = [...]uint8{0, 7, 12, 21, 29}
 
 func (i ExchangeID) String() string {
 	i -= 1

@@ -26,6 +26,7 @@ type Endpoint struct {
 	signer Signer
 	interf Interface
 	l      *zap.SugaredLogger
+	client *http.Client
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool) {
@@ -53,9 +54,6 @@ func (ep *Endpoint) GetResponse(
 	method string, reqURL string,
 	params map[string]string, signNeeded bool) ([]byte, error) {
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
 	reqBody, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
@@ -89,7 +87,7 @@ func (ep *Endpoint) GetResponse(
 	req.URL.RawQuery = q.Encode()
 	ep.fillRequest(req, signNeeded)
 	var respBody []byte
-	resp, err := client.Do(req)
+	resp, err := ep.client.Do(req)
 	if err != nil {
 		return respBody, err
 	}
@@ -386,6 +384,6 @@ func (ep *Endpoint) GetExchangeInfo() (exchange.HuobiExchangeInfo, error) {
 }
 
 //NewHuobiEndpoint return new endpoint instance
-func NewHuobiEndpoint(signer Signer, interf Interface) *Endpoint {
-	return &Endpoint{signer, interf, zap.S()}
+func NewHuobiEndpoint(signer Signer, interf Interface, client *http.Client) *Endpoint {
+	return &Endpoint{signer: signer, interf: interf, l: zap.S(), client: client}
 }

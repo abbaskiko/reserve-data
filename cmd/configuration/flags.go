@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
+	"github.com/KyberNetwork/reserve-data/exchange/coinbase"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	"github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
@@ -21,15 +22,11 @@ import (
 const (
 	dryRunFlag = "dry-run"
 
-	binancePublicEndpointFlag         = "binance-public-endpoint"
-	binancePublicEndpointValue        = "https://api.binance.com"
-	binanceAuthenticatedEndpointFlag  = "binance-authenticated-endpoint"
-	binanceAuthenticatedEndpointValue = "https://api.binance.com"
+	binancePublicEndpointFlag  = "binance-public-endpoint"
+	binancePublicEndpointValue = "https://api.binance.com"
 
-	huobiPublicEndpointFlag         = "huobi-public-endpoint"
-	huobiPublicEndpointValue        = "https://api.huobi.pro"
-	huobiAuthenticatedEndpointFlag  = "huobi-authenticated-endpoint"
-	huobiAuthenticatedEndpointValue = "https://api.huobi.pro"
+	huobiPublicEndpointFlag  = "huobi-public-endpoint"
+	huobiPublicEndpointValue = "https://api.huobi.pro"
 
 	defaultDB = "reserve_data"
 )
@@ -57,12 +54,6 @@ func NewBinanceCliFlags() []cli.Flag {
 			EnvVar: "BINANCE_PUBLIC_ENDPOINT",
 			Value:  binancePublicEndpointValue,
 		},
-		cli.StringFlag{
-			Name:   binanceAuthenticatedEndpointFlag,
-			Usage:  "Binance authenticated API endpoint",
-			EnvVar: "BINANCE_AUTHENTICATED_ENDPOINT",
-			Value:  binanceAuthenticatedEndpointValue,
-		},
 	}
 }
 
@@ -70,7 +61,6 @@ func NewBinanceCliFlags() []cli.Flag {
 func NewBinanceInterfaceFromContext(c *cli.Context) binance.Interface {
 	return binance.NewRealInterface(
 		c.GlobalString(binancePublicEndpointFlag),
-		c.GlobalString(binanceAuthenticatedEndpointFlag),
 	)
 }
 
@@ -83,12 +73,6 @@ func NewHuobiCliFlags() []cli.Flag {
 			EnvVar: "huobi_PUBLIC_ENDPOINT",
 			Value:  huobiPublicEndpointValue,
 		},
-		cli.StringFlag{
-			Name:   huobiAuthenticatedEndpointFlag,
-			Usage:  "huobi authenticated API endpoint",
-			EnvVar: "huobi_AUTHENTICATED_ENDPOINT",
-			Value:  huobiAuthenticatedEndpointValue,
-		},
 	}
 }
 
@@ -96,7 +80,6 @@ func NewHuobiCliFlags() []cli.Flag {
 func NewhuobiInterfaceFromContext(c *cli.Context) huobi.Interface {
 	return huobi.NewRealInterface(
 		c.GlobalString(huobiPublicEndpointFlag),
-		c.GlobalString(huobiAuthenticatedEndpointFlag),
 	)
 }
 
@@ -180,8 +163,9 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 		return nil, err
 	}
 
-	bi := binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL, rcf.ExchangeEndpoints.Binance.AuthenURL)
-	hi := huobi.NewRealInterface(rcf.ExchangeEndpoints.Houbi.URL, rcf.ExchangeEndpoints.Houbi.AuthenURL)
+	bi := binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL)
+	hi := huobi.NewRealInterface(rcf.ExchangeEndpoints.Houbi.URL)
+	coinbaseEndpoint := coinbase.NewRealInterface(rcf.ExchangeEndpoints.Coinbase.URL)
 
 	contractAddressConf := &common.ContractAddressConfiguration{
 		Reserve: rcf.ContractAddresses.Reserve,
@@ -208,6 +192,7 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 		ethereumNodeConf,
 		bi,
 		hi,
+		coinbaseEndpoint,
 		contractAddressConf,
 		sr,
 		rcf,
