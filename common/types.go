@@ -713,16 +713,11 @@ type ContractAddresses struct {
 	Pricing ethereum.Address `json:"pricing"`
 }
 
-// ExchangeSiteConfig ...
-type ExchangeSiteConfig struct {
-	URL       string `json:"url"`
-	AuthenURL string `json:"authen_url"`
-}
-
 // ExchangeEndpoints ...
 type ExchangeEndpoints struct {
-	Binance ExchangeSiteConfig `json:"binance"`
-	Houbi   ExchangeSiteConfig `json:"houbi"`
+	Binance  SiteConfig `json:"binance"`
+	Houbi    SiteConfig `json:"houbi"`
+	Coinbase SiteConfig `json:"coinbase"`
 }
 
 // Nodes ...

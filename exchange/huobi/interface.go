@@ -12,12 +12,11 @@ type Interface interface {
 }
 
 type RealInterface struct {
-	publicEndpoint        string
-	authenticatedEndpoint string
+	publicEndpoint string
 }
 
-func NewRealInterface(publicEndpoint string, authenticatedEndpoint string) *RealInterface {
-	return &RealInterface{publicEndpoint: publicEndpoint, authenticatedEndpoint: authenticatedEndpoint}
+func NewRealInterface(publicEndpoint string) *RealInterface {
+	return &RealInterface{publicEndpoint: publicEndpoint}
 }
 
 func (r *RealInterface) isHuobi() {}
@@ -27,5 +26,5 @@ func (r *RealInterface) PublicEndpoint() string {
 }
 
 func (r *RealInterface) AuthenticatedEndpoint() string {
-	return r.authenticatedEndpoint
+	return r.publicEndpoint
 }

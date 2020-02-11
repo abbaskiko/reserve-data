@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
@@ -31,6 +30,7 @@ type Endpoint struct {
 	timeDelta  int64
 	l          *zap.SugaredLogger
 	exchangeID common.ExchangeID
+	client     *http.Client
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
@@ -61,9 +61,7 @@ func (ep *Endpoint) GetResponse(
 		err      error
 		respBody []byte
 	)
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, err
@@ -78,7 +76,7 @@ func (ep *Endpoint) GetResponse(
 	ep.fillRequest(req, signNeeded, timepoint)
 
 	ep.l.Infof("request to binance: %s", req.URL)
-	resp, err := client.Do(req)
+	resp, err := ep.client.Do(req)
 	if err != nil {
 		return respBody, err
 	}
@@ -458,9 +456,9 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 }
 
 //NewBinanceEndpoint return new endpoint instance for using binance
-func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, exchangeID common.ExchangeID) *Endpoint {
+func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client) *Endpoint {
 	l := zap.S()
-	endpoint := &Endpoint{signer: signer, interf: interf, l: l}
+	endpoint := &Endpoint{signer: signer, interf: interf, l: l, client: client}
 	switch dpl {
 	case deployment.Simulation:
 		l.Info("Simulate environment, no updateTime called...")
