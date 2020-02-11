@@ -3,7 +3,6 @@ package blockchain
 import (
 	"fmt"
 	"math/big"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -433,19 +432,19 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 	l.Infow("wrapper address", "address", contractAddressConf.Wrapper.Hex())
 	wrapper := blockchain.NewContract(
 		contractAddressConf.Wrapper,
-		filepath.Join(common.CurrentDir(), "wrapper.abi"),
+		wrapperABI,
 	)
 
 	l.Infow("reserve address", "address", contractAddressConf.Reserve.Hex())
 	reserve := blockchain.NewContract(
 		contractAddressConf.Reserve,
-		filepath.Join(common.CurrentDir(), "reserve.abi"),
+		reserveABI,
 	)
 
 	l.Infow("pricing address", "address", contractAddressConf.Pricing.Hex())
 	pricing := blockchain.NewContract(
 		contractAddressConf.Pricing,
-		filepath.Join(common.CurrentDir(), "pricing.abi"),
+		pricingABI,
 	)
 
 	return &Blockchain{
