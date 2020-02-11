@@ -1,6 +1,7 @@
 package exchange
 
 import (
+	"database/sql"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/lib/caller"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -100,7 +102,9 @@ func (bn *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining
 	return done, total - done, total-done < binanceEpsilon, nil
 }
 
-func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
+// Trade create an order in binance
+func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string,
+	done float64, remaining float64, finished bool, err error) {
 	result, err := bn.interf.Trade(tradeType, pair, rate, amount)
 	if err != nil {
 		return "", 0, 0, false, err
@@ -113,11 +117,13 @@ func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rat
 	return id, done, remaining, finished, err
 }
 
+// Withdraw asset from binance
 func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	tx, err := bn.interf.Withdraw(asset, amount, address)
 	return tx, err
 }
 
+// CancelOrder from binance
 func (bn *Binance) CancelOrder(id string, base, quote string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
@@ -131,6 +137,7 @@ func (bn *Binance) CancelOrder(id string, base, quote string) error {
 	return nil
 }
 
+// FetchOnePairData fetch order book for one pair data
 func (bn *Binance) FetchOnePairData(
 	wg *sync.WaitGroup,
 	pair commonv3.TradingPairSymbols,
@@ -181,6 +188,7 @@ func (bn *Binance) FetchOnePairData(
 	data.Store(pair.ID, result)
 }
 
+// FetchPriceData fetch all order book from timepoint
 func (bn *Binance) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
@@ -220,7 +228,11 @@ func (bn *Binance) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangeP
 	return result, err
 }
 
+// FetchEBalanceData fetch exchange balance for token we list on binance
 func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
+	var (
+		logger = bn.l.With("func", caller.GetCurrentFunctionName())
+	)
 	result := common.EBalanceEntry{}
 	result.Timestamp = common.Timestamp(fmt.Sprintf("%d", timepoint))
 	result.Valid = true
@@ -243,8 +255,10 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 		} else {
 			assets, err := bn.sr.GetAssets()
 			if err != nil {
+				logger.Errorw("failed to get asset from storage", "error", err)
 				return common.EBalanceEntry{}, err
 			}
+			logger.Debugw("assets", "len", len(assets))
 			for _, b := range respData.Balances {
 				tokenSymbol := b.Asset
 				for _, asset := range assets {
@@ -261,6 +275,7 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 			}
 		}
 	}
+	logger.Debugw("binance balance", "value", result)
 	return result, nil
 }
 
@@ -268,7 +283,7 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 func (bn *Binance) FetchOnePairTradeHistory(pair commonv3.TradingPairSymbols) ([]common.TradeHistory, error) {
 	var result []common.TradeHistory
 	fromID, err := bn.storage.GetLastIDTradeHistory(pair.ID)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, errors.Wrapf(err, "Cannot get last ID trade history")
 	}
 	resp, err := bn.interf.GetAccountTradeHistory(pair.BaseSymbol, pair.QuoteSymbol, fromID)
@@ -339,10 +354,12 @@ func (bn *Binance) FetchTradeHistory() {
 	}
 }
 
+// GetTradeHistory get trade history we currently save in database
 func (bn *Binance) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return bn.storage.GetTradeHistory(fromTime, toTime)
 }
 
+// DepositStatus checkt deposit status we currently made
 func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID uint64, amount float64, timepoint uint64) (string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
@@ -363,6 +380,7 @@ func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID ui
 	return "", nil
 }
 
+// WithdrawStatus check status of withdraw we currently made
 func (bn *Binance) WithdrawStatus(id string, assetID uint64, amount float64, timepoint uint64) (string, string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
@@ -383,6 +401,7 @@ func (bn *Binance) WithdrawStatus(id string, assetID uint64, amount float64, tim
 	return "", "", nil
 }
 
+// OrderStatus check current order status
 func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 	orderID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
