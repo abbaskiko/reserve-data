@@ -1,4 +1,6 @@
-[
+package blockchain
+
+const wrapperABI = `[
     {
         "constant": true,
         "inputs": [
@@ -200,4 +202,4 @@
         "stateMutability": "view",
         "type": "function"
     }
-]
+]`

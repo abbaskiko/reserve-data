@@ -1,12 +1,11 @@
 package blockchain
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"math/big"
-	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -383,12 +382,7 @@ func NewBaseBlockchain(
 	broadcaster *Broadcaster,
 	contractcaller *ContractCaller) *BaseBlockchain {
 
-	file, err := os.Open(
-		filepath.Join(common.CurrentDir(), "ERC20.abi"))
-	if err != nil {
-		panic(err)
-	}
-	packabi, err := abi.JSON(file)
+	packabi, err := abi.JSON(bytes.NewBufferString(erc20ABI))
 	if err != nil {
 		panic(err)
 	}
