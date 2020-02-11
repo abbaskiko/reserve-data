@@ -352,7 +352,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 
 // GetInfo return account binance info
 func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
-	var(
+	var (
 		logger = ep.l.With("func", caller.GetCurrentFunctionName())
 	)
 	result := exchange.Binainfo{}
