@@ -51,6 +51,18 @@ Allow overwriting some parameter`,
 	}
 	RootCmd.AddCommand(versionCmd)
 
+	var migrateCmd = &cobra.Command{
+		Use:     "migrate",
+		Short:   "migrate latest data from current db to new db",
+		Example: "./cmd migrate --to new_db.db",
+		Run:     migrateDB,
+	}
+
+	migrateCmd.Flags().StringVar(&configFile, "config", "config.json", "path to config file")
+	migrateCmd.Flags().StringVar(&newDB, "to", "new_data_db.db", "path to new db")
+
+	RootCmd.AddCommand(migrateCmd)
+
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
