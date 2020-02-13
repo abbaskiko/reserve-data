@@ -54,7 +54,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		if err := newbs.StorePrice(latestPricesData, 0); err != nil {
+		if err := newbs.StorePrice(latestPricesData, uint64(latestPriceVersion)); err != nil {
 			return err
 		}
 	}
