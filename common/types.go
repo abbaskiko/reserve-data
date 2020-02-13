@@ -482,15 +482,15 @@ type AllOrderResponse struct {
 	ReturnTime Timestamp
 	Data       AllOrderEntry
 }
-
+type AssetID uint64
 type EBalanceEntry struct {
 	Valid            bool
 	Error            string
 	Timestamp        Timestamp
 	ReturnTime       Timestamp
-	AvailableBalance map[string]float64
-	LockedBalance    map[string]float64
-	DepositBalance   map[string]float64
+	AvailableBalance map[AssetID]float64
+	LockedBalance    map[AssetID]float64
+	DepositBalance   map[AssetID]float64
 	Status           bool
 }
 
@@ -508,7 +508,7 @@ type AuthDataSnapshot struct {
 	Timestamp         Timestamp                    `json:"Timestamp,omitempty"`
 	ReturnTime        Timestamp                    `json:"ReturnTime,omitempty"`
 	ExchangeBalances  map[ExchangeID]EBalanceEntry `json:"ExchangeBalances,omitempty"`
-	ReserveBalances   map[string]BalanceEntry      `json:"ReserveBalances,omitempty"`
+	ReserveBalances   map[AssetID]BalanceEntry     `json:"ReserveBalances,omitempty"`
 	PendingActivities []ActivityRecord             `json:"PendingActivities,omitempty"`
 	Block             uint64                       `json:"Block,omitempty"`
 }

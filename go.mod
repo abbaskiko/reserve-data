@@ -43,7 +43,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/julienschmidt/httprouter v1.2.0 // indirect
-	github.com/karalabe/usb v0.0.0-20190613070255-4d6ba34a8414 // indirect
+	github.com/karalabe/usb v0.0.0-20190703133951-9be757f914c0 // indirect
 	github.com/lib/pq v1.1.1
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect

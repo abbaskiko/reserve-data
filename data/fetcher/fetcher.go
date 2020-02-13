@@ -187,11 +187,11 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		Valid:             true,
 		Timestamp:         common.GetTimestamp(),
 		ExchangeBalances:  map[common.ExchangeID]common.EBalanceEntry{},
-		ReserveBalances:   map[string]common.BalanceEntry{},
+		ReserveBalances:   map[common.AssetID]common.BalanceEntry{},
 		PendingActivities: []common.ActivityRecord{},
 		Block:             0,
 	}
-	bbalances := map[string]common.BalanceEntry{}
+	bbalances := map[common.AssetID]common.BalanceEntry{}
 	ebalances := sync.Map{}
 	estatuses := sync.Map{}
 	bstatuses := sync.Map{}
@@ -246,7 +246,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 }
 
 func (f *Fetcher) FetchAuthDataFromBlockchain(
-	allBalances map[string]common.BalanceEntry,
+	allBalances map[common.AssetID]common.BalanceEntry,
 	allStatuses *sync.Map,
 	pendings []common.ActivityRecord) error {
 	// we apply double check strategy to mitigate race condition on exchange side like this:
@@ -260,7 +260,7 @@ func (f *Fetcher) FetchAuthDataFromBlockchain(
 		activities update(eg, some txs become complete) can make balances result looks wrong
 		so, we verify activities status before and after we collect balances, make sure it does not change.
 	*/
-	var balances map[string]common.BalanceEntry
+	var balances map[common.AssetID]common.BalanceEntry
 	var preStatuses, statuses map[common.ActivityID]common.ActivityStatus
 	var err error
 	for {
@@ -302,7 +302,7 @@ func (f *Fetcher) FetchCurrentBlock(timepoint uint64) {
 	}
 }
 
-func (f *Fetcher) FetchBalanceFromBlockchain() (map[string]common.BalanceEntry, error) {
+func (f *Fetcher) FetchBalanceFromBlockchain() (map[common.AssetID]common.BalanceEntry, error) {
 	return f.blockchain.FetchBalanceData(f.contractAddressConf.Reserve, 0)
 }
 
@@ -482,7 +482,7 @@ func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityReco
 // PersistSnapshot save a authdata snapshot into db
 func (f *Fetcher) PersistSnapshot(
 	ebalances *sync.Map,
-	bbalances map[string]common.BalanceEntry,
+	bbalances map[common.AssetID]common.BalanceEntry,
 	estatuses *sync.Map,
 	bstatuses *sync.Map,
 	pendings []common.ActivityRecord,
@@ -579,7 +579,7 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 	var balances common.EBalanceEntry
 	var statuses map[common.ActivityID]common.ActivityStatus
 	var err error
-	var tokenAddress map[string]ethereum.Address
+	var tokenAddress map[common.AssetID]ethereum.Address
 	for {
 		preStatuses := f.FetchStatusFromExchange(exchange, pendings, timepoint)
 		balances, err = exchange.FetchEBalanceData(timepoint)
