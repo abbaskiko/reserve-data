@@ -3,6 +3,7 @@ package storage
 import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
+	common2 "github.com/KyberNetwork/reserve-data/common"
 	v3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -36,7 +37,7 @@ type SettingReader interface {
 	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
 	GetTradingBy(tradingByID uint64) (v3.TradingBy, error)
 	// TODO: check usages of this method to see if it should be replaced with GetDepositAddress(exchangeID, tokenID)
-	GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error)
+	GetDepositAddresses(exchangeID uint64) (map[common2.AssetID]ethereum.Address, error)
 	GetAssets() ([]v3.Asset, error)
 	// GetTransferableAssets returns all assets that the set rate strategy is not not_set.
 	GetTransferableAssets() ([]v3.Asset, error)

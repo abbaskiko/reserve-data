@@ -198,7 +198,10 @@ func TestAuthData(t *testing.T) {
 
 	ps, err := NewPostgresStorage(db)
 	require.NoError(t, err)
-
+	var (
+		ETH = common.AssetID(1)
+		KNC = common.AssetID(2)
+	)
 	authDataTest := common.AuthDataSnapshot{
 		Valid:      true,
 		Error:      "",
@@ -210,30 +213,30 @@ func TestAuthData(t *testing.T) {
 				Error:      "",
 				Timestamp:  "1568705819377",
 				ReturnTime: "1568705819461",
-				AvailableBalance: map[string]float64{
-					"ETH": 177.72330689,
-					"KNC": 3851.21689913,
+				AvailableBalance: map[common.AssetID]float64{
+					ETH: 177.72330689,
+					KNC: 3851.21689913,
 				},
-				LockedBalance: map[string]float64{
-					"ETH": 0,
-					"KNC": 0,
+				LockedBalance: map[common.AssetID]float64{
+					ETH: 0,
+					KNC: 0,
 				},
-				DepositBalance: map[string]float64{
-					"ETH": 0,
-					"KNC": 0,
+				DepositBalance: map[common.AssetID]float64{
+					ETH: 0,
+					KNC: 0,
 				},
 				Status: true,
 			},
 		},
-		ReserveBalances: map[string]common.BalanceEntry{
-			"ETH": {
+		ReserveBalances: map[common.AssetID]common.BalanceEntry{
+			ETH: {
 				Valid:      true,
 				Error:      "",
 				Timestamp:  "1568705820671",
 				ReturnTime: "1568705820937",
 				Balance:    common.RawBalance(*big.NewInt(432048208)),
 			},
-			"KNC": {
+			KNC: {
 				Valid:      true,
 				Error:      "",
 				Timestamp:  "1568705820671",

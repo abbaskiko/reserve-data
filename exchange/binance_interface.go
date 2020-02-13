@@ -16,7 +16,7 @@ type BinanceInterface interface {
 
 	GetExchangeInfo() (BinanceExchangeInfo, error)
 
-	GetDepositAddress(tokenID string) (Binadepositaddress, error)
+	GetDepositAddress(exchangeSymbol string) (Binadepositaddress, error)
 
 	GetAccountTradeHistory(baseSymbol, quoteSymbol, fromID string) (BinaAccountTradeHistory, error)
 

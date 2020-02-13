@@ -102,7 +102,7 @@ func TestExchangeDown(t *testing.T) {
 	addressConf := &common.ContractAddressConfiguration{}
 
 	fetcher := NewFetcher(fstorage, fstorage, &world.TheWorld{}, runner, true, addressConf)
-
+	var KNC = common.AssetID(1)
 	// mock normal data
 	var estatuses, bstatuses sync.Map
 	ebalanceValue := common.EBalanceEntry{
@@ -110,11 +110,11 @@ func TestExchangeDown(t *testing.T) {
 		Error:      "",
 		Timestamp:  common.GetTimestamp(),
 		ReturnTime: common.GetTimestamp(),
-		AvailableBalance: map[string]float64{
-			"KNC": 500,
+		AvailableBalance: map[common.AssetID]float64{
+			KNC: 500,
 		},
-		LockedBalance:  map[string]float64{},
-		DepositBalance: map[string]float64{},
+		LockedBalance:  map[common.AssetID]float64{},
+		DepositBalance: map[common.AssetID]float64{},
 		Status:         true,
 	}
 	ebalance := sync.Map{}
@@ -129,8 +129,8 @@ func TestExchangeDown(t *testing.T) {
 		Balance:    rawBalance,
 	}
 
-	bbalance := map[string]common.BalanceEntry{
-		"KNC": tokenBalance,
+	bbalance := map[common.AssetID]common.BalanceEntry{
+		KNC: tokenBalance,
 	}
 
 	// empty pending activities
@@ -151,9 +151,9 @@ func TestExchangeDown(t *testing.T) {
 		Error:            "Connection time out",
 		Timestamp:        common.GetTimestamp(),
 		ReturnTime:       common.GetTimestamp(),
-		AvailableBalance: map[string]float64{},
-		LockedBalance:    map[string]float64{},
-		DepositBalance:   map[string]float64{},
+		AvailableBalance: map[common.AssetID]float64{},
+		LockedBalance:    map[common.AssetID]float64{},
+		DepositBalance:   map[common.AssetID]float64{},
 		Status:           false, // exchange status false - down, true - up
 	}
 	ebalance.Store(common.Binance, ebalanceValue)
@@ -171,7 +171,7 @@ func TestExchangeDown(t *testing.T) {
 		t.Fatalf("Cannot get snapshot: %s", err.Error())
 	}
 	exchangeBalance := authData.ExchangeBalances[common.Binance]
-	if exchangeBalance.AvailableBalance["KNC"] != 500 {
+	if exchangeBalance.AvailableBalance[KNC] != 500 {
 		t.Fatalf("Snapshot did not get the latest auth data instead")
 	}
 

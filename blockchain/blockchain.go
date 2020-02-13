@@ -276,8 +276,8 @@ func (bc *Blockchain) Send(
 //====================== Readonly calls ============================
 
 // FetchBalanceData return token balance on reserve
-func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[string]common.BalanceEntry, error) {
-	result := map[string]common.BalanceEntry{}
+func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64) (map[common.AssetID]common.BalanceEntry, error) {
+	result := map[common.AssetID]common.BalanceEntry{}
 	tokens := []ethereum.Address{}
 	allAssets, err := bc.sr.GetAssets()
 	if err != nil {
@@ -294,8 +294,7 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 	bc.l.Infow("Fetcher ------> balances", "balances", balances, "err", err)
 	if err != nil {
 		for _, token := range assets {
-			// TODO: should store token id instead of symbol
-			result[token.Symbol] = common.BalanceEntry{
+			result[common.AssetID(token.ID)] = common.BalanceEntry{
 				Valid:      false,
 				Error:      err.Error(),
 				Timestamp:  timestamp,
@@ -303,13 +302,11 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 			}
 		}
 	} else {
-		for i, tok := range assets {
+		for i, asset := range assets {
 			if balances[i].Cmp(Big0) == 0 || balances[i].Cmp(BigMax) > 0 {
-				// TODO: log asset_id instead of token
-				bc.l.Infow("balances of token is invalid", "token_symbol", tok.Symbol, "balances",
-					balances[i].String())
-				// TODO: should store token id instead of symbol
-				result[tok.Symbol] = common.BalanceEntry{
+				bc.l.Infow("balances of token is invalid", "token_symbol", asset.Symbol, "balances",
+					balances[i].String(), "asset_id", asset.ID)
+				result[common.AssetID(asset.ID)] = common.BalanceEntry{
 					Valid:      false,
 					Error:      "Got strange balances from node. It equals to 0 or is bigger than 10^33",
 					Timestamp:  timestamp,
@@ -317,8 +314,7 @@ func (bc *Blockchain) FetchBalanceData(reserve ethereum.Address, atBlock uint64)
 					Balance:    common.RawBalance(*balances[i]),
 				}
 			} else {
-				// TODO: should store token id instead of symbol
-				result[tok.Symbol] = common.BalanceEntry{
+				result[common.AssetID(asset.ID)] = common.BalanceEntry{
 					Valid:      true,
 					Timestamp:  timestamp,
 					ReturnTime: returnTime,

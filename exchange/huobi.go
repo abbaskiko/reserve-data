@@ -36,7 +36,7 @@ type Huobi struct {
 }
 
 // TokenAddresses return deposit of all token supported by Huobi
-func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
+func (h *Huobi) TokenAddresses() (map[common.AssetID]ethereum.Address, error) {
 	result, err := h.sr.GetDepositAddresses(uint64(common.Huobi))
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (h *Huobi) MarshalText() (text []byte, err error) {
 
 // RealDepositAddress return the actual Huobi deposit address of a token
 // It should only be used to send 2nd transaction.
-func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
+func (h *Huobi) RealDepositAddress(tokenID string, asset commonv3.Asset) (ethereum.Address, error) {
 	liveAddress, err := h.interf.GetDepositAddress(tokenID)
 	if err != nil || len(liveAddress.Data) == 0 || liveAddress.Data[0].Address == "" {
 		if err != nil {
@@ -63,7 +63,7 @@ func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 		if uErr != nil {
 			return ethereum.Address{}, uErr
 		}
-		result, supported := addrs[tokenID]
+		result, supported := addrs[common.AssetID(asset.ID)]
 		if !supported || commonv3.IsZeroAddress(result) {
 			return result, fmt.Errorf("real deposit address of token %s is not available", tokenID)
 		}
@@ -76,14 +76,14 @@ func (h *Huobi) RealDepositAddress(tokenID string) (ethereum.Address, error) {
 // Due to the logic of Huobi exchange, every token if supported will be
 // deposited to an Intermediator address instead.
 func (h *Huobi) Address(asset commonv3.Asset) (ethereum.Address, bool) {
-	var symbol string
+	var exhSymbol string
 	for _, exchange := range asset.Exchanges {
 		if exchange.ExchangeID == uint64(common.Huobi) {
-			symbol = exchange.Symbol
+			exhSymbol = exchange.Symbol
 		}
 	}
 	result := h.blockchain.GetIntermediatorAddr()
-	_, err := h.RealDepositAddress(symbol)
+	_, err := h.RealDepositAddress(exhSymbol, asset)
 	//if the realDepositAddress can not be querried, that mean the token isn't supported on Huobi
 	if err != nil {
 		return result, false
@@ -267,9 +267,9 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 		result.Error = err.Error()
 		result.Status = false
 	} else {
-		result.AvailableBalance = map[string]float64{}
-		result.LockedBalance = map[string]float64{}
-		result.DepositBalance = map[string]float64{}
+		result.AvailableBalance = map[common.AssetID]float64{}
+		result.LockedBalance = map[common.AssetID]float64{}
+		result.DepositBalance = map[common.AssetID]float64{}
 		result.Status = true
 		if respData.Status != "ok" {
 			result.Valid = false
@@ -289,11 +289,11 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 						if exchg.ExchangeID == uint64(common.Huobi) && exchg.Symbol == tokenSymbol {
 							balance, _ := strconv.ParseFloat(b.Balance, 64)
 							if b.Type == "trade" {
-								result.AvailableBalance[tokenSymbol] = balance
+								result.AvailableBalance[common.AssetID(asset.ID)] = balance
 							} else {
-								result.LockedBalance[tokenSymbol] = balance
+								result.LockedBalance[common.AssetID(asset.ID)] = balance
 							}
-							result.DepositBalance[tokenSymbol] = 0
+							result.DepositBalance[common.AssetID(asset.ID)] = 0
 						}
 					}
 				}
@@ -497,14 +497,14 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID uint6
 			return "", err
 		}
 
-		var symbol string
+		var exhSymbol string
 		for _, exchg := range asset.Exchanges {
 			if exchg.ExchangeID == uint64(common.Huobi) {
-				symbol = exchg.Symbol
+				exhSymbol = exchg.Symbol
 			}
 		}
 
-		exchangeAddress, err := h.RealDepositAddress(symbol)
+		exchangeAddress, err := h.RealDepositAddress(exhSymbol, asset)
 		if err != nil {
 			return "", err
 		}
