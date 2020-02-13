@@ -40,7 +40,7 @@ func (rd ReserveData) CurrentBTCInfoVersion(timepoint uint64) (common.Version, e
 
 // CurrentUSDInfoVersion return
 func (rd ReserveData) CurrentUSDInfoVersion(timepoint uint64) (common.Version, error) {
-	return rd.globalStorage.CurrentBTCInfoVersion(timepoint)
+	return rd.globalStorage.CurrentUSDInfoVersion(timepoint)
 }
 
 // GetGoldData return gold data
@@ -209,8 +209,8 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 				exchangeBalance.ExchangeID = exchanges[exchangeID.String()].ID
 				exchangeBalance.Available = balances.AvailableBalance[common.AssetID(token.ID)]
 				exchangeBalance.Locked = balances.LockedBalance[common.AssetID(token.ID)]
+				exchangeBalances = append(exchangeBalances, exchangeBalance)
 			}
-			exchangeBalances = append(exchangeBalances, exchangeBalance)
 		}
 		tokenBalance.Exchanges = exchangeBalances
 		if balance, exist := data.ReserveBalances[assetID]; exist {
