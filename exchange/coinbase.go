@@ -189,8 +189,8 @@ func (c *Coinbase) WithdrawStatus(id string, assetID uint64, amount float64, tim
 	return "", "", ErrNotSupport
 }
 
-func (c *Coinbase) TokenAddresses() (map[string]common3.Address, error) {
-	return map[string]common3.Address{}, nil // we return empty map so FetchAuthDataFromExchange does not treat as error
+func (c *Coinbase) TokenAddresses() (map[common.AssetID]common3.Address, error) {
+	return map[common.AssetID]common3.Address{}, nil // we return empty map so FetchAuthDataFromExchange does not treat as error
 }
 
 func NewCoinbase(l *zap.SugaredLogger, id common.ExchangeID, interf CoinbaseInterface, sr storage.Interface) *Coinbase {

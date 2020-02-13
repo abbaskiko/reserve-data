@@ -153,7 +153,7 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 	result.PendingActivities.Withdraw = pendingWithdraw
 	result.PendingActivities.Deposit = pendingDeposit
 	// map of token
-	tokens := make(map[string]v3.Asset)
+	assets := make(map[common.AssetID]v3.Asset)
 	exchanges := make(map[string]v3.Exchange)
 	// get id from exchange balance asset name
 	for exchangeID, balances := range data.ExchangeBalances {
@@ -162,40 +162,40 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 			return result, errors.Wrapf(err, "failed to get exchange by name: %s", exchangeID.String())
 		}
 		exchanges[exchangeID.String()] = exchange
-		for exchangeTokenSymbol := range balances.AvailableBalance {
+		for assetID := range balances.AvailableBalance {
 			//* cos symbol of token in an exchange can be different then we need to use GetAssetExchangeBySymbol
-			token, err := rd.settingStorage.GetAssetExchangeBySymbol(exchange.ID, exchangeTokenSymbol)
+			token, err := rd.settingStorage.GetAsset(uint64(assetID))
 			//* it seems this token have balance in exchange but have not configured
 			//* in core, just ignore it
 			if err != nil {
-				rd.l.Warnw("failed to get token by name", "symbol", exchangeTokenSymbol, "err", err)
+				rd.l.Warnw("failed to get token by name", "symbol", assetID, "err", err)
 				continue
 			}
-			tokens[exchangeTokenSymbol] = token
+			assets[common.AssetID(token.ID)] = token
 		}
 	}
 
-	for tokenSymbol := range data.ReserveBalances {
-		if _, exist := tokens[tokenSymbol]; !exist {
-			token, err := rd.settingStorage.GetAssetBySymbol(tokenSymbol)
+	for assetID := range data.ReserveBalances {
+		if _, exist := assets[assetID]; !exist {
+			token, err := rd.settingStorage.GetAsset(uint64(assetID))
 			//* it seems this token have balance in exchange but have not configured
 			//* in core, just ignore it
 			if err != nil {
-				rd.l.Warnw("failed to get token by name", "token", tokenSymbol, "err", err)
+				rd.l.Warnw("failed to get token by id", "assetID", assetID, "err", err)
 				continue
 			}
-			tokens[tokenSymbol] = token
+			assets[assetID] = token
 		}
 	}
 
-	balances := []common.AuthdataBalance{}
-	for tokenSymbol, token := range tokens {
+	var balances []common.AuthdataBalance
+	for assetID, token := range assets {
 		tokenBalance := common.AuthdataBalance{
 			Valid: true,
 		}
 		tokenBalance.AssetID = token.ID
-		tokenBalance.Symbol = tokenSymbol
-		exchangeBalances := []common.ExchangeBalance{}
+		tokenBalance.Symbol = token.Symbol
+		var exchangeBalances []common.ExchangeBalance
 		for exchangeID, balances := range data.ExchangeBalances {
 			exchangeBalance := common.ExchangeBalance{
 				ExchangeID: exchanges[exchangeID.String()].ID,
@@ -205,15 +205,15 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 				exchangeBalance.Error = balances.Error
 				tokenBalance.Valid = false
 			}
-			if _, exist := balances.AvailableBalance[tokenSymbol]; exist {
+			if _, exist := balances.AvailableBalance[common.AssetID(token.ID)]; exist {
 				exchangeBalance.ExchangeID = exchanges[exchangeID.String()].ID
-				exchangeBalance.Available = balances.AvailableBalance[tokenSymbol]
-				exchangeBalance.Locked = balances.LockedBalance[tokenSymbol]
+				exchangeBalance.Available = balances.AvailableBalance[common.AssetID(token.ID)]
+				exchangeBalance.Locked = balances.LockedBalance[common.AssetID(token.ID)]
 			}
 			exchangeBalances = append(exchangeBalances, exchangeBalance)
 		}
 		tokenBalance.Exchanges = exchangeBalances
-		if balance, exist := data.ReserveBalances[tokenSymbol]; exist {
+		if balance, exist := data.ReserveBalances[assetID]; exist {
 			tokenBalance.Reserve = balance.Balance.ToFloat(int64(token.Decimals))
 			if !balance.Valid {
 				tokenBalance.Valid = balance.Valid

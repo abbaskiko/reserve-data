@@ -31,7 +31,7 @@ type Binance struct {
 }
 
 // TokenAddresses return deposit addresses of token
-func (bn *Binance) TokenAddresses() (map[string]ethereum.Address, error) {
+func (bn *Binance) TokenAddresses() (map[common.AssetID]ethereum.Address, error) {
 	result, err := bn.sr.GetDepositAddresses(uint64(bn.id))
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (bn *Binance) Address(asset commonv3.Asset) (ethereum.Address, bool) {
 			bn.l.Warnw("get address of token in Binance exchange failed, it will be considered as not supported", "assetID", asset.ID, "err", err)
 			return ethereum.Address{}, false
 		}
-		depositAddr, ok := addrs[symbol]
+		depositAddr, ok := addrs[common.AssetID(asset.ID)]
 		return depositAddr, ok && !commonv3.IsZeroAddress(depositAddr)
 	}
 	bn.l.Infof("Got Binance live deposit address for token %d, attempt to update it to current setting", asset.ID)
@@ -232,9 +232,9 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 		result.Error = err.Error()
 		result.Status = false
 	} else {
-		result.AvailableBalance = map[string]float64{}
-		result.LockedBalance = map[string]float64{}
-		result.DepositBalance = map[string]float64{}
+		result.AvailableBalance = map[common.AssetID]float64{}
+		result.LockedBalance = map[common.AssetID]float64{}
+		result.DepositBalance = map[common.AssetID]float64{}
 		result.Status = true
 		if respData.Code != 0 {
 			result.Valid = false
@@ -252,9 +252,9 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 						if exchg.ExchangeID == uint64(bn.id) && exchg.Symbol == tokenSymbol {
 							avai, _ := strconv.ParseFloat(b.Free, 64)
 							locked, _ := strconv.ParseFloat(b.Locked, 64)
-							result.AvailableBalance[tokenSymbol] = avai
-							result.LockedBalance[tokenSymbol] = locked
-							result.DepositBalance[tokenSymbol] = 0
+							result.AvailableBalance[common.AssetID(asset.ID)] = avai
+							result.LockedBalance[common.AssetID(asset.ID)] = locked
+							result.DepositBalance[common.AssetID(asset.ID)] = 0
 						}
 					}
 				}

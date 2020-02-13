@@ -5,6 +5,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
+	common2 "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -56,10 +57,10 @@ func (s *Storage) GetTradingPairs(id uint64) ([]common.TradingPairSymbols, error
 	return result, nil
 }
 
-func (s *Storage) GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Address, error) {
+func (s *Storage) GetDepositAddresses(exchangeID uint64) (map[common2.AssetID]ethereum.Address, error) {
 	var (
 		dbResult []assetExchangeDB
-		results  = make(map[string]ethereum.Address)
+		results  = make(map[common2.AssetID]ethereum.Address)
 	)
 	err := s.stmts.getAssetExchange.Select(&dbResult, assetExchangeCondition{
 		ExchangeID: &exchangeID,
@@ -69,9 +70,9 @@ func (s *Storage) GetDepositAddresses(exchangeID uint64) (map[string]ethereum.Ad
 	}
 	for _, r := range dbResult {
 		if r.DepositAddress.Valid {
-			results[r.Symbol] = ethereum.HexToAddress(r.DepositAddress.String)
+			results[common2.AssetID(r.AssetID)] = ethereum.HexToAddress(r.DepositAddress.String)
 		} else {
-			results[r.Symbol] = ethereum.HexToAddress("0x0")
+			results[common2.AssetID(r.AssetID)] = ethereum.HexToAddress("0x0")
 		}
 	}
 	return results, nil
