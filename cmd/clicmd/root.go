@@ -60,6 +60,8 @@ Allow overwriting some parameter`,
 
 	migrateCmd.Flags().StringVar(&configFile, "config", "config.json", "path to config file")
 	migrateCmd.Flags().StringVar(&newDB, "to", "new_data_db.db", "path to new db")
+	migrateCmd.Flags().StringVar(&zapMode, "zap-mode", "dev", "mode for zap log [dev,prod]")
+	migrateCmd.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
 
 	RootCmd.AddCommand(migrateCmd)
 

@@ -18,7 +18,6 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		bs.l.Info(latestBTCData)
 		if err := newbs.StoreBTCInfo(latestBTCData); err != nil {
 			return err
 		}
@@ -31,8 +30,6 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		bs.l.Info(latestUSDData)
-
 		if err := newbs.StoreUSDInfo(latestUSDData); err != nil {
 			return err
 		}
@@ -45,8 +42,6 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		bs.l.Info(latestGoldData)
-
 		if err := newbs.StoreGoldInfo(latestGoldData); err != nil {
 			return err
 		}
@@ -59,8 +54,6 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		bs.l.Info(latestPricesData)
-
 		if err := newbs.StorePrice(latestPricesData, 0); err != nil {
 			return err
 		}
@@ -73,8 +66,6 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		bs.l.Info(latestAuthData)
-
 		if err := newbs.StoreAuthSnapshot(&latestAuthData, uint64(latestAuthDataVersion)); err != nil {
 			return err
 		}
@@ -87,8 +78,6 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		bs.l.Info(latestRateData)
-
 		if err := newbs.StoreRate(latestRateData, uint64(latestRateVersion)); err != nil {
 			return err
 		}
@@ -104,9 +93,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 				default:
 					b := tx.Bucket([]byte(bucket))
 					newB := newTX.Bucket([]byte(bucket))
-					if errFE := b.ForEach(func(k, v []byte) error {
-						return newB.Put(k, v)
-					}); errFE != nil {
+					if errFE := b.ForEach(newB.Put); errFE != nil {
 						return errFE
 					}
 				}
