@@ -65,6 +65,36 @@ const (
 	fetcherConfigurationBucket = "btc_fetcher_configuration"
 )
 
+var buckets = []string{
+	goldBucket,
+	btcBucket,
+	usdBucket,
+	disabledFeedsBucket,
+	priceBucket,
+	rateBucket,
+	activityBucket,
+	pendingActivityBucket,
+	authDataBucket,
+	metricBucket,
+	metricTargetQuantity,
+	enableRebalance,
+	setrateControl,
+	pwiEquation,
+	exchangeStatus,
+	exchangeNotifications,
+	pendingStatbleTokenParamsBucket,
+	stableTokenParamsBucket,
+	pendingTargetQuantityV2,
+	targetQuantityV2,
+	pendingPWIEquationV2,
+	pwiEquationV2,
+	pendingRebalanceQuadratic,
+	rebalanceQuadratic,
+	fetcherConfigurationBucket,
+	feedSetting,
+	pendingFeedSetting,
+}
+
 // BoltStorage is the storage implementation of data.Storage interface
 // that uses BoltDB as its storage engine.
 type BoltStorage struct {
@@ -85,36 +115,6 @@ func NewBoltStorage(path string) (*BoltStorage, error) {
 	}
 	// init buckets
 	err = db.Update(func(tx *bolt.Tx) error {
-		buckets := []string{
-			goldBucket,
-			btcBucket,
-			usdBucket,
-			disabledFeedsBucket,
-			priceBucket,
-			rateBucket,
-			activityBucket,
-			pendingActivityBucket,
-			authDataBucket,
-			metricBucket,
-			metricTargetQuantity,
-			enableRebalance,
-			setrateControl,
-			pwiEquation,
-			exchangeStatus,
-			exchangeNotifications,
-			pendingStatbleTokenParamsBucket,
-			stableTokenParamsBucket,
-			pendingTargetQuantityV2,
-			targetQuantityV2,
-			pendingPWIEquationV2,
-			pwiEquationV2,
-			pendingRebalanceQuadratic,
-			rebalanceQuadratic,
-			fetcherConfigurationBucket,
-			feedSetting,
-			pendingFeedSetting,
-		}
-
 		for _, bucket := range buckets {
 			if _, cErr := tx.CreateBucketIfNotExists([]byte(bucket)); cErr != nil {
 				return cErr
