@@ -51,6 +51,20 @@ Allow overwriting some parameter`,
 	}
 	RootCmd.AddCommand(versionCmd)
 
+	var migrateCmd = &cobra.Command{
+		Use:     "migrate",
+		Short:   "migrate latest data from current db to new db",
+		Example: "./cmd migrate --from current.db --to new_db.db",
+		Run:     migrateDB,
+	}
+
+	migrateCmd.Flags().StringVar(&currentDB, "from", "data.db", "path to current db")
+	migrateCmd.Flags().StringVar(&newDB, "to", "new_data.db", "path to new db")
+	migrateCmd.Flags().StringVar(&zapMode, "zap-mode", "dev", "mode for zap log [dev,prod]")
+	migrateCmd.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", true, "send log to both log file and stdout terminal")
+
+	RootCmd.AddCommand(migrateCmd)
+
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
