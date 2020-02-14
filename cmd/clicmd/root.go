@@ -58,10 +58,10 @@ Allow overwriting some parameter`,
 		Run:     migrateDB,
 	}
 
-	migrateCmd.Flags().StringVar(&configFile, "config", "config.json", "path to config file")
-	migrateCmd.Flags().StringVar(&newDB, "to", "new_data_db.db", "path to new db")
+	migrateCmd.Flags().StringVar(&currentDB, "from", "data.db", "path to current db")
+	migrateCmd.Flags().StringVar(&newDB, "to", "new_data.db", "path to new db")
 	migrateCmd.Flags().StringVar(&zapMode, "zap-mode", "dev", "mode for zap log [dev,prod]")
-	migrateCmd.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", false, "send log to both log file and stdout terminal")
+	migrateCmd.Flags().BoolVarP(&stdoutLog, "log-to-stdout", "", true, "send log to both log file and stdout terminal")
 
 	RootCmd.AddCommand(migrateCmd)
 

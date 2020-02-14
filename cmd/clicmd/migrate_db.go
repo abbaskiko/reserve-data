@@ -3,14 +3,12 @@ package cmd
 import (
 	"runtime"
 
-	"github.com/KyberNetwork/reserve-data/common/config"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 var (
-	newDB string
+	currentDB, newDB string
 )
 
 func migrateDB(_ *cobra.Command, _ []string) {
@@ -23,12 +21,7 @@ func migrateDB(_ *cobra.Command, _ []string) {
 		panic(err)
 	}
 	defer f()
-	zap.ReplaceGlobals(s.Desugar())
-	var ac = config.DefaultAppConfig()
-	if err = config.LoadConfig(configFile, &ac); err != nil {
-		s.Panicw("failed to load config file", "err", err, "file", configFile)
-	}
-	currentStorage, err := storage.NewBoltStorage(ac.DataDB)
+	currentStorage, err := storage.NewBoltStorage(currentDB)
 	if err != nil {
 		panic(err)
 	}
@@ -40,5 +33,5 @@ func migrateDB(_ *cobra.Command, _ []string) {
 	if err := currentStorage.Migrate(newStorage); err != nil {
 		s.Panicw("failed to migrate data", "err", err)
 	}
-	s.Infow("migrate db successfully", "to", newDB)
+	s.Infow("migrate db successfully", "from", currentDB, "to", newDB)
 }
