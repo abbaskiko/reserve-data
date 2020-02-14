@@ -54,7 +54,7 @@ Allow overwriting some parameter`,
 	var migrateCmd = &cobra.Command{
 		Use:     "migrate",
 		Short:   "migrate latest data from current db to new db",
-		Example: "./cmd migrate --to new_db.db",
+		Example: "./cmd migrate --from current.db --to new_db.db",
 		Run:     migrateDB,
 	}
 
