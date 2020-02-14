@@ -5,6 +5,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 var (
@@ -15,12 +16,15 @@ func migrateDB(_ *cobra.Command, _ []string) {
 	numCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(numCPU)
 
-	w := configLog(stdoutLog)
-	s, f, err := newSugaredLogger(w)
+	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}
-	defer f()
+	zap.ReplaceGlobals(logger)
+	s := logger.Sugar()
+	defer func() {
+		_ = logger.Sync()
+	}()
 	currentStorage, err := storage.NewBoltStorage(currentDB)
 	if err != nil {
 		panic(err)
@@ -29,7 +33,6 @@ func migrateDB(_ *cobra.Command, _ []string) {
 	if err != nil {
 		panic(err)
 	}
-
 	if err := currentStorage.Migrate(newStorage); err != nil {
 		s.Panicw("failed to migrate data", "err", err)
 	}

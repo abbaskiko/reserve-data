@@ -4,12 +4,23 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 )
 
 // Migrate migrate data to new db
-func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
+func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
+	defer func() {
+		err = newbs.db.Close()
+		if err != nil {
+			zap.S().Errorw("failed to close dest db", "err", err)
+		}
+		err = bs.db.Close()
+		if err != nil {
+			zap.S().Errorw("failed to close source db", "err", err)
+		}
+	}()
 	timeNow := common.TimeToTimepoint(time.Now())
 	// btc info
 	latestBTCVersion, err := bs.CurrentBTCInfoVersion(timeNow)
@@ -18,7 +29,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		if err := newbs.StoreBTCInfo(latestBTCData); err != nil {
+		if err = newbs.StoreBTCInfo(latestBTCData); err != nil {
 			return err
 		}
 	}
@@ -30,7 +41,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		if err := newbs.StoreUSDInfo(latestUSDData); err != nil {
+		if err = newbs.StoreUSDInfo(latestUSDData); err != nil {
 			return err
 		}
 	}
@@ -54,7 +65,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		if err := newbs.StorePrice(latestPricesData, uint64(latestPriceVersion)); err != nil {
+		if err = newbs.StorePrice(latestPricesData, uint64(latestPriceVersion)); err != nil {
 			return err
 		}
 	}
@@ -66,7 +77,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		if err := newbs.StoreAuthSnapshot(&latestAuthData, uint64(latestAuthDataVersion)); err != nil {
+		if err = newbs.StoreAuthSnapshot(&latestAuthData, uint64(latestAuthDataVersion)); err != nil {
 			return err
 		}
 	}
@@ -78,7 +89,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) error {
 		if err != nil {
 			return err
 		}
-		if err := newbs.StoreRate(latestRateData, uint64(latestRateVersion)); err != nil {
+		if err = newbs.StoreRate(latestRateData, uint64(latestRateVersion)); err != nil {
 			return err
 		}
 	}
