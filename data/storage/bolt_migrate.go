@@ -121,11 +121,11 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 			bs.l.Info("process metric info")
 			mtricBucket := tx.Bucket([]byte(metricBucket))
 			mtricBucketNew := newTX.Bucket([]byte(metricBucket))
-			maxMetricCopyMax := 10000
-			err = reverseForEach(mtricBucket, maxMetricCopyMax, func(k, v []byte) error {
-				return mtricBucketNew.Put(k, v)
-			})
-
+			maxMetricRecordCopy := 10000
+			err = reverseForEach(mtricBucket, maxMetricRecordCopy, mtricBucketNew.Put)
+			if err != nil {
+				return err
+			}
 			for _, bucket := range buckets {
 				switch bucket {
 				case btcBucket, usdBucket, goldBucket, rateBucket, priceBucket, authDataBucket, metricBucket:
