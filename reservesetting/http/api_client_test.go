@@ -153,3 +153,18 @@ func createRequest(method, url string, data interface{}) (*http.Request, error) 
 	}
 	return http.NewRequest(method, url, bytes.NewBuffer(body))
 }
+
+func (c *apiClient) updateExchangeStatus(id uint64, exs exchangeStatusEntry) (commonResponse, error) {
+	req, err := createRequest(http.MethodPut, fmt.Sprintf("/v3/update-exchange-status/%d", id), exs)
+	if err != nil {
+		return commonResponse{}, err
+	}
+	resp := httptest.NewRecorder()
+	c.s.r.ServeHTTP(resp, req)
+	if resp.Code != http.StatusOK {
+		return commonResponse{}, fmt.Errorf("server return %d - %s", resp.Code, resp.Body.String())
+	}
+	var status commonResponse
+	err = readResponse(resp.Body, &status)
+	return status, err
+}
