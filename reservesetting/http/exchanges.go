@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
+	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
@@ -33,6 +34,10 @@ func (s *Server) getExchange(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(exchange))
 }
 
+type exchangeStatusEntry struct {
+	Disable bool `json:"disable" binding:"required"`
+}
+
 func (s *Server) updateExchangeStatus(c *gin.Context) {
 	var input struct {
 		ID uint64 `uri:"id" binding:"required"`
@@ -46,10 +51,15 @@ func (s *Server) updateExchangeStatus(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	newStatus := !exchange.Disable
+
+	var exStatus exchangeStatusEntry
+	if err = c.ShouldBindJSON(&exStatus); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
 
 	if err := s.storage.UpdateExchange(exchange.ID, storage.UpdateExchangeOpts{
-		Disable: &newStatus,
+		Disable: common.BoolPointer(exStatus.Disable),
 	}); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
