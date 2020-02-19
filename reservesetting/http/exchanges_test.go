@@ -8,6 +8,8 @@ import (
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
+	"github.com/KyberNetwork/reserve-data/reservesetting/common"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
 )
 
@@ -41,4 +43,42 @@ func TestExchanges(t *testing.T) {
 	ex3, err := c.getExchange(10)
 	assert.NoError(t, err)
 	assert.Equal(t, false, ex3.Success)
+}
+
+func TestUpdateExchangeStatus(t *testing.T) {
+	var (
+		supportedExchanges = make(map[v1common.ExchangeID]v1common.LiveExchange)
+	)
+
+	// create map of test exchange
+	for _, exchangeID := range []v1common.ExchangeID{v1common.Binance} {
+		exchange := v1common.TestExchange{}
+		supportedExchanges[exchangeID] = exchange
+	}
+
+	db, tearDown := testutil.MustNewDevelopmentDB()
+	defer func() {
+		assert.NoError(t, tearDown())
+	}()
+	s, err := postgres.NewStorage(db)
+	require.NoError(t, err)
+	server := NewServer(s, "", supportedExchanges, "", "")
+	c := apiClient{s: server}
+
+	err = s.UpdateExchange(binance, storage.UpdateExchangeOpts{
+		TradingFeeMaker: common.FloatPointer(0.2),
+		TradingFeeTaker: common.FloatPointer(0.2),
+		Disable:         common.BoolPointer(false),
+	})
+	require.NoError(t, err)
+
+	status, err := c.updateExchangeStatus(binance, exchangeStatusEntry{
+		Disable: true,
+	})
+	require.NoError(t, err)
+	assert.True(t, status.Success)
+
+	ex, err := c.getExchange(binance)
+	require.NoError(t, err)
+	assert.Equal(t, ex.Exchange.Disable, true)
 }

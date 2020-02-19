@@ -22,6 +22,8 @@ type Interface interface {
 
 	CreatePriceFactor(v3.PriceFactorAtTime) (uint64, error)
 	GetPriceFactors(uint64, uint64) ([]v3.PriceFactorAtTime, error)
+
+	UpdateExchange(id uint64, updateOpts UpdateExchangeOpts) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
