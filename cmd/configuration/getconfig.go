@@ -66,6 +66,12 @@ func GetConfig(
 	bkClients := map[string]*ethclient.Client{}
 
 	var callClients []*common.EthClient
+
+	// add main node to callclients
+	callClients = append(callClients, &common.EthClient{
+		Client: mainClient,
+		URL:    nodeConf.Main,
+	})
 	for _, ep := range nodeConf.Backup {
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
