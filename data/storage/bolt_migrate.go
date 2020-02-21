@@ -23,6 +23,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 	}()
 	timeNow := common.TimeToTimepoint(time.Now())
 	// btc info
+	bs.l.Info("process BTCInfo")
 	latestBTCVersion, err := bs.CurrentBTCInfoVersion(timeNow)
 	if err == nil {
 		latestBTCData, err := bs.GetBTCInfo(latestBTCVersion)
@@ -33,6 +34,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 			return err
 		}
 	}
+	bs.l.Info("process USDInfo")
 
 	// usd info
 	latestUSDVersion, err := bs.CurrentUSDInfoVersion(timeNow)
@@ -46,6 +48,8 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 		}
 	}
 
+	bs.l.Info("process GoldInfo")
+
 	// gold info
 	latestGoldVersion, err := bs.CurrentGoldInfoVersion(timeNow)
 	if err == nil {
@@ -57,7 +61,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 			return err
 		}
 	}
-
+	bs.l.Info("process PriceInfo")
 	// price info
 	latestPriceVersion, err := bs.CurrentPriceVersion(timeNow)
 	if err == nil {
@@ -70,6 +74,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 		}
 	}
 
+	bs.l.Info("process AuthData")
 	// auth data info
 	latestAuthDataVersion, err := bs.CurrentAuthDataVersion(timeNow)
 	if err == nil {
@@ -82,6 +87,7 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 		}
 	}
 
+	bs.l.Info("process RateInfo")
 	// rate info
 	latestRateVersion, err := bs.CurrentRateVersion(timeNow)
 	if err == nil {
@@ -93,17 +99,42 @@ func (bs *BoltStorage) Migrate(newbs *BoltStorage) (err error) {
 			return err
 		}
 	}
+	reverseForEach := func(b *bolt.Bucket, maxIteration int, fn func(k, v []byte) error) error {
+		c := b.Cursor()
+		iteration := 0
+		for k, v := c.Last(); k != nil; k, v = c.Prev() {
+			if err := fn(k, v); err != nil {
+				return err
+			}
+			iteration++
+			if iteration == maxIteration {
+				break
+			}
+		}
+		return nil
+	}
 
 	// other buckets
 	errU := newbs.db.Update(func(newTX *bolt.Tx) error {
 		errV := bs.db.View(func(tx *bolt.Tx) error {
+
+			bs.l.Info("process metric info")
+			mtricBucket := tx.Bucket([]byte(metricBucket))
+			mtricBucketNew := newTX.Bucket([]byte(metricBucket))
+			maxMetricRecordCopy := 10000
+			err = reverseForEach(mtricBucket, maxMetricRecordCopy, mtricBucketNew.Put)
+			if err != nil {
+				return err
+			}
 			for _, bucket := range buckets {
 				switch bucket {
-				case btcBucket, usdBucket, goldBucket, rateBucket, priceBucket, authDataBucket:
+				case btcBucket, usdBucket, goldBucket, rateBucket, priceBucket, authDataBucket, metricBucket:
 					continue
 				default:
+					bs.l.Infow("process", "bucket", bucket)
 					b := tx.Bucket([]byte(bucket))
 					newB := newTX.Bucket([]byte(bucket))
+
 					if errFE := b.ForEach(newB.Put); errFE != nil {
 						return errFE
 					}
