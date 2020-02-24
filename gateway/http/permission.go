@@ -26,7 +26,7 @@ p, %[1]s, /v3/setting-change-rbquadratic, POST
 p, %[1]s, /v3/setting-change-main, POST
 p, %[1]s, /v3/setting-change-stable, POST
 p, %[1]s, /v3/setting-change-feed-configuration, POST
-p, %[1]s, /v3/update-exchange-status/:id, POST`, key)
+p, %[1]s, /v3/update-exchange-status/:id, PUT`, key)
 }
 
 func addKeyConfirmPolicy(key string) string {
