@@ -422,6 +422,27 @@ func (s *Server) Trade(c *gin.Context) {
 	}))
 }
 
+// GetOpenOrders return open orders from exchange
+func (s *Server) GetOpenOrders(c *gin.Context) {
+	_, ok := s.Authenticated(c, nil, []Permission{RebalancePermission, ConfigurePermission, ConfirmConfPermission, ReadOnlyPermission})
+	if !ok {
+		return
+	}
+
+	exchangeParam := c.Query("exchange_id")
+	exchange, err := common.GetExchange(exchangeParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	result, err := exchange.OpenOrders()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(result))
+}
+
 // CancelOrder cancel an open order on exchanges
 func (s *Server) CancelOrder(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"order_id"}, []Permission{RebalancePermission})
@@ -1157,6 +1178,7 @@ func (s *Server) register() {
 		s.r.GET("/metrics", s.Metrics)
 		s.r.POST("/metrics", s.StoreMetrics)
 
+		s.r.GET("/open-orders", s.GetOpenOrders)
 		s.r.POST("/cancelorder/:exchangeid", s.CancelOrder)
 		s.r.POST("/deposit/:exchangeid", s.Deposit)
 		s.r.POST("/withdraw/:exchangeid", s.Withdraw)

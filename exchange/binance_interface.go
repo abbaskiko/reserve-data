@@ -11,7 +11,7 @@ import (
 type BinanceInterface interface {
 	GetDepthOnePair(baseID, quoteID string) (Binaresp, error)
 
-	OpenOrdersForOnePair(pair common.TokenPair) (Binaorders, error)
+	OpenOrders() (Binaorders, error)
 
 	GetInfo() (Binainfo, error)
 
