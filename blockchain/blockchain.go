@@ -479,6 +479,11 @@ func (bc *Blockchain) GetProxyAddress() ethereum.Address {
 	return bc.contractAddress.Proxy
 }
 
+// GetReserveAddress return reserve address
+func (bc *Blockchain) GetReserveAddress() ethereum.Address {
+	return bc.contractAddress.Reserve
+}
+
 func (bc *Blockchain) getListedTokens() ([]ethereum.Address, error) {
 	opts := bc.GetCallOpts(0)
 	return bc.GeneratedGetListedTokens(opts)
