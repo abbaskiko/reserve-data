@@ -388,7 +388,7 @@ func (h *Huobi) OpenOrders() ([]common.Order, error) {
 	}
 	for _, pair := range pairs {
 		errGroup.Go(
-			func() func() error {
+			func(pair common.TokenPair) func() error {
 				return func() error {
 					orders, err := h.interf.OpenOrders(&pair)
 					if err != nil {
@@ -413,7 +413,7 @@ func (h *Huobi) OpenOrders() ([]common.Order, error) {
 					}
 					return nil
 				}
-			}(),
+			}(pair),
 		)
 	}
 	if err := errGroup.Wait(); err != nil {
