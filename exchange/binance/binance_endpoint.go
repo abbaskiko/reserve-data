@@ -448,9 +448,9 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 }
 
 //NewBinanceEndpoint return new endpoint instance for using binance
-func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client) *Endpoint {
+func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client, exparam common.ExchangeID) *Endpoint {
 	l := zap.S()
-	endpoint := &Endpoint{signer: signer, interf: interf, l: l, client: client}
+	endpoint := &Endpoint{signer: signer, interf: interf, l: l, client: client, exchangeID: exparam}
 	switch dpl {
 	case deployment.Simulation:
 		l.Info("Simulate environment, no updateTime called...")
