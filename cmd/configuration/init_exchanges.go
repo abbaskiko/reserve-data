@@ -177,7 +177,7 @@ func NewExchangePool(
 			if exparam == common.Binance2 {
 				binanceSigner = binance.NewSigner(rcf.Binance2Key, rcf.Binance2Secret)
 			}
-			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient)
+			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient, exparam)
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%s)", err.Error())
@@ -222,6 +222,9 @@ func NewExchangePool(
 	go updateDepositAddress(assetStorage, be, he)
 	if bin != nil {
 		go updateTradingPairConf(assetStorage, bin, uint64(common.Binance))
+	}
+	if bin2, ok := exchanges[common.Binance2].(*exchange.Binance); ok {
+		go updateTradingPairConf(assetStorage, bin2, uint64(bin2.ID()))
 	}
 	if hb != nil {
 		go updateTradingPairConf(assetStorage, hb, uint64(common.Huobi))
