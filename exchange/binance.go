@@ -401,6 +401,8 @@ func (bn *Binance) OpenOrders() ([]common.Order, error) {
 			StopPrice:   order.StopPrice,
 			IcebergQty:  order.IcebergQty,
 			Time:        order.Time,
+			Base:        order.Symbol,
+			Quote:       "",
 		})
 	}
 	return orders, nil

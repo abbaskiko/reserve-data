@@ -381,6 +381,7 @@ func (h *Huobi) OpenOrders() ([]common.Order, error) {
 	var (
 		result   []common.Order
 		errGroup errgroup.Group
+		mu       sync.Mutex
 	)
 	pairs, err := h.TokenPairs()
 	if err != nil {
@@ -403,6 +404,7 @@ func (h *Huobi) OpenOrders() ([]common.Order, error) {
 						if err != nil {
 							return err
 						}
+						mu.Lock()
 						result = append(result, common.Order{
 							OrderID: strconv.FormatUint(order.OrderID, 10),
 							OrigQty: originQty,
@@ -410,6 +412,7 @@ func (h *Huobi) OpenOrders() ([]common.Order, error) {
 							Quote:   strings.ToUpper(pair.Quote.ID),
 							Price:   price,
 						})
+						mu.Unlock()
 					}
 					return nil
 				}
