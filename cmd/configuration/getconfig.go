@@ -45,6 +45,7 @@ func GetConfig(
 		Client: mainClient,
 		URL:    nodeConf.Main,
 	})
+	bkClients[nodeConf.Main] = mainClient
 	for _, ep := range nodeConf.Backup {
 		var bkClient *ethclient.Client
 		bkClient, err = ethclient.Dial(ep)
