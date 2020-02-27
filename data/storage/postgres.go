@@ -406,7 +406,7 @@ func (ps *PostgresStorage) HasPendingDeposit(token commonv3.Asset, exchange comm
 		pendingActivity common.ActivityRecord
 		data            [][]byte
 	)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE is_pending IS TRUE AND data->>'Action' = $1 AND data ->> 'Destination' = $2`, activityTable)
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE is_pending IS TRUE AND data->>'action' = $1 AND data ->> 'destination' = $2`, activityTable)
 	if err := ps.db.Select(&data, query, common.ActionDeposit, exchange.ID().String()); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
