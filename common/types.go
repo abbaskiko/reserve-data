@@ -228,14 +228,14 @@ func NewActivityID(timepoint uint64, eid string) ActivityID {
 
 // ActivityRecord object
 type ActivityRecord struct {
-	Action         string         `json:"Action,omitempty"`
-	ID             ActivityID     `json:"ID,omitempty"`
-	Destination    string         `json:"Destination,omitempty"`
-	Params         ActivityParams `json:"Params,omitempty"`
-	Result         ActivityResult `json:"Result,omitempty"`
-	ExchangeStatus string         `json:"ExchangeStatus,omitempty"`
-	MiningStatus   string         `json:"MiningStatus,omitempty"`
-	Timestamp      Timestamp      `json:"Timestamp,omitempty"`
+	Action         string         `json:"action,omitempty"`
+	ID             ActivityID     `json:"id,omitempty"`
+	Destination    string         `json:"destination,omitempty"`
+	Params         ActivityParams `json:"params,omitempty"`
+	Result         ActivityResult `json:"result,omitempty"`
+	ExchangeStatus string         `json:"exchange_status,omitempty"`
+	MiningStatus   string         `json:"mining_status,omitempty"`
+	Timestamp      Timestamp      `json:"timestamp,omitempty"`
 }
 
 // ActivityParams is params for activity
@@ -417,11 +417,11 @@ func (rb *RawBalance) UnmarshalJSON(text []byte) error {
 }
 
 type BalanceEntry struct {
-	Valid      bool
-	Error      string
-	Timestamp  Timestamp
-	ReturnTime Timestamp
-	Balance    RawBalance
+	Valid      bool       `json:"valid"`
+	Error      string     `json:"error"`
+	Timestamp  Timestamp  `json:"timestamp"`
+	ReturnTime Timestamp  `json:"return_time"`
+	Balance    RawBalance `json:"balance"`
 }
 
 func (be BalanceEntry) ToBalanceResponse(decimal int64) BalanceResponse {
@@ -503,16 +503,17 @@ type AllEBalanceResponse struct {
 
 // AuthDataSnapshot object
 type AuthDataSnapshot struct {
-	Valid             bool                         `json:"Valid,omitempty"`
-	Error             string                       `json:"Error,omitempty"`
-	Timestamp         Timestamp                    `json:"Timestamp,omitempty"`
-	ReturnTime        Timestamp                    `json:"ReturnTime,omitempty"`
-	ExchangeBalances  map[ExchangeID]EBalanceEntry `json:"ExchangeBalances,omitempty"`
-	ReserveBalances   map[AssetID]BalanceEntry     `json:"ReserveBalances,omitempty"`
-	PendingActivities []ActivityRecord             `json:"PendingActivities,omitempty"`
-	Block             uint64                       `json:"Block,omitempty"`
+	Valid             bool                         `json:"valid,omitempty"`
+	Error             string                       `json:"error,omitempty"`
+	Timestamp         Timestamp                    `json:"timestamp,omitempty"`
+	ReturnTime        Timestamp                    `json:"return_time,omitempty"`
+	ExchangeBalances  map[ExchangeID]EBalanceEntry `json:"exchange_balances,omitempty"`
+	ReserveBalances   map[AssetID]BalanceEntry     `json:"reserve_balances,omitempty"`
+	PendingActivities []ActivityRecord             `json:"pending_activities,omitempty"`
+	Block             uint64                       `json:"block,omitempty"`
 }
 
+// deprecated
 type AuthDataRecord struct {
 	Timestamp Timestamp
 	Data      AuthDataSnapshot
