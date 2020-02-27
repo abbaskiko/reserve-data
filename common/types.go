@@ -605,14 +605,14 @@ func NewTXEntry(hash, exchange string, assetID uint64, miningStatus, exchangeSta
 
 // RateResponse is the human friendly format of a rate entry to returns in HTTP APIs.
 type RateResponse struct {
-	Timestamp   Timestamp
-	ReturnTime  Timestamp
-	BaseBuy     float64
-	CompactBuy  int8
-	BaseSell    float64
-	CompactSell int8
-	Rate        float64
-	Block       uint64
+	Timestamp   Timestamp `json:"timestamp"`
+	ReturnTime  Timestamp `json:"return_time"`
+	BaseBuy     float64   `json:"base_buy"`
+	CompactBuy  int8      `json:"compact_buy"`
+	BaseSell    float64   `json:"base_sell"`
+	CompactSell int8      `json:"compact_sell"`
+	Rate        float64   `json:"rate"`
+	Block       uint64    `json:"block"`
 }
 
 // AllRateEntry contains rates data of all tokens.
@@ -625,12 +625,12 @@ type AllRateEntry struct {
 
 // AllRateResponse is the response to query all rates.
 type AllRateResponse struct {
-	Version       Version
-	Timestamp     Timestamp
-	ReturnTime    Timestamp
-	Data          map[uint64]RateResponse
-	BlockNumber   uint64
-	ToBlockNumber uint64
+	Version       Version                 `json:"version"`
+	Timestamp     Timestamp               `json:"timestamp"`
+	ReturnTime    Timestamp               `json:"return_time"`
+	Data          map[uint64]RateResponse `json:"data"`
+	BlockNumber   uint64                  `json:"block_number"`
+	ToBlockNumber uint64                  `json:"to_block_number"`
 }
 
 type TradeHistory struct {
