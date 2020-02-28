@@ -634,11 +634,11 @@ type AllRateResponse struct {
 }
 
 type TradeHistory struct {
-	ID        string
-	Price     float64
-	Qty       float64
-	Type      string // buy or sell
-	Timestamp uint64
+	ID        string  `json:"id"`
+	Price     float64 `json:"price"`
+	Qty       float64 `json:"qty"`
+	Type      string  `json:"type"` // buy or sell
+	Timestamp uint64  `json:"timestamp"`
 }
 
 // NewTradeHistory creates a new TradeHistory instance.
@@ -656,8 +656,8 @@ func NewTradeHistory(id string, price, qty float64, typ string, timestamp uint64
 type ExchangeTradeHistory map[uint64][]TradeHistory
 
 type AllTradeHistory struct {
-	Timestamp Timestamp
-	Data      map[ExchangeID]ExchangeTradeHistory
+	Timestamp Timestamp                           `json:"timestamp"`
+	Data      map[ExchangeID]ExchangeTradeHistory `json:"data"`
 }
 
 type ExStatus struct {
