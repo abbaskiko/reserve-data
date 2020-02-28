@@ -40,6 +40,11 @@ func Test_BinancePostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	err = storage.StoreTradeHistory(exchangeTradeHistory)
+	if err != nil {
+		t.Fatal(err)
+	} // this store should not create a new record, so the next GetTradeHistory won't break
+
 	// get trade history
 	var tradeHistory common.ExchangeTradeHistory
 	fromTime := uint64(1528934400000)

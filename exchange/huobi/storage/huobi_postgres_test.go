@@ -40,6 +40,10 @@ func TestPostgresStorage_TradeHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = storage.StoreTradeHistory(exchangeTradeHistory)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// get trade history
 	var tradeHistory common.ExchangeTradeHistory

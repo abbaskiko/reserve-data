@@ -15,7 +15,7 @@ const (
 		CREATE TABLE IF NOT EXISTS "binance_trade_history"(
 		    id 				SERIAL PRIMARY KEY,
 		    pair_id			BIGINT,
-		    trade_id		TEXT NOT NULL,
+		    trade_id		TEXT UNIQUE NOT NULL,
 		    price 			FLOAT NOT NULL,
 		    qty 			FLOAT NOT NULL, 
 		    type			TEXT NOT NULL,
@@ -52,7 +52,8 @@ func (s *postgresStorage) prepareStmts() error {
 	var err error
 	s.stmts.storeHistoryStmt, err = s.db.PrepareNamed(`INSERT INTO "binance_trade_history"
 		(pair_id, trade_id, price, qty, type, time)
-		VALUES(:pair_id, :trade_id, :price, :qty, :type, :time)`)
+		VALUES(:pair_id, :trade_id, :price, :qty, :type, :time) ON CONFLICT (trade_id) DO UPDATE SET
+		price=excluded.price, qty=excluded.qty,time=excluded.time`)
 	if err != nil {
 		return err
 	}
