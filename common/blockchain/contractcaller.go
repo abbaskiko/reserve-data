@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -25,8 +25,12 @@ func NewContractCaller(clients []*common.EthClient) *ContractCaller {
 }
 
 func (c ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, timeOut time.Duration) ([]byte, error) {
+	type errInfo struct {
+		URL string
+		Err error
+	}
+	var errs []errInfo
 	for _, client := range c.clients {
-
 		output, err := func() ([]byte, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), timeOut)
 			defer cancel()
@@ -34,9 +38,13 @@ func (c ContractCaller) CallContract(msg ether.CallMsg, blockNo *big.Int, timeOu
 		}()
 		if err != nil {
 			c.l.Infof("FALLBACK: Ether client %s done, getting err %v, trying next one...", client.URL, err)
+			errs = append(errs, errInfo{
+				URL: client.URL,
+				Err: err,
+			})
 			continue
 		}
 		return output, nil
 	}
-	return nil, errors.New("failed to call contract, all clients failed")
+	return nil, fmt.Errorf("failed to call contract, all clients failed: %v", errs)
 }
