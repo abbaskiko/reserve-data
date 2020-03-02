@@ -102,9 +102,8 @@ func (bn *Binance) QueryOrder(symbol string, id uint64) (done float64, remaining
 	return done, total - done, total-done < binanceEpsilon, nil
 }
 
-// Trade create an order in binance
-func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string,
-	done float64, remaining float64, finished bool, err error) {
+// Trade create a new trade on binance
+func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	result, err := bn.interf.Trade(tradeType, pair, rate, amount)
 	if err != nil {
 		return "", 0, 0, false, err
@@ -117,13 +116,13 @@ func (bn *Binance) Trade(tradeType string, pair commonv3.TradingPairSymbols, rat
 	return id, done, remaining, finished, err
 }
 
-// Withdraw asset from binance
+// Withdraw create a withdrawal from binance to our reserve
 func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	tx, err := bn.interf.Withdraw(asset, amount, address)
 	return tx, err
 }
 
-// CancelOrder from binance
+// CancelOrder cancel order on binance
 func (bn *Binance) CancelOrder(id string, base, quote string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
@@ -137,7 +136,7 @@ func (bn *Binance) CancelOrder(id string, base, quote string) error {
 	return nil
 }
 
-// FetchOnePairData fetch order book for one pair data
+// FetchOnePairData fetch price data for one pair of token
 func (bn *Binance) FetchOnePairData(
 	wg *sync.WaitGroup,
 	pair commonv3.TradingPairSymbols,
@@ -188,7 +187,7 @@ func (bn *Binance) FetchOnePairData(
 	data.Store(pair.ID, result)
 }
 
-// FetchPriceData fetch all order book from timepoint
+// FetchPriceData fetch price data for all token that we supported
 func (bn *Binance) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
@@ -228,7 +227,7 @@ func (bn *Binance) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangeP
 	return result, err
 }
 
-// FetchEBalanceData fetch exchange balance for token we list on binance
+// FetchEBalanceData fetch balance data from binance
 func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
 	var (
 		logger = bn.l.With("func", caller.GetCurrentFunctionName())
@@ -355,12 +354,12 @@ func (bn *Binance) FetchTradeHistory() {
 	}
 }
 
-// GetTradeHistory get trade history we currently save in database
+// GetTradeHistory get trade history from binance
 func (bn *Binance) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return bn.storage.GetTradeHistory(fromTime, toTime)
 }
 
-// DepositStatus checkt deposit status we currently made
+// DepositStatus return status of a deposit on binance
 func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID uint64, amount float64, timepoint uint64) (string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
@@ -381,7 +380,7 @@ func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID ui
 	return "", nil
 }
 
-// WithdrawStatus check status of withdraw we currently made
+// WithdrawStatus return status of a withdrawal on binance
 func (bn *Binance) WithdrawStatus(id string, assetID uint64, amount float64, timepoint uint64) (string, string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
@@ -402,7 +401,7 @@ func (bn *Binance) WithdrawStatus(id string, assetID uint64, amount float64, tim
 	return "", "", nil
 }
 
-// OrderStatus check current order status
+// OrderStatus return status of an order on binance
 func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 	orderID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
@@ -417,6 +416,55 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 		return "", nil
 	}
 	return common.ExchangeStatusDone, nil
+}
+
+// OpenOrders get open orders from binance
+func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, error) {
+	var (
+		result []common.Order
+		orders []Binaorder
+		err    error
+	)
+	if pair.ID != 0 {
+		orders, err = bn.interf.OpenOrdersForOnePair(&pair)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		orders, err = bn.interf.OpenOrdersForOnePair(nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, order := range orders {
+		originalQty, err := strconv.ParseFloat(order.OrigQty, 64)
+		if err != nil {
+			return nil, err
+		}
+		price, err := strconv.ParseFloat(order.Price, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		// because binance api response with symbol base + quote as a string
+		// we cannot split them,
+		// then when we get all open orders at a time, base symbol will include both base and quote (for human view)
+		// and quote symbol will be empty
+		var symbol = order.Symbol
+		if pair.BaseSymbol != "" {
+			symbol = pair.BaseSymbol
+		}
+		result = append(result, common.Order{
+			OrderID: strconv.FormatUint(order.OrderID, 10),
+			Side:    order.Side,
+			Type:    order.Type,
+			OrigQty: originalQty,
+			Price:   price,
+			Base:    symbol,
+			Quote:   pair.QuoteSymbol,
+		})
+	}
+	return result, nil
 }
 
 // NewBinance init new binance instance

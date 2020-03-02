@@ -376,13 +376,13 @@ func (ps *PostgresStorage) UpdateActivity(id common.ActivityID, act common.Activ
 }
 
 // GetActivity return activity record by id
-func (ps *PostgresStorage) GetActivity(id common.ActivityID) (common.ActivityRecord, error) {
+func (ps *PostgresStorage) GetActivity(exchangeID common.ExchangeID, id string) (common.ActivityRecord, error) {
 	var (
 		activityRecord common.ActivityRecord
 		data           []byte
 	)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE timepoint = $1 AND eid = $2`, activityTable)
-	if err := ps.db.Get(&data, query, id.Timepoint, id.EID); err != nil {
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE data->>'destination' = $1 AND eid = $2`, activityTable)
+	if err := ps.db.Get(&data, query, exchangeID.String(), id); err != nil {
 		return common.ActivityRecord{}, err
 	}
 	if err := json.Unmarshal(data, &activityRecord); err != nil {
