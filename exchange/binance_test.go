@@ -27,7 +27,7 @@ func (bi *binanceTestInterface) GetDepthOnePair(baseID, quoteID string) (Binares
 	panic("implement me")
 }
 
-func (bi *binanceTestInterface) OpenOrdersForOnePair(pair commonv3.TradingPairSymbols) (Binaorders, error) {
+func (bi *binanceTestInterface) OpenOrdersForOnePair(pair *commonv3.TradingPairSymbols) (Binaorders, error) {
 	panic("implement me")
 }
 

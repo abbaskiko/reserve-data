@@ -230,6 +230,7 @@ func NewActivityID(timepoint uint64, eid string) ActivityID {
 type ActivityRecord struct {
 	Action         string         `json:"action,omitempty"`
 	ID             ActivityID     `json:"id,omitempty"`
+	EID            string         `json:"eid"`
 	Destination    string         `json:"destination,omitempty"`
 	Params         ActivityParams `json:"params,omitempty"`
 	Result         ActivityResult `json:"result,omitempty"`
@@ -450,20 +451,21 @@ type AllBalanceResponse struct {
 	Data       map[string]BalanceResponse
 }
 
+// Order accross multiple exchanges
 type Order struct {
-	ID          string // standard id across multiple exchanges
-	Base        string
-	Quote       string
-	OrderID     string
-	Price       float64
-	OrigQty     float64 // original quantity
-	ExecutedQty float64 // matched quantity
-	TimeInForce string
-	Type        string // market or limit
-	Side        string // buy or sell
-	StopPrice   string
-	IcebergQty  string
-	Time        uint64
+	ID          string  `json:"id,omitempty"` // standard id across multiple exchanges
+	Base        string  `json:"base"`
+	Quote       string  `json:"quote"`
+	OrderID     string  `json:"order_id"`
+	Price       float64 `json:"price"`
+	OrigQty     float64 `json:"orig_qty"`     // original quantity
+	ExecutedQty float64 `json:"executed_qty"` // matched quantity
+	TimeInForce string  `json:"time_in_force,omitempty"`
+	Type        string  `json:"type"` // market or limit
+	Side        string  `json:"side"` // buy or sell
+	StopPrice   string  `json:"stop_price,omitempty"`
+	IcebergQty  string  `json:"iceberg_qty,omitempty"`
+	Time        uint64  `json:"time,omitempty"`
 }
 
 type OrderEntry struct {

@@ -12,11 +12,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	huobihttp "github.com/KyberNetwork/reserve-data/exchange/huobi/http"
+	"github.com/KyberNetwork/reserve-data/lib/caller"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -649,6 +651,67 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 // ID return exchange ID
 func (h *Huobi) ID() common.ExchangeID {
 	return common.Huobi
+}
+
+// OpenOrders get open orders from binance
+func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, error) {
+	var (
+		logger   = h.l.With("func", caller.GetCurrentFunctionName())
+		result   []common.Order
+		pairs    []commonv3.TradingPairSymbols
+		err      error
+		errGroup errgroup.Group
+		mu       sync.Mutex
+	)
+	if pair.BaseSymbol == "" {
+		logger.Info("No pair token provided, get open orders for all token")
+		pairs, err = h.TokenPairs()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		pairs = append(pairs, pair)
+	}
+	for _, pair := range pairs {
+		errGroup.Go(
+			func(pair commonv3.TradingPairSymbols) func() error {
+				return func() error {
+					logger.Infow("get open orders for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
+					orders, err := h.interf.OpenOrdersForOnePair(pair)
+					if err != nil {
+						return err
+					}
+					for _, order := range orders.Data {
+						originalQty, err := strconv.ParseFloat(order.OrigQty, 64)
+						if err != nil {
+							return err
+						}
+						price, err := strconv.ParseFloat(order.Price, 64)
+						if err != nil {
+							return err
+						}
+						mu.Lock()
+						result = append(result, common.Order{
+							OrderID: strconv.FormatUint(order.OrderID, 10),
+							Type:    order.Type,
+							OrigQty: originalQty,
+							Price:   price,
+							Base:    pair.BaseSymbol,
+							Quote:   pair.QuoteSymbol,
+						})
+						mu.Unlock()
+					}
+					return nil
+				}
+			}(pair),
+		)
+	}
+
+	if err := errGroup.Wait(); err != nil {
+		return result, err
+	}
+
+	return result, nil
 }
 
 //NewHuobi creates new Huobi exchange instance

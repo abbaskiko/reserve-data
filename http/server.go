@@ -20,6 +20,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
+	"github.com/KyberNetwork/reserve-data/lib/caller"
 	v3common "github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -245,6 +246,54 @@ func (s *Server) Trade(c *gin.Context) {
 	}))
 }
 
+// OpenOrdersRequest request for open orders
+type OpenOrdersRequest struct {
+	ExchangeID uint64 `form:"exchange_id" binding:"required"`
+	Pair       uint64 `form:"pair"`
+}
+
+// OpenOrders request for open orders
+func (s *Server) OpenOrders(c *gin.Context) {
+	var (
+		logger = s.l.With("func", caller.GetCurrentFunctionName())
+		query  OpenOrdersRequest
+		pair   v3common.TradingPairSymbols
+		err    error
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		logger.Errorw("query is is not correct format", "error", err)
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	exchange, ok := common.SupportedExchanges[common.ExchangeID(query.ExchangeID)]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", query.ExchangeID)))
+		return
+	}
+	if query.Pair != 0 {
+		logger.Infow("query pair", "pair", query.Pair)
+		pair, err = s.settingStorage.GetTradingPair(query.Pair)
+		if err != nil {
+			logger.Errorw("failed to get trading token pair from setting data base", "err", err)
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+		logger.Infow("getting open orders for pair", "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
+	} else {
+		logger.Info("pair id not provide, getting open orders for all supported pairs")
+	}
+
+	openOrders, err := exchange.OpenOrders(pair)
+	if err != nil {
+		logger.Errorw("failed to get open orders", "exchange", exchange.ID().String, "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	httputil.ResponseSuccess(c, httputil.WithData(openOrders))
+}
+
 // CancelOrderRequest type
 type CancelOrderRequest struct {
 	Exchange string `json:"exchange"`
@@ -265,12 +314,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		return
 	}
 	s.l.Infow("Cancel order", "id", request.OrderID, "from", exchange.ID().String())
-	activityID, err := common.StringToActivityID(request.OrderID)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	err = s.core.CancelOrder(activityID, exchange)
+	err = s.core.CancelOrder(request.OrderID, exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -483,6 +527,7 @@ func (s *Server) register() {
 		g.GET("/activities", s.GetActivities)
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
 
+		g.GET("/open-orders", s.OpenOrders)
 		g.POST("/cancelorder", s.CancelOrder)
 		g.POST("/cancel-all-orders", s.CancelAllOrders)
 		g.POST("/deposit", s.Deposit)

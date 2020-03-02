@@ -43,6 +43,10 @@ func (te testExchange) GetLiveExchangeInfos(pairs []commonv3.TradingPairSymbols)
 	return common.ExchangeInfo{}, nil
 }
 
+func (te testExchange) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, error) {
+	return nil, nil
+}
+
 type testBlockchain struct {
 }
 
@@ -101,7 +105,7 @@ func (tas testActivityStorage) Record(
 	return nil
 }
 
-func (tas testActivityStorage) GetActivity(id common.ActivityID) (common.ActivityRecord, error) {
+func (tas testActivityStorage) GetActivity(exchangeID common.ExchangeID, id string) (common.ActivityRecord, error) {
 	return common.ActivityRecord{}, nil
 }
 

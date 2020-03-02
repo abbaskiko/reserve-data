@@ -17,6 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	"github.com/KyberNetwork/reserve-data/lib/caller"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -220,6 +221,7 @@ func (ep *Endpoint) GetAccountTradeHistory(
 	return result, err
 }
 
+// WithdrawHistory get withdraw history from binance
 func (ep *Endpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawithdrawals, error) {
 	result := exchange.Binawithdrawals{}
 	respBody, err := ep.GetResponse(
@@ -243,6 +245,7 @@ func (ep *Endpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawit
 	return result, err
 }
 
+// DepositHistory get deposit history from binance
 func (ep *Endpoint) DepositHistory(startTime, endTime uint64) (exchange.Binadeposits, error) {
 	result := exchange.Binadeposits{}
 	respBody, err := ep.GetResponse(
@@ -266,6 +269,7 @@ func (ep *Endpoint) DepositHistory(startTime, endTime uint64) (exchange.Binadepo
 	return result, err
 }
 
+// CancelOrder cancel an order from binance
 func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.Binacancel, error) {
 	result := exchange.Binacancel{}
 	respBody, err := ep.GetResponse(
@@ -289,6 +293,7 @@ func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.Binacancel, 
 	return result, err
 }
 
+// OrderStatus return status of orders
 func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, error) {
 	result := exchange.Binaorder{}
 	respBody, err := ep.GetResponse(
@@ -312,6 +317,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 	return result, err
 }
 
+// Withdraw token from binance
 func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	var symbol string
 	for _, exchg := range asset.Exchanges {
@@ -344,6 +350,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 	return "", fmt.Errorf("withdraw rejected by Binnace: %v", err)
 }
 
+// GetInfo return binance exchange info
 func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	result := exchange.Binainfo{}
 	respBody, err := ep.GetResponse(
@@ -364,15 +371,21 @@ func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	return result, err
 }
 
-func (ep *Endpoint) OpenOrdersForOnePair(pair commonv3.TradingPairSymbols) (exchange.Binaorders, error) {
-
-	result := exchange.Binaorders{}
+// OpenOrdersForOnePair return list open orders for one pair of token
+func (ep *Endpoint) OpenOrdersForOnePair(pair *commonv3.TradingPairSymbols) (exchange.Binaorders, error) {
+	var (
+		result = exchange.Binaorders{}
+		logger = ep.l.With("func", caller.GetCurrentFunctionName())
+		params = make(map[string]string)
+	)
+	if pair != nil {
+		logger.Infow("getting open order for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
+		params["symbol"] = pair.BaseSymbol + pair.QuoteSymbol
+	}
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
-		map[string]string{
-			"symbol": pair.BaseSymbol + pair.QuoteSymbol,
-		},
+		params,
 		true,
 		common.NowInMillis(),
 	)
@@ -385,6 +398,7 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair commonv3.TradingPairSymbols) (exch
 	return result, nil
 }
 
+// GetDepositAddress of an asset
 func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress, error) {
 	result := exchange.Binadepositaddress{}
 	respBody, err := ep.GetResponse(
@@ -440,6 +454,7 @@ func (ep *Endpoint) getServerTime() (uint64, error) {
 	return result.ServerTime, err
 }
 
+// UpdateTimeDelta update the time delta of the request
 func (ep *Endpoint) UpdateTimeDelta() error {
 	currentTime := common.NowInMillis()
 	serverTime, err := ep.getServerTime()
