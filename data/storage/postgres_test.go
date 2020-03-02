@@ -144,13 +144,13 @@ func TestActivity(t *testing.T) {
 			EID:       "0x7437e2ac582a7cdef75a6c8355d03167a8ab7670a178197d81f14cea76684d74|BQX|39811.443679",
 		},
 		Destination: "binance",
-		Params: common.ActivityParams{
+		Params: &common.ActivityParams{
 			Amount:    39811.443679,
 			Exchange:  common.Binance,
 			Timepoint: uint64(1568622125860),
 			Asset:     2, // KNC id
 		},
-		Result: common.ActivityResult{
+		Result: &common.ActivityResult{
 			BlockNumber: 8559409,
 			Error:       "",
 			GasPrice:    "50100000000",
@@ -163,7 +163,7 @@ func TestActivity(t *testing.T) {
 		Timestamp:      "1568622125860",
 	}
 	err = ps.Record(activityTest.Action, activityTest.ID, activityTest.Destination,
-		activityTest.Params, activityTest.Result, activityTest.ExchangeStatus, activityTest.MiningStatus, 1568622125860)
+		*activityTest.Params, *activityTest.Result, activityTest.ExchangeStatus, activityTest.MiningStatus, 1568622125860)
 	assert.NoError(t, err)
 
 	hasPending, err := ps.HasPendingDeposit(commonv3.Asset{ID: 2}, common.TestExchange{})
