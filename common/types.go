@@ -228,15 +228,15 @@ func NewActivityID(timepoint uint64, eid string) ActivityID {
 
 // ActivityRecord object
 type ActivityRecord struct {
-	Action         string          `json:"action,omitempty"`
-	ID             ActivityID      `json:"id,omitempty"`
-	EID            string          `json:"eid"`
-	Destination    string          `json:"destination,omitempty"`
-	Params         *ActivityParams `json:"params,omitempty"`
-	Result         *ActivityResult `json:"result,omitempty"`
-	ExchangeStatus string          `json:"exchange_status,omitempty"`
-	MiningStatus   string          `json:"mining_status,omitempty"`
-	Timestamp      Timestamp       `json:"timestamp,omitempty"`
+	Action         string         `json:"action,omitempty"`
+	ID             ActivityID     `json:"id,omitempty"`
+	EID            string         `json:"eid"`
+	Destination    string         `json:"destination,omitempty"`
+	Params         ActivityParams `json:"params,omitempty"`
+	Result         ActivityResult `json:"result,omitempty"`
+	ExchangeStatus string         `json:"exchange_status,omitempty"`
+	MiningStatus   string         `json:"mining_status,omitempty"`
+	Timestamp      Timestamp      `json:"timestamp,omitempty"`
 }
 
 // ActivityParams is params for activity
@@ -283,8 +283,8 @@ func NewActivityRecord(action string, id ActivityID, destination string, params 
 		Action:         action,
 		ID:             id,
 		Destination:    destination,
-		Params:         &params,
-		Result:         &result,
+		Params:         params,
+		Result:         result,
 		ExchangeStatus: exStatus,
 		MiningStatus:   miStatus,
 		Timestamp:      timestamp,
