@@ -352,6 +352,9 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 
 // GetInfo return binance exchange info
 func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
+	var (
+		logger = ep.l.With("func", caller.GetCurrentFunctionName())
+	)
 	result := exchange.Binainfo{}
 	respBody, err := ep.GetResponse(
 		"GET",
@@ -361,6 +364,7 @@ func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 		common.NowInMillis(),
 	)
 	if err == nil {
+		logger.Debugw("info response from binance", "response", respBody)
 		if err = json.Unmarshal(respBody, &result); err != nil {
 			return result, err
 		}

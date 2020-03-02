@@ -1,11 +1,9 @@
 package storage
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/postgres"
@@ -140,9 +138,7 @@ func (s *postgresStorage) GetLastIDTradeHistory(pairID uint64) (string, error) {
 	var record exchangeTradeHistoryDB
 	err := s.stmts.getLastIDHistoryStmt.Get(&record, pairID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", errors.Errorf("no history with pair_id=%v", pairID)
-		}
+		// if err == sql.ErrorNoRow then last id trade history  equal 0
 		return "", err
 	}
 	return record.TradeID, nil
