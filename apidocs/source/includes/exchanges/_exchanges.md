@@ -82,7 +82,7 @@ pair | uint64 | true | nil | id of pair (ex: KNCETH - 1, OMGETH - 2)
 ## Cancel order 
 
 ```shell
-curl -X POST "http://gateway.local/v3/cancelorder/binance"
+curl -X POST "http://gateway.local/v3/cancelorder"
 -H 'Content-Type: application/json'
 -d '{
     "order_id": 43142,
@@ -100,12 +100,13 @@ curl -X POST "http://gateway.local/v3/cancelorder/binance"
 
 ### HTTP request
 
-`POST https://gateway.local/v3/cancelorder/:exchange`
+`POST https://gateway.local/v3/cancelorder`
 <aside class="notice">Rebalance key is required</aside>
 
 Param | Type | Required | Default | Description
 ----- | ---- | -------- | ------- | -----------
 order_id | string | true | nil | order id to be cancelled
+exchange | string | true | nil | exchange to cancel order
 
 ## Withdraw
 
