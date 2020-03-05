@@ -296,8 +296,8 @@ func (s *Server) OpenOrders(c *gin.Context) {
 
 // CancelOrderRequest type
 type CancelOrderRequest struct {
-	ExchangeID uint64 `json:"exchange_id"`
-	OrderID    string `json:"order_id"`
+	ExchangeID uint64   `json:"exchange_id"`
+	OrderIDs   []string `json:"order_ids"`
 }
 
 // CancelOrder cancel an order from cexs
@@ -313,12 +313,9 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", request.ExchangeID)))
 		return
 	}
-	s.l.Infow("Cancel order", "id", request.OrderID, "from", exchange.ID().String())
-	if err := s.core.CancelOrder(request.OrderID, exchange); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	httputil.ResponseSuccess(c)
+	s.l.Infow("Cancel order", "id", request.OrderIDs, "from", exchange.ID().String())
+	result := s.core.CancelOrder(request.OrderIDs, exchange)
+	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
 // WithdrawRequest type

@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/lib/caller"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -52,17 +53,42 @@ func timebasedID(id string) common.ActivityID {
 }
 
 // CancelOrder cancel an order on centralized exchanges
-func (rc ReserveCore) CancelOrder(orderID string, exchange common.Exchange) error {
-	activity, err := rc.activityStorage.GetActivity(exchange.ID(), orderID)
-	if err != nil {
-		return err
+func (rc ReserveCore) CancelOrder(orderIDs []string, exchange common.Exchange) map[string]common.CancelOrderResult {
+	var (
+		logger = rc.l.With("func", caller.GetCurrentFunctionName())
+	)
+	result := make(map[string]common.CancelOrderResult)
+	for _, orderID := range orderIDs {
+		activity, err := rc.activityStorage.GetActivity(exchange.ID(), orderID)
+		if err != nil {
+			logger.Warnw("failed to get order", "order id", orderID, "exchange", exchange.ID().String(), "error", err)
+			result[orderID] = common.CancelOrderResult{
+				Success: false,
+				Error:   err.Error(),
+			}
+			continue
+		}
+		if activity.Action != common.ActionTrade {
+			result[orderID] = common.CancelOrderResult{
+				Success: false,
+				Error:   "This is not an order activity so cannot cancel",
+			}
+			continue
+		}
+		base := activity.Params.Base
+		quote := activity.Params.Quote
+		if err := exchange.CancelOrder(orderID, base, quote); err != nil {
+			result[orderID] = common.CancelOrderResult{
+				Success: false,
+				Error:   err.Error(),
+			}
+		} else {
+			result[orderID] = common.CancelOrderResult{
+				Success: true,
+			}
+		}
 	}
-	if activity.Action != common.ActionTrade {
-		return errors.New("this is not an order activity so cannot cancel")
-	}
-	base := activity.Params.Base
-	quote := activity.Params.Quote
-	return exchange.CancelOrder(orderID, base, quote)
+	return result
 }
 
 // Trade token on centralized exchange
