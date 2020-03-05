@@ -226,6 +226,12 @@ func NewActivityID(timepoint uint64, eid string) ActivityID {
 	}
 }
 
+// CancelOrderResult is response when calling cancel an order
+type CancelOrderResult struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error"`
+}
+
 // ActivityRecord object
 type ActivityRecord struct {
 	Action         string          `json:"action,omitempty"`
