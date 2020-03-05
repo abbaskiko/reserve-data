@@ -296,8 +296,8 @@ func (s *Server) OpenOrders(c *gin.Context) {
 
 // CancelOrderRequest type
 type CancelOrderRequest struct {
-	Exchange string `json:"exchange"`
-	OrderID  string `json:"order_id"`
+	ExchangeID uint64 `json:"exchange_id"`
+	OrderID    string `json:"order_id"`
 }
 
 // CancelOrder cancel an order from cexs
@@ -308,14 +308,13 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	exchange, err := common.GetExchange(request.Exchange)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
+	exchange, ok := common.SupportedExchanges[common.ExchangeID(request.ExchangeID)]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", request.ExchangeID)))
 		return
 	}
 	s.l.Infow("Cancel order", "id", request.OrderID, "from", exchange.ID().String())
-	err = s.core.CancelOrder(request.OrderID, exchange)
-	if err != nil {
+	if err := s.core.CancelOrder(request.OrderID, exchange); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
