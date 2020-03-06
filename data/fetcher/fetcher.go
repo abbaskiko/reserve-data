@@ -209,7 +209,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	bstatuses := sync.Map{}
 	pendings, err := f.storage.GetPendingActivities()
 	if err != nil {
-		f.l.Warnw("Getting pending activities failed", "err", err)
+		f.l.Errorw("AuthData - getting pending activities failed", "err", err)
 		return
 	}
 	wait := sync.WaitGroup{}
@@ -254,7 +254,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	if err = f.FetchAuthDataFromBlockchain(bbalances, &bstatuses, pendings); err != nil {
 		snapshot.Error = err.Error()
 		snapshot.Valid = false
-		f.l.Warnw("FetchAuthDataFromBlockchain failed", "err", err)
+		f.l.Errorw("AuthData - fetch from blockchain failed", "err", err)
 	}
 	snapshot.Block = f.currentBlock
 	snapshot.ReturnTime = common.GetTimestamp()
@@ -262,7 +262,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		&ebalances, bbalances, &estatuses, &bstatuses,
 		pendings, &snapshot, timepoint)
 	if err != nil {
-		f.l.Warnw("Storing auth data failed", "err", err)
+		f.l.Errorw("AuthData - storing auth data failed", "err", err)
 		return
 	}
 }
@@ -626,13 +626,13 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 		preStatuses := f.FetchStatusFromExchange(exchange, pendings, timepoint)
 		balances, err = exchange.FetchEBalanceData(timepoint)
 		if err != nil {
-			f.l.Warnw("Fetching exchange balances failed", "exchange", exchange.Name(), "err", err)
+			f.l.Errorw("AuthData - fetching exchange balances failed", "exchange", exchange.Name(), "err", err)
 			break
 		}
 		//Remove all token which is not in this exchange's token addresses
 		tokenAddress, err = exchange.TokenAddresses()
 		if err != nil {
-			f.l.Warnw("getting token address failed", "exchange", exchange.Name(), "err", err)
+			f.l.Errorw("AuthData - getting token address failed", "exchange", exchange.Name(), "err", err)
 			break
 		}
 		for tokenID := range balances.AvailableBalance {

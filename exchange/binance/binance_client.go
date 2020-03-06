@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -80,11 +79,10 @@ func (ep *Client) GetResponse(
 	if err != nil {
 		return respBody, err
 	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			ep.l.Warnw("Response body close", "err", cErr)
-		}
-	}()
+	respBody, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return respBody, fmt.Errorf("read binance response error %+v", err)
+	}
 	switch resp.StatusCode {
 	case 429:
 		err = errors.New("breaking binance request rate limit")
@@ -95,16 +93,9 @@ func (ep *Client) GetResponse(
 	case 401:
 		err = errors.New("binance api key not valid")
 	case 200:
-		respBody, err = ioutil.ReadAll(resp.Body)
+		return respBody, nil
 	default:
-		var response exchange.Binaresp
-		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			break
-		}
-		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
-	}
-	if err != nil || len(respBody) == 0 || rand.Int()%10 == 0 {
-		ep.l.Infof("request to %s, got response from binance (error or throttled to 10%%): %s, err: %s", req.URL, common.TruncStr(respBody), common.ErrorToString(err))
+		err = fmt.Errorf("binance failed with status code: %d - %s", resp.StatusCode, string(respBody))
 	}
 	return respBody, err
 }
