@@ -390,7 +390,10 @@ func (bn *Binance) WithdrawStatus(id string, assetID uint64, amount float64, tim
 	}
 	for _, withdraw := range withdraws.Withdrawals {
 		if withdraw.ID == id {
-			if withdraw.Status == 3 || withdraw.Status == 5 || withdraw.Status == 6 {
+			if withdraw.Status == 3 || withdraw.Status == 5 { // 3 = rejected, 5 = failed
+				return common.ExchangeStatusFailed, withdraw.TxID, nil
+			}
+			if withdraw.Status == 6 { // 6 = success
 				return common.ExchangeStatusDone, withdraw.TxID, nil
 			}
 			return "", withdraw.TxID, nil
