@@ -73,7 +73,7 @@ func (f *Fetcher) GetData() common.Feed {
 	if err != nil {
 		f.sugar.Errorw("Get error while get coinbase feed", "error", err)
 		return common.Feed{
-			Error: err,
+			Error: err.Error(),
 		}
 	}
 	f.sugar.Debugw("Response from coinbase", "resp", resp)
