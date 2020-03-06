@@ -776,6 +776,9 @@ func (h *Huobi) WithdrawStatus(
 				}
 				return common.ExchangeStatusDone, withdraw.TxHash, nil
 			}
+			if withdraw.State == "reject" || withdraw.State == "wallet-reject" || withdraw.State == "confirm-error" {
+				return common.ExchangeStatusFailed, "", nil
+			}
 			return "", withdraw.TxHash, nil
 		}
 	}
