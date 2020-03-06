@@ -86,18 +86,20 @@ func (ep *Client) GetResponse(
 	if err != nil {
 		return respBody, err
 	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			ep.l.Warnw("Response body", "err", cErr)
-		}
-	}()
+	respBody, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read huobi response error %+v", err)
+	}
+	_ = resp.Body.Close()
 	switch resp.StatusCode {
 	case 429:
 		err = errors.New("breaking Huobi request rate limit")
 	case 500:
 		err = errors.New("500 from Huobi, its fault")
 	case 200:
-		respBody, err = ioutil.ReadAll(resp.Body)
+		return respBody, nil
+	default:
+		err = fmt.Errorf("unexpected response code %d, data - %s", resp.StatusCode, string(respBody))
 	}
 	return respBody, err
 }
