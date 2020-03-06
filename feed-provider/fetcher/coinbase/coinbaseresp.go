@@ -42,13 +42,13 @@ func (c *Resp) toFeed(amount float64) common.Feed {
 	ask, err := getAfp(c.Asks, amount, false)
 	if err != nil {
 		return common.Feed{
-			Error: err,
+			Error: err.Error(),
 		}
 	}
 	bid, err := getAfp(c.Bids, amount, true)
 	if err != nil {
 		return common.Feed{
-			Error: err,
+			Error: err.Error(),
 		}
 	}
 	return common.Feed{
