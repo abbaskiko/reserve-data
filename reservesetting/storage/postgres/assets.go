@@ -617,9 +617,9 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 		result.OldAddresses = append(result.OldAddresses, ethereum.HexToAddress(oldAddress))
 	}
 
-	setRate, ok := common.SetRateFromString(adb.SetRate)
-	if !ok {
-		return common.Asset{}, fmt.Errorf("invalid set rate value %s", adb.SetRate)
+	setRate, err := common.SetRateString(adb.SetRate)
+	if err != nil {
+		return common.Asset{}, fmt.Errorf("invalid set rate value %s - %w", adb.SetRate, err)
 	}
 
 	result.SetRate = setRate

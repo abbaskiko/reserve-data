@@ -40,6 +40,8 @@ var (
 	ErrTradingByAlreadyExists = errors.New("trading by already exists")
 	// ErrExchangeNotExists is returned when exchange is not exist.
 	ErrExchangeNotExists = errors.New("exchange does not exist")
+	// ErrFeedConfiguration is returned when exchange is not exist.
+	ErrFeedConfiguration = errors.New("feed configuration does not exist")
 	// ErrAssetNotExists is returned when foreign key is not exist.
 	ErrAssetNotExists = errors.New("asset does not exist")
 	// ErrTradingByAssetIDInvalid is returned when trading by asset id is invalid

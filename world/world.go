@@ -64,7 +64,7 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 }
 
 func (tw *TheWorld) getOneForgeGoldUSDInfo() common.OneForgeGoldData {
-	url := tw.endpoint.OneForgeGoldUSDDataEndpoint()
+	url := tw.endpoint.OneForgeXAUUSD()
 	result := common.OneForgeGoldData{}
 	err := tw.getPublic(url, &result)
 	if err != nil {
@@ -75,7 +75,7 @@ func (tw *TheWorld) getOneForgeGoldUSDInfo() common.OneForgeGoldData {
 }
 
 func (tw *TheWorld) getOneForgeGoldETHInfo() common.OneForgeGoldData {
-	url := tw.endpoint.OneForgeGoldETHDataEndpoint()
+	url := tw.endpoint.OneForgeXAUETH()
 	result := common.OneForgeGoldData{}
 	err := tw.getPublic(url, &result)
 	if err != nil {
@@ -99,7 +99,7 @@ func (tw *TheWorld) getDGXGoldInfo() common.DGXGoldData {
 }
 
 func (tw *TheWorld) getGDAXGoldInfo() common.GDAXGoldData {
-	url := tw.endpoint.GDAXDataEndpoint()
+	url := tw.endpoint.GDAXETHUSD()
 	result := common.GDAXGoldData{
 		Valid: true,
 	}
@@ -112,7 +112,7 @@ func (tw *TheWorld) getGDAXGoldInfo() common.GDAXGoldData {
 }
 
 func (tw *TheWorld) getKrakenGoldInfo() common.KrakenGoldData {
-	url := tw.endpoint.KrakenDataEndpoint()
+	url := tw.endpoint.KrakenETHUSD()
 	result := common.KrakenGoldData{
 		Valid: true,
 	}
@@ -126,7 +126,7 @@ func (tw *TheWorld) getKrakenGoldInfo() common.KrakenGoldData {
 
 func (tw *TheWorld) getGeminiGoldInfo() common.GeminiGoldData {
 
-	url := tw.endpoint.GeminiDataEndpoint()
+	url := tw.endpoint.GeminiETHUSD()
 	result := common.GeminiGoldData{
 		Valid: true,
 	}
