@@ -496,28 +496,30 @@ func (s *Storage) createAsset(
 }
 
 func (s Storage) createNewFeedWeight(tx *sqlx.Tx, assetID uint64, feedWeight *common.FeedWeight) error {
-	// create new feed weights
-	if feedWeight != nil {
-		for feed, weight := range *feedWeight {
-			var (
-				feedWeightID uint64
-			)
-			if err := tx.NamedStmt(s.stmts.newFeedWeight).Get(&feedWeightID,
-				struct {
-					AssetID uint64  `db:"asset_id"`
-					Feed    string  `db:"feed"`
-					Weight  float64 `db:"weight"`
-				}{
-					AssetID: assetID,
-					Feed:    feed,
-					Weight:  weight,
-				}); err != nil {
-				return fmt.Errorf("failed to create feed weight for asset %d, feed %s, weight %f, err=%v",
-					assetID, feed, weight, err)
-			}
-			s.l.Infow("feed weight created", "id", feedWeightID)
-		}
+	if feedWeight == nil {
+		return nil
 	}
+
+	for feed, weight := range *feedWeight {
+		var (
+			feedWeightID uint64
+		)
+		if err := tx.NamedStmt(s.stmts.newFeedWeight).Get(&feedWeightID,
+			struct {
+				AssetID uint64  `db:"asset_id"`
+				Feed    string  `db:"feed"`
+				Weight  float64 `db:"weight"`
+			}{
+				AssetID: assetID,
+				Feed:    feed,
+				Weight:  weight,
+			}); err != nil {
+			return fmt.Errorf("failed to create feed weight for asset %d, feed %s, weight %f, err=%v",
+				assetID, feed, weight, err)
+		}
+		s.l.Infow("feed weight created", "id", feedWeightID)
+	}
+
 	return nil
 }
 
@@ -873,11 +875,6 @@ func (s *Storage) GetAssetBySymbol(symbol string) (common.Asset, error) {
 	}
 }
 
-// UpdateAsset update asset with provide option
-func (s *Storage) UpdateAsset(id uint64, opts storage.UpdateAssetOpts) error {
-	return s.updateAsset(nil, id, opts)
-}
-
 type updateAssetParam struct {
 	ID           uint64  `db:"id"`
 	Symbol       *string `db:"symbol"`
@@ -1012,9 +1009,7 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 		return nil
 	}
 	var sts = s.stmts.updateAsset
-	if tx != nil {
-		sts = tx.NamedStmt(s.stmts.updateAsset)
-	}
+	sts = tx.NamedStmt(s.stmts.updateAsset)
 
 	s.l.Infow("updating asset", "id", id, "fields", strings.Join(updateMsgs, " "))
 	var updatedID uint64
@@ -1054,8 +1049,8 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 
 		return fmt.Errorf("failed to update asset err=%s", pErr)
 	}
-	// remove old feed weight
-	if uo.FeedWeight != nil {
+	// remove old feed weight in case explicit set new feed_weight or set_rate for asset change.
+	if uo.FeedWeight != nil || uo.SetRate != nil {
 		if _, err := tx.Stmt(s.stmts.deleteFeedWeight.Stmt).Exec(uo.AssetID); err != nil {
 			if err != sql.ErrNoRows {
 				return fmt.Errorf("failed to remove old feed weight: %s", err.Error())
