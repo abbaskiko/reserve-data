@@ -132,6 +132,10 @@ func (tas testActivityStorage) GetActivity(id common.ActivityID) (common.Activit
 	return common.ActivityRecord{}, nil
 }
 
+func (tas testActivityStorage) GetActivityByOrderID(id string) (common.ActivityRecord, error) {
+	return common.ActivityRecord{}, nil
+}
+
 func (tas testActivityStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
 	return nil, 0, nil
 }
