@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
@@ -891,6 +892,33 @@ func (bs *BoltStorage) GetActivity(id common.ActivityID) (common.ActivityRecord,
 	return result, err
 }
 
+// GetActivityByOrderID return activity by eid
+func (bs *BoltStorage) GetActivityByOrderID(id string) (common.ActivityRecord, error) {
+	result := common.ActivityRecord{}
+	var err error
+	err = bs.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(activityBucket))
+		c := b.Cursor()
+		fKey, _ := c.First()
+		lKey, _ := c.Last()
+		toTime := common.TimeToTimepoint(time.Now())
+		fromTime := toTime - maxGetRatesPeriod // one day from now
+		min := formatTimepointToActivityID(fromTime, fKey)
+		max := formatTimepointToActivityID(toTime, lKey)
+		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
+			record := common.ActivityRecord{}
+			err = json.Unmarshal(v, &record)
+			if record.ID.EID == id {
+				result = record
+				break
+			}
+		}
+		return nil
+	})
+	return result, err
+}
+
+// GetAllRecords return all activity records
 func (bs *BoltStorage) GetAllRecords(fromTime, toTime uint64) ([]common.ActivityRecord, error) {
 	result := []common.ActivityRecord{}
 	var err error
@@ -980,7 +1008,7 @@ func getFirstAndCountPendingSetrate(l *zap.SugaredLogger, pendings []common.Acti
 	return result, count, nil
 }
 
-//RemovePendingActivities remove it
+//RemoveStalePendingActivities remove it
 func (bs *BoltStorage) RemoveStalePendingActivities(tx *bolt.Tx, stales []common.ActivityRecord) error {
 	pb := tx.Bucket([]byte(pendingActivityBucket))
 	for _, stale := range stales {

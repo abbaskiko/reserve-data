@@ -459,12 +459,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		return
 	}
 	s.l.Infof("Cancel order id: %s from %s\n", id, exchange.ID())
-	activityID, err := common.StringToActivityID(id)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-	err = s.core.CancelOrder(activityID, exchange)
+	err = s.core.CancelOrder(id, exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return

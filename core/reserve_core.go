@@ -49,8 +49,10 @@ func timebasedID(id string) common.ActivityID {
 	return common.NewActivityID(uint64(time.Now().UnixNano()), id)
 }
 
-func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange) error {
-	activity, err := rc.activityStorage.GetActivity(id)
+// CancelOrder - cancel order with order id
+//
+func (rc ReserveCore) CancelOrder(orderID string, exchange common.Exchange) error {
+	activity, err := rc.activityStorage.GetActivityByOrderID(orderID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +67,6 @@ func (rc ReserveCore) CancelOrder(id common.ActivityID, exchange common.Exchange
 	if !ok {
 		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
 	}
-	orderID := id.EID
 	return exchange.CancelOrder(orderID, base, quote)
 }
 
