@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-data/http/httputil"
+	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
 func (s *Server) getFeedConfigurations(c *gin.Context) {
@@ -16,30 +17,24 @@ func (s *Server) getFeedConfigurations(c *gin.Context) {
 }
 
 type feedStatusEntry struct {
-	Enabled bool `json:"enabled" binding:"required"`
+	Enabled bool           `json:"enabled" binding:"required"`
+	Name    string         `json:"name" binding:"required"`
+	SetRate common.SetRate `json:"set_rate" binding:"required"`
 }
 
 func (s *Server) updateFeedStatus(c *gin.Context) {
-	var input struct {
-		Name string `uri:"name" binding:"required"`
-	}
-	if err := c.ShouldBindUri(&input); err != nil {
+	var fse feedStatusEntry
+	if err := c.ShouldBindJSON(&fse); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	feed, err := s.storage.GetFeedConfiguration(input.Name)
+	feed, err := s.storage.GetFeedConfiguration(fse.Name, fse.SetRate)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
 
-	var fse feedStatusEntry
-	if err = c.ShouldBindJSON(&fse); err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
-	}
-
-	if err := s.storage.UpdateFeedStatus(feed.Name, fse.Enabled); err != nil {
+	if err := s.storage.UpdateFeedStatus(feed.Name, fse.SetRate, fse.Enabled); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}

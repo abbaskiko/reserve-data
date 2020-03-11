@@ -18,6 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
+	"github.com/KyberNetwork/reserve-data/world"
 )
 
 func createSampleAsset(store *postgres.Storage) (uint64, error) {
@@ -329,8 +330,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								AskSpread: expectedAskSpread,
 							},
 							FeedWeight: &common.FeedWeight{
-								"GeminiBTC":   3.0,
-								"CoinbaseBTC": 1.2,
+								world.GeminiETHBTC.String():   3.0,
+								world.CoinbaseETHBTC.String(): 1.2,
 							},
 						},
 					},
@@ -365,7 +366,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							SetRate: &btcFeed,
 							AssetID: 6,
 							FeedWeight: &common.FeedWeight{
-								"GeminiBTC": 3.0,
+								world.GeminiETHBTC.String(): 3.0,
 							},
 						},
 					},
@@ -516,8 +517,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								AskSpread: expectedAskSpread,
 							},
 							FeedWeight: &common.FeedWeight{
-								"CoinBTC":   1.2,
-								"GeminiBTC": 3.0,
+								"some_random_feed":          1.2,
+								world.GeminiETHBTC.String(): 3.0,
 							},
 						},
 					},
@@ -1300,13 +1301,15 @@ func TestSetFeedConfiguration(t *testing.T) {
 		setFeedConfigurationEndpoint = "/v3/setting-change-feed-configuration"
 		setFeedConfigurationID       uint64
 
-		fname                 = "DGX"
+		fname                 = world.GeminiETHUSD.String()
+		setRate               = common.USDFeed
 		fenabled              = false
 		fbaseVolatilitySpread = 1.1
 		fnormalSpread         = 1.2
 
 		expectFC = common.FeedConfiguration{
 			Name:                 fname,
+			SetRate:              setRate,
 			Enabled:              fenabled,
 			BaseVolatilitySpread: fbaseVolatilitySpread,
 			NormalSpread:         fnormalSpread,
@@ -1324,6 +1327,7 @@ func TestSetFeedConfiguration(t *testing.T) {
 						Type: common.ChangeTypeSetFeedConfiguration,
 						Data: common.SetFeedConfigurationEntry{
 							Name:                 fname,
+							SetRate:              setRate,
 							Enabled:              &fenabled,
 							BaseVolatilitySpread: &fbaseVolatilitySpread,
 							NormalSpread:         &fnormalSpread,
@@ -1367,7 +1371,7 @@ func TestSetFeedConfiguration(t *testing.T) {
 				err = json.Unmarshal(resp.Body.Bytes(), &response)
 				require.NoError(t, err)
 				require.Equal(t, true, response.Success)
-				newFC, err := s.GetFeedConfiguration(fname)
+				newFC, err := s.GetFeedConfiguration(fname, setRate)
 				require.NoError(t, err)
 				require.Equal(t, expectFC, newFC)
 			},

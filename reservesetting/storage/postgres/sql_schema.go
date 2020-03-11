@@ -525,9 +525,11 @@ $$ LANGUAGE PLPGSQL;
 
 CREATE TABLE IF NOT EXISTS "feed_configurations"
 (
-	name                   TEXT    PRIMARY KEY,
+	name                   TEXT    NOT NULL,
+	set_rate               TEXT    NOT NULL,
     enabled                BOOLEAN NOT NULL,
     base_volatility_spread FLOAT   DEFAULT 0,
-    normal_spread          FLOAT   DEFAULT 0
+    normal_spread          FLOAT   DEFAULT 0,
+	PRIMARY KEY (name,set_rate)
 );
 `

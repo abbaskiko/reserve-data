@@ -12,6 +12,7 @@ import (
 
 type setFeedConfigurationParams struct {
 	Name                 string   `db:"name"`
+	SetRate              string   `db:"set_rate"`
 	Enabled              *bool    `db:"enabled"`
 	BaseVolatilitySpread *float64 `db:"base_volatility_spread"`
 	NormalSpread         *float64 `db:"normal_spread"`
@@ -19,9 +20,20 @@ type setFeedConfigurationParams struct {
 
 func (s *Storage) initFeedData() error {
 	// init all feed as enabled
-	query := `INSERT INTO "feed_configurations" (name, enabled, base_volatility_spread, normal_spread) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING;`
-	for _, feed := range world.AllFeeds() {
-		if _, err := s.db.Exec(query, feed, true, 0, 0); err != nil {
+	query := `INSERT INTO "feed_configurations" (name, set_rate, enabled, base_volatility_spread, normal_spread) 
+				VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING;`
+	for feed := range world.AllFeeds().USD {
+		if _, err := s.db.Exec(query, feed, common.USDFeed.String(), true, 0, 0); err != nil {
+			return err
+		}
+	}
+	for feed := range world.AllFeeds().BTC {
+		if _, err := s.db.Exec(query, feed, common.BTCFeed.String(), true, 0, 0); err != nil {
+			return err
+		}
+	}
+	for feed := range world.AllFeeds().Gold {
+		if _, err := s.db.Exec(query, feed, common.GoldFeed.String(), true, 0, 0); err != nil {
 			return err
 		}
 	}
@@ -29,10 +41,11 @@ func (s *Storage) initFeedData() error {
 }
 
 // UpdateFeedStatus update feed status
-func (s *Storage) UpdateFeedStatus(name string, enabled bool) error {
+func (s *Storage) UpdateFeedStatus(name string, setRate common.SetRate, enabled bool) error {
 	return s.setFeedConfiguration(nil, common.SetFeedConfigurationEntry{
 		Name:    name,
 		Enabled: common.BoolPointer(enabled),
+		SetRate: setRate,
 	})
 }
 
@@ -44,13 +57,14 @@ func (s *Storage) setFeedConfiguration(tx *sqlx.Tx, feedConfiguration common.Set
 	var feedName string
 	err := sts.Get(&feedName, setFeedConfigurationParams{
 		Name:                 feedConfiguration.Name,
+		SetRate:              feedConfiguration.SetRate.String(),
 		Enabled:              feedConfiguration.Enabled,
 		BaseVolatilitySpread: feedConfiguration.BaseVolatilitySpread,
 		NormalSpread:         feedConfiguration.NormalSpread,
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return common.ErrExchangeNotExists
+			return common.ErrFeedConfiguration
 		}
 		return fmt.Errorf("failed to set feed config, err=%s,", err)
 	}
@@ -73,7 +87,7 @@ func (s *Storage) GetFeedConfigurations() ([]common.FeedConfiguration, error) {
 }
 
 // GetFeedConfiguration return feed configuration by name
-func (s *Storage) GetFeedConfiguration(name string) (common.FeedConfiguration, error) {
+func (s *Storage) GetFeedConfiguration(name string, setRate common.SetRate) (common.FeedConfiguration, error) {
 	var result common.FeedConfiguration
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -81,7 +95,7 @@ func (s *Storage) GetFeedConfiguration(name string) (common.FeedConfiguration, e
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 
-	if err := tx.Stmtx(s.stmts.getFeedConfiguration).Get(&result, name); err != nil {
+	if err := tx.Stmtx(s.stmts.getFeedConfiguration).Get(&result, name, setRate.String()); err != nil {
 		if err == sql.ErrNoRows {
 			return result, common.ErrNotFound
 		}

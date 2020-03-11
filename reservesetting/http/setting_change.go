@@ -442,15 +442,6 @@ func getAssetExchange(assets []common.Asset, assetID, exchangeID uint64) (common
 	return common.AssetExchange{}, fmt.Errorf("AssetExchange not found, asset=%d exchange=%d", assetID, exchangeID)
 }
 
-func feedWeightExist(feed string, feeds []string) bool {
-	for _, v := range feeds {
-		if v == feed {
-			return true
-		}
-	}
-	return false
-}
-
 func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) error {
 	// if feedWeight is nil
 	if feedWeight == nil {
@@ -476,15 +467,15 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 
 	// check if FeedWeight is correctly supported
 	if *setrate == common.BTCFeed {
-		for k := range *feedWeight {
-			if !feedWeightExist(k, world.BTCFeeds) {
-				return fmt.Errorf("%s feed is not supported", k)
+		for k := range *feedWeight { // TODO: test on this
+			if _, ok := world.AllFeeds().BTC[k]; !ok {
+				return fmt.Errorf("%s feed is not supported by %s", k, common.BTCFeed.String())
 			}
 		}
-	} else {
+	} else if *setrate == common.USDFeed {
 		for k := range *feedWeight {
-			if !feedWeightExist(k, world.USDFeeds) {
-				return fmt.Errorf("%s feed is not supported", k)
+			if _, ok := world.AllFeeds().USD[k]; !ok {
+				return fmt.Errorf("%s feed is not supported by %s", k, common.USDFeed.String())
 			}
 		}
 	}
@@ -602,10 +593,14 @@ func (s *Server) checkUpdateExchangeParams(updateExchangeEntry common.UpdateExch
 }
 
 func (s *Server) checkSetFeedConfigurationParams(setFeedConfigurationEntry common.SetFeedConfigurationEntry) error {
-	for _, feed := range world.AllFeeds() {
-		if setFeedConfigurationEntry.Name == feed {
-			return nil
-		}
+	if _, ok := world.AllFeeds().BTC[setFeedConfigurationEntry.Name]; ok {
+		return nil
+	}
+	if _, ok := world.AllFeeds().USD[setFeedConfigurationEntry.Name]; ok {
+		return nil
+	}
+	if _, ok := world.AllFeeds().Gold[setFeedConfigurationEntry.Name]; ok {
+		return nil
 	}
 	return fmt.Errorf("feed does not exist, feed=%s", setFeedConfigurationEntry.Name)
 }
