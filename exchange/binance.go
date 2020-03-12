@@ -569,6 +569,7 @@ func (bn *Binance) DepositStatus(id common.ActivityID, txHash, currency string, 
 	return "", nil
 }
 
+// WithdrawStatus return withdraw status from binance
 func (bn *Binance) WithdrawStatus(id, currency string, amount float64, timepoint uint64) (string, string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
@@ -578,7 +579,10 @@ func (bn *Binance) WithdrawStatus(id, currency string, amount float64, timepoint
 	}
 	for _, withdraw := range withdraws.Withdrawals {
 		if withdraw.ID == id {
-			if withdraw.Status == 3 || withdraw.Status == 5 || withdraw.Status == 6 {
+			if withdraw.Status == 3 || withdraw.Status == 5 {
+				return common.ExchangeStatusFailed, "", nil
+			}
+			if withdraw.Status == 6 {
 				return common.ExchangeStatusDone, withdraw.TxID, nil
 			}
 			return "", withdraw.TxID, nil
