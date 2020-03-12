@@ -67,7 +67,7 @@ func InitAppState(authEnbl bool, ac ccfg.AppConfig) *AppState {
 
 	mainClient := ethclient.NewClient(client)
 	bkClients := map[string]*ethclient.Client{}
-
+	bkClients[ac.Node.Main] = mainClient
 	var callClients []*common.EthClient
 	for _, ep := range ac.Node.Backup {
 		client, err := common.NewEthClient(ep)
