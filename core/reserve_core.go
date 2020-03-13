@@ -26,6 +26,7 @@ const (
 	statusDone      = "done"
 )
 
+// ReserveCore is core package for program
 type ReserveCore struct {
 	blockchain      Blockchain
 	activityStorage ActivityStorage
@@ -33,6 +34,7 @@ type ReserveCore struct {
 	l               *zap.SugaredLogger
 }
 
+// NewReserveCore create new core instance
 func NewReserveCore(
 	blockchain Blockchain,
 	storage ActivityStorage,
@@ -49,9 +51,29 @@ func timebasedID(id string) common.ActivityID {
 	return common.NewActivityID(uint64(time.Now().UnixNano()), id)
 }
 
-// CancelOrder - cancel order with order id
-//
-func (rc ReserveCore) CancelOrder(orderID string, exchange common.Exchange) error {
+// CancelOrder - cancel order with activity id
+func (rc ReserveCore) CancelOrder(activityID common.ActivityID, exchange common.Exchange) error {
+	activity, err := rc.activityStorage.GetActivity(activityID)
+	if err != nil {
+		return err
+	}
+	if activity.Action != common.ActionTrade {
+		return errors.New("this is not an order activity so cannot cancel")
+	}
+	base, ok := activity.Params["base"].(string)
+	if !ok {
+		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params["base"])
+	}
+	quote, ok := activity.Params["quote"].(string)
+	if !ok {
+		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
+	}
+	orderID := activityID.EID
+	return exchange.CancelOrder(orderID, base, quote)
+}
+
+// CancelOrderByOrderID cancel order by order id
+func (rc ReserveCore) CancelOrderByOrderID(orderID string, exchange common.Exchange) error {
 	activity, err := rc.activityStorage.GetActivityByOrderID(orderID)
 	if err != nil {
 		return err
@@ -70,6 +92,7 @@ func (rc ReserveCore) CancelOrder(orderID string, exchange common.Exchange) erro
 	return exchange.CancelOrder(orderID, base, quote)
 }
 
+// Trade create an order to buy or sell of exchange
 func (rc ReserveCore) Trade(
 	exchange common.Exchange,
 	tradeType string,
@@ -147,6 +170,7 @@ func (rc ReserveCore) Trade(
 	return uid, done, remaining, finished, common.CombineActivityStorageErrs(err, sErr)
 }
 
+// Deposit token into exchanges
 func (rc ReserveCore) Deposit(
 	exchange common.Exchange,
 	token common.Token,
@@ -250,6 +274,7 @@ func (rc ReserveCore) Deposit(
 	return uidGenerator(tx.Hash().Hex()), common.CombineActivityStorageErrs(err, sErr)
 }
 
+// Withdraw withdraw token from exchanges to reserve
 func (rc ReserveCore) Withdraw(
 	exchange common.Exchange, token common.Token,
 	amount *big.Int, timepoint uint64) (common.ActivityID, error) {
@@ -371,6 +396,7 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
 
+// GetSetRateResult get set rate result
 func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	buys, sells, afpMids []*big.Int,
 	block *big.Int) (*types.Transaction, error) {
@@ -446,6 +472,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	return tx, err
 }
 
+// SetRates set rate for token in our reserve
 func (rc ReserveCore) SetRates(
 	tokens []common.Token,
 	buys []*big.Int,

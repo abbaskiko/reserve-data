@@ -365,7 +365,7 @@ func (ep *Client) GetInfo() (exchange.Binainfo, error) {
 	return result, err
 }
 
-// OpenOrders get open orders for one pair of token and quote
+// OpenOrders get open orders
 func (ep *Client) OpenOrders() (exchange.Binaorders, error) {
 	result := exchange.Binaorders{}
 	respBody, err := ep.GetResponse(

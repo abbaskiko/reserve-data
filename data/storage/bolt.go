@@ -35,7 +35,9 @@ const (
 	exchangeStatus                  string = "exchange_status"
 	exchangeNotifications           string = "exchange_notifications"
 	maxNumberVersion                int    = 1000
-	maxGetRatesPeriod               uint64 = 86400000      //1 days in milisec
+	aDay                            uint64 = 86400000 //1 days in milisec
+	maxGetRatesPeriod                      = aDay
+	maxSearchRange                         = aDay
 	authDataExpiredDuration         uint64 = 10 * 86400000 //10day in milisec
 	stableTokenParamsBucket         string = "stable-token-params"
 	pendingStatbleTokenParamsBucket string = "pending-stable-token-params"
@@ -902,7 +904,7 @@ func (bs *BoltStorage) GetActivityByOrderID(id string) (common.ActivityRecord, e
 		fKey, _ := c.First()
 		lKey, _ := c.Last()
 		toTime := common.TimeToTimepoint(time.Now())
-		fromTime := toTime - maxGetRatesPeriod // one day from now
+		fromTime := toTime - maxSearchRange // one day from now
 		min := formatTimepointToActivityID(fromTime, fKey)
 		max := formatTimepointToActivityID(toTime, lKey)
 		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
@@ -1894,6 +1896,7 @@ func (bs *BoltStorage) storeJSONByteArray(tx *bolt.Tx, bucketName string, key, v
 	return b.Put(key, value)
 }
 
+// ConfirmTokenUpdateInfo confirm update token info
 func (bs *BoltStorage) ConfirmTokenUpdateInfo(tarQty common.TokenTargetQtyV2, pwi common.PWIEquationRequestV2, quadEq common.RebalanceQuadraticRequest) error {
 	timeStampKey := boltutil.Uint64ToBytes(common.GetTimepoint())
 	err := bs.db.Update(func(tx *bolt.Tx) error {

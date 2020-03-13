@@ -429,7 +429,7 @@ func (s *Server) GetOpenOrders(c *gin.Context) {
 		return
 	}
 
-	exchangeParam := c.Query("exchange_id")
+	exchangeParam := c.Query("exchange")
 	exchange, err := common.GetExchange(exchangeParam)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -459,7 +459,12 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		return
 	}
 	s.l.Infof("Cancel order id: %s from %s\n", id, exchange.ID())
-	err = s.core.CancelOrder(id, exchange)
+	activityID, err := common.StringToActivityID(id)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	err = s.core.CancelOrder(activityID, exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -1175,6 +1180,8 @@ func (s *Server) register() {
 
 		s.r.GET("/open-orders", s.GetOpenOrders)
 		s.r.POST("/cancelorder/:exchangeid", s.CancelOrder)
+		s.r.POST("/cancel-order-by-order-id", s.CancelOrderByOrderID)
+
 		s.r.POST("/deposit/:exchangeid", s.Deposit)
 		s.r.POST("/withdraw/:exchangeid", s.Withdraw)
 		s.r.POST("/trade/:exchangeid", s.Trade)
