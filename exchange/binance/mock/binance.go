@@ -55,6 +55,11 @@ func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common
 	return common.ExchangeTradeHistory{}, nil
 }
 
+// OpenOrders return all open orders from exchange
+func (bte *BinanceTestExchange) OpenOrders() ([]common.Order, error) {
+	return nil, nil
+}
+
 // GetLiveExchangeInfos of TestExchangeForSetting return a valid result for
 func (bte *BinanceTestExchange) GetLiveExchangeInfos(tokenPairIDs []common.TokenPairID) (common.ExchangeInfo, error) {
 	ETHKNCpairID := common.NewTokenPairID("KNC", "ETH")

@@ -30,6 +30,8 @@ type HuobiInterface interface {
 		rate, amount float64,
 		timepoint uint64) (HuobiTrade, error)
 
+	OpenOrders(pair *common.TokenPair) (HuobiOpenOrders, error)
+
 	CancelOrder(symbol string, id uint64) (HuobiCancel, error)
 
 	DepositHistory(tokens []common.Token) (HuobiDeposits, error)

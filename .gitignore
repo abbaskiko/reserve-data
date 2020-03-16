@@ -33,6 +33,9 @@ cmd/faucet/faucet_wallet
 temp
 build.sh
 cmd/config.json
+cmd/secret.json
+cmd/local.sh
+cmd/config-v3.json
 cmd/dev.db
 cmd/internal_mainnet.db
 cmd/internal_mainnet_config.json
@@ -72,3 +75,5 @@ cmd/mainnet_rates.db
 cmd/mainnet_stats.db
 cmd/mainnet_users.db
 cmd/shared/
+apidocs/build
+*/cmd/cmd

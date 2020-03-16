@@ -113,6 +113,22 @@ type HuobiOrder struct {
 	Reason string `json:"err-msg"`
 }
 
+// HuobiOpenOrders is list of orders response from huobi
+type HuobiOpenOrders struct {
+	Status string `json:"status,omitempty"`
+	Data   []struct {
+		OrderID     uint64 `json:"id,omitempty"`
+		Symbol      string `json:"symbol,omitempty"`
+		AccountID   uint64 `json:"account-id"`
+		OrigQty     string `json:"amount"`
+		Price       string `json:"price"`
+		Type        string `json:"type"`
+		State       string `json:"state"`
+		ExecutedQty string `json:"field-amount"`
+	} `json:"data"`
+	Reason string `json:"err-msg,omitempty"`
+}
+
 // HuobiDepositAddress response from huobi
 type HuobiDepositAddress struct {
 	Code    int    `json:"code"`
