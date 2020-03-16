@@ -330,9 +330,11 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 
 	for _, activity := range pendings {
 		if activity.IsBlockchainPending() && (activity.Action == common.ActionSetRate || activity.Action == common.ActionDeposit || activity.Action == common.ActionWithdraw) {
-			var blockNum uint64
-			var status string
-			var err error
+			var (
+				blockNum uint64
+				status   string
+				err      error
+			)
 			txStr := activity.Result.Tx
 			tx := ethereum.HexToHash(txStr)
 			if tx.Big().IsInt64() && tx.Big().Int64() == 0 {
@@ -340,7 +342,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 			}
 			status, blockNum, err = f.blockchain.TxStatus(tx)
 			if err != nil {
-				return result, fmt.Errorf("TX_STATUS: ERROR Getting tx status failed: %s", err)
+				return result, fmt.Errorf("TX_STATUS: ERROR Getting tx %s status failed: %s", txStr, err)
 			}
 
 			switch status {

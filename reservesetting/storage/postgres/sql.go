@@ -716,18 +716,18 @@ func feedConfigurationStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sql
 	SET enabled                = COALESCE(:enabled, enabled),
 	    base_volatility_spread = COALESCE(:base_volatility_spread, base_volatility_spread),
 	    normal_spread          = COALESCE(:normal_spread, normal_spread)
-	WHERE name = :name RETURNING name;
+	WHERE name = :name AND set_rate = :set_rate RETURNING name;
 	`
 	setFeedConfigurationStmt, err := db.PrepareNamed(setFeedConfiguration)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	const getFeedConfigurations = `SELECT name, enabled, base_volatility_spread, normal_spread FROM feed_configurations;`
+	const getFeedConfigurations = `SELECT name, set_rate, enabled, base_volatility_spread, normal_spread FROM feed_configurations;`
 	getFeedConfigurationsStmt, err := db.Preparex(getFeedConfigurations)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	const getFeedConfiguration = `SELECT name, enabled, base_volatility_spread, normal_spread FROM feed_configurations WHERE name = $1;`
+	const getFeedConfiguration = `SELECT name, set_rate, enabled, base_volatility_spread, normal_spread FROM feed_configurations WHERE name = $1 AND set_rate = $2;`
 	getFeedConfigurationStmt, err := db.Preparex(getFeedConfiguration)
 	if err != nil {
 		return nil, nil, nil, err

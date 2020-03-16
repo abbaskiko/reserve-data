@@ -10,7 +10,8 @@ curl -X POST "https://gateway.local/v3/setting-change-feed-configuration" \
         {
             "type": "set_feed_configuration",
             "data" : {
-              "name": "DGX",
+              "name": "geminiETHUSD",
+              "set_rate": "usd_feed"
               "enabled": true,
               "base_volatility_spread": 1.1,
               "normal_spread": 1.2
@@ -59,7 +60,8 @@ curl -X GET "https://gateway.local/v3/setting-change-feed-configuration"
       "change_list":{
         "type": "set_feed_configuration",
         "data": {
-          "name": "DGX",
+          "name": "geminiETHUSD",
+          "set_rate": "usd_feed",
           "enabled": true,
           "base_volatility_spread": 1.1,
           "normal_spread": 1.2
@@ -117,16 +119,18 @@ curl -X DELETE "https://gateway.local/v3/setting-change-feed-configuration/6"
 ## Update feed status
 
 ```shell
-curl -X PUT "https://gateway.local/v3/update-feed-status/:name" \
+curl -X PUT "https://gateway.local/v3/update-feed-status" \
 -H 'Content-Type: application/json' \
--d '{"enabled": true}'
+-d '{"enabled": true, "name: "geminiETHUSD", "set_rate": "usd_feed"}'
 ```
 
 > sample response
 
 ```json
 {
-  "success": true
+  "name": "geminiETHUSD",
+  "success": true,
+  "set_rate": "usd_feed"
 }
 ```
 

@@ -23,7 +23,7 @@ func TestGetFeedConfigurations(t *testing.T) {
 	fcs, err := s.GetFeedConfigurations()
 	require.NoError(t, err)
 
-	require.Equal(t, len(world.AllFeeds()), len(fcs))
+	require.Equal(t, len(world.AllFeeds().Gold)+len(world.AllFeeds().USD)+len(world.AllFeeds().BTC), len(fcs))
 }
 
 func TestSetFeedConfigurations(t *testing.T) {
@@ -39,21 +39,23 @@ func TestSetFeedConfigurations(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotZero(t, len(fcs))
-	require.Equal(t, len(world.AllFeeds()), len(fcs))
+	require.Equal(t, len(world.AllFeeds().Gold)+len(world.AllFeeds().USD)+len(world.AllFeeds().BTC), len(fcs))
 
 	var (
-		fname                 = fcs[0].Name
+		fname                 = world.GeminiETHUSD.String()
 		fenabled              = false
 		fbaseVolatilitySpread = 1.1
 		fnormalSpread         = 1.2
 		testFeedData          = common.SetFeedConfigurationEntry{
 			Name:                 fname,
+			SetRate:              common.USDFeed,
 			Enabled:              &fenabled,
 			BaseVolatilitySpread: &fbaseVolatilitySpread,
 			NormalSpread:         &fnormalSpread,
 		}
 		expectFC = common.FeedConfiguration{
 			Name:                 fname,
+			SetRate:              common.USDFeed,
 			Enabled:              fenabled,
 			BaseVolatilitySpread: fbaseVolatilitySpread,
 			NormalSpread:         fnormalSpread,
@@ -62,8 +64,7 @@ func TestSetFeedConfigurations(t *testing.T) {
 
 	err = s.setFeedConfiguration(nil, testFeedData)
 	require.NoError(t, err)
-
-	newFC, err := s.GetFeedConfiguration(fname)
+	newFC, err := s.GetFeedConfiguration(fname, common.USDFeed)
 	require.NoError(t, err)
 
 	require.Equal(t, expectFC, newFC)
@@ -77,20 +78,16 @@ func TestUpdateFeedStatus(t *testing.T) {
 
 	s, err := NewStorage(db)
 	require.NoError(t, err)
-
-	fcs, err := s.GetFeedConfigurations()
+	fname := world.GeminiETHUSD.String()
+	fcs, err := s.GetFeedConfiguration(fname, common.USDFeed)
 	require.NoError(t, err)
-
-	require.NotZero(t, len(fcs))
-	require.Equal(t, len(world.AllFeeds()), len(fcs))
 	var (
-		fname     = fcs[0].Name
-		newStatus = !fcs[0].Enabled
+		newStatus = !fcs.Enabled
 	)
-	err = s.UpdateFeedStatus(fname, newStatus)
+	err = s.UpdateFeedStatus(fname, common.USDFeed, newStatus)
 	require.NoError(t, err)
 
-	newFeed, err := s.GetFeedConfiguration(fname)
+	newFeed, err := s.GetFeedConfiguration(fname, common.USDFeed)
 	require.NoError(t, err)
 
 	require.Equal(t, newStatus, newFeed.Enabled)

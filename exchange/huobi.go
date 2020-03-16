@@ -618,15 +618,19 @@ func (h *Huobi) WithdrawStatus(
 	}
 	h.l.Infof("Huobi Withdrawal id: %d", withdrawID)
 	for _, withdraw := range withdraws.Data {
-		if withdraw.ID == withdrawID {
-			if withdraw.State == "confirmed" {
-				if withdraw.TxHash[0:2] != "0x" {
-					withdraw.TxHash = "0x" + withdraw.TxHash
-				}
-				return common.ExchangeStatusDone, withdraw.TxHash, nil
-			}
-			return "", withdraw.TxHash, nil
+		if withdraw.ID != withdrawID {
+			continue
 		}
+		switch withdraw.State {
+		case "confirmed":
+			if withdraw.TxHash[0:2] != "0x" {
+				withdraw.TxHash = "0x" + withdraw.TxHash
+			}
+			return common.ExchangeStatusDone, withdraw.TxHash, nil
+		case "reject", "wallet-reject", "confirm-error":
+			return common.ExchangeStatusFailed, "", nil
+		}
+		return "", withdraw.TxHash, nil
 	}
 	return "", "", errors.New("huobi Withdrawal doesn't exist. This shouldn't happen unless tx returned from withdrawal from huobi and activity ID are not consistently designed")
 }

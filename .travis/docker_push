@@ -14,12 +14,15 @@ echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 docker tag kybernetwork/reserve-data:"$TRAVIS_COMMIT" kybernetwork/reserve-data:"$TRAVIS_BRANCH"
 docker tag kybernetwork/reserve-data-gateway:"$TRAVIS_COMMIT" kybernetwork/reserve-data-gateway:"$TRAVIS_BRANCH"
 docker tag kybernetwork/reserve-data-setting:"$TRAVIS_COMMIT" kybernetwork/reserve-data-setting:"$TRAVIS_BRANCH"
+docker tag kybernetwork/reserve-data-feed-provider:"$TRAVIS_COMMIT" kybernetwork/reserve-data-feed-provider:"$TRAVIS_BRANCH"
 if [[ -n "$TRAVIS_TAG" ]]; then
     docker tag kybernetwork/reserve-data:"$TRAVIS_COMMIT" kybernetwork/reserve-data:"$TRAVIS_TAG"
     docker tag kybernetwork/reserve-data-gateway:"$TRAVIS_COMMIT" kybernetwork/reserve-data-gateway:"$TRAVIS_TAG"
     docker tag kybernetwork/reserve-data-setting:"$TRAVIS_COMMIT" kybernetwork/reserve-data-setting:"$TRAVIS_TAG"
+    docker tag kybernetwork/reserve-data-feed-provider:"$TRAVIS_COMMIT" kybernetwork/reserve-data-feed-provider:"$TRAVIS_TAG"
 fi
 
 docker push kybernetwork/reserve-data
 docker push kybernetwork/reserve-data-gateway
 docker push kybernetwork/reserve-data-setting
+docker push kybernetwork/reserve-data-feed-provider

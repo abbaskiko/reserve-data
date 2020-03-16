@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -17,7 +16,7 @@ type Exchange struct {
 }
 
 // SetRate ..
-//go:generate stringer -type=SetRate -linecomment
+//go:generate enumer -type=SetRate -linecomment -json=true -sql=true
 type SetRate int
 
 const (
@@ -32,38 +31,6 @@ const (
 	// USDFeed is used when asset rate is set from fetching usd prices.
 	USDFeed // usd_feed
 )
-
-var validSetRateTypes = map[string]SetRate{
-	SetRateNotSet.String(): SetRateNotSet,
-	ExchangeFeed.String():  ExchangeFeed,
-	GoldFeed.String():      GoldFeed,
-	BTCFeed.String():       BTCFeed,
-	USDFeed.String():       USDFeed,
-}
-
-// SetRateFromString returns the SetRate value from its string presentation, if exists.
-func SetRateFromString(s string) (SetRate, bool) {
-	sr, ok := validSetRateTypes[s]
-	return sr, ok
-}
-
-func (i SetRate) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, i.String())), nil
-}
-func isString(input []byte) bool {
-	return len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"'
-}
-func (i *SetRate) UnmarshalJSON(input []byte) error {
-	if !isString(input) {
-		return fmt.Errorf("not is string")
-	}
-	r, ok := SetRateFromString(string(input[1 : len(input)-1]))
-	if !ok {
-		return fmt.Errorf("%s is not a valid SetRate", input)
-	}
-	*i = r
-	return nil
-}
 
 // TradingPair is a trading in an exchange.
 type TradingPair struct {
@@ -277,6 +244,7 @@ type ChangeAssetAddressEntry struct {
 type SetFeedConfigurationEntry struct {
 	settingChangeMarker
 	Name                 string   `json:"name" binding:"required"`
+	SetRate              SetRate  `json:"set_rate"`
 	Enabled              *bool    `json:"enabled"`
 	BaseVolatilitySpread *float64 `json:"base_volatility_spread"`
 	NormalSpread         *float64 `json:"normal_spread"`
@@ -374,6 +342,7 @@ type UpdateStableTokenParamsEntry struct {
 // FeedConfiguration feed configuration
 type FeedConfiguration struct {
 	Name                 string  `json:"name" db:"name"`
+	SetRate              SetRate `json:"set_rate" db:"set_rate"`
 	Enabled              bool    `json:"enabled" db:"enabled"`
 	BaseVolatilitySpread float64 `json:"base_volatility_spread" db:"base_volatility_spread"`
 	NormalSpread         float64 `json:"normal_spread" db:"normal_spread"`
