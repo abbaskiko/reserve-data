@@ -81,6 +81,8 @@ type Core interface {
 
 	CancelOrder(id common.ActivityID, exchange common.Exchange) error
 
+	CancelOrderByOrderID(orderIDs string, exchange common.Exchange) error
+
 	// blockchain related action
 	SetRates(tokens []common.Token, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string) (common.ActivityID, error)
 }

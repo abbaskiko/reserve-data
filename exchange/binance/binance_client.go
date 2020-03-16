@@ -356,16 +356,13 @@ func (ep *Client) GetInfo() (exchange.Binainfo, error) {
 	return result, err
 }
 
-// OpenOrdersForOnePair get open orders for one pair of token and quote
-func (ep *Client) OpenOrdersForOnePair(pair common.TokenPair) (exchange.Binaorders, error) {
-
+// OpenOrders get open orders
+func (ep *Client) OpenOrders() (exchange.Binaorders, error) {
 	result := exchange.Binaorders{}
 	respBody, err := ep.GetResponse(
 		"GET",
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
-		map[string]string{
-			"symbol": pair.Base.ID + pair.Quote.ID,
-		},
+		map[string]string{},
 		true,
 		common.GetTimepoint(),
 	)

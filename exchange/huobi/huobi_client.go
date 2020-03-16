@@ -229,6 +229,37 @@ func (ep *Client) DepositHistory(tokens []common.Token) (exchange.HuobiDeposits,
 	return result, err
 }
 
+// OpenOrders return list open orders for one pair of token
+func (ep *Client) OpenOrders(pair *common.TokenPair) (exchange.HuobiOpenOrders, error) {
+	result := exchange.HuobiOpenOrders{}
+	accounts, err := ep.GetAccounts()
+	if err != nil {
+		return result, err
+	}
+	if len(accounts.Data) == 0 {
+		return result, errors.New("cannot get Huobi account")
+	}
+	account := strconv.FormatUint(accounts.Data[0].ID, 10)
+	params := make(map[string]string)
+	params["account"] = account
+	if pair != nil {
+		params["symbol"] = strings.ToLower(pair.Base.ID + pair.Quote.ID)
+	}
+	respBody, err := ep.GetResponse(
+		"GET",
+		ep.interf.AuthenticatedEndpoint()+"/v1/order/openOrders",
+		params,
+		true,
+	)
+	if err != nil {
+		return result, err
+	}
+	if err = json.Unmarshal(respBody, &result); err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
 // CancelOrder cancel open order on huobi
 func (ep *Client) CancelOrder(symbol string, id uint64) (exchange.HuobiCancel, error) {
 	result := exchange.HuobiCancel{}

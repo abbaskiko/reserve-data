@@ -60,6 +60,10 @@ func (te testExchange) GetLiveExchangeInfos(pairIDs []common.TokenPairID) (commo
 	return common.ExchangeInfo{}, nil
 }
 
+func (te testExchange) OpenOrders() ([]common.Order, error) {
+	return nil, nil
+}
+
 type testBlockchain struct {
 }
 
@@ -125,6 +129,10 @@ func (tas testActivityStorage) Record(
 }
 
 func (tas testActivityStorage) GetActivity(id common.ActivityID) (common.ActivityRecord, error) {
+	return common.ActivityRecord{}, nil
+}
+
+func (tas testActivityStorage) GetActivityByOrderID(id string) (common.ActivityRecord, error) {
 	return common.ActivityRecord{}, nil
 }
 

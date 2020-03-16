@@ -49,3 +49,7 @@ func (te TestExchange) GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHi
 func (te TestExchange) GetLiveExchangeInfos(tokenPairIDs []TokenPairID) (ExchangeInfo, error) {
 	return ExchangeInfo{}, nil
 }
+
+func (te TestExchange) OpenOrders() ([]Order, error) {
+	return nil, nil
+}
