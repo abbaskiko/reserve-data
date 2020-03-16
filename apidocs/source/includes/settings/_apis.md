@@ -402,7 +402,8 @@ curl -X GET "https://gateway.local/v3/feed-configurations"
 {
     "data": [
         {
-            "name": "DGX",
+            "name": "geminiETHUSD",
+            "set_rate": "usd_feed",
             "enabled": true,
             "base_volatility_spread": 0,
             "normal_spread": 0
