@@ -467,7 +467,7 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 
 	// check if FeedWeight is correctly supported
 	if *setrate == common.BTCFeed {
-		for k := range *feedWeight { // TODO: test on this
+		for k := range *feedWeight {
 			if _, ok := feed.AllFeeds().BTC[k]; !ok {
 				return fmt.Errorf("%s feed is not supported by %s", k, common.BTCFeed.String())
 			}
