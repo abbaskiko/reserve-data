@@ -395,6 +395,19 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	}
 	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
+func requireSameLength(tokens []common.Token, buys, sells, afpMids []*big.Int) error {
+	if len(tokens) != len(buys) {
+		return fmt.Errorf("number of buys (%d) is not equal to number of tokens (%d)", len(buys), len(tokens))
+	}
+	if len(tokens) != len(sells) {
+		return fmt.Errorf("number of sell (%d) is not equal to number of tokens (%d)", len(sells), len(tokens))
+
+	}
+	if len(tokens) != len(afpMids) {
+		return fmt.Errorf("number of afpMids (%d) is not equal to number of tokens (%d)", len(afpMids), len(tokens))
+	}
+	return nil
+}
 
 // GetSetRateResult get set rate result
 func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
@@ -404,15 +417,9 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 		tx  *types.Transaction
 		err error
 	)
-	if len(tokens) != len(buys) {
-		return tx, fmt.Errorf("number of buys (%d) is not equal to number of tokens (%d)", len(buys), len(tokens))
-	}
-	if len(tokens) != len(sells) {
-		return tx, fmt.Errorf("number of sell (%d) is not equal to number of tokens (%d)", len(sells), len(tokens))
-
-	}
-	if len(tokens) != len(afpMids) {
-		return tx, fmt.Errorf("number of afpMids (%d) is not equal to number of tokens (%d)", len(afpMids), len(tokens))
+	err = requireSameLength(tokens, buys, sells, afpMids)
+	if err != nil {
+		return tx, err
 	}
 	if err = rc.sanityCheck(buys, afpMids, sells); err != nil {
 		return tx, err
@@ -440,35 +447,33 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	if oldNonce != nil {
 		newPrice := calculateNewGasPrice(initPrice, count)
 		tx, err = rc.blockchain.SetRates(
-			tokenAddrs, buys, sells, block,
-			oldNonce,
-			newPrice,
+			tokenAddrs, buys, sells, block, oldNonce, newPrice,
 		)
 		if err != nil {
-			rc.l.Warnw("Trying to replace old tx failed", "err", err)
-		} else {
-			rc.l.Infof("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
-				newPrice.String(),
-				tx.Hash().Hex(),
-				initPrice.String(),
-				count,
-			)
+			rc.l.Errorw("Trying to replace old tx failed", "err", err)
+			return tx, err
 		}
-	} else {
-		recommendedPrice := rc.blockchain.StandardGasPrice()
-		var initPrice *big.Int
-		if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
-			initPrice = common.GweiToWei(10)
-		} else {
-			initPrice = common.GweiToWei(recommendedPrice)
-		}
-		rc.l.Infof("initial set rate tx, init price: %s", initPrice.String())
-		tx, err = rc.blockchain.SetRates(
-			tokenAddrs, buys, sells, block,
-			big.NewInt(int64(minedNonce)),
-			initPrice,
+		rc.l.Infof("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
+			newPrice.String(),
+			tx.Hash().Hex(),
+			initPrice.String(),
+			count,
 		)
+		return tx, err
 	}
+
+	recommendedPrice := rc.blockchain.StandardGasPrice()
+	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
+		initPrice = common.GweiToWei(10)
+	} else {
+		initPrice = common.GweiToWei(recommendedPrice)
+	}
+	rc.l.Infof("initial set rate tx, init price: %s", initPrice.String())
+	tx, err = rc.blockchain.SetRates(
+		tokenAddrs, buys, sells, block,
+		big.NewInt(int64(minedNonce)),
+		initPrice,
+	)
 	return tx, err
 }
 
