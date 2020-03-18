@@ -264,12 +264,10 @@ func (b *Blockchain) SetRates(
 }
 
 // Send request to blockchain
-func (b *Blockchain) Send(
-	token common.Token,
-	amount *big.Int,
-	dest ethereum.Address) (*types.Transaction, error) {
+func (b *Blockchain) Send(token common.Token, amount *big.Int, dest ethereum.Address, nonce *big.Int,
+	gasPrice *big.Int) (*types.Transaction, error) {
 
-	opts, err := b.GetTxOpts(blockchain.DepositOP, nil, nil, nil)
+	opts, err := b.GetTxOpts(blockchain.DepositOP, nonce, gasPrice, nil)
 	if err != nil {
 		return nil, err
 	}

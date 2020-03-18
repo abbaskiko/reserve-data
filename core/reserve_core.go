@@ -197,18 +197,10 @@ func (rc ReserveCore) Trade(
 }
 
 // Deposit token into exchanges
-func (rc ReserveCore) Deposit(
-	exchange common.Exchange,
-	token common.Token,
-	amount *big.Int,
-	timepoint uint64) (common.ActivityID, error) {
-	address, supported := exchange.Address(token)
-	var (
-		err         error
-		ok          bool
-		tx          *types.Transaction
-		amountFloat = common.BigToFloat(amount, token.Decimals)
-	)
+func (rc ReserveCore) Deposit(exchange common.Exchange, token common.Token, amount *big.Int, timepoint uint64) (
+	common.ActivityID, error) {
+
+	amountFloat := common.BigToFloat(amount, token.Decimals)
 
 	uidGenerator := func(txhex string) common.ActivityID {
 		return timebasedID(txhex + "|" + token.ID + "|" + strconv.FormatFloat(amountFloat, 'f', -1, 64))
@@ -249,43 +241,11 @@ func (rc ReserveCore) Deposit(
 			timepoint,
 		)
 	}
-
-	if !supported {
-		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
+	tx, err := rc.doDeposit(exchange, token, amount)
+	if err != nil {
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-
-	if ok, err = rc.activityStorage.HasPendingDeposit(token, exchange); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-	if ok {
-		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-
-	if err = sanityCheckAmount(exchange, token, amount); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-	if tx, err = rc.blockchain.Send(token, amount, address); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
+			rc.l.Errorw("failed to save activity record", "err", sErr)
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
@@ -298,6 +258,70 @@ func (rc ReserveCore) Deposit(
 		nil,
 	)
 	return uidGenerator(tx.Hash().Hex()), common.CombineActivityStorageErrs(err, sErr)
+}
+func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, amount *big.Int) (tx *types.Transaction, err error) {
+
+	address, supported := exchange.Address(token)
+	if !supported {
+		return nil, fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
+	}
+	found, err := rc.activityStorage.HasPendingDeposit(token, exchange)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return nil, fmt.Errorf("there is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
+	}
+
+	if err = sanityCheckAmount(exchange, token, amount); err != nil {
+		return nil, err
+	}
+
+	// if there is a pending deposit tx, we replace it
+	var (
+		oldNonce   *big.Int
+		initPrice  *big.Int
+		minedNonce uint64
+		count      uint64
+	)
+	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.DepositOP)
+	if err != nil {
+		return tx, fmt.Errorf("couldn't get mined resultNonce of deposit operator (%+v)", err)
+	}
+	oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionDeposit)
+	rc.l.Infof("old resultNonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
+	if err != nil {
+		return tx, fmt.Errorf("couldn't check pending deposit tx pool (%+v). Please try later", err)
+	}
+	if oldNonce != nil {
+		newPrice := calculateNewGasPrice(initPrice, count)
+		tx, err = rc.blockchain.Send(token, amount, address, oldNonce, newPrice)
+		if err != nil {
+			rc.l.Errorw("deposit: trying to replace old tx failed", "err", err)
+			return tx, err
+		}
+		rc.l.Infof("deposit: trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
+			newPrice.String(),
+			tx.Hash().Hex(),
+			initPrice.String(),
+			count,
+		)
+		return tx, err
+	}
+
+	recommendedPrice := rc.blockchain.StandardGasPrice()
+	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
+		initPrice = common.GweiToWei(10)
+	} else {
+		initPrice = common.GweiToWei(recommendedPrice)
+	}
+	rc.l.Infof("initial deposit tx, init price: %s", initPrice.String())
+
+	if tx, err = rc.blockchain.Send(token, amount, address, big.NewInt(int64(minedNonce)), initPrice); err != nil {
+		return nil, err
+	}
+
+	return tx, nil
 }
 
 // Withdraw withdraw token from exchanges to reserve

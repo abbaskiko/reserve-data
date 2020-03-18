@@ -73,10 +73,8 @@ func (tbc testBlockchain) ListedTokens() []ethereum.Address {
 	return nil
 }
 
-func (tbc testBlockchain) Send(
-	token common.Token,
-	amount *big.Int,
-	address ethereum.Address) (*types.Transaction, error) {
+func (tbc testBlockchain) Send(token common.Token, amount *big.Int, address ethereum.Address,
+	nonce *big.Int, gasPrice *big.Int) (*types.Transaction, error) {
 	tx := types.NewTransaction(
 		0,
 		ethereum.Address{},
