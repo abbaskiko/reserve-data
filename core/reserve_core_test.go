@@ -108,7 +108,7 @@ func (tbc testBlockchain) StandardGasPrice() float64 {
 	return 0
 }
 
-func (tbc testBlockchain) SetRateMinedNonce() (uint64, error) {
+func (tbc testBlockchain) GetMinedNonceWithOP(string) (uint64, error) {
 	return 0, nil
 }
 
@@ -136,7 +136,7 @@ func (tas testActivityStorage) GetActivityByOrderID(id string) (common.ActivityR
 	return common.ActivityRecord{}, nil
 }
 
-func (tas testActivityStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+func (tas testActivityStorage) PendingActivityForAction(minedNonce uint64, activityType string) (*common.ActivityRecord, uint64, error) {
 	return nil, 0, nil
 }
 

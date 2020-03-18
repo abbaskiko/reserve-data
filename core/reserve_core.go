@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
 )
 
@@ -367,8 +368,8 @@ func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
 }
 
 // return: old nonce, init price, step, error
-func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int, uint64, error) {
-	act, count, err := rc.activityStorage.PendingSetRate(minedNonce)
+func (rc ReserveCore) pendingActionInfo(minedNonce uint64, activityType string) (*big.Int, *big.Int, uint64, error) {
+	act, count, err := rc.activityStorage.PendingActivityForAction(minedNonce, activityType)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -435,11 +436,11 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 		minedNonce uint64
 		count      uint64
 	)
-	minedNonce, err = rc.blockchain.SetRateMinedNonce()
+	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
 	}
-	oldNonce, initPrice, count, err = rc.pendingSetrateInfo(minedNonce)
+	oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionSetRate)
 	rc.l.Infof("old nonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%+v). Please try later", err)

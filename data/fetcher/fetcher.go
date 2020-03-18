@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
 )
 
@@ -328,8 +329,8 @@ func (f *Fetcher) FetchBalanceFromBlockchain() (map[string]common.BalanceEntry, 
 }
 
 func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
-	// SetRateMinedNonce might be slow, use closure to not invoke it every time
-	minedNonce, err := f.blockchain.SetRateMinedNonce()
+	// GetMinedNonceWithOP might be slow, use closure to not invoke it every time
+	minedNonce, err := f.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
 	if err != nil {
 		f.l.Warnw("Getting mined nonce failed", "err", err)
 	}
@@ -337,7 +338,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 	return func(act common.ActivityRecord) bool {
 		// this check only works with set rate transaction as:
 		//   - account nonce is record in result field of activity
-		//   - the SetRateMinedNonce method is available
+		//   - the GetMinedNonceWithOP method is available
 		if act.Action != common.ActionSetRate {
 			return false
 		}

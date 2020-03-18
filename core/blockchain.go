@@ -4,6 +4,8 @@ import (
 	"math/big"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
+
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -23,5 +25,5 @@ type Blockchain interface {
 		block *big.Int,
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
-	SetRateMinedNonce() (uint64, error)
+	blockchain.MinedNonePicker
 }
