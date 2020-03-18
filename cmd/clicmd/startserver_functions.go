@@ -178,6 +178,7 @@ func CreateBlockchain(config *configuration.AppState) (bc *blockchain.Blockchain
 	bc, err = blockchain.NewBlockchain(
 		config.Blockchain,
 		config.Setting,
+		config.AppConfig.GasConfig,
 	)
 
 	if err != nil {

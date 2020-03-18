@@ -3,6 +3,7 @@ package blockchain
 import (
 	"fmt"
 	"math/big"
+	"net/http"
 	"path/filepath"
 	"sync"
 	"time"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/common/config"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
 )
@@ -59,8 +62,10 @@ type Blockchain struct {
 	localSetRateNonce, localDepositNone          uint64
 	setRateNonceTimestamp, depositNonceTimestamp uint64
 
-	setting Setting
-	l       *zap.SugaredLogger
+	setting   Setting
+	l         *zap.SugaredLogger
+	gasConfig config.GasConfig
+	gsClient  *gasstation.Client
 }
 
 //ListedTokens return listed tokens
@@ -70,8 +75,13 @@ func (b *Blockchain) ListedTokens() []ethereum.Address {
 
 // StandardGasPrice return standard gas price
 func (b *Blockchain) StandardGasPrice() float64 {
-	// we use node's recommended gas price because gas station is not returning
-	// correct gas price now
+	if b.gasConfig.PreferUseGasStation {
+		gss, err := b.gsClient.ETHGas()
+		if err == nil { // TODO: we can make decision to use gss.Fast to other if some one ask.
+			return gss.Fast / 10.0 // gas return by gas station is *10, so we need to divide it here
+		}
+		b.l.Errorw("receive gas price from gasstation failed, failed back to node suggest", "err", err)
+	}
 	price, err := b.RecommendedGasPriceFromNode()
 	if err != nil {
 		return 0
@@ -437,7 +447,7 @@ func (b *Blockchain) GetMinedNonceWithOP(op string) (uint64, error) {
 }
 
 // NewBlockchain return new blockchain object
-func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchain, error) {
+func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting, gasConfig config.GasConfig) (*Blockchain, error) {
 	wrapperAddr, err := setting.GetAddress(settings.Wrapper)
 	if err != nil {
 		return nil, err
@@ -474,6 +484,8 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchai
 		reserve:        reserve,
 		setting:        setting,
 		l:              l,
+		gasConfig:      gasConfig,
+		gsClient:       gasstation.New(&http.Client{}),
 	}, nil
 }
 
