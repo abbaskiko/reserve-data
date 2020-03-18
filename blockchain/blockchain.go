@@ -404,11 +404,12 @@ func (b *Blockchain) GetMinedNonceWithOP(op string) (uint64, error) {
 	const localNonceExpiration = time.Minute * 2
 	var localNonce, localTimestamp *uint64
 	// base on op value, we bind selected nonce and timestamp field to local var for easier use it with below main logic
-	if op == blockchain.PricingOP {
+	switch op {
+	case blockchain.PricingOP:
 		localNonce, localTimestamp = &b.localSetRateNonce, &b.setRateNonceTimestamp
-	} else if op == blockchain.DepositOP { // op == depositOP
+	case blockchain.DepositOP:
 		localNonce, localTimestamp = &b.localDepositNone, &b.depositNonceTimestamp
-	} else {
+	default:
 		return 0, fmt.Errorf("get minedNonce for unexpected op [%s]", op)
 	}
 	nonceFromNode, err := b.GetMinedNonce(op)
