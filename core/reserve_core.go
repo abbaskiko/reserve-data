@@ -18,10 +18,11 @@ import (
 )
 
 const (
-	statusFailed            = "failed"
-	statusSubmitted         = "submitted"
-	statusDone              = "done"
-	maxGasPrice     float64 = 100.1
+	statusFailed    = "failed"
+	statusSubmitted = "submitted"
+	statusDone      = "done"
+	// maxGasPrice this value only use when it can't receive value from network contract
+	maxGasPrice float64 = 100.1
 )
 
 // ReserveCore is core package for program

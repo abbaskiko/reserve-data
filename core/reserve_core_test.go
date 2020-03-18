@@ -195,14 +195,14 @@ func TestNotAllowDeposit(t *testing.T) {
 
 func TestCalculateNewGasPrice(t *testing.T) {
 	initPrice := common.GweiToWei(1)
-	newPrice := calculateNewGasPrice(initPrice, 0, 0)
+	newPrice := calculateNewGasPrice(initPrice, 0, 100.0)
 	if newPrice.Cmp(newPrice) != 0 {
 		t.Errorf("new price is not equal to initial price with count == 0")
 	}
 
 	prevPrice := initPrice
 	for count := uint64(1); count < 10; count++ {
-		newPrice = calculateNewGasPrice(initPrice, count, 0)
+		newPrice = calculateNewGasPrice(initPrice, count, 100.0)
 		if newPrice.Cmp(prevPrice) != 1 {
 			t.Errorf("new price %s is not higher than previous price %s",
 				newPrice.String(),
