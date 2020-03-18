@@ -447,7 +447,7 @@ func (b *Blockchain) GetMinedNonceWithOP(op string) (uint64, error) {
 }
 
 // NewBlockchain return new blockchain object
-func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting, gasConfig config.GasConfig) (*Blockchain, error) {
+func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchain, error) {
 	wrapperAddr, err := setting.GetAddress(settings.Wrapper)
 	if err != nil {
 		return nil, err
@@ -484,7 +484,6 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting, gasConfig c
 		reserve:        reserve,
 		setting:        setting,
 		l:              l,
-		gasConfig:      gasConfig,
 		gsClient:       gasstation.New(&http.Client{}),
 	}, nil
 }

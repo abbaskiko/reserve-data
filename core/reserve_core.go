@@ -18,13 +18,10 @@ import (
 )
 
 const (
-	// highBoundGasPrice is the price we will try to use to get higher priority
-	// than trade tx to avoid price front running from users.
-	highBoundGasPrice float64 = 100.1
-
-	statusFailed    = "failed"
-	statusSubmitted = "submitted"
-	statusDone      = "done"
+	statusFailed            = "failed"
+	statusSubmitted         = "submitted"
+	statusDone              = "done"
+	maxGasPrice     float64 = 100.1
 )
 
 // ReserveCore is core package for program
@@ -33,18 +30,18 @@ type ReserveCore struct {
 	activityStorage ActivityStorage
 	setting         Setting
 	l               *zap.SugaredLogger
+	gasPriceLimiter GasPriceLimiter
 }
 
 // NewReserveCore create new core instance
-func NewReserveCore(
-	blockchain Blockchain,
-	storage ActivityStorage,
-	setting Setting) *ReserveCore {
+func NewReserveCore(blockchain Blockchain, storage ActivityStorage, setting Setting, gasPriceLimiter GasPriceLimiter) *ReserveCore {
+
 	return &ReserveCore{
 		blockchain:      blockchain,
 		activityStorage: storage,
 		setting:         setting,
 		l:               zap.S(),
+		gasPriceLimiter: gasPriceLimiter,
 	}
 }
 
@@ -234,6 +231,16 @@ func (rc ReserveCore) Deposit(exchange common.Exchange, token common.Token, amou
 	)
 	return uidGenerator(tx.Hash().Hex()), common.CombineActivityStorageErrs(err, sErr)
 }
+func (rc ReserveCore) maxGasPrice() float64 {
+	// MaxGasPrice will fetch gasPrice from kyber network contract(with cache for configurable seconds)
+	max, err := rc.gasPriceLimiter.MaxGasPrice()
+	if err != nil {
+		rc.l.Errorw("failed to receive maxGasPrice from network, fallback to hard code value",
+			"err", err, "maxGasPrice", maxGasPrice)
+		return maxGasPrice
+	}
+	return max
+}
 func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, amount *big.Int) (tx *types.Transaction, err error) {
 
 	address, supported := exchange.Address(token)
@@ -286,6 +293,7 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, am
 	}*/
 
 	recommendedPrice := rc.blockchain.StandardGasPrice()
+	highBoundGasPrice := rc.maxGasPrice()
 	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
 		initPrice = common.GweiToWei(10)
 	} else {
@@ -374,7 +382,7 @@ func (rc ReserveCore) Withdraw(
 	return timebasedID(id), common.CombineActivityStorageErrs(err, sErr)
 }
 
-func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
+func calculateNewGasPrice(initPrice *big.Int, count uint64, highBoundGasPrice float64) *big.Int {
 	// in this case after 5 tries the tx is still not mined.
 	// at this point, 100.1 gwei is not enough but it doesn't matter
 	// if the tx is mined or not because users' tx is not mined neither
@@ -461,6 +469,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 		minedNonce uint64
 		count      uint64
 	)
+	highBoundGasPrice := rc.maxGasPrice()
 	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
@@ -471,7 +480,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%+v). Please try later", err)
 	}
 	if oldNonce != nil {
-		newPrice := calculateNewGasPrice(initPrice, count)
+		newPrice := calculateNewGasPrice(initPrice, count, highBoundGasPrice)
 		tx, err = rc.blockchain.SetRates(
 			tokenAddrs, buys, sells, block, oldNonce, newPrice,
 		)

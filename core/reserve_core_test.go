@@ -168,11 +168,7 @@ func getTestCore(hasPendingDeposit bool) *ReserveCore {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return NewReserveCore(
-		testBlockchain{},
-		testActivityStorage{hasPendingDeposit},
-		setting,
-	)
+	return NewReserveCore(testBlockchain{}, testActivityStorage{hasPendingDeposit}, setting, &ConstGasPriceLimiter{})
 }
 
 func TestNotAllowDeposit(t *testing.T) {
@@ -199,14 +195,14 @@ func TestNotAllowDeposit(t *testing.T) {
 
 func TestCalculateNewGasPrice(t *testing.T) {
 	initPrice := common.GweiToWei(1)
-	newPrice := calculateNewGasPrice(initPrice, 0)
+	newPrice := calculateNewGasPrice(initPrice, 0, 0)
 	if newPrice.Cmp(newPrice) != 0 {
 		t.Errorf("new price is not equal to initial price with count == 0")
 	}
 
 	prevPrice := initPrice
 	for count := uint64(1); count < 10; count++ {
-		newPrice = calculateNewGasPrice(initPrice, count)
+		newPrice = calculateNewGasPrice(initPrice, count, 0)
 		if newPrice.Cmp(prevPrice) != 1 {
 			t.Errorf("new price %s is not higher than previous price %s",
 				newPrice.String(),

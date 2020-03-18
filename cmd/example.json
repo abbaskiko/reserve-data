@@ -19,7 +19,8 @@
     "kn_confirm_configuration": "confirmkey"
   },
   "gas_config": {
-    "prefer_use_gas_station": true
+    "prefer_use_gas_station": true,
+    "fetch_max_gas_cache_seconds": 300
   },
   "aws_config": {
     "aws_access_key_id": "aa222",

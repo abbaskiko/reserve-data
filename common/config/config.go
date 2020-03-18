@@ -117,8 +117,10 @@ type FetcherDelay struct {
 	GlobalData    HumanDuration `json:"global_data"`
 }
 
+// GasConfig ...
 type GasConfig struct {
-	PreferUseGasStation bool `json:"prefer_use_gas_station"`
+	PreferUseGasStation     bool  `json:"prefer_use_gas_station"`
+	FetchMaxGasCacheSeconds int64 `json:"fetch_max_gas_cache_seconds"`
 }
 
 // AppConfig represnet for app configuration
