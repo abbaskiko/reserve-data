@@ -27,31 +27,6 @@ const (
 	statusDone      = "done"
 )
 
-const (
-	resultGasPrice  = "gasPrice"
-	resultNonce     = "resultNonce"
-	resultTx        = "tx"
-	resultError     = "error"
-	resultID        = "id"
-	resultDone      = "done"
-	resultRemaining = "remaining"
-	resultFinished  = "finished"
-	paramBase       = "base"
-	paramExchange   = "exchange"
-	paramToken      = "token"
-	paramAmount     = "amount"
-	paramTimepoint  = "timepoint"
-	paramTokens     = "tokens"
-	paramType       = "type"
-	paramQuote      = "quote"
-	paramRate       = "rate"
-	paramBuys       = "buys"
-	paramSells      = "sells"
-	paramBlock      = "block"
-	paramAfpMid     = "afpMid"
-	paramMsgs       = "msgs"
-)
-
 // ReserveCore is core package for program
 type ReserveCore struct {
 	blockchain      Blockchain
@@ -86,13 +61,13 @@ func (rc ReserveCore) CancelOrder(activityID common.ActivityID, exchange common.
 	if activity.Action != common.ActionTrade {
 		return errors.New("this is not an order activity so cannot cancel")
 	}
-	base, ok := activity.Params[paramBase].(string)
+	base, ok := activity.Params[common.ParamBase].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[paramBase])
+		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[common.ParamBase])
 	}
-	quote, ok := activity.Params[paramQuote].(string)
+	quote, ok := activity.Params[common.ParamQuote].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[paramQuote])
+		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
 	}
 	orderID := activityID.EID
 	return exchange.CancelOrder(orderID, base, quote)
@@ -107,13 +82,13 @@ func (rc ReserveCore) CancelOrderByOrderID(orderID string, exchange common.Excha
 	if activity.Action != common.ActionTrade {
 		return errors.New("this is not an order activity so cannot cancel")
 	}
-	base, ok := activity.Params[paramBase].(string)
+	base, ok := activity.Params[common.ParamBase].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[paramBase])
+		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[common.ParamBase])
 	}
-	quote, ok := activity.Params[paramQuote].(string)
+	quote, ok := activity.Params[common.ParamQuote].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[paramQuote])
+		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
 	}
 	return exchange.CancelOrder(orderID, base, quote)
 }
@@ -147,19 +122,19 @@ func (rc ReserveCore) Trade(
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
-				paramExchange:  exchange,
-				paramType:      tradeType,
-				paramBase:      base,
-				paramQuote:     quote,
-				paramRate:      rate,
-				paramAmount:    strconv.FormatFloat(amount, 'f', -1, 64),
-				paramTimepoint: timepoint,
+				common.ParamExchange:  exchange,
+				common.ParamType:      tradeType,
+				common.ParamBase:      base,
+				common.ParamQuote:     quote,
+				common.ParamRate:      rate,
+				common.ParamAmount:    strconv.FormatFloat(amount, 'f', -1, 64),
+				common.ParamTimepoint: timepoint,
 			}, map[string]interface{}{
-				resultID:        id,
-				resultDone:      done,
-				resultRemaining: remaining,
-				resultFinished:  finished,
-				resultError:     common.ErrorToString(err),
+				common.ResultID:        id,
+				common.ResultDone:      done,
+				common.ResultRemaining: remaining,
+				common.ResultFinished:  finished,
+				common.ResultError:     common.ErrorToString(err),
 			},
 			status,
 			"",
@@ -210,14 +185,14 @@ func (rc ReserveCore) Deposit(exchange common.Exchange, token common.Token, amou
 		if err == nil {
 			rc.l.Infow(
 				"Core ----------> Deposit",
-				"exchangeID", exchange.ID(), "tokenID", token.ID, paramAmount, amount.Text(10),
-				paramTimepoint, timepoint, resultTx, txhex,
+				"exchangeID", exchange.ID(), "tokenID", token.ID, common.ParamAmount, amount.Text(10),
+				common.ParamTimepoint, timepoint, common.ResultTx, txhex,
 			)
 		} else {
 			rc.l.Warnw(
 				"Core ----------> Deposit",
-				"exchangeID", exchange.ID(), "tokenID", token.ID, paramAmount, amount.Text(10),
-				paramTimepoint, timepoint, resultTx, txhex, "err", err,
+				"exchangeID", exchange.ID(), "tokenID", token.ID, common.ParamAmount, amount.Text(10),
+				common.ParamTimepoint, timepoint, common.ResultTx, txhex, "err", err,
 			)
 		}
 
@@ -226,15 +201,15 @@ func (rc ReserveCore) Deposit(exchange common.Exchange, token common.Token, amou
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
-				paramExchange:  exchange,
-				paramToken:     token,
-				paramAmount:    strconv.FormatFloat(amountFloat, 'f', -1, 64),
-				paramTimepoint: timepoint,
+				common.ParamExchange:  exchange,
+				common.ParamToken:     token,
+				common.ParamAmount:    strconv.FormatFloat(amountFloat, 'f', -1, 64),
+				common.ParamTimepoint: timepoint,
 			}, map[string]interface{}{
-				resultTx:       txhex,
-				resultNonce:    txnonce,
-				resultGasPrice: txprice,
-				resultError:    common.ErrorToString(err),
+				common.ResultTx:       txhex,
+				common.ResultNonce:    txnonce,
+				common.ResultGasPrice: txprice,
+				common.ResultError:    common.ErrorToString(err),
 			},
 			"",
 			status,
@@ -282,7 +257,7 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, am
 	)
 	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.DepositOP)
 	if err != nil {
-		return tx, fmt.Errorf("couldn't get mined resultNonce of deposit operator (%+v)", err)
+		return tx, fmt.Errorf("couldn't get mined nonce of deposit operator (%+v)", err)
 	}
 	/* // we don't support override nonce for deposit due huobi deposit require 2 step
 	// a deposit can stay in pending state when step 1 done, step 2 is processing,
@@ -290,7 +265,7 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, am
 	oldNonce   *big.Int
 	count      uint64
 	oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionDeposit)
-	rc.l.Infof("old resultNonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
+	rc.l.Infof("old nonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't check pending deposit tx pool (%+v). Please try later", err)
 	}
@@ -342,16 +317,16 @@ func (rc ReserveCore) Withdraw(
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
-				paramExchange:  exchange,
-				paramToken:     token,
-				paramAmount:    strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
-				paramTimepoint: timepoint,
+				common.ParamExchange:  exchange,
+				common.ParamToken:     token,
+				common.ParamAmount:    strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
+				common.ParamTimepoint: timepoint,
 			}, map[string]interface{}{
-				resultError: common.ErrorToString(err),
-				resultID:    id,
+				common.ResultError: common.ErrorToString(err),
+				common.ResultID:    id,
 				// this field will be updated with real tx when data fetcher can fetch it
 				// from exchanges
-				resultTx: "",
+				common.ResultTx: "",
 			},
 			status,
 			"",
@@ -426,14 +401,14 @@ func (rc ReserveCore) pendingActionInfo(minedNonce uint64, activityType string) 
 	if act == nil {
 		return nil, nil, 0, nil
 	}
-	nonceStr, ok := act.Result[resultNonce].(string)
+	nonceStr, ok := act.Result[common.ResultNonce].(string)
 	if !ok {
-		nErr := fmt.Errorf("cannot convert result[resultNonce] (value %v) to string type", act.Result[resultNonce])
+		nErr := fmt.Errorf("cannot convert result[nonce] (value %v) to string type", act.Result[common.ResultNonce])
 		return nil, nil, count, nErr
 	}
-	gasPriceStr, ok := act.Result[resultGasPrice].(string)
+	gasPriceStr, ok := act.Result[common.ResultGasPrice].(string)
 	if !ok {
-		nErr := fmt.Errorf("cannot convert result[resultGasPrice] (value %v) to string type", act.Result[resultGasPrice])
+		nErr := fmt.Errorf("cannot convert result[ResultGasPrice] (value %v) to string type", act.Result[common.ResultGasPrice])
 		return nil, nil, count, nErr
 	}
 	nonce, err := strconv.ParseUint(nonceStr, 10, 64)
@@ -488,10 +463,10 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	)
 	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
 	if err != nil {
-		return tx, fmt.Errorf("couldn't get mined resultNonce of set rate operator (%+v)", err)
+		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
 	}
 	oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionSetRate)
-	rc.l.Infof("old resultNonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
+	rc.l.Infof("old nonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%+v). Please try later", err)
 	}
@@ -561,24 +536,24 @@ func (rc ReserveCore) SetRates(
 		uid,
 		"blockchain",
 		map[string]interface{}{
-			paramTokens: tokens,
-			paramBuys:   buys,
-			paramSells:  sells,
-			paramBlock:  block,
-			paramAfpMid: afpMids,
-			paramMsgs:   additionalMsgs,
+			common.ParamTokens: tokens,
+			common.ParamBuys:   buys,
+			common.ParamSells:  sells,
+			common.ParamBlock:  block,
+			common.ParamAfpMid: afpMids,
+			common.ParamMsgs:   additionalMsgs,
 		}, map[string]interface{}{
-			resultTx:       txhex,
-			resultNonce:    txnonce,
-			resultGasPrice: txprice,
-			resultError:    common.ErrorToString(err),
+			common.ResultTx:       txhex,
+			common.ResultNonce:    txnonce,
+			common.ResultGasPrice: txprice,
+			common.ResultError:    common.ErrorToString(err),
 		},
 		"",
 		miningStatus,
 		common.GetTimepoint(),
 	)
 	rc.l.Infof(
-		"Core ----------> Set rates: ==> Result: tx: %s, resultNonce: %s, price: %s, error: %s, storage error: %s",
+		"Core ----------> Set rates: ==> Result: tx: %s, nonce: %s, price: %s, error: %s, storage error: %s",
 		txhex, txnonce, txprice, common.ErrorToString(err), common.ErrorToString(sErr),
 	)
 
