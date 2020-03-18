@@ -265,21 +265,30 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, am
 	if !supported {
 		return nil, fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
 	}
-
+	found, err := rc.activityStorage.HasPendingDeposit(token, exchange)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return nil, fmt.Errorf("there is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
+	}
 	if err = sanityCheckAmount(exchange, token, amount); err != nil {
 		return nil, err
 	}
 	// if there is a pending deposit tx, we replace it
 	var (
-		oldNonce   *big.Int
 		initPrice  *big.Int
 		minedNonce uint64
-		count      uint64
 	)
 	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.DepositOP)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't get mined resultNonce of deposit operator (%+v)", err)
 	}
+	/* // we don't support override nonce for deposit due huobi deposit require 2 step
+	// a deposit can stay in pending state when step 1 done, step 2 is processing,
+	// we can't handle this situation at this time.
+	oldNonce   *big.Int
+	count      uint64
 	oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionDeposit)
 	rc.l.Infof("old resultNonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
 	if err != nil {
@@ -299,7 +308,7 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, am
 			count,
 		)
 		return tx, err
-	}
+	}*/
 
 	recommendedPrice := rc.blockchain.StandardGasPrice()
 	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
