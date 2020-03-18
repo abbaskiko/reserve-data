@@ -14,5 +14,5 @@ type Blockchain interface {
 	FetchRates(atBlock uint64, currentBlock uint64) (common.AllRateEntry, error)
 	TxStatus(tx ethereum.Hash) (string, uint64, error)
 	CurrentBlock() (uint64, error)
-	blockchain.MinedNonePicker
+	blockchain.MinedNoncePicker
 }

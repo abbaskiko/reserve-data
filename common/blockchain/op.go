@@ -7,7 +7,7 @@ const (
 	DepositOP = "depositOP"
 )
 
-// MinedNonePicker just an interface container shared function of core/blockchain and fetcher/blockchain interface
-type MinedNonePicker interface {
+// MinedNoncePicker just an interface container shared function of core/blockchain and fetcher/blockchain interface
+type MinedNoncePicker interface {
 	GetMinedNonceWithOP(op string) (uint64, error)
 }

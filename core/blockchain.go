@@ -22,5 +22,5 @@ type Blockchain interface {
 		block *big.Int,
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
-	blockchain.MinedNonePicker
+	blockchain.MinedNoncePicker
 }

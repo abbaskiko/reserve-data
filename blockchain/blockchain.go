@@ -59,7 +59,7 @@ type Blockchain struct {
 	listedTokens []ethereum.Address
 	mu           sync.RWMutex
 
-	localSetRateNonce, localDepositNone          uint64
+	localSetRateNonce, localDepositNonce         uint64
 	setRateNonceTimestamp, depositNonceTimestamp uint64
 
 	setting   Setting
@@ -416,7 +416,7 @@ func (b *Blockchain) GetMinedNonceWithOP(op string) (uint64, error) {
 	case blockchain.PricingOP:
 		localNonce, localTimestamp = &b.localSetRateNonce, &b.setRateNonceTimestamp
 	case blockchain.DepositOP:
-		localNonce, localTimestamp = &b.localDepositNone, &b.depositNonceTimestamp
+		localNonce, localTimestamp = &b.localDepositNonce, &b.depositNonceTimestamp
 	default:
 		return 0, fmt.Errorf("get minedNonce for unexpected op [%s]", op)
 	}
