@@ -1,10 +1,23 @@
 package common
 
+import (
+	"github.com/KyberNetwork/reserve-data/world"
+)
+
 // BTCData is the data returned by /btc-feed API.
 type BTCData struct {
 	Timestamp uint64
 	Coinbase  CoinbaseData `json:"CoinbaseBTC"`
 	Gemini    GeminiData   `json:"GeminiBTC"`
+}
+
+// ToMap convert to map result.
+func (b BTCData) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"Timestamp":                   b.Timestamp,
+		world.CoinbaseETHBTC.String(): b.Coinbase,
+		world.GeminiETHBTC.String():   b.Gemini,
+	}
 }
 
 // CoinbaseData is the response of Coinbase ETH/BTC ticker request.
