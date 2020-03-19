@@ -22,31 +22,33 @@ const (
 	CoinbaseETHBTC // CoinbaseETHBTC
 	GeminiETHBTC   // GeminiETHBTC
 
-	CoinbaseETHUSDC // CoinbaseETHUSDC
-	BinanceETHUSDC  // BinanceETHUSDC
-	CoinbaseETHUSD  // CoinbaseETHUSD
-	CoinbaseETHDAI  // CoinbaseETHDAI
-	HitBTCETHDAI    // HitBTCETHDAI
-	BitFinexETHUSDT // BitFinexETHUSDT
-	BinanceETHUSDT  // BinanceETHUSDT
-	BinanceETHPAX   // BinanceETHPAX
-	BinanceETHTUSD  // BinanceETHTUSD
+	CoinbaseETHUSDC     // CoinbaseETHUSDC
+	BinanceETHUSDC      // BinanceETHUSDC
+	CoinbaseETHUSD      // CoinbaseETHUSD
+	CoinbaseETHDAI      // CoinbaseETHDAI
+	CoinbaseETHDAI10000 // CoinbaseETHDAI10000
+	HitBTCETHDAI        // HitBTCETHDAI
+	BitFinexETHUSDT     // BitFinexETHUSDT
+	BinanceETHUSDT      // BinanceETHUSDT
+	BinanceETHPAX       // BinanceETHPAX
+	BinanceETHTUSD      // BinanceETHTUSD
 )
 
 var (
 	dummyStruct = struct{}{}
 	// usdFeeds list of supported usd feeds
 	usdFeeds = map[string]struct{}{
-		CoinbaseETHUSD.String():  dummyStruct,
-		GeminiETHUSD.String():    dummyStruct,
-		CoinbaseETHUSDC.String(): dummyStruct,
-		BinanceETHUSDC.String():  dummyStruct,
-		CoinbaseETHDAI.String():  dummyStruct,
-		HitBTCETHDAI.String():    dummyStruct,
-		BitFinexETHUSDT.String(): dummyStruct,
-		BinanceETHPAX.String():   dummyStruct,
-		BinanceETHTUSD.String():  dummyStruct,
-		BinanceETHUSDT.String():  dummyStruct,
+		CoinbaseETHUSD.String():      dummyStruct,
+		GeminiETHUSD.String():        dummyStruct,
+		CoinbaseETHUSDC.String():     dummyStruct,
+		BinanceETHUSDC.String():      dummyStruct,
+		CoinbaseETHDAI.String():      dummyStruct,
+		CoinbaseETHDAI10000.String(): dummyStruct,
+		HitBTCETHDAI.String():        dummyStruct,
+		BitFinexETHUSDT.String():     dummyStruct,
+		BinanceETHPAX.String():       dummyStruct,
+		BinanceETHTUSD.String():      dummyStruct,
+		BinanceETHUSDT.String():      dummyStruct,
 	}
 
 	// btcFeeds list of supported btc feeds
@@ -97,6 +99,7 @@ type Endpoint interface {
 	BinanceETHUSDC() string
 	CoinbaseETHUSD() string
 	CoinbaseETHDAI() string
+	CoinbaseETHDAI10000() string
 	HitBTCETHDAI() string
 
 	BitFinexETHUSDT() string
@@ -170,6 +173,11 @@ func (re RealEndpoint) GeminiETHBTC() string {
 // CoinbaseETHDAI real endpoint fo Coinbase Dai
 func (re RealEndpoint) CoinbaseETHDAI() string {
 	return re.Endpoints.CoinbaseDAI.URL
+}
+
+// CoinbaseETHDAI10000 real endpoint fo Coinbase Dai
+func (re RealEndpoint) CoinbaseETHDAI10000() string {
+	return re.Endpoints.CoinbaseDAI10000.URL
 }
 
 // HitBTCETHDAI real endpoint for Hit DAI

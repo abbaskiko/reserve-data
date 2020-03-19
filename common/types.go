@@ -702,11 +702,12 @@ type WorldEndpoints struct {
 	CoinbaseBTC SiteConfig `json:"coinbase_btc"`
 	BinanceBTC  SiteConfig `json:"binance_btc"`
 
-	CoinbaseUSDC SiteConfig `json:"coinbase_usdc"`
-	BinanceUSDC  SiteConfig `json:"binance_usdc"`
-	CoinbaseUSD  SiteConfig `json:"coinbase_usd"`
-	CoinbaseDAI  SiteConfig `json:"coinbase_dai"`
-	HitDai       SiteConfig `json:"hit_dai"`
+	CoinbaseUSDC     SiteConfig `json:"coinbase_usdc"`
+	BinanceUSDC      SiteConfig `json:"binance_usdc"`
+	CoinbaseUSD      SiteConfig `json:"coinbase_usd"`
+	CoinbaseDAI      SiteConfig `json:"coinbase_dai"`
+	CoinbaseDAI10000 SiteConfig `json:"coinbase_dai_10000"`
+	HitDai           SiteConfig `json:"hit_dai"`
 
 	BitFinexUSDT SiteConfig `json:"bit_finex_usdt"`
 	BinanceUSDT  SiteConfig `json:"binance_usdt"`
