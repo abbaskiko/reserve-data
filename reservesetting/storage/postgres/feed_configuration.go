@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
+
+	"github.com/KyberNetwork/reserve-data/common/feed"
 	pgutil "github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
-	"github.com/KyberNetwork/reserve-data/world"
-	"github.com/jmoiron/sqlx"
 )
 
 type setFeedConfigurationParams struct {
@@ -22,18 +23,18 @@ func (s *Storage) initFeedData() error {
 	// init all feed as enabled
 	query := `INSERT INTO "feed_configurations" (name, set_rate, enabled, base_volatility_spread, normal_spread) 
 				VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING;`
-	for feed := range world.AllFeeds().USD {
-		if _, err := s.db.Exec(query, feed, common.USDFeed.String(), true, 0, 0); err != nil {
+	for f := range feed.AllFeeds().USD {
+		if _, err := s.db.Exec(query, f, common.USDFeed.String(), true, 0, 0); err != nil {
 			return err
 		}
 	}
-	for feed := range world.AllFeeds().BTC {
-		if _, err := s.db.Exec(query, feed, common.BTCFeed.String(), true, 0, 0); err != nil {
+	for f := range feed.AllFeeds().BTC {
+		if _, err := s.db.Exec(query, f, common.BTCFeed.String(), true, 0, 0); err != nil {
 			return err
 		}
 	}
-	for feed := range world.AllFeeds().Gold {
-		if _, err := s.db.Exec(query, feed, common.GoldFeed.String(), true, 0, 0); err != nil {
+	for f := range feed.AllFeeds().Gold {
+		if _, err := s.db.Exec(query, f, common.GoldFeed.String(), true, 0, 0); err != nil {
 			return err
 		}
 	}

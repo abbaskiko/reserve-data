@@ -16,7 +16,7 @@ func (s *Server) GetGoldData(c *gin.Context) {
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
+		httputil.ResponseSuccess(c, httputil.WithData(data.ToMap()))
 	}
 }
 
@@ -26,7 +26,7 @@ func (s *Server) GetBTCData(c *gin.Context) {
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
+		httputil.ResponseSuccess(c, httputil.WithData(data.ToMap()))
 	}
 }
 
@@ -36,6 +36,6 @@ func (s *Server) GetUSDData(c *gin.Context) {
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
-		httputil.ResponseSuccess(c, httputil.WithData(data))
+		httputil.ResponseSuccess(c, httputil.WithData(data.ToMap()))
 	}
 }

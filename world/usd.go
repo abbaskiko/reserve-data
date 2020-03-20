@@ -66,16 +66,16 @@ func (tw *TheWorld) getCoinbaseInfo10000(ep string) common.CoinbaseData1000 {
 func (tw *TheWorld) GetUSDInfo() (common.USDData, error) {
 	return common.USDData{
 		Timestamp:        0,
-		CoinbaseUSD:      tw.getCoinbaseInfo(tw.endpoint.CoinbaseETHUSD()),
+		CoinbaseUSD:      tw.getCoinbaseInfo(tw.endpoint.CoinbaseUSD.URL),
 		GeminiUSD:        tw.getGeminiGoldInfo(),
-		CoinbaseUSDC:     tw.getCoinbaseInfo(tw.endpoint.CoinbaseETHUSDC()),
-		BinanceUSDC:      tw.getBinanceInfo(tw.endpoint.BinanceETHUSDC()),
-		CoinbaseDAI:      tw.getCoinbaseInfo(tw.endpoint.CoinbaseETHDAI()),
-		CoinbaseDAI10000: tw.getCoinbaseInfo10000(tw.endpoint.CoinbaseETHDAI10000()),
-		HitDAI:           tw.getHitInfo(tw.endpoint.HitBTCETHDAI()),
-		BitFinex:         tw.getBitFinexInfo(tw.endpoint.BitFinexETHUSDT()),
-		BinancePAX:       tw.getBinanceInfo(tw.endpoint.BinanceETHPAX()),
-		BinanceTUSD:      tw.getBinanceInfo(tw.endpoint.BinanceETHTUSD()),
-		BinanceUSDT:      tw.getBinanceInfo(tw.endpoint.BinanceETHUSDT()),
+		CoinbaseUSDC:     tw.getCoinbaseInfo(tw.endpoint.CoinbaseUSDC.URL),
+		BinanceUSDC:      tw.getBinanceInfo(tw.endpoint.BinanceUSDC.URL),
+		CoinbaseDAI:      tw.getCoinbaseInfo(tw.endpoint.CoinbaseDAI.URL),
+		CoinbaseDAI10000: tw.getCoinbaseInfo10000(tw.endpoint.CoinbaseDAI10000.URL),
+		HitDAI:           tw.getHitInfo(tw.endpoint.HitDai.URL),
+		BitFinex:         tw.getBitFinexInfo(tw.endpoint.BitFinexUSDT.URL),
+		BinancePAX:       tw.getBinanceInfo(tw.endpoint.BinancePAX.URL),
+		BinanceTUSD:      tw.getBinanceInfo(tw.endpoint.BinanceTUSD.URL),
+		BinanceUSDT:      tw.getBinanceInfo(tw.endpoint.BinanceUSDT.URL),
 	}, nil
 }

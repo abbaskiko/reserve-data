@@ -15,7 +15,7 @@ import (
 
 // TheWorld is the concrete implementation of fetcher.TheWorld interface.
 type TheWorld struct {
-	endpoint Endpoint
+	endpoint common.WorldEndpoints
 	l        *zap.SugaredLogger
 }
 
@@ -64,7 +64,7 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 }
 
 func (tw *TheWorld) getOneForgeGoldUSDInfo() common.OneForgeGoldData {
-	url := tw.endpoint.OneForgeXAUUSD()
+	url := tw.endpoint.OneForgeGoldUSD.URL
 	result := common.OneForgeGoldData{}
 	err := tw.getPublic(url, &result)
 	if err != nil {
@@ -75,7 +75,7 @@ func (tw *TheWorld) getOneForgeGoldUSDInfo() common.OneForgeGoldData {
 }
 
 func (tw *TheWorld) getOneForgeGoldETHInfo() common.OneForgeGoldData {
-	url := tw.endpoint.OneForgeXAUETH()
+	url := tw.endpoint.OneForgeGoldETH.URL
 	result := common.OneForgeGoldData{}
 	err := tw.getPublic(url, &result)
 	if err != nil {
@@ -86,7 +86,7 @@ func (tw *TheWorld) getOneForgeGoldETHInfo() common.OneForgeGoldData {
 }
 
 func (tw *TheWorld) getDGXGoldInfo() common.DGXGoldData {
-	url := tw.endpoint.GoldDataEndpoint()
+	url := tw.endpoint.GoldData.URL
 	result := common.DGXGoldData{
 		Valid: true,
 	}
@@ -99,7 +99,7 @@ func (tw *TheWorld) getDGXGoldInfo() common.DGXGoldData {
 }
 
 func (tw *TheWorld) getGDAXGoldInfo() common.GDAXGoldData {
-	url := tw.endpoint.GDAXETHUSD()
+	url := tw.endpoint.GDAXData.URL
 	result := common.GDAXGoldData{
 		Valid: true,
 	}
@@ -112,7 +112,7 @@ func (tw *TheWorld) getGDAXGoldInfo() common.GDAXGoldData {
 }
 
 func (tw *TheWorld) getKrakenGoldInfo() common.KrakenGoldData {
-	url := tw.endpoint.KrakenETHUSD()
+	url := tw.endpoint.KrakenData.URL
 	result := common.KrakenGoldData{
 		Valid: true,
 	}
@@ -126,7 +126,7 @@ func (tw *TheWorld) getKrakenGoldInfo() common.KrakenGoldData {
 
 func (tw *TheWorld) getGeminiGoldInfo() common.GeminiGoldData {
 
-	url := tw.endpoint.GeminiETHUSD()
+	url := tw.endpoint.GeminiData.URL
 	result := common.GeminiGoldData{
 		Valid: true,
 	}
@@ -152,10 +152,8 @@ func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 //NewTheWorld return new world instance
 func NewTheWorld(worldEndpoints common.WorldEndpoints) *TheWorld {
 	return &TheWorld{
-		endpoint: RealEndpoint{
-			Endpoints: worldEndpoints,
-		},
-		l: zap.S(),
+		endpoint: worldEndpoints,
+		l:        zap.S(),
 	}
 }
 

@@ -70,7 +70,7 @@
       "url": "https://api.pro.coinbase.com/products/eth-dai/ticker"
     },
     "coinbase_dai_10000": {
-      "url": "http://localhost:8003/feed/CoinbaseETHDAI10000"
+      "url": "http://localhost:8043/feed/CoinbaseETHDAI10000"
     },
     "hit_dai": {
       "url": "https://api.hitbtc.com/api/2/public/ticker/ETHDAI"

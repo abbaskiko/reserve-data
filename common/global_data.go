@@ -1,5 +1,9 @@
 package common
 
+import (
+	"github.com/KyberNetwork/reserve-data/common/feed"
+)
+
 // GoldRate gold rate
 type GoldRate struct {
 	Symbol string  `json:"symbol"`
@@ -79,4 +83,16 @@ type GoldData struct {
 	GDAX        GDAXGoldData
 	Kraken      KrakenGoldData
 	Gemini      GeminiGoldData
+}
+
+func (d GoldData) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"Timestamp":                  d.Timestamp,
+		feed.GoldData.String():       d.DGX,
+		feed.OneForgeXAUETH.String(): d.OneForgeETH,
+		feed.OneForgeXAUUSD.String(): d.OneForgeUSD,
+		feed.GDAXETHUSD.String():     d.GDAX,
+		feed.KrakenETHUSD.String():   d.Kraken,
+		feed.GeminiETHUSD.String():   d.Gemini,
+	}
 }

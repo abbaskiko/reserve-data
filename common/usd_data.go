@@ -1,5 +1,9 @@
 package common
 
+import (
+	"github.com/KyberNetwork/reserve-data/common/feed"
+)
+
 // BinanceData data return by https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC
 type BinanceData struct {
 	Valid    bool
@@ -49,4 +53,22 @@ type USDData struct {
 	BinanceUSDT      BinanceData      `json:"BinanceUSDT"`
 	BinancePAX       BinanceData      `json:"BinancePAX"`
 	BinanceTUSD      BinanceData      `json:"BinanceTUSD"`
+}
+
+// ToMap convert to map result.
+func (u USDData) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"Timestamp":                       u.Timestamp,
+		feed.CoinbaseETHUSD.String():      u.CoinbaseUSD,
+		feed.GeminiETHUSD.String():        u.GeminiUSD,
+		feed.CoinbaseETHUSDC.String():     u.CoinbaseUSDC,
+		feed.BinanceETHUSDC.String():      u.BinanceUSDC,
+		feed.CoinbaseETHDAI.String():      u.CoinbaseDAI,
+		feed.CoinbaseETHDAI10000.String(): u.CoinbaseDAI10000,
+		feed.HitBTCETHDAI.String():        u.HitDAI,
+		feed.BitFinexETHUSDT.String():     u.BitFinex,
+		feed.BinanceETHUSDT.String():      u.BinanceUSDT,
+		feed.BinanceETHPAX.String():       u.BinancePAX,
+		feed.BinanceETHTUSD.String():      u.BinanceTUSD,
+	}
 }

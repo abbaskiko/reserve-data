@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/feed"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
-	"github.com/KyberNetwork/reserve-data/world"
 )
 
 func createSampleAsset(store *postgres.Storage) (uint64, error) {
@@ -330,8 +330,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								AskSpread: expectedAskSpread,
 							},
 							FeedWeight: &common.FeedWeight{
-								world.GeminiETHBTC.String():   3.0,
-								world.CoinbaseETHBTC.String(): 1.2,
+								feed.GeminiETHBTC.String():   3.0,
+								feed.CoinbaseETHBTC.String(): 1.2,
 							},
 						},
 					},
@@ -366,7 +366,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							SetRate: &btcFeed,
 							AssetID: 6,
 							FeedWeight: &common.FeedWeight{
-								world.GeminiETHBTC.String(): 3.0,
+								feed.GeminiETHBTC.String(): 3.0,
 							},
 						},
 					},
@@ -517,8 +517,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								AskSpread: expectedAskSpread,
 							},
 							FeedWeight: &common.FeedWeight{
-								"some_random_feed":          1.2,
-								world.GeminiETHBTC.String(): 3.0,
+								"some_random_feed":         1.2,
+								feed.GeminiETHBTC.String(): 3.0,
 							},
 						},
 					},
@@ -1301,7 +1301,7 @@ func TestSetFeedConfiguration(t *testing.T) {
 		setFeedConfigurationEndpoint = "/v3/setting-change-feed-configuration"
 		setFeedConfigurationID       uint64
 
-		fname                 = world.GeminiETHUSD.String()
+		fname                 = feed.GeminiETHUSD.String()
 		setRate               = common.USDFeed
 		fenabled              = false
 		fbaseVolatilitySpread = 1.1
