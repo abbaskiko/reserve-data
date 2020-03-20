@@ -39,12 +39,12 @@ func run(c *cli.Context) error {
 		flusher()
 	}()
 	zap.ReplaceGlobals(l.Desugar())
-	coinbaseETHDAIfetcher, err := coinbase.NewFetcherFromCli(c, l)
+	coinbaseETHDAI10000fetcher, err := coinbase.NewFetcherFromCli(c, l)
 	if err != nil {
 		return err
 	}
 	fetchers := map[string]fetcher.Fetcher{
-		"CoinbaseETHDAI": coinbaseETHDAIfetcher,
+		"CoinbaseETHDAI10000": coinbaseETHDAI10000fetcher,
 	}
 	s := storage.NewRAMStorage()
 	host := httputil.NewHTTPAddressFromContext(c)
