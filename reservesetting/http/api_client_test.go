@@ -64,7 +64,7 @@ func (c *apiClient) getAsset(id uint64) (assetResponse, error) {
 }
 
 func (c *apiClient) getAssets() (assetsResponse, error) {
-	req, err := createRequest(http.MethodGet, fmt.Sprintf("/v3/asset"), nil)
+	req, err := createRequest(http.MethodGet, "/v3/asset", nil)
 	if err != nil {
 		return assetsResponse{}, err
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -36,8 +35,8 @@ const (
 )
 
 var (
-	coreEndpointDefaultValue    = fmt.Sprint("http://127.0.0.1:8000")
-	settingEndpointDefaultValue = fmt.Sprint("http://127.0.0.1:8002")
+	coreEndpointDefaultValue    = "http://127.0.0.1:8000"
+	settingEndpointDefaultValue = "http://127.0.0.1:8002"
 )
 
 func main() {
