@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/config"
+	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/http"
 )
 
@@ -71,7 +72,14 @@ func serverStart(_ *cobra.Command, _ []string) {
 		log.Panicf("Can not create blockchain: (%s)", err)
 	}
 
-	rData, rCore = CreateDataCore(appState, kyberENV, bc)
+	kyberNetworkProxy, err := blockchain.NewNetworkProxy(appState.AppConfig.ContractAddresses.Proxy,
+		appState.Blockchain.EthClient())
+	if err != nil {
+		log.Panicf("cannot create network proxy client, err %+v", err)
+	}
+	gasPriceLimiter := core.NewNetworkGasPriceLimiter(kyberNetworkProxy, appState.AppConfig.GasConfig.FetchMaxGasCacheSeconds)
+
+	rData, rCore = CreateDataCore(appState, kyberENV, bc, gasPriceLimiter)
 	if !dryRun {
 		if kyberENV != common.SimulationMode {
 			if err = rData.RunStorageController(); err != nil {

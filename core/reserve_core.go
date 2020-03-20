@@ -13,17 +13,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
 )
 
 const (
-	// highBoundGasPrice is the price we will try to use to get higher priority
-	// than trade tx to avoid price front running from users.
-	highBoundGasPrice float64 = 100.1
-
 	statusFailed    = "failed"
 	statusSubmitted = "submitted"
 	statusDone      = "done"
+	// maxGasPrice this value only use when it can't receive value from network contract
+	maxGasPrice float64 = 100.1
 )
 
 // ReserveCore is core package for program
@@ -32,18 +31,18 @@ type ReserveCore struct {
 	activityStorage ActivityStorage
 	setting         Setting
 	l               *zap.SugaredLogger
+	gasPriceLimiter GasPriceLimiter
 }
 
 // NewReserveCore create new core instance
-func NewReserveCore(
-	blockchain Blockchain,
-	storage ActivityStorage,
-	setting Setting) *ReserveCore {
+func NewReserveCore(blockchain Blockchain, storage ActivityStorage, setting Setting, gasPriceLimiter GasPriceLimiter) *ReserveCore {
+
 	return &ReserveCore{
 		blockchain:      blockchain,
 		activityStorage: storage,
 		setting:         setting,
 		l:               zap.S(),
+		gasPriceLimiter: gasPriceLimiter,
 	}
 }
 
@@ -60,13 +59,13 @@ func (rc ReserveCore) CancelOrder(activityID common.ActivityID, exchange common.
 	if activity.Action != common.ActionTrade {
 		return errors.New("this is not an order activity so cannot cancel")
 	}
-	base, ok := activity.Params["base"].(string)
+	base, ok := activity.Params[common.ParamBase].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params["base"])
+		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[common.ParamBase])
 	}
-	quote, ok := activity.Params["quote"].(string)
+	quote, ok := activity.Params[common.ParamQuote].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
+		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
 	}
 	orderID := activityID.EID
 	return exchange.CancelOrder(orderID, base, quote)
@@ -81,13 +80,13 @@ func (rc ReserveCore) CancelOrderByOrderID(orderID string, exchange common.Excha
 	if activity.Action != common.ActionTrade {
 		return errors.New("this is not an order activity so cannot cancel")
 	}
-	base, ok := activity.Params["base"].(string)
+	base, ok := activity.Params[common.ParamBase].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params["base"])
+		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[common.ParamBase])
 	}
-	quote, ok := activity.Params["quote"].(string)
+	quote, ok := activity.Params[common.ParamQuote].(string)
 	if !ok {
-		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params["quote"])
+		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
 	}
 	return exchange.CancelOrder(orderID, base, quote)
 }
@@ -121,19 +120,19 @@ func (rc ReserveCore) Trade(
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
-				"exchange":  exchange,
-				"type":      tradeType,
-				"base":      base,
-				"quote":     quote,
-				"rate":      rate,
-				"amount":    strconv.FormatFloat(amount, 'f', -1, 64),
-				"timepoint": timepoint,
+				common.ParamExchange:  exchange,
+				common.ParamType:      tradeType,
+				common.ParamBase:      base,
+				common.ParamQuote:     quote,
+				common.ParamRate:      rate,
+				common.ParamAmount:    strconv.FormatFloat(amount, 'f', -1, 64),
+				common.ParamTimepoint: timepoint,
 			}, map[string]interface{}{
-				"id":        id,
-				"done":      done,
-				"remaining": remaining,
-				"finished":  finished,
-				"error":     common.ErrorToString(err),
+				common.ResultID:        id,
+				common.ResultDone:      done,
+				common.ResultRemaining: remaining,
+				common.ResultFinished:  finished,
+				common.ResultError:     common.ErrorToString(err),
 			},
 			status,
 			"",
@@ -171,18 +170,10 @@ func (rc ReserveCore) Trade(
 }
 
 // Deposit token into exchanges
-func (rc ReserveCore) Deposit(
-	exchange common.Exchange,
-	token common.Token,
-	amount *big.Int,
-	timepoint uint64) (common.ActivityID, error) {
-	address, supported := exchange.Address(token)
-	var (
-		err         error
-		ok          bool
-		tx          *types.Transaction
-		amountFloat = common.BigToFloat(amount, token.Decimals)
-	)
+func (rc ReserveCore) Deposit(exchange common.Exchange, token common.Token, amount *big.Int, timepoint uint64) (
+	common.ActivityID, error) {
+
+	amountFloat := common.BigToFloat(amount, token.Decimals)
 
 	uidGenerator := func(txhex string) common.ActivityID {
 		return timebasedID(txhex + "|" + token.ID + "|" + strconv.FormatFloat(amountFloat, 'f', -1, 64))
@@ -192,14 +183,14 @@ func (rc ReserveCore) Deposit(
 		if err == nil {
 			rc.l.Infow(
 				"Core ----------> Deposit",
-				"exchangeID", exchange.ID(), "tokenID", token.ID, "amount", amount.Text(10),
-				"timepoint", timepoint, "tx", txhex,
+				"exchangeID", exchange.ID(), "tokenID", token.ID, common.ParamAmount, amount.Text(10),
+				common.ParamTimepoint, timepoint, common.ResultTx, txhex,
 			)
 		} else {
 			rc.l.Warnw(
 				"Core ----------> Deposit",
-				"exchangeID", exchange.ID(), "tokenID", token.ID, "amount", amount.Text(10),
-				"timepoint", timepoint, "tx", txhex, "err", err,
+				"exchangeID", exchange.ID(), "tokenID", token.ID, common.ParamAmount, amount.Text(10),
+				common.ParamTimepoint, timepoint, common.ResultTx, txhex, "err", err,
 			)
 		}
 
@@ -208,58 +199,26 @@ func (rc ReserveCore) Deposit(
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
-				"exchange":  exchange,
-				"token":     token,
-				"amount":    strconv.FormatFloat(amountFloat, 'f', -1, 64),
-				"timepoint": timepoint,
+				common.ParamExchange:  exchange,
+				common.ParamToken:     token,
+				common.ParamAmount:    strconv.FormatFloat(amountFloat, 'f', -1, 64),
+				common.ParamTimepoint: timepoint,
 			}, map[string]interface{}{
-				"tx":       txhex,
-				"nonce":    txnonce,
-				"gasPrice": txprice,
-				"error":    common.ErrorToString(err),
+				common.ResultTx:       txhex,
+				common.ResultNonce:    txnonce,
+				common.ResultGasPrice: txprice,
+				common.ResultError:    common.ErrorToString(err),
 			},
 			"",
 			status,
 			timepoint,
 		)
 	}
-
-	if !supported {
-		err = fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
+	tx, err := rc.doDeposit(exchange, token, amount)
+	if err != nil {
 		sErr := recordActivity(statusFailed, "", "", "", err)
 		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-
-	if ok, err = rc.activityStorage.HasPendingDeposit(token, exchange); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-	if ok {
-		err = fmt.Errorf("there is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-
-	if err = sanityCheckAmount(exchange, token, amount); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
-		}
-		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
-	}
-	if tx, err = rc.blockchain.Send(token, amount, address); err != nil {
-		sErr := recordActivity(statusFailed, "", "", "", err)
-		if sErr != nil {
-			rc.l.Warnw("failed to save activity record", "err", sErr)
+			rc.l.Errorw("failed to save activity record", "err", sErr)
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
@@ -272,6 +231,82 @@ func (rc ReserveCore) Deposit(
 		nil,
 	)
 	return uidGenerator(tx.Hash().Hex()), common.CombineActivityStorageErrs(err, sErr)
+}
+func (rc ReserveCore) maxGasPrice() float64 {
+	// MaxGasPrice will fetch gasPrice from kyber network contract(with cache for configurable seconds)
+	max, err := rc.gasPriceLimiter.MaxGasPrice()
+	if err != nil {
+		rc.l.Errorw("failed to receive maxGasPrice from network, fallback to hard code value",
+			"err", err, "maxGasPrice", maxGasPrice)
+		return maxGasPrice
+	}
+	return max
+}
+func (rc ReserveCore) doDeposit(exchange common.Exchange, token common.Token, amount *big.Int) (tx *types.Transaction, err error) {
+
+	address, supported := exchange.Address(token)
+	if !supported {
+		return nil, fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), token.ID)
+	}
+	found, err := rc.activityStorage.HasPendingDeposit(token, exchange)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return nil, fmt.Errorf("there is a pending %s deposit to %s currently, please try again", token.ID, exchange.ID())
+	}
+	if err = sanityCheckAmount(exchange, token, amount); err != nil {
+		return nil, err
+	}
+	// if there is a pending deposit tx, we replace it
+	var (
+		initPrice  *big.Int
+		minedNonce uint64
+	)
+	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.DepositOP)
+	if err != nil {
+		return tx, fmt.Errorf("couldn't get mined nonce of deposit operator (%+v)", err)
+	}
+	/* // we don't support override nonce for deposit due huobi deposit require 2 step
+	// a deposit can stay in pending state when step 1 done, step 2 is processing,
+	// we can't handle this situation at this time.
+	oldNonce   *big.Int
+	count      uint64
+	oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionDeposit)
+	rc.l.Infof("old nonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
+	if err != nil {
+		return tx, fmt.Errorf("couldn't check pending deposit tx pool (%+v). Please try later", err)
+	}
+	if oldNonce != nil {
+		newPrice := calculateNewGasPrice(initPrice, count)
+		tx, err = rc.blockchain.Send(token, amount, address, oldNonce, newPrice)
+		if err != nil {
+			rc.l.Errorw("deposit: trying to replace old tx failed", "err", err)
+			return tx, err
+		}
+		rc.l.Infof("deposit: trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
+			newPrice.String(),
+			tx.Hash().Hex(),
+			initPrice.String(),
+			count,
+		)
+		return tx, err
+	}*/
+
+	recommendedPrice := rc.blockchain.StandardGasPrice()
+	highBoundGasPrice := rc.maxGasPrice()
+	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
+		initPrice = common.GweiToWei(10)
+	} else {
+		initPrice = common.GweiToWei(recommendedPrice)
+	}
+	rc.l.Infof("initial deposit tx, init price: %s", initPrice.String())
+
+	if tx, err = rc.blockchain.Send(token, amount, address, big.NewInt(int64(minedNonce)), initPrice); err != nil {
+		return nil, err
+	}
+
+	return tx, nil
 }
 
 // Withdraw withdraw token from exchanges to reserve
@@ -291,16 +326,16 @@ func (rc ReserveCore) Withdraw(
 			uid,
 			string(exchange.ID()),
 			map[string]interface{}{
-				"exchange":  exchange,
-				"token":     token,
-				"amount":    strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
-				"timepoint": timepoint,
+				common.ParamExchange:  exchange,
+				common.ParamToken:     token,
+				common.ParamAmount:    strconv.FormatFloat(common.BigToFloat(amount, token.Decimals), 'f', -1, 64),
+				common.ParamTimepoint: timepoint,
 			}, map[string]interface{}{
-				"error": common.ErrorToString(err),
-				"id":    id,
+				common.ResultError: common.ErrorToString(err),
+				common.ResultID:    id,
 				// this field will be updated with real tx when data fetcher can fetch it
 				// from exchanges
-				"tx": "",
+				common.ResultTx: "",
 			},
 			status,
 			"",
@@ -348,7 +383,7 @@ func (rc ReserveCore) Withdraw(
 	return timebasedID(id), common.CombineActivityStorageErrs(err, sErr)
 }
 
-func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
+func calculateNewGasPrice(initPrice *big.Int, count uint64, highBoundGasPrice float64) *big.Int {
 	// in this case after 5 tries the tx is still not mined.
 	// at this point, 100.1 gwei is not enough but it doesn't matter
 	// if the tx is mined or not because users' tx is not mined neither
@@ -367,22 +402,22 @@ func calculateNewGasPrice(initPrice *big.Int, count uint64) *big.Int {
 }
 
 // return: old nonce, init price, step, error
-func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int, uint64, error) {
-	act, count, err := rc.activityStorage.PendingSetRate(minedNonce)
+func (rc ReserveCore) pendingActionInfo(minedNonce uint64, activityType string) (*big.Int, *big.Int, uint64, error) {
+	act, count, err := rc.activityStorage.PendingActivityForAction(minedNonce, activityType)
 	if err != nil {
 		return nil, nil, 0, err
 	}
 	if act == nil {
 		return nil, nil, 0, nil
 	}
-	nonceStr, ok := act.Result["nonce"].(string)
+	nonceStr, ok := act.Result[common.ResultNonce].(string)
 	if !ok {
-		nErr := fmt.Errorf("cannot convert result[nonce] (value %v) to string type", act.Result["nonce"])
+		nErr := fmt.Errorf("cannot convert result[nonce] (value %v) to string type", act.Result[common.ResultNonce])
 		return nil, nil, count, nErr
 	}
-	gasPriceStr, ok := act.Result["gasPrice"].(string)
+	gasPriceStr, ok := act.Result[common.ResultGasPrice].(string)
 	if !ok {
-		nErr := fmt.Errorf("cannot convert result[gasPrice] (value %v) to string type", act.Result["gasPrice"])
+		nErr := fmt.Errorf("cannot convert result[ResultGasPrice] (value %v) to string type", act.Result[common.ResultGasPrice])
 		return nil, nil, count, nErr
 	}
 	nonce, err := strconv.ParseUint(nonceStr, 10, 64)
@@ -395,6 +430,19 @@ func (rc ReserveCore) pendingSetrateInfo(minedNonce uint64) (*big.Int, *big.Int,
 	}
 	return big.NewInt(int64(nonce)), big.NewInt(int64(gasPrice)), count, nil
 }
+func requireSameLength(tokens []common.Token, buys, sells, afpMids []*big.Int) error {
+	if len(tokens) != len(buys) {
+		return fmt.Errorf("number of buys (%d) is not equal to number of tokens (%d)", len(buys), len(tokens))
+	}
+	if len(tokens) != len(sells) {
+		return fmt.Errorf("number of sell (%d) is not equal to number of tokens (%d)", len(sells), len(tokens))
+
+	}
+	if len(tokens) != len(afpMids) {
+		return fmt.Errorf("number of afpMids (%d) is not equal to number of tokens (%d)", len(afpMids), len(tokens))
+	}
+	return nil
+}
 
 // GetSetRateResult get set rate result
 func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
@@ -404,15 +452,9 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 		tx  *types.Transaction
 		err error
 	)
-	if len(tokens) != len(buys) {
-		return tx, fmt.Errorf("number of buys (%d) is not equal to number of tokens (%d)", len(buys), len(tokens))
-	}
-	if len(tokens) != len(sells) {
-		return tx, fmt.Errorf("number of sell (%d) is not equal to number of tokens (%d)", len(sells), len(tokens))
-
-	}
-	if len(tokens) != len(afpMids) {
-		return tx, fmt.Errorf("number of afpMids (%d) is not equal to number of tokens (%d)", len(afpMids), len(tokens))
+	err = requireSameLength(tokens, buys, sells, afpMids)
+	if err != nil {
+		return tx, err
 	}
 	if err = rc.sanityCheck(buys, afpMids, sells); err != nil {
 		return tx, err
@@ -428,47 +470,46 @@ func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 		minedNonce uint64
 		count      uint64
 	)
-	minedNonce, err = rc.blockchain.SetRateMinedNonce()
+	highBoundGasPrice := rc.maxGasPrice()
+	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
 	}
-	oldNonce, initPrice, count, err = rc.pendingSetrateInfo(minedNonce)
+	oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionSetRate)
 	rc.l.Infof("old nonce: %v, init price: %v, count: %d, err: %+v", oldNonce, initPrice, count, err)
 	if err != nil {
 		return tx, fmt.Errorf("couldn't check pending set rate tx pool (%+v). Please try later", err)
 	}
 	if oldNonce != nil {
-		newPrice := calculateNewGasPrice(initPrice, count)
+		newPrice := calculateNewGasPrice(initPrice, count, highBoundGasPrice)
 		tx, err = rc.blockchain.SetRates(
-			tokenAddrs, buys, sells, block,
-			oldNonce,
-			newPrice,
+			tokenAddrs, buys, sells, block, oldNonce, newPrice,
 		)
 		if err != nil {
-			rc.l.Warnw("Trying to replace old tx failed", "err", err)
-		} else {
-			rc.l.Infof("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
-				newPrice.String(),
-				tx.Hash().Hex(),
-				initPrice.String(),
-				count,
-			)
+			rc.l.Errorw("Trying to replace old tx failed", "err", err)
+			return tx, err
 		}
-	} else {
-		recommendedPrice := rc.blockchain.StandardGasPrice()
-		var initPrice *big.Int
-		if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
-			initPrice = common.GweiToWei(10)
-		} else {
-			initPrice = common.GweiToWei(recommendedPrice)
-		}
-		rc.l.Infof("initial set rate tx, init price: %s", initPrice.String())
-		tx, err = rc.blockchain.SetRates(
-			tokenAddrs, buys, sells, block,
-			big.NewInt(int64(minedNonce)),
-			initPrice,
+		rc.l.Infof("Trying to replace old tx with new price: %s, tx: %s, init price: %s, count: %d",
+			newPrice.String(),
+			tx.Hash().Hex(),
+			initPrice.String(),
+			count,
 		)
+		return tx, err
 	}
+
+	recommendedPrice := rc.blockchain.StandardGasPrice()
+	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
+		initPrice = common.GweiToWei(10)
+	} else {
+		initPrice = common.GweiToWei(recommendedPrice)
+	}
+	rc.l.Infof("initial set rate tx, init price: %s", initPrice.String())
+	tx, err = rc.blockchain.SetRates(
+		tokenAddrs, buys, sells, block,
+		big.NewInt(int64(minedNonce)),
+		initPrice,
+	)
 	return tx, err
 }
 
@@ -505,17 +546,17 @@ func (rc ReserveCore) SetRates(
 		uid,
 		"blockchain",
 		map[string]interface{}{
-			"tokens": tokens,
-			"buys":   buys,
-			"sells":  sells,
-			"block":  block,
-			"afpMid": afpMids,
-			"msgs":   additionalMsgs,
+			common.ParamTokens: tokens,
+			common.ParamBuys:   buys,
+			common.ParamSells:  sells,
+			common.ParamBlock:  block,
+			common.ParamAfpMid: afpMids,
+			common.ParamMsgs:   additionalMsgs,
 		}, map[string]interface{}{
-			"tx":       txhex,
-			"nonce":    txnonce,
-			"gasPrice": txprice,
-			"error":    common.ErrorToString(err),
+			common.ResultTx:       txhex,
+			common.ResultNonce:    txnonce,
+			common.ResultGasPrice: txprice,
+			common.ResultError:    common.ErrorToString(err),
 		},
 		"",
 		miningStatus,

@@ -73,10 +73,8 @@ func (tbc testBlockchain) ListedTokens() []ethereum.Address {
 	return nil
 }
 
-func (tbc testBlockchain) Send(
-	token common.Token,
-	amount *big.Int,
-	address ethereum.Address) (*types.Transaction, error) {
+func (tbc testBlockchain) Send(token common.Token, amount *big.Int, address ethereum.Address,
+	nonce *big.Int, gasPrice *big.Int) (*types.Transaction, error) {
 	tx := types.NewTransaction(
 		0,
 		ethereum.Address{},
@@ -108,7 +106,7 @@ func (tbc testBlockchain) StandardGasPrice() float64 {
 	return 0
 }
 
-func (tbc testBlockchain) SetRateMinedNonce() (uint64, error) {
+func (tbc testBlockchain) GetMinedNonceWithOP(string) (uint64, error) {
 	return 0, nil
 }
 
@@ -136,7 +134,7 @@ func (tas testActivityStorage) GetActivityByOrderID(id string) (common.ActivityR
 	return common.ActivityRecord{}, nil
 }
 
-func (tas testActivityStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+func (tas testActivityStorage) PendingActivityForAction(minedNonce uint64, activityType string) (*common.ActivityRecord, uint64, error) {
 	return nil, 0, nil
 }
 
@@ -170,11 +168,7 @@ func getTestCore(hasPendingDeposit bool) *ReserveCore {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return NewReserveCore(
-		testBlockchain{},
-		testActivityStorage{hasPendingDeposit},
-		setting,
-	)
+	return NewReserveCore(testBlockchain{}, testActivityStorage{hasPendingDeposit}, setting, &ConstGasPriceLimiter{})
 }
 
 func TestNotAllowDeposit(t *testing.T) {
@@ -201,14 +195,14 @@ func TestNotAllowDeposit(t *testing.T) {
 
 func TestCalculateNewGasPrice(t *testing.T) {
 	initPrice := common.GweiToWei(1)
-	newPrice := calculateNewGasPrice(initPrice, 0)
+	newPrice := calculateNewGasPrice(initPrice, 0, 100.0)
 	if newPrice.Cmp(newPrice) != 0 {
 		t.Errorf("new price is not equal to initial price with count == 0")
 	}
 
 	prevPrice := initPrice
 	for count := uint64(1); count < 10; count++ {
-		newPrice = calculateNewGasPrice(initPrice, count)
+		newPrice = calculateNewGasPrice(initPrice, count, 100.0)
 		if newPrice.Cmp(prevPrice) != 1 {
 			t.Errorf("new price %s is not higher than previous price %s",
 				newPrice.String(),

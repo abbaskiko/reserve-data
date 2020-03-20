@@ -444,7 +444,7 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 		result.Status = true
 		if respData.Status != "ok" {
 			result.Valid = false
-			result.Error = fmt.Sprintf("Cannot fetch ebalance")
+			result.Error = "Cannot fetch ebalance"
 			result.Status = false
 		} else {
 			balances := respData.Data.List
@@ -633,7 +633,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 				data := common.NewTXEntry(tx2Entry.Hash,
 					h.Name(),
 					currency,
-					"mined",
+					common.MiningStatusMined,
 					exchangeStatusDone,
 					sentAmount,
 					common.GetTimestamp(),
