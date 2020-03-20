@@ -35,8 +35,8 @@ type HitData struct {
 type CoinbaseData1000 struct {
 	Valid bool    `json:"valid"`
 	Error string  `json:"error"`
-	Bid   float64 `json:"bid"`
-	Ask   float64 `json:"ask"`
+	Bid   float64 `json:"bid,string"`
+	Ask   float64 `json:"ask,string"`
 }
 
 // USDData ...
