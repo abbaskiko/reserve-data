@@ -248,7 +248,7 @@ func (s *Server) Trade(c *gin.Context) {
 
 // OpenOrdersRequest request for open orders
 type OpenOrdersRequest struct {
-	ExchangeID uint64 `form:"exchange_id" binding:"required"`
+	ExchangeID uint64 `form:"exchange_id"`
 	Pair       uint64 `form:"pair"`
 }
 
@@ -265,11 +265,16 @@ func (s *Server) OpenOrders(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-
-	exchange, ok := common.SupportedExchanges[common.ExchangeID(query.ExchangeID)]
-	if !ok {
-		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", query.ExchangeID)))
-		return
+	getExchange := make(map[common.ExchangeID]common.Exchange)
+	if query.ExchangeID != 0 {
+		exchange, ok := common.SupportedExchanges[common.ExchangeID(query.ExchangeID)]
+		if !ok {
+			httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", query.ExchangeID)))
+			return
+		}
+		getExchange[common.ExchangeID(query.ExchangeID)] = exchange
+	} else {
+		getExchange = common.SupportedExchanges
 	}
 	if query.Pair != 0 {
 		logger.Infow("query pair", "pair", query.Pair)
@@ -283,15 +288,18 @@ func (s *Server) OpenOrders(c *gin.Context) {
 	} else {
 		logger.Info("pair id not provide, getting open orders for all supported pairs")
 	}
-
-	openOrders, err := exchange.OpenOrders(pair)
-	if err != nil {
-		logger.Errorw("failed to get open orders", "exchange", exchange.ID().String, "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
+	result := make(map[common.ExchangeID][]common.Order)
+	for exchangeID, exchange := range getExchange {
+		openOrders, err := exchange.OpenOrders(pair)
+		if err != nil {
+			logger.Errorw("failed to get open orders", "exchange", exchange.ID().String, "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+		result[exchangeID] = openOrders
 	}
 
-	httputil.ResponseSuccess(c, httputil.WithData(openOrders))
+	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
 // CancelOrderRequest type

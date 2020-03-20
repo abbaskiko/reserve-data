@@ -50,20 +50,24 @@ curl -X POST "http://gateway.local/v3/open-orders?exchange_id=1&pair=2"
 
 > sample response
 
+data is map exchange id with its corresponding open orders
+
 ```json
 {
-    "data": [
-        {
-            "Base": "KNC",
-            "Quote": "ETH",
-            "OrderID": "54649705",
-            "Price": 0.0018,
-            "OrigQty": 118,
-            "ExecutedQty": 0,
-            "Type": "LIMIT",
-            "Side": "BUY"
-        }
-    ],
+    "data": {
+        "1": [
+            {
+                "Base": "KNC",
+                "Quote": "ETH",
+                "OrderID": "54649705",
+                "Price": 0.0018,
+                "OrigQty": 118,
+                "ExecutedQty": 0,
+                "Type": "LIMIT",
+                "Side": "BUY"
+            }
+        ]
+    },
     "success": true
 }
 ```
@@ -75,7 +79,7 @@ curl -X POST "http://gateway.local/v3/open-orders?exchange_id=1&pair=2"
 
 Param | Type | Required | Default | Description
 ----- | ---- | -------- | ------- | -----------
-exchange_id | uint64 | true | nil | id of exchange (ex: binance - 1, huobi - 2)
+exchange_id | uint64 | false | nil | id of exchange (ex: binance - 1, huobi - 2)
 pair | uint64 | true | nil | id of pair (ex: KNCETH - 1, OMGETH - 2)
 
 
