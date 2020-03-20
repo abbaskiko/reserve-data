@@ -27,18 +27,26 @@ type HitData struct {
 	Symbol      string `json:"symbol"`
 }
 
+// CoinbaseData1000 ...
+type CoinbaseData1000 struct {
+	Valid bool    `json:"valid"`
+	Error string  `json:"error"`
+	Bid   float64 `json:"bid"`
+	Ask   float64 `json:"ask"`
+}
+
 // USDData ...
 type USDData struct {
 	Timestamp        uint64
-	CoinbaseUSD      CoinbaseData   `json:"CoinbaseUSD"`
-	GeminiUSD        GeminiGoldData `json:"GeminiUSD"` // gold and usd use the same url
-	CoinbaseUSDC     CoinbaseData   `json:"CoinbaseUSDC"`
-	BinanceUSDC      BinanceData    `json:"BinanceUSDC"`
-	CoinbaseDAI      CoinbaseData   `json:"CoinbaseDAI"`
-	CoinbaseDAI10000 CoinbaseData   `json:"CoinbaseDAI10000"`
-	HitDAI           HitData        `json:"HitDAI"`
-	BitFinex         BitFinexData   `json:"BitFinexUSD"`
-	BinanceUSDT      BinanceData    `json:"BinanceUSDT"`
-	BinancePAX       BinanceData    `json:"BinancePAX"`
-	BinanceTUSD      BinanceData    `json:"BinanceTUSD"`
+	CoinbaseUSD      CoinbaseData     `json:"CoinbaseUSD"`
+	GeminiUSD        GeminiGoldData   `json:"GeminiUSD"` // gold and usd use the same url
+	CoinbaseUSDC     CoinbaseData     `json:"CoinbaseUSDC"`
+	BinanceUSDC      BinanceData      `json:"BinanceUSDC"`
+	CoinbaseDAI      CoinbaseData     `json:"CoinbaseDAI"`
+	CoinbaseDAI10000 CoinbaseData1000 `json:"CoinbaseDAI10000"`
+	HitDAI           HitData          `json:"HitDAI"`
+	BitFinex         BitFinexData     `json:"BitFinexUSD"`
+	BinanceUSDT      BinanceData      `json:"BinanceUSDT"`
+	BinancePAX       BinanceData      `json:"BinancePAX"`
+	BinanceTUSD      BinanceData      `json:"BinanceTUSD"`
 }

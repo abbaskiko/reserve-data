@@ -50,6 +50,18 @@ func (tw *TheWorld) getBitFinexInfo(url string) common.BitFinexData {
 	return result
 }
 
+func (tw *TheWorld) getCoinbaseInfo10000(ep string) common.CoinbaseData1000 {
+	var (
+		url    = ep
+		result = common.CoinbaseData1000{}
+	)
+	if err := tw.getPublic(url, &result); err != nil {
+		result.Valid = false
+		result.Error = err.Error()
+	}
+	return result
+}
+
 // GetUSDInfo return usd info
 func (tw *TheWorld) GetUSDInfo() (common.USDData, error) {
 	return common.USDData{
@@ -59,7 +71,7 @@ func (tw *TheWorld) GetUSDInfo() (common.USDData, error) {
 		CoinbaseUSDC:     tw.getCoinbaseInfo(tw.endpoint.CoinbaseETHUSDC()),
 		BinanceUSDC:      tw.getBinanceInfo(tw.endpoint.BinanceETHUSDC()),
 		CoinbaseDAI:      tw.getCoinbaseInfo(tw.endpoint.CoinbaseETHDAI()),
-		CoinbaseDAI10000: tw.getCoinbaseInfo(tw.endpoint.CoinbaseETHDAI10000()),
+		CoinbaseDAI10000: tw.getCoinbaseInfo10000(tw.endpoint.CoinbaseETHDAI10000()),
 		HitDAI:           tw.getHitInfo(tw.endpoint.HitBTCETHDAI()),
 		BitFinex:         tw.getBitFinexInfo(tw.endpoint.BitFinexETHUSDT()),
 		BinancePAX:       tw.getBinanceInfo(tw.endpoint.BinanceETHPAX()),
