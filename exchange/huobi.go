@@ -633,7 +633,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 				data := common.NewTXEntry(tx2Entry.Hash,
 					h.Name(),
 					currency,
-					"mined",
+					common.MiningStatusMined,
 					exchangeStatusDone,
 					sentAmount,
 					common.GetTimestamp(),

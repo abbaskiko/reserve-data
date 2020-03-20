@@ -46,6 +46,11 @@ type BaseBlockchain struct {
 	l              *zap.SugaredLogger
 }
 
+// EthClient return main client that BaseBlockchain use
+func (b *BaseBlockchain) EthClient() *ethclient.Client {
+	return b.client
+}
+
 func (b *BaseBlockchain) OperatorAddresses() map[string]ethereum.Address {
 	result := map[string]ethereum.Address{}
 	for name, op := range b.operators {

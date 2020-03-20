@@ -117,6 +117,12 @@ type FetcherDelay struct {
 	GlobalData    HumanDuration `json:"global_data"`
 }
 
+// GasConfig ...
+type GasConfig struct {
+	PreferUseGasStation     bool  `json:"prefer_use_gas_station"`
+	FetchMaxGasCacheSeconds int64 `json:"fetch_max_gas_cache_seconds"`
+}
+
 // AppConfig represnet for app configuration
 type AppConfig struct {
 	Authentication       Authentication `json:"authentication"`
@@ -127,6 +133,7 @@ type AppConfig struct {
 	PassphraseDeposit    string         `json:"passphrase_deposit"`
 	HTTPAPIAddr          string         `json:"http_api_addr"`
 	SimulationRunnerAddr string         `json:"http_simulation_runner_addr"`
+	GasConfig            GasConfig      `json:"gas_config"`
 
 	ExchangeEndpoints   ExchangeEndpoints               `json:"exchange_endpoints"`
 	WorldEndpoints      WorldEndpoints                  `json:"world_endpoints"`

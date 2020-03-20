@@ -4,6 +4,8 @@ import (
 	"math/big"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
+
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -12,10 +14,7 @@ import (
 // with Ethereum blockchain.
 type Blockchain interface {
 	StandardGasPrice() float64
-	Send(
-		token common.Token,
-		amount *big.Int,
-		address ethereum.Address) (*types.Transaction, error)
+	Send(token common.Token, amount *big.Int, address ethereum.Address, nonce *big.Int, gasPrice *big.Int) (*types.Transaction, error)
 	SetRates(
 		tokens []ethereum.Address,
 		buys []*big.Int,
@@ -23,5 +22,5 @@ type Blockchain interface {
 		block *big.Int,
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
-	SetRateMinedNonce() (uint64, error)
+	blockchain.MinedNoncePicker
 }
