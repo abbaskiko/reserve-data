@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/KyberNetwork/reserve-data/world"
+	"github.com/KyberNetwork/reserve-data/common/feed"
 )
 
 // GoldRate gold rate
@@ -87,12 +87,12 @@ type GoldData struct {
 
 func (d GoldData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"Timestamp":                   d.Timestamp,
-		world.GoldData.String():       d.DGX,
-		world.OneForgeXAUETH.String(): d.OneForgeETH,
-		world.OneForgeXAUUSD.String(): d.OneForgeUSD,
-		world.GDAXETHUSD.String():     d.GDAX,
-		world.KrakenETHUSD.String():   d.Kraken,
-		world.GeminiETHUSD.String():   d.Gemini,
+		"Timestamp":                  d.Timestamp,
+		feed.GoldData.String():       d.DGX,
+		feed.OneForgeXAUETH.String(): d.OneForgeETH,
+		feed.OneForgeXAUUSD.String(): d.OneForgeUSD,
+		feed.GDAXETHUSD.String():     d.GDAX,
+		feed.KrakenETHUSD.String():   d.Kraken,
+		feed.GeminiETHUSD.String():   d.Gemini,
 	}
 }

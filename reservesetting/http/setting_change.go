@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/feed"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
-	"github.com/KyberNetwork/reserve-data/world"
 )
 
 const (
@@ -468,13 +468,13 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 	// check if FeedWeight is correctly supported
 	if *setrate == common.BTCFeed {
 		for k := range *feedWeight { // TODO: test on this
-			if _, ok := world.AllFeeds().BTC[k]; !ok {
+			if _, ok := feed.AllFeeds().BTC[k]; !ok {
 				return fmt.Errorf("%s feed is not supported by %s", k, common.BTCFeed.String())
 			}
 		}
 	} else if *setrate == common.USDFeed {
 		for k := range *feedWeight {
-			if _, ok := world.AllFeeds().USD[k]; !ok {
+			if _, ok := feed.AllFeeds().USD[k]; !ok {
 				return fmt.Errorf("%s feed is not supported by %s", k, common.USDFeed.String())
 			}
 		}
@@ -593,13 +593,13 @@ func (s *Server) checkUpdateExchangeParams(updateExchangeEntry common.UpdateExch
 }
 
 func (s *Server) checkSetFeedConfigurationParams(setFeedConfigurationEntry common.SetFeedConfigurationEntry) error {
-	if _, ok := world.AllFeeds().BTC[setFeedConfigurationEntry.Name]; ok {
+	if _, ok := feed.AllFeeds().BTC[setFeedConfigurationEntry.Name]; ok {
 		return nil
 	}
-	if _, ok := world.AllFeeds().USD[setFeedConfigurationEntry.Name]; ok {
+	if _, ok := feed.AllFeeds().USD[setFeedConfigurationEntry.Name]; ok {
 		return nil
 	}
-	if _, ok := world.AllFeeds().Gold[setFeedConfigurationEntry.Name]; ok {
+	if _, ok := feed.AllFeeds().Gold[setFeedConfigurationEntry.Name]; ok {
 		return nil
 	}
 	return fmt.Errorf("feed does not exist, feed=%s", setFeedConfigurationEntry.Name)

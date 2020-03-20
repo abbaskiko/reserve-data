@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/KyberNetwork/reserve-data/world"
+	"github.com/KyberNetwork/reserve-data/common/feed"
 )
 
 // BTCData is the data returned by /btc-feed API.
@@ -14,9 +14,9 @@ type BTCData struct {
 // ToMap convert to map result.
 func (b BTCData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"Timestamp":                   b.Timestamp,
-		world.CoinbaseETHBTC.String(): b.Coinbase,
-		world.GeminiETHBTC.String():   b.Gemini,
+		"Timestamp":                  b.Timestamp,
+		feed.CoinbaseETHBTC.String(): b.Coinbase,
+		feed.GeminiETHBTC.String():   b.Gemini,
 	}
 }
 

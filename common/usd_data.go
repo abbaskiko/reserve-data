@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/KyberNetwork/reserve-data/world"
+	"github.com/KyberNetwork/reserve-data/common/feed"
 )
 
 // BinanceData data return by https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDC
@@ -58,16 +58,17 @@ type USDData struct {
 // ToMap convert to map result.
 func (u USDData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"Timestamp":                    u.Timestamp,
-		world.CoinbaseETHUSD.String():  u.CoinbaseUSD,
-		world.GeminiETHUSD.String():    u.GeminiUSD,
-		world.CoinbaseETHUSDC.String(): u.CoinbaseUSDC,
-		world.BinanceETHUSDC.String():  u.BinanceUSDC,
-		world.CoinbaseETHDAI.String():  u.CoinbaseDAI,
-		world.HitBTCETHDAI.String():    u.HitDAI,
-		world.BitFinexETHUSDT.String(): u.BitFinex,
-		world.BinanceETHUSDT.String():  u.BinanceUSDT,
-		world.BinanceETHPAX.String():   u.BinancePAX,
-		world.BinanceETHTUSD.String():  u.BinanceTUSD,
+		"Timestamp":                       u.Timestamp,
+		feed.CoinbaseETHUSD.String():      u.CoinbaseUSD,
+		feed.GeminiETHUSD.String():        u.GeminiUSD,
+		feed.CoinbaseETHUSDC.String():     u.CoinbaseUSDC,
+		feed.BinanceETHUSDC.String():      u.BinanceUSDC,
+		feed.CoinbaseETHDAI.String():      u.CoinbaseDAI,
+		feed.CoinbaseETHDAI10000.String(): u.CoinbaseDAI10000,
+		feed.HitBTCETHDAI.String():        u.HitDAI,
+		feed.BitFinexETHUSDT.String():     u.BitFinex,
+		feed.BinanceETHUSDT.String():      u.BinanceUSDT,
+		feed.BinanceETHPAX.String():       u.BinancePAX,
+		feed.BinanceETHTUSD.String():      u.BinanceTUSD,
 	}
 }
