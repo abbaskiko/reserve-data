@@ -444,7 +444,7 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 		result.Status = true
 		if respData.Status != "ok" {
 			result.Valid = false
-			result.Error = fmt.Sprintf("Cannot fetch ebalance")
+			result.Error = "Cannot fetch ebalance"
 			result.Status = false
 		} else {
 			balances := respData.Data.List

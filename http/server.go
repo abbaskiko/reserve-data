@@ -430,15 +430,25 @@ func (s *Server) GetOpenOrders(c *gin.Context) {
 	}
 
 	exchangeParam := c.Query("exchange")
-	exchange, err := common.GetExchange(exchangeParam)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
+	exchanges := make(map[common.ExchangeID]common.Exchange)
+	if exchangeParam != "" {
+		exchange, err := common.GetExchange(exchangeParam)
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+		exchanges[common.ExchangeID(exchangeParam)] = exchange
+	} else {
+		exchanges = common.SupportedExchanges
 	}
-	result, err := exchange.OpenOrders()
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithError(err))
-		return
+	result := make(map[common.ExchangeID][]common.Order)
+	for exchangeID, exchange := range exchanges {
+		orders, err := exchange.OpenOrders()
+		if err != nil {
+			httputil.ResponseFailure(c, httputil.WithError(err))
+			return
+		}
+		result[exchangeID] = orders
 	}
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
