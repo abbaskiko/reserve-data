@@ -7,14 +7,14 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type stableTokenParamsDb struct {
+type stableTokenParamsDB struct {
 	ID        uint64          `db:"id"`
 	Timepoint time.Time       `db:"timepoint"`
 	Data      json.RawMessage `db:"data"`
 }
 
 func (s *Storage) GetStableTokenParams() (map[string]interface{}, error) {
-	var r stableTokenParamsDb
+	var r stableTokenParamsDB
 	var data = make(map[string]interface{})
 	//var jsonMsg json.RawMessage
 

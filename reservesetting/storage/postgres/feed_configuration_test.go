@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/KyberNetwork/reserve-data/common/feed"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
-	"github.com/KyberNetwork/reserve-data/world"
 )
 
 func TestGetFeedConfigurations(t *testing.T) {
@@ -23,7 +23,7 @@ func TestGetFeedConfigurations(t *testing.T) {
 	fcs, err := s.GetFeedConfigurations()
 	require.NoError(t, err)
 
-	require.Equal(t, len(world.AllFeeds().Gold)+len(world.AllFeeds().USD)+len(world.AllFeeds().BTC), len(fcs))
+	require.Equal(t, len(feed.AllFeeds().Gold)+len(feed.AllFeeds().USD)+len(feed.AllFeeds().BTC), len(fcs))
 }
 
 func TestSetFeedConfigurations(t *testing.T) {
@@ -39,10 +39,10 @@ func TestSetFeedConfigurations(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotZero(t, len(fcs))
-	require.Equal(t, len(world.AllFeeds().Gold)+len(world.AllFeeds().USD)+len(world.AllFeeds().BTC), len(fcs))
+	require.Equal(t, len(feed.AllFeeds().Gold)+len(feed.AllFeeds().USD)+len(feed.AllFeeds().BTC), len(fcs))
 
 	var (
-		fname                 = world.GeminiETHUSD.String()
+		fname                 = feed.GeminiETHUSD.String()
 		fenabled              = false
 		fbaseVolatilitySpread = 1.1
 		fnormalSpread         = 1.2
@@ -78,7 +78,7 @@ func TestUpdateFeedStatus(t *testing.T) {
 
 	s, err := NewStorage(db)
 	require.NoError(t, err)
-	fname := world.GeminiETHUSD.String()
+	fname := feed.GeminiETHUSD.String()
 	fcs, err := s.GetFeedConfiguration(fname, common.USDFeed)
 	require.NoError(t, err)
 	var (
