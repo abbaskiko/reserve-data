@@ -467,7 +467,7 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 
 	// check if FeedWeight is correctly supported
 	if *setrate == common.BTCFeed {
-		for k := range *feedWeight { // TODO: test on this
+		for k := range *feedWeight {
 			if _, ok := feed.AllFeeds().BTC[k]; !ok {
 				return fmt.Errorf("%s feed is not supported by %s", k, common.BTCFeed.String())
 			}
@@ -593,14 +593,23 @@ func (s *Server) checkUpdateExchangeParams(updateExchangeEntry common.UpdateExch
 }
 
 func (s *Server) checkSetFeedConfigurationParams(setFeedConfigurationEntry common.SetFeedConfigurationEntry) error {
-	if _, ok := feed.AllFeeds().BTC[setFeedConfigurationEntry.Name]; ok {
-		return nil
+	switch setFeedConfigurationEntry.SetRate {
+	case common.BTCFeed:
+		if _, ok := feed.AllFeeds().BTC[setFeedConfigurationEntry.Name]; ok {
+			return nil
+		}
+		return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
+	case common.USDFeed:
+		if _, ok := feed.AllFeeds().USD[setFeedConfigurationEntry.Name]; ok {
+			return nil
+		}
+		return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
+	case common.GoldFeed:
+		if _, ok := feed.AllFeeds().Gold[setFeedConfigurationEntry.Name]; ok {
+			return nil
+		}
+		return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
 	}
-	if _, ok := feed.AllFeeds().USD[setFeedConfigurationEntry.Name]; ok {
-		return nil
-	}
-	if _, ok := feed.AllFeeds().Gold[setFeedConfigurationEntry.Name]; ok {
-		return nil
-	}
+
 	return fmt.Errorf("feed does not exist, feed=%s", setFeedConfigurationEntry.Name)
 }
