@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/feed"
 	"github.com/KyberNetwork/reserve-data/common/testutil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
-	"github.com/KyberNetwork/reserve-data/world"
 )
 
 func TestCheckFeedConfiguration(t *testing.T) {
@@ -29,32 +29,70 @@ func TestCheckFeedConfiguration(t *testing.T) {
 	err = server.checkSetFeedConfigurationParams(feedConfigurationEntryNotSupportedTest)
 	require.Error(t, err)
 
-	// test for supported feed names
-	supportedFeed := []world.Feed{
-		world.GoldData,
-		world.OneForgeXAUETH,
-		world.OneForgeXAUUSD,
-		world.GDAXETHUSD,
-		world.KrakenETHUSD,
-		world.GeminiETHUSD,
-		world.CoinbaseETHBTC,
-		world.GeminiETHBTC,
-		world.CoinbaseETHUSDC,
-		world.BinanceETHUSDC,
-		world.CoinbaseETHUSD,
-		world.CoinbaseETHDAI,
-		world.HitBTCETHDAI,
-		world.BitFinexETHUSDT,
-		world.BinanceETHUSDT,
-		world.BinanceETHPAX,
-		world.BinanceETHTUSD,
+	// test match supported feeds name and set rate value
+	// gold feed
+	supportedGoldFeed := []feed.Feed{
+		feed.GoldData,
+		feed.OneForgeXAUETH,
+		feed.OneForgeXAUUSD, // OneForgeXAUUSD
+		feed.GDAXETHUSD,     // GDAXETHUSD
+		feed.KrakenETHUSD,   // KrakenETHUSD
+		feed.GeminiETHUSD,   // GeminiETHUSD
 	}
 
-	for _, feedName := range supportedFeed {
+	for _, feedName := range supportedGoldFeed {
 		feedNameSupportedEntry := common.SetFeedConfigurationEntry{
-			Name: feedName.String(),
+			Name:    feedName.String(),
+			SetRate: common.GoldFeed,
 		}
 		err := server.checkSetFeedConfigurationParams(feedNameSupportedEntry)
 		assert.NoError(t, err)
 	}
+
+	// test match supported feeds name and set rate value
+	// USD feed
+	supportedUSDFeed := []feed.Feed{
+		feed.CoinbaseETHUSDC,
+		feed.BinanceETHUSDC,
+		feed.CoinbaseETHUSD,
+		feed.CoinbaseETHDAI,
+		feed.HitBTCETHDAI,
+		feed.BitFinexETHUSDT,
+		feed.BinanceETHUSDT,
+		feed.BinanceETHPAX,
+		feed.BinanceETHTUSD,
+	}
+
+	for _, feedName := range supportedUSDFeed {
+		feedNameSupportedEntry := common.SetFeedConfigurationEntry{
+			Name:    feedName.String(),
+			SetRate: common.USDFeed,
+		}
+		err := server.checkSetFeedConfigurationParams(feedNameSupportedEntry)
+		assert.NoError(t, err)
+	}
+
+	// test match supported feeds name and set rate value
+	// USD feed
+	supportedBTCFeed := []feed.Feed{
+		feed.CoinbaseETHBTC,
+		feed.GeminiETHBTC,
+	}
+
+	for _, feedName := range supportedBTCFeed {
+		feedNameSupportedEntry := common.SetFeedConfigurationEntry{
+			Name:    feedName.String(),
+			SetRate: common.BTCFeed,
+		}
+		err := server.checkSetFeedConfigurationParams(feedNameSupportedEntry)
+		assert.NoError(t, err)
+	}
+
+	// test feed name and set rate value does not match
+	feedNameSupportedEntry := common.SetFeedConfigurationEntry{
+		Name:    feed.GeminiETHUSD.String(),
+		SetRate: common.BTCFeed,
+	}
+	err = server.checkSetFeedConfigurationParams(feedNameSupportedEntry)
+	assert.Error(t, err)
 }

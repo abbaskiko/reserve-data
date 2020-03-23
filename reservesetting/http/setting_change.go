@@ -594,12 +594,30 @@ func (s *Server) checkUpdateExchangeParams(updateExchangeEntry common.UpdateExch
 
 func (s *Server) checkSetFeedConfigurationParams(setFeedConfigurationEntry common.SetFeedConfigurationEntry) error {
 	if _, ok := feed.AllFeeds().BTC[setFeedConfigurationEntry.Name]; ok {
+		if setFeedConfigurationEntry.SetRate != common.BTCFeed {
+			return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
+		}
 		return nil
 	}
 	if _, ok := feed.AllFeeds().USD[setFeedConfigurationEntry.Name]; ok {
+		// because GeminiETHUSD could be both USD Feed or Gold Feed then we exclude it here
+		if setFeedConfigurationEntry.Name != feed.GeminiETHUSD.String() && setFeedConfigurationEntry.SetRate != common.USDFeed {
+			return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
+		}
+		if setFeedConfigurationEntry.Name == feed.GeminiETHUSD.String() && setFeedConfigurationEntry.SetRate == common.BTCFeed {
+			return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
+		}
 		return nil
 	}
 	if _, ok := feed.AllFeeds().Gold[setFeedConfigurationEntry.Name]; ok {
+		// because GeminiETHUSD could be both USD Feed or Gold Feed then we exclude it here
+		if setFeedConfigurationEntry.Name != feed.GeminiETHUSD.String() && setFeedConfigurationEntry.SetRate != common.GoldFeed {
+			return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
+		}
+
+		if setFeedConfigurationEntry.Name == feed.GeminiETHUSD.String() && setFeedConfigurationEntry.SetRate == common.BTCFeed {
+			return fmt.Errorf("set feed configuration does not match, feed name: %s, set rate value: %s", setFeedConfigurationEntry.Name, setFeedConfigurationEntry.SetRate.String())
+		}
 		return nil
 	}
 	return fmt.Errorf("feed does not exist, feed=%s", setFeedConfigurationEntry.Name)
