@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -49,6 +50,7 @@ func (c *KyberGasPriceLimiter) MaxGasPrice() (float64, error) {
 		c.localCachedTime = now
 		fValue := common.BigToFloat(v, 9)
 		c.cachedValue = &fValue
+		zap.S().Infow("fetch new max_gas_price", "value", fValue)
 		return fValue, nil
 	}
 	return 0, err
