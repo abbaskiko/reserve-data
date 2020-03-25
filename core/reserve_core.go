@@ -52,8 +52,8 @@ func timebasedID(id string) common.ActivityID {
 	return common.NewActivityID(uint64(time.Now().UnixNano()), id)
 }
 
-// CancelOrder cancel an order on centralized exchanges
-func (rc ReserveCore) CancelOrder(orderIDs []string, exchange common.Exchange) map[string]common.CancelOrderResult {
+// CancelOrders cancel orders on centralized exchanges
+func (rc ReserveCore) CancelOrders(orderIDs []string, exchange common.Exchange) map[string]common.CancelOrderResult {
 	var (
 		logger = rc.l.With("func", caller.GetCurrentFunctionName())
 	)

@@ -425,7 +425,7 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, error) {
 	var (
 		result []common.Order
-		orders []Binaorder
+		orders = []Binaorder{}
 		err    error
 	)
 	if pair.ID != 0 {

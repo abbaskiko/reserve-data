@@ -322,7 +322,7 @@ func (s *Server) CancelOrder(c *gin.Context) {
 		return
 	}
 	s.l.Infow("Cancel order", "id", request.OrderIDs, "from", exchange.ID().String())
-	result := s.core.CancelOrder(request.OrderIDs, exchange)
+	result := s.core.CancelOrders(request.OrderIDs, exchange)
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
@@ -532,7 +532,7 @@ func (s *Server) register() {
 		g.GET("/immediate-pending-activities", s.ImmediatePendingActivities)
 
 		g.GET("/open-orders", s.OpenOrders)
-		g.POST("/cancel-order", s.CancelOrder)
+		g.POST("/cancel-orders", s.CancelOrder)
 		g.POST("/cancel-all-orders", s.CancelAllOrders)
 		g.POST("/deposit", s.Deposit)
 		g.POST("/withdraw", s.Withdraw)
