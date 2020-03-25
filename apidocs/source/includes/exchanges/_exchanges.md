@@ -86,7 +86,7 @@ pair | uint64 | true | nil | id of pair (ex: KNCETH - 1, OMGETH - 2)
 ## Cancel order 
 
 ```shell
-curl -X POST "http://gateway.local/v3/cancelorder"
+curl -X POST "http://gateway.local/v3/cancel-order"
 -H 'Content-Type: application/json'
 -d '{
     "order_ids": ["43142", "43224"]
@@ -124,7 +124,7 @@ curl -X POST "http://gateway.local/v3/cancelorder"
 
 Param | Type | Required | Default | Description
 ----- | ---- | -------- | ------- | -----------
-order_id | string | true | nil | order id to be cancelled
+order_ids | string array | true | nil | list of order ids to be cancelled
 exchange | string | true | nil | exchange to cancel order
 
 ## Withdraw
