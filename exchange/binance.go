@@ -424,8 +424,8 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 // OpenOrders get open orders from binance
 func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, error) {
 	var (
-		result []common.Order
-		orders = []Binaorder{}
+		result = []common.Order{}
+		orders []Binaorder
 		err    error
 	)
 	if pair.ID != 0 {
