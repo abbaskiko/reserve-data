@@ -175,7 +175,7 @@ func configLog(stdoutLog bool) io.Writer {
 
 // CreateBlockchain create new blockchain instance
 func CreateBlockchain(config *configuration.AppState) (bc *blockchain.Blockchain, err error) {
-	bc, err = blockchain.NewBlockchain(config.Blockchain, config.Setting)
+	bc, err = blockchain.NewBlockchain(config.Blockchain, config.Setting, config.AppConfig.GasConfig)
 
 	if err != nil {
 		panic(err)
