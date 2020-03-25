@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -12,12 +12,8 @@ type Contract struct {
 	ABI     abi.ABI
 }
 
-func NewContract(address ethereum.Address, abipath string) *Contract {
-	file, err := os.Open(abipath)
-	if err != nil {
-		panic(err)
-	}
-	parsed, err := abi.JSON(file)
+func NewContract(address ethereum.Address, rawABI string) *Contract {
+	parsed, err := abi.JSON(strings.NewReader(rawABI))
 	if err != nil {
 		panic(err)
 	}

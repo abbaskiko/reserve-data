@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"os"
-	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	ether "github.com/ethereum/go-ethereum"
@@ -389,12 +388,7 @@ func NewBaseBlockchain(
 	broadcaster *Broadcaster,
 	contractcaller *ContractCaller) *BaseBlockchain {
 
-	file, err := os.Open(
-		filepath.Join(common.CurrentDir(), "ERC20.abi"))
-	if err != nil {
-		panic(err)
-	}
-	packabi, err := abi.JSON(file)
+	packabi, err := abi.JSON(strings.NewReader(ERC20ABI))
 	if err != nil {
 		panic(err)
 	}

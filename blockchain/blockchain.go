@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -456,7 +455,7 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchai
 	l.Infof("wrapper address: %s", wrapperAddr.Hex())
 	wrapper := blockchain.NewContract(
 		wrapperAddr,
-		filepath.Join(common.CurrentDir(), "wrapper.abi"),
+		blockchain.WrapperABI,
 	)
 	reserveAddr, err := setting.GetAddress(settings.Reserve)
 	if err != nil {
@@ -465,7 +464,7 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchai
 	l.Infof("reserve address: %s", reserveAddr.Hex())
 	reserve := blockchain.NewContract(
 		reserveAddr,
-		filepath.Join(common.CurrentDir(), "reserve.abi"),
+		blockchain.ReserveABI,
 	)
 	pricingAddr, err := setting.GetAddress(settings.Pricing)
 	if err != nil {
@@ -474,7 +473,7 @@ func NewBlockchain(base *blockchain.BaseBlockchain, setting Setting) (*Blockchai
 	l.Infof("pricing address: %s", pricingAddr.Hex())
 	pricing := blockchain.NewContract(
 		pricingAddr,
-		filepath.Join(common.CurrentDir(), "pricing.abi"),
+		blockchain.PricingABI,
 	)
 
 	return &Blockchain{
