@@ -6,31 +6,36 @@
 localhost://open-orders?exchange=binance
 GET request
 Query params:
-    - exchange: string (ex: binance)
+    - exchange: string (ex: binance) - optional
 ```
 
 response:
 
 ```json
-    {
-        "success": true,
-        "data": [
-            "OrderID": "123132",
-            "Price": 0.43432,
+{
+    "success": true,
+    "data": {
+        "1": [
+            {
+                "OrderID": "123132",
+                "Price": 0.43432
+            }
         ]
     }
+}
 ```
 
-### Cancel order (signing required)
+### Cancel order by order id (signing require)
+
 ```
-<host>:8000/cancelorder/
+<host>:8000/cancel-order-by-order-id
 POST request
 Form params:
   - exchange_id: string (ex: binance)
   - order_id: string (this is order id get from open orders)
 ```
 
-response:
+sample response:
 ```json
 {
     "reason": "UNKNOWN_ORDER",
