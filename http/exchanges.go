@@ -15,6 +15,7 @@ func (s *Server) CancelOrderByOrderID(c *gin.Context) {
 
 	exchangeParam := postForm.Get("exchange_id")
 	id := postForm.Get("order_id")
+	symbol := postForm.Get("symbol")
 
 	exchange, err := common.GetExchange(exchangeParam)
 	if err != nil {
@@ -22,7 +23,7 @@ func (s *Server) CancelOrderByOrderID(c *gin.Context) {
 		return
 	}
 	s.l.Infof("Cancel order id: %s from %s\n", id, exchange.ID())
-	err = s.core.CancelOrderByOrderID(id, exchange)
+	err = s.core.CancelOrderByOrderID(id, symbol, exchange)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
