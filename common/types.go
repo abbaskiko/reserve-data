@@ -460,6 +460,7 @@ type AllBalanceResponse struct {
 // Order accross multiple exchanges
 type Order struct {
 	ID          string  `json:"id,omitempty"` // standard id across multiple exchanges
+	Symbol      string  `json:"symbol,omitempty"`
 	Base        string  `json:"base"`
 	Quote       string  `json:"quote"`
 	OrderID     string  `json:"order_id"`

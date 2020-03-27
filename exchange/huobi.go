@@ -700,6 +700,7 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 							Type:    order.Type,
 							OrigQty: originalQty,
 							Price:   price,
+							Symbol:  order.Symbol,
 							Base:    pair.BaseSymbol,
 							Quote:   pair.QuoteSymbol,
 						})
