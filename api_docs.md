@@ -15,10 +15,27 @@ response:
 {
     "success": true,
     "data": {
-        "1": [
+        "binance": [
             {
                 "OrderID": "123132",
                 "Price": 0.43432
+            }
+        ],
+        "huobi": [
+            {
+                "ID": "",
+                "Base": "KNC",
+                "Quote": "ETH",
+                "OrderID": "71167643340",
+                "Price": 0.0018,
+                "OrigQty": 108.33,
+                "ExecutedQty": 0,
+                "TimeInForce": "",
+                "Type": "",
+                "Side": "",
+                "StopPrice": "",
+                "IcebergQty": "",
+                "Time": 0
             }
         ]
     }
