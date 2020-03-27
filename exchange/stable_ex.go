@@ -182,7 +182,7 @@ func (se *StableEx) GetMinDeposit() (common.ExchangesMinDeposit, error) {
 }
 
 func (se *StableEx) OpenOrders() ([]common.Order, error) {
-	return nil, nil
+	return []common.Order{}, nil
 }
 
 func NewStableEx(setting Setting) (*StableEx, error) {
