@@ -379,7 +379,7 @@ func (bn *Binance) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[com
 // OpenOrders return open orders from binance
 func (bn *Binance) OpenOrders() ([]common.Order, error) {
 	var (
-		orders []common.Order
+		orders = make([]common.Order, 0)
 	)
 	result, err := bn.interf.OpenOrders()
 	if err != nil {

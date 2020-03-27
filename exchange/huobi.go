@@ -379,7 +379,7 @@ func (h *Huobi) FetchPriceData(timepoint uint64, fetchPriceData bool) (map[commo
 // OpenOrders return current open orders from huobi
 func (h *Huobi) OpenOrders() ([]common.Order, error) {
 	var (
-		result   []common.Order
+		result   = make([]common.Order, 0)
 		errGroup errgroup.Group
 		mu       sync.Mutex
 	)
