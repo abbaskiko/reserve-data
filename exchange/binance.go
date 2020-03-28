@@ -265,12 +265,11 @@ func (bn *Binance) Withdraw(token common.Token, amount *big.Int, address ethereu
 	return tx, err
 }
 
-func (bn *Binance) CancelOrder(id string, base, quote string) error {
+func (bn *Binance) CancelOrder(id string, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
-	symbol := base + quote
 	_, err = bn.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
@@ -401,7 +400,7 @@ func (bn *Binance) OpenOrders() ([]common.Order, error) {
 			StopPrice:   order.StopPrice,
 			IcebergQty:  order.IcebergQty,
 			Time:        order.Time,
-			Base:        order.Symbol,
+			Symbol:      order.Symbol,
 			Quote:       "",
 		})
 	}

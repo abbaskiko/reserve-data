@@ -271,12 +271,11 @@ func (h *Huobi) Withdraw(token common.Token, amount *big.Int, address ethereum.A
 }
 
 // CancelOrder cancel an order from huobi
-func (h *Huobi) CancelOrder(id, base, quote string) error {
+func (h *Huobi) CancelOrder(id, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
-	symbol := base + quote
 	result, err := h.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
@@ -410,6 +409,7 @@ func (h *Huobi) OpenOrders() ([]common.Order, error) {
 							OrigQty: originQty,
 							Base:    strings.ToUpper(pair.Base.ID),
 							Quote:   strings.ToUpper(pair.Quote.ID),
+							Symbol:  order.Symbol,
 							Price:   price,
 						})
 						mu.Unlock()

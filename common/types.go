@@ -418,6 +418,7 @@ type AllBalanceResponse struct {
 
 type Order struct {
 	ID          string // standard id across multiple exchanges
+	Symbol      string // I don't add json tag to keep it consistent with other existed component
 	Base        string
 	Quote       string
 	OrderID     string
