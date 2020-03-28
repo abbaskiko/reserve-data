@@ -92,13 +92,18 @@ func (rc ReserveCore) CancelOrderByOrderID(orderID, symbol string, exchange comm
 		}
 		symbol = base + quote
 		err := exchange.CancelOrder(orderID, symbol)
+		rc.l.Infow("cancel order with activity", "err", err, "orderID", orderID,
+			"symbol", symbol, "exchange", exchange.ID())
 		if err != nil {
 			return err
 		}
 		activity.Result[common.ResultCanceled] = true
 		return rc.activityStorage.UpdateCompletedActivity(activity.ID, activity)
 	}
-	return exchange.CancelOrder(orderID, symbol)
+	err = exchange.CancelOrder(orderID, symbol)
+	rc.l.Infow("cancel order without activity", "err", err, "orderID", orderID,
+		"symbol", symbol, "exchange", exchange.ID())
+	return err
 }
 
 // Trade create an order to buy or sell of exchange
