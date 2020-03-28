@@ -8,7 +8,7 @@ import (
 
 // CancelOrderByOrderID cancel an open order on exchanges
 func (s *Server) CancelOrderByOrderID(c *gin.Context) {
-	postForm, ok := s.Authenticated(c, []string{"order_id", "exchange_id"}, []Permission{RebalancePermission})
+	postForm, ok := s.Authenticated(c, []string{"order_id", "exchange_id", "symbol"}, []Permission{RebalancePermission})
 	if !ok {
 		return
 	}
