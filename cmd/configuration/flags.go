@@ -125,9 +125,9 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 }
 
 // CreateDataCore create reserve data component
-func CreateDataCore(config *Config, 
-	dpl deployment.Deployment, 
-	bc *blockchain.Blockchain, 
+func CreateDataCore(config *Config,
+	dpl deployment.Deployment,
+	bc *blockchain.Blockchain,
 	l *zap.SugaredLogger,
 	gasPriceLimiter core.GasPriceLimiter) (*data.ReserveData, *core.ReserveCore) {
 	//get fetcher based on config and ENV == simulation.

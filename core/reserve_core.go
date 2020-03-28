@@ -262,14 +262,14 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, asset commonv3.Asset, 
 
 	address, supported := exchange.Address(asset)
 	if !supported {
-		return nil, fmt.Errorf("exchange %s doesn't support token %s", exchange.ID(), asset.ID)
+		return nil, fmt.Errorf("exchange %s doesn't support token %d", exchange.ID(), asset.ID)
 	}
 	found, err := rc.activityStorage.HasPendingDeposit(asset, exchange)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		return nil, fmt.Errorf("there is a pending %s deposit to %s currently, please try again", asset.ID, exchange.ID())
+		return nil, fmt.Errorf("there is a pending %d deposit to %s currently, please try again", asset.ID, exchange.ID())
 	}
 	if err = sanityCheckAmount(exchange, asset, amount); err != nil {
 		return nil, err
