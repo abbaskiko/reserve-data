@@ -91,7 +91,12 @@ func (rc ReserveCore) CancelOrderByOrderID(orderID, symbol string, exchange comm
 			return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
 		}
 		symbol = base + quote
-		return exchange.CancelOrder(orderID, symbol)
+		err := exchange.CancelOrder(orderID, symbol)
+		if err != nil {
+			return err
+		}
+		activity.Result[common.ResultCanceled] = true
+		return rc.activityStorage.UpdateCompletedActivity(activity.ID, activity)
 	}
 	return exchange.CancelOrder(orderID, symbol)
 }

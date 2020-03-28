@@ -130,6 +130,10 @@ func (tas testActivityStorage) GetActivity(id common.ActivityID) (common.Activit
 	return common.ActivityRecord{}, nil
 }
 
+func (tas testActivityStorage) UpdateCompletedActivity(id common.ActivityID, activity common.ActivityRecord) error {
+	return nil
+}
+
 func (tas testActivityStorage) GetActivityByOrderID(id string) (common.ActivityRecord, error) {
 	return common.ActivityRecord{}, nil
 }

@@ -28,6 +28,7 @@ const (
 	ResultFinished    = "finished"
 	ResultStatusError = "status_error"
 	ResultBlockNumber = "blockNumber"
+	ResultCanceled    = "canceled"
 	ParamBase         = "base"
 	ParamExchange     = "exchange"
 	ParamToken        = "token"
