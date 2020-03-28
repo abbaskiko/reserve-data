@@ -15,8 +15,6 @@
     ]
   },
   "http_api_addr": "localhost:8000",
-  "prefer_use_gas_station": true,
-  "fetch_max_gas_cache_seconds": 120,
   "contract_addresses": {
     "wrapper": "0x6172AFC8c00c46E0D07ce3AF203828198194620a",
     "network_proxy": "0x818E6FECD516Ecc3849DAf6845e3EC868087B755",
@@ -33,6 +31,10 @@
     "coinbase": {
       "url": "https://api.pro.coinbase.com"
     }
+  },
+  "gas_config": {
+    "prefer_use_gas_station": true,
+    "fetch_max_gas_cache_seconds": 120
   },
   "world_endpoints": {
     "gold_data": {
