@@ -68,27 +68,42 @@ func (rc ReserveCore) CancelOrder(activityID common.ActivityID, exchange common.
 		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
 	}
 	orderID := activityID.EID
-	return exchange.CancelOrder(orderID, base, quote)
+	symbol := base + quote
+	return exchange.CancelOrder(orderID, symbol)
 }
 
 // CancelOrderByOrderID cancel order by order id
-func (rc ReserveCore) CancelOrderByOrderID(orderID string, exchange common.Exchange) error {
+func (rc ReserveCore) CancelOrderByOrderID(orderID, symbol string, exchange common.Exchange) error {
 	activity, err := rc.activityStorage.GetActivityByOrderID(orderID)
 	if err != nil {
 		return err
 	}
-	if activity.Action != common.ActionTrade {
-		return errors.New("this is not an order activity so cannot cancel")
+	if activity.Action != "" {
+		if activity.Action != common.ActionTrade {
+			return errors.New("this is not an order activity so cannot cancel")
+		}
+		base, ok := activity.Params[common.ParamBase].(string)
+		if !ok {
+			return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[common.ParamBase])
+		}
+		quote, ok := activity.Params[common.ParamQuote].(string)
+		if !ok {
+			return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
+		}
+		symbol = base + quote
+		err := exchange.CancelOrder(orderID, symbol)
+		rc.l.Infow("cancel order with activity", "err", err, "orderID", orderID,
+			"symbol", symbol, "exchange", exchange.ID())
+		if err != nil {
+			return err
+		}
+		activity.Result[common.ResultCanceled] = true
+		return rc.activityStorage.UpdateCompletedActivity(activity.ID, activity)
 	}
-	base, ok := activity.Params[common.ParamBase].(string)
-	if !ok {
-		return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[common.ParamBase])
-	}
-	quote, ok := activity.Params[common.ParamQuote].(string)
-	if !ok {
-		return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
-	}
-	return exchange.CancelOrder(orderID, base, quote)
+	err = exchange.CancelOrder(orderID, symbol)
+	rc.l.Infow("cancel order without activity", "err", err, "orderID", orderID,
+		"symbol", symbol, "exchange", exchange.ID())
+	return err
 }
 
 // Trade create an order to buy or sell of exchange

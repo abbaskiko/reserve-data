@@ -24,4 +24,7 @@ type ActivityStorage interface {
 
 	// PendingActivityForAction return the last pending activity and number of pending transactions.
 	PendingActivityForAction(minedNonce uint64, activityType string) (*common.ActivityRecord, uint64, error)
+
+	// This activty have been canceled after done
+	UpdateCompletedActivity(id common.ActivityID, activity common.ActivityRecord) error
 }
