@@ -108,6 +108,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 		config.Blockchain,
 		config.ContractAddresses,
 		config.SettingStorage,
+		config.GasConfig,
 	)
 	if err != nil {
 		l.Errorw("failed to create block chain", "err", err)
@@ -124,7 +125,11 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 }
 
 // CreateDataCore create reserve data component
-func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Blockchain, l *zap.SugaredLogger) (*data.ReserveData, *core.ReserveCore) {
+func CreateDataCore(config *Config, 
+	dpl deployment.Deployment, 
+	bc *blockchain.Blockchain, 
+	l *zap.SugaredLogger,
+	gasPriceLimiter core.GasPriceLimiter) (*data.ReserveData, *core.ReserveCore) {
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
@@ -152,7 +157,7 @@ func CreateDataCore(config *Config, dpl deployment.Deployment, bc *blockchain.Bl
 		config.SettingStorage,
 	)
 
-	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses)
+	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses, gasPriceLimiter)
 	return rData, rCore
 }
 

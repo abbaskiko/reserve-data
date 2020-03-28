@@ -67,6 +67,7 @@ func TestGetActivities(t *testing.T) {
 		nil,
 		s,
 		nil,
+		&core.ConstGasPriceLimiter{},
 	)
 
 	sv := NewHTTPServer(

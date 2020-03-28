@@ -9,10 +9,12 @@ import (
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-data/blockchain"
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
+	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/lib/app"
 )
@@ -71,7 +73,13 @@ func run(c *cli.Context) error {
 
 	dryRun := configuration.NewDryRunFromContext(c)
 
-	rData, rCore := configuration.CreateDataCore(conf, dpl, bc, l)
+	kyberNetworkProxy, err := blockchain.NewNetworkProxy(conf.ContractAddresses.Proxy, bc.EthClient())
+	if err != nil {
+		log.Panicf("cannot create network proxy client, err %+v", err)
+	}
+	gasPriceLimiter := core.NewNetworkGasPriceLimiter(kyberNetworkProxy, conf.GasConfig.FetchMaxGasCacheSeconds)
+
+	rData, rCore := configuration.CreateDataCore(conf, dpl, bc, l, gasPriceLimiter)
 	if !dryRun {
 		if dpl != deployment.Simulation {
 			if err = rData.RunStorageController(); err != nil {

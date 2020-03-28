@@ -391,13 +391,13 @@ func (ps *PostgresStorage) GetActivity(exchangeID common.ExchangeID, id string) 
 	return activityRecord, nil
 }
 
-// PendingSetRate return pending set rate activity
-func (ps *PostgresStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+// PendingActivityForAction return pending set rate activity
+func (ps *PostgresStorage) PendingActivityForAction(minedNonce uint64, activityType string) (*common.ActivityRecord, uint64, error) {
 	pendings, err := ps.GetPendingActivities()
 	if err != nil {
 		return nil, 0, err
 	}
-	return getFirstAndCountPendingSetrate(pendings, minedNonce)
+	return getFirstAndCountPendingAction(ps.l, pendings, minedNonce, activityType)
 }
 
 // HasPendingDeposit return true if there is any pending deposit for a token
