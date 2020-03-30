@@ -154,10 +154,10 @@ func NewExchangePool(
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
 	var (
-		be      exchange.BinanceInterface
-		he      exchange.HuobiInterface
-		bin, hb common.Exchange
-		s       = zap.S()
+		be            exchange.BinanceInterface
+		he            exchange.HuobiInterface
+		bin, hb, cbex common.Exchange
+		s             = zap.S()
 	)
 
 	enabledExchanges, err := NewExchangesFromContext(c)
@@ -214,7 +214,7 @@ func NewExchangePool(
 			exchanges[hb.ID()] = hb
 		case common.Coinbase:
 			ep := coinbase.NewCoinbaseEndpoint(cb, httpClient)
-			cbex := exchange.NewCoinbase(s, common.Coinbase, ep, assetStorage)
+			cbex = exchange.NewCoinbase(s, common.Coinbase, ep, assetStorage)
 			exchanges[common.Coinbase] = cbex
 		}
 	}
