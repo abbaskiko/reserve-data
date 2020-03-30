@@ -57,6 +57,7 @@ data is map exchange id with its corresponding open orders
     "data": {
         "1": [
             {
+                "Symbol": "KNCETH",
                 "Base": "KNC",
                 "Quote": "ETH",
                 "OrderID": "54649705",
@@ -83,13 +84,22 @@ exchange_id | uint64 | false | nil | id of exchange (ex: binance - 1, huobi - 2)
 pair | uint64 | true | nil | id of pair (ex: KNCETH - 1, OMGETH - 2)
 
 
-## Cancel order 
+## Cancel orders 
 
 ```shell
 curl -X POST "http://gateway.local/v3/cancel-orders"
 -H 'Content-Type: application/json'
 -d '{
-    "order_ids": ["43142", "43224"]
+    "orders": [
+        {
+            "id": "43223",
+            "symbol": "KNCETH"
+        },
+        {
+            "id": "43243",
+            "symbol": "KNCETH"
+        }
+    ],
     "exchange_id": 1
 }'
 

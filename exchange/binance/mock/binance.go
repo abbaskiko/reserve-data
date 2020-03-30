@@ -28,7 +28,7 @@ func (bte *BinanceTestExchange) Withdraw(asset commonv3.Asset, amount *big.Int, 
 func (bte *BinanceTestExchange) Trade(tradeType string, pair commonv3.TradingPairSymbols, rate float64, amount float64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
-func (bte *BinanceTestExchange) CancelOrder(id, base, quote string) error {
+func (bte *BinanceTestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
 func (bte *BinanceTestExchange) MarshalText() (text []byte, err error) {

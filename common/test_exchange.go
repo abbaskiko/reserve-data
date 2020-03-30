@@ -33,7 +33,7 @@ func (te TestExchange) Trade(tradeType string, pair common.TradingPairSymbols, r
 }
 
 // CancelOrder mock function
-func (te TestExchange) CancelOrder(id, base, quote string) error {
+func (te TestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
 

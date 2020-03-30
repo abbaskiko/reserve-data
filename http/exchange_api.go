@@ -23,7 +23,7 @@ func (s *Server) CancelAllOrders(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	cancelOrders := make(map[common.Exchange][]string)
+	cancelOrders := make(map[common.Exchange][]common.RequestOrder)
 	for _, activity := range pendingActivites {
 		if activity.Action == common.ActionTrade {
 			exchangeID := activity.Params.Exchange
@@ -33,11 +33,15 @@ func (s *Server) CancelAllOrders(c *gin.Context) {
 				httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("exchange %s does not exist", exchange.ID().String())))
 				return
 			}
-			cancelOrders[exchange] = append(cancelOrders[exchange], activity.EID)
+			cancelOrders[exchange] = append(cancelOrders[exchange],
+				common.RequestOrder{
+					ID:     activity.EID,
+					Symbol: activity.Params.Base + activity.Params.Quote,
+				})
 		}
 	}
-	for exchange, orderIDs := range cancelOrders {
-		result := s.core.CancelOrders(orderIDs, exchange)
+	for exchange, orders := range cancelOrders {
+		result := s.core.CancelOrders(orders, exchange)
 		for id, res := range result {
 			if !res.Success {
 				// save failed order id

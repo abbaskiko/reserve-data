@@ -44,7 +44,7 @@ type Exchange interface {
 
 	// OpenOrders return open orders from exchange
 	OpenOrders(pair common.TradingPairSymbols) (orders []Order, err error)
-	CancelOrder(id, base, quote string) error
+	CancelOrder(id, symbol string) error
 	MarshalText() (text []byte, err error)
 
 	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)

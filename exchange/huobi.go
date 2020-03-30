@@ -158,12 +158,11 @@ func (h *Huobi) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum
 }
 
 // CancelOrder cancel an order from Huobi
-func (h *Huobi) CancelOrder(id, base, quote string) error {
+func (h *Huobi) CancelOrder(id, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
-	symbol := base + quote
 	result, err := h.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
@@ -700,6 +699,7 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 							Type:    order.Type,
 							OrigQty: originalQty,
 							Price:   price,
+							Symbol:  order.Symbol,
 							Base:    pair.BaseSymbol,
 							Quote:   pair.QuoteSymbol,
 						})

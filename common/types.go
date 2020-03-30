@@ -457,9 +457,15 @@ type AllBalanceResponse struct {
 	Data       map[string]BalanceResponse
 }
 
+type RequestOrder struct {
+	ID     string `json:"id"`
+	Symbol string `json:"symbol"`
+}
+
 // Order accross multiple exchanges
 type Order struct {
 	ID          string  `json:"id,omitempty"` // standard id across multiple exchanges
+	Symbol      string  `json:"symbol,omitempty"`
 	Base        string  `json:"base"`
 	Quote       string  `json:"quote"`
 	OrderID     string  `json:"order_id"`
