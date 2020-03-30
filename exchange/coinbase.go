@@ -39,7 +39,7 @@ func (c *Coinbase) Trade(tradeType string, pair commonv3.TradingPairSymbols, rat
 }
 
 // CancelOrder cancel open order on coinbase
-func (c *Coinbase) CancelOrder(id, base, quote string) error {
+func (c *Coinbase) CancelOrder(id, symbol string) error {
 	return ErrNotSupport
 }
 
