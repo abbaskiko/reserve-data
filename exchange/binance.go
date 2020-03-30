@@ -123,12 +123,11 @@ func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ether
 }
 
 // CancelOrder cancel order on binance
-func (bn *Binance) CancelOrder(id string, base, quote string) error {
+func (bn *Binance) CancelOrder(id, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
-	symbol := base + quote
 	_, err = bn.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
@@ -449,21 +448,13 @@ func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order,
 			return nil, err
 		}
 
-		// because binance api response with symbol base + quote as a string
-		// we cannot split them,
-		// then when we get all open orders at a time, base symbol will include both base and quote (for human view)
-		// and quote symbol will be empty
-		var symbol = order.Symbol
-		if pair.BaseSymbol != "" {
-			symbol = pair.BaseSymbol
-		}
 		result = append(result, common.Order{
 			OrderID: strconv.FormatUint(order.OrderID, 10),
 			Side:    order.Side,
 			Type:    order.Type,
 			OrigQty: originalQty,
 			Price:   price,
-			Base:    symbol,
+			Symbol:  order.Symbol,
 			Quote:   pair.QuoteSymbol,
 		})
 	}
