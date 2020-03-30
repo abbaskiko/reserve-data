@@ -1,7 +1,6 @@
 package core
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"math"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/lib/caller"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
@@ -64,7 +64,7 @@ func (rc ReserveCore) CancelOrders(orders []common.RequestOrder, exchange common
 	result := make(map[string]common.CancelOrderResult)
 	for _, order := range orders {
 		_, err := rc.activityStorage.GetActivity(exchange.ID(), order.ID)
-		if err != nil && err != sql.ErrNoRows {
+		if err != nil && err != storage.ErrorNotFound {
 			logger.Warnw("failed to get order", "order id", order.ID, "exchange", exchange.ID().String(), "error", err)
 			result[order.ID] = common.CancelOrderResult{
 				Success: false,

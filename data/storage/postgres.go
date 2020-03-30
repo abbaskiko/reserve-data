@@ -66,6 +66,8 @@ const (
 	usdDataType                        // usd
 )
 
+var ErrorNotFound = errors.New("record not found")
+
 // PostgresStorage struct
 type PostgresStorage struct {
 	db *sqlx.DB
@@ -383,6 +385,9 @@ func (ps *PostgresStorage) GetActivity(exchangeID common.ExchangeID, id string) 
 	)
 	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE data->>'destination' = $1 AND eid = $2`, activityTable)
 	if err := ps.db.Get(&data, query, exchangeID.String(), id); err != nil {
+		if err == sql.ErrNoRows {
+			return common.ActivityRecord{}, ErrorNotFound
+		}
 		return common.ActivityRecord{}, err
 	}
 	if err := json.Unmarshal(data, &activityRecord); err != nil {
