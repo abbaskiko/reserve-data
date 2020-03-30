@@ -78,19 +78,7 @@ func (rc ReserveCore) CancelOrderByOrderID(orderID, symbol string, exchange comm
 	if err != nil {
 		return err
 	}
-	if activity.Action != "" {
-		if activity.Action != common.ActionTrade {
-			return errors.New("this is not an order activity so cannot cancel")
-		}
-		base, ok := activity.Params[common.ParamBase].(string)
-		if !ok {
-			return fmt.Errorf("cannot convert params base (value: %v) to tokenID (type string)", activity.Params[common.ParamBase])
-		}
-		quote, ok := activity.Params[common.ParamQuote].(string)
-		if !ok {
-			return fmt.Errorf("cannot convert params quote (value: %v) to tokenID (type string)", activity.Params[common.ParamQuote])
-		}
-		symbol = base + quote
+	if activity.Action != "" { // completed activity
 		err := exchange.CancelOrder(orderID, symbol)
 		rc.l.Infow("cancel order with activity", "err", err, "orderID", orderID,
 			"symbol", symbol, "exchange", exchange.ID())
