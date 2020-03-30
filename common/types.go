@@ -33,11 +33,13 @@ func GetTimepoint() uint64 {
 	return uint64(timestamp)
 }
 
+// TimeToTimepoint convert from timestamp to millisecond
 func TimeToTimepoint(t time.Time) uint64 {
 	timestamp := t.UnixNano() / int64(time.Millisecond)
 	return uint64(timestamp)
 }
 
+// TimepointToTime convert from time millisecond to timestamp
 func TimepointToTime(t uint64) time.Time {
 	return time.Unix(0, int64(t)*int64(time.Millisecond))
 }
@@ -212,7 +214,7 @@ func StringToActivityID(id string) (ActivityID, error) {
 	return result, nil
 }
 
-// NewActivityStatus creates new Activity ID.
+// NewActivityID creates new Activity ID.
 func NewActivityID(timepoint uint64, eid string) ActivityID {
 	return ActivityID{
 		Timepoint: timepoint,
@@ -416,6 +418,7 @@ type AllBalanceResponse struct {
 
 type Order struct {
 	ID          string // standard id across multiple exchanges
+	Symbol      string // I don't add json tag to keep it consistent with other existed component
 	Base        string
 	Quote       string
 	OrderID     string

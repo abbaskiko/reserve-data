@@ -175,10 +175,7 @@ func configLog(stdoutLog bool) io.Writer {
 
 // CreateBlockchain create new blockchain instance
 func CreateBlockchain(config *configuration.AppState) (bc *blockchain.Blockchain, err error) {
-	bc, err = blockchain.NewBlockchain(
-		config.Blockchain,
-		config.Setting,
-	)
+	bc, err = blockchain.NewBlockchain(config.Blockchain, config.Setting, config.AppConfig.GasConfig)
 
 	if err != nil {
 		panic(err)
@@ -192,7 +189,7 @@ func CreateBlockchain(config *configuration.AppState) (bc *blockchain.Blockchain
 	return
 }
 
-func CreateDataCore(config *configuration.AppState, kyberENV string, bc *blockchain.Blockchain) (*data.ReserveData, *core.ReserveCore) {
+func CreateDataCore(config *configuration.AppState, kyberENV string, bc *blockchain.Blockchain, gasPriceLimiter core.GasPriceLimiter) (*data.ReserveData, *core.ReserveCore) {
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
@@ -220,6 +217,6 @@ func CreateDataCore(config *configuration.AppState, kyberENV string, bc *blockch
 		config.Setting,
 	)
 
-	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.Setting)
+	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.Setting, gasPriceLimiter)
 	return rData, rCore
 }

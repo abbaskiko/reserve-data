@@ -30,7 +30,7 @@ func (bte *BinanceTestExchange) Withdraw(token common.Token, amount *big.Int, ad
 func (bte *BinanceTestExchange) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
-func (bte *BinanceTestExchange) CancelOrder(id, base, quote string) error {
+func (bte *BinanceTestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
 func (bte *BinanceTestExchange) MarshalText() (text []byte, err error) {
@@ -53,6 +53,11 @@ func (bte *BinanceTestExchange) UpdateDepositAddress(token common.Token, address
 }
 func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
+}
+
+// OpenOrders return all open orders from exchange
+func (bte *BinanceTestExchange) OpenOrders() ([]common.Order, error) {
+	return nil, nil
 }
 
 // GetLiveExchangeInfos of TestExchangeForSetting return a valid result for

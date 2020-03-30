@@ -129,7 +129,7 @@ func (se *StableEx) Withdraw(token common.Token, amount *big.Int, address ethere
 	return "not supported", errors.New("not supported")
 }
 
-func (se *StableEx) CancelOrder(id, base, quote string) error {
+func (se *StableEx) CancelOrder(id, symbol string) error {
 	return errors.New("dgx doesn't support trade cancelling")
 }
 
@@ -179,6 +179,10 @@ func (se *StableEx) OrderStatus(id string, base, quote string) (string, error) {
 
 func (se *StableEx) GetMinDeposit() (common.ExchangesMinDeposit, error) {
 	return se.setting.GetMinDeposit(settings.StableExchange)
+}
+
+func (se *StableEx) OpenOrders() ([]common.Order, error) {
+	return []common.Order{}, nil
 }
 
 func NewStableEx(setting Setting) (*StableEx, error) {

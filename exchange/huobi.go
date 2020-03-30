@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	pe "github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
@@ -269,12 +270,12 @@ func (h *Huobi) Withdraw(token common.Token, amount *big.Int, address ethereum.A
 	return withdrawID, err
 }
 
-func (h *Huobi) CancelOrder(id, base, quote string) error {
+// CancelOrder cancel an order from huobi
+func (h *Huobi) CancelOrder(id, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
-	symbol := base + quote
 	result, err := h.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
@@ -374,50 +375,57 @@ func (h *Huobi) FetchPriceData(timepoint uint64, fetchPriceData bool) (map[commo
 	return result, err
 }
 
-func (h *Huobi) OpenOrdersForOnePair(
-	wg *sync.WaitGroup,
-	pair common.TokenPair,
-	data *sync.Map,
-	timepoint uint64) {
-
-	// defer wg.Done()
-
-	// result, err := h.interf.OpenOrdersForOnePair(pair, timepoint)
-
-	//TODO: complete open orders for one pair
-}
-
-func (h *Huobi) FetchOrderData(timepoint uint64) (common.OrderEntry, error) {
-	result := common.OrderEntry{}
-	result.Timestamp = common.Timestamp(fmt.Sprintf("%d", timepoint))
-	result.Valid = true
-	result.Data = []common.Order{}
-
-	wait := sync.WaitGroup{}
-	data := sync.Map{}
+// OpenOrders return current open orders from huobi
+func (h *Huobi) OpenOrders() ([]common.Order, error) {
+	var (
+		result   = make([]common.Order, 0)
+		errGroup errgroup.Group
+		mu       sync.Mutex
+	)
 	pairs, err := h.TokenPairs()
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 	for _, pair := range pairs {
-		wait.Add(1)
-		go h.OpenOrdersForOnePair(&wait, pair, &data, timepoint)
+		errGroup.Go(
+			func(pair common.TokenPair) func() error {
+				return func() error {
+					orders, err := h.interf.OpenOrders(&pair)
+					if err != nil {
+						return err
+					}
+					for _, order := range orders.Data {
+						originQty, err := strconv.ParseFloat(order.OrigQty, 64)
+						if err != nil {
+							return err
+						}
+						price, err := strconv.ParseFloat(order.Price, 64)
+						if err != nil {
+							return err
+						}
+						mu.Lock()
+						result = append(result, common.Order{
+							OrderID: strconv.FormatUint(order.OrderID, 10),
+							OrigQty: originQty,
+							Base:    strings.ToUpper(pair.Base.ID),
+							Quote:   strings.ToUpper(pair.Quote.ID),
+							Symbol:  order.Symbol,
+							Price:   price,
+						})
+						mu.Unlock()
+					}
+					return nil
+				}
+			}(pair),
+		)
 	}
-	wait.Wait()
-
-	result.ReturnTime = common.GetTimestamp()
-	data.Range(func(key, value interface{}) bool {
-		orders, ok := value.([]common.Order)
-		if !ok {
-			err = fmt.Errorf("cannot convert value (%v) to Order", value)
-			return false
-		}
-		result.Data = append(result.Data, orders...)
-		return true
-	})
-	return result, err
+	if err := errGroup.Wait(); err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
+// FetchEBalanceData return balance from huobi
 func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {
 	result := common.EBalanceEntry{}
 	result.Timestamp = common.Timestamp(fmt.Sprintf("%d", timepoint))
@@ -436,7 +444,7 @@ func (h *Huobi) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error
 		result.Status = true
 		if respData.Status != "ok" {
 			result.Valid = false
-			result.Error = fmt.Sprintf("Cannot fetch ebalance")
+			result.Error = "Cannot fetch ebalance"
 			result.Status = false
 		} else {
 			balances := respData.Data.List
@@ -625,7 +633,7 @@ func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEn
 				data := common.NewTXEntry(tx2Entry.Hash,
 					h.Name(),
 					currency,
-					"mined",
+					common.MiningStatusMined,
 					exchangeStatusDone,
 					sentAmount,
 					common.GetTimestamp(),

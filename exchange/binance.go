@@ -265,12 +265,11 @@ func (bn *Binance) Withdraw(token common.Token, amount *big.Int, address ethereu
 	return tx, err
 }
 
-func (bn *Binance) CancelOrder(id string, base, quote string) error {
+func (bn *Binance) CancelOrder(id string, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
-	symbol := base + quote
 	_, err = bn.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
@@ -376,42 +375,36 @@ func (bn *Binance) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[com
 	return result, err
 }
 
-func (bn *Binance) OpenOrdersForOnePair(
-	wg *sync.WaitGroup,
-	pair common.TokenPair,
-	data *sync.Map,
-	timepoint uint64) {
-
-	defer wg.Done()
-
-	result, err := bn.interf.OpenOrdersForOnePair(pair)
-
-	if err == nil {
-		orders := []common.Order{}
-		for _, order := range result {
-			price, _ := strconv.ParseFloat(order.Price, 64)
-			orgQty, _ := strconv.ParseFloat(order.OrigQty, 64)
-			executedQty, _ := strconv.ParseFloat(order.ExecutedQty, 64)
-			orders = append(orders, common.Order{
-				ID:          fmt.Sprintf("%d_%s%s", order.OrderID, strings.ToUpper(pair.Base.ID), strings.ToUpper(pair.Quote.ID)),
-				Base:        strings.ToUpper(pair.Base.ID),
-				Quote:       strings.ToUpper(pair.Quote.ID),
-				OrderID:     fmt.Sprintf("%d", order.OrderID),
-				Price:       price,
-				OrigQty:     orgQty,
-				ExecutedQty: executedQty,
-				TimeInForce: order.TimeInForce,
-				Type:        order.Type,
-				Side:        order.Side,
-				StopPrice:   order.StopPrice,
-				IcebergQty:  order.IcebergQty,
-				Time:        order.Time,
-			})
-		}
-		data.Store(pair.PairID(), orders)
-	} else {
-		bn.l.Warnw("Unsuccessful response from Binance", "err", err)
+// OpenOrders return open orders from binance
+func (bn *Binance) OpenOrders() ([]common.Order, error) {
+	var (
+		orders = make([]common.Order, 0)
+	)
+	result, err := bn.interf.OpenOrders()
+	if err != nil {
+		return nil, err
 	}
+	for _, order := range result {
+		price, _ := strconv.ParseFloat(order.Price, 64)
+		orgQty, _ := strconv.ParseFloat(order.OrigQty, 64)
+		executedQty, _ := strconv.ParseFloat(order.ExecutedQty, 64)
+		orders = append(orders, common.Order{
+			ID:          fmt.Sprintf("%d_%s", order.OrderID, strings.ToUpper(order.Symbol)),
+			OrderID:     fmt.Sprintf("%d", order.OrderID),
+			Price:       price,
+			OrigQty:     orgQty,
+			ExecutedQty: executedQty,
+			TimeInForce: order.TimeInForce,
+			Type:        order.Type,
+			Side:        order.Side,
+			StopPrice:   order.StopPrice,
+			IcebergQty:  order.IcebergQty,
+			Time:        order.Time,
+			Symbol:      order.Symbol,
+			Quote:       "",
+		})
+	}
+	return orders, nil
 }
 
 func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, error) {

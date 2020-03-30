@@ -16,7 +16,8 @@ type Exchange interface {
 	UpdateDepositAddress(token Token, addr string) error
 	Withdraw(token Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error)
 	Trade(tradeType string, base, quote Token, rate, amount float64, timepoint uint64) (id string, done, remaining float64, finished bool, err error)
-	CancelOrder(id, base, quote string) error
+	OpenOrders() ([]Order, error)
+	CancelOrder(id, symbol string) error
 	MarshalText() (text []byte, err error)
 	GetInfo() (ExchangeInfo, error)
 	GetExchangeInfo(TokenPairID) (ExchangePrecisionLimit, error)

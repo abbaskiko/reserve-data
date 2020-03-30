@@ -30,7 +30,7 @@ func (te testExchange) Withdraw(token common.Token, amount *big.Int, address eth
 func (te testExchange) Trade(tradeType string, base common.Token, quote common.Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
-func (te testExchange) CancelOrder(id string, base, quote string) error {
+func (te testExchange) CancelOrder(id string, symbol string) error {
 	return nil
 }
 func (te testExchange) MarshalText() (text []byte, err error) {
@@ -60,6 +60,10 @@ func (te testExchange) GetLiveExchangeInfos(pairIDs []common.TokenPairID) (commo
 	return common.ExchangeInfo{}, nil
 }
 
+func (te testExchange) OpenOrders() ([]common.Order, error) {
+	return nil, nil
+}
+
 type testBlockchain struct {
 }
 
@@ -69,10 +73,8 @@ func (tbc testBlockchain) ListedTokens() []ethereum.Address {
 	return nil
 }
 
-func (tbc testBlockchain) Send(
-	token common.Token,
-	amount *big.Int,
-	address ethereum.Address) (*types.Transaction, error) {
+func (tbc testBlockchain) Send(token common.Token, amount *big.Int, address ethereum.Address,
+	nonce *big.Int, gasPrice *big.Int) (*types.Transaction, error) {
 	tx := types.NewTransaction(
 		0,
 		ethereum.Address{},
@@ -104,7 +106,7 @@ func (tbc testBlockchain) StandardGasPrice() float64 {
 	return 0
 }
 
-func (tbc testBlockchain) SetRateMinedNonce() (uint64, error) {
+func (tbc testBlockchain) GetMinedNonceWithOP(string) (uint64, error) {
 	return 0, nil
 }
 
@@ -128,7 +130,15 @@ func (tas testActivityStorage) GetActivity(id common.ActivityID) (common.Activit
 	return common.ActivityRecord{}, nil
 }
 
-func (tas testActivityStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+func (tas testActivityStorage) UpdateCompletedActivity(id common.ActivityID, activity common.ActivityRecord) error {
+	return nil
+}
+
+func (tas testActivityStorage) GetActivityByOrderID(id string) (common.ActivityRecord, error) {
+	return common.ActivityRecord{}, nil
+}
+
+func (tas testActivityStorage) PendingActivityForAction(minedNonce uint64, activityType string) (*common.ActivityRecord, uint64, error) {
 	return nil, 0, nil
 }
 
@@ -162,11 +172,7 @@ func getTestCore(hasPendingDeposit bool) *ReserveCore {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return NewReserveCore(
-		testBlockchain{},
-		testActivityStorage{hasPendingDeposit},
-		setting,
-	)
+	return NewReserveCore(testBlockchain{}, testActivityStorage{hasPendingDeposit}, setting, &ConstGasPriceLimiter{})
 }
 
 func TestNotAllowDeposit(t *testing.T) {
@@ -193,14 +199,14 @@ func TestNotAllowDeposit(t *testing.T) {
 
 func TestCalculateNewGasPrice(t *testing.T) {
 	initPrice := common.GweiToWei(1)
-	newPrice := calculateNewGasPrice(initPrice, 0)
+	newPrice := calculateNewGasPrice(initPrice, 0, 100.0)
 	if newPrice.Cmp(newPrice) != 0 {
 		t.Errorf("new price is not equal to initial price with count == 0")
 	}
 
 	prevPrice := initPrice
 	for count := uint64(1); count < 10; count++ {
-		newPrice = calculateNewGasPrice(initPrice, count)
+		newPrice = calculateNewGasPrice(initPrice, count, 100.0)
 		if newPrice.Cmp(prevPrice) != 1 {
 			t.Errorf("new price %s is not higher than previous price %s",
 				newPrice.String(),

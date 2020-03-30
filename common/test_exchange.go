@@ -21,7 +21,7 @@ func (te TestExchange) Withdraw(token Token, amount *big.Int, address ethereum.A
 func (te TestExchange) Trade(tradeType string, base Token, quote Token, rate float64, amount float64, timepoint uint64) (id string, done float64, remaining float64, finished bool, err error) {
 	return "tradeid", 10, 5, false, nil
 }
-func (te TestExchange) CancelOrder(id, base, quote string) error {
+func (te TestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
 func (te TestExchange) MarshalText() (text []byte, err error) {
@@ -48,4 +48,8 @@ func (te TestExchange) GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHi
 
 func (te TestExchange) GetLiveExchangeInfos(tokenPairIDs []TokenPairID) (ExchangeInfo, error) {
 	return ExchangeInfo{}, nil
+}
+
+func (te TestExchange) OpenOrders() ([]Order, error) {
+	return nil, nil
 }

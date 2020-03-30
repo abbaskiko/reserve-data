@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
 )
 
@@ -235,18 +236,18 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 				f.l.Warnw("status from cexs cannot be asserted to common.ActivityStatus")
 				continue
 			}
-			txID := activity.Result["tx"]
+			txID := activity.Result[common.ResultTx]
 			if txID == nil {
 				continue
 			}
 			//Set activity result tx to tx from cexs if currently result tx is not nil an is an empty string
 			resultTx, ok := txID.(string)
 			if !ok {
-				f.l.Warnw("Activity Result Tx cannot be asserted to string", "tx", fmt.Sprintf("%+v", txID))
+				f.l.Warnw("Activity Result Tx cannot be asserted to string", common.ResultTx, fmt.Sprintf("%+v", txID))
 				continue
 			}
 			if resultTx == "" {
-				activity.Result["tx"] = activityStatus.Tx
+				activity.Result[common.ResultTx] = activityStatus.Tx
 			}
 		}
 	}
@@ -328,8 +329,8 @@ func (f *Fetcher) FetchBalanceFromBlockchain() (map[string]common.BalanceEntry, 
 }
 
 func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
-	// SetRateMinedNonce might be slow, use closure to not invoke it every time
-	minedNonce, err := f.blockchain.SetRateMinedNonce()
+	// GetMinedNonceWithOP might be slow, use closure to not invoke it every time
+	minedNonce, err := f.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
 	if err != nil {
 		f.l.Warnw("Getting mined nonce failed", "err", err)
 	}
@@ -337,7 +338,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 	return func(act common.ActivityRecord) bool {
 		// this check only works with set rate transaction as:
 		//   - account nonce is record in result field of activity
-		//   - the SetRateMinedNonce method is available
+		//   - the GetMinedNonceWithOP method is available
 		if act.Action != common.ActionSetRate {
 			return false
 		}
@@ -367,13 +368,13 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 				status   string
 				err      error
 			)
-			txID := activity.Result["tx"]
+			txID := activity.Result[common.ResultTx]
 			if txID == nil {
 				continue
 			}
 			txStr, ok := txID.(string)
 			if !ok {
-				f.l.Warnw("TX_STATUS:cannot convert activity.Result[tx] to string type", "tx", fmt.Sprintf("%+v", txID))
+				f.l.Warnw("TX_STATUS:cannot convert activity.Result[tx] to string type", common.ResultTx, fmt.Sprintf("%+v", txID))
 				continue
 			}
 			tx := ethereum.HexToHash(txStr)
@@ -483,11 +484,11 @@ func (f *Fetcher) updateActivitywithBlockchainStatus(activity *common.ActivityRe
 	if activityStatus.Error != nil {
 		snapshot.Valid = false
 		snapshot.Error = activityStatus.Error.Error()
-		activity.Result["status_error"] = activityStatus.Error.Error()
+		activity.Result[common.ResultStatusError] = activityStatus.Error.Error()
 	} else {
-		activity.Result["status_error"] = ""
+		activity.Result[common.ResultStatusError] = ""
 	}
-	activity.Result["blockNumber"] = activityStatus.BlockNumber
+	activity.Result[common.ResultBlockNumber] = activityStatus.BlockNumber
 }
 
 func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityRecord, estatuses *sync.Map, snapshot *common.AuthDataSnapshot) {
@@ -508,16 +509,16 @@ func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityReco
 		activity.ExchangeStatus = activityStatus.ExchangeStatus
 	}
 
-	if resultTx, ok := activity.Result["tx"].(string); ok && resultTx == "" {
-		activity.Result["tx"] = activityStatus.Tx
+	if resultTx, ok := activity.Result[common.ResultTx].(string); ok && resultTx == "" {
+		activity.Result[common.ResultTx] = activityStatus.Tx
 	}
 
 	if activityStatus.Error != nil {
 		snapshot.Valid = false
 		snapshot.Error = activityStatus.Error.Error()
-		activity.Result["status_error"] = activityStatus.Error.Error()
+		activity.Result[common.ResultStatusError] = activityStatus.Error.Error()
 	} else {
-		activity.Result["status_error"] = ""
+		activity.Result[common.ResultStatusError] = ""
 	}
 }
 
@@ -681,68 +682,68 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			switch activity.Action {
 			case common.ActionTrade:
 				orderID := id.EID
-				base, ok := activity.Params["base"].(string)
+				base, ok := activity.Params[common.ParamBase].(string)
 				if !ok {
-					f.l.Warnw("activity Params base can't be converted to type string", "base", activity.Params["base"])
+					f.l.Warnw("activity Params base can't be converted to type string", common.ParamBase, activity.Params[common.ParamBase])
 					continue
 				}
-				quote, ok := activity.Params["quote"].(string)
+				quote, ok := activity.Params[common.ParamQuote].(string)
 				if !ok {
-					f.l.Warnw("activity Params quote can't be converted to type string", "quote", activity.Params["quote"])
+					f.l.Warnw("activity Params quote can't be converted to type string", common.ParamQuote, activity.Params[common.ParamQuote])
 					continue
 				}
 				// we ignore error of order status because it doesn't affect
 				// authdata. Analytic will ignore order status anyway.
 				status, _ = exchange.OrderStatus(orderID, base, quote)
 			case common.ActionDeposit:
-				txID := activity.Result["tx"]
+				txID := activity.Result[common.ResultTx]
 				if txID == nil {
 					continue
 				}
 				txHash, ok := txID.(string)
 				if !ok {
-					f.l.Warnw("activity Result tx can't be converted to type string", "tx", fmt.Sprintf("%+v", txID))
+					f.l.Warnw("activity Result tx can't be converted to type string", common.ResultTx, fmt.Sprintf("%+v", txID))
 					continue
 				}
-				amountStr, ok := activity.Params["amount"].(string)
+				amountStr, ok := activity.Params[common.ParamAmount].(string)
 				if !ok {
-					f.l.Warnw("activity Params amount can't be converted to type string", "amount", activity.Params["amount"])
+					f.l.Warnw("activity Params amount can't be converted to type string", common.ParamAmount, activity.Params[common.ParamAmount])
 					continue
 				}
 				amount, uErr := strconv.ParseFloat(amountStr, 64)
 				if uErr != nil {
-					f.l.Warnw("can't parse activity Params amount to float64", "amount", amountStr)
+					f.l.Warnw("can't parse activity Params amount to float64", common.ParamAmount, amountStr)
 					continue
 				}
-				currency, ok := activity.Params["token"].(string)
+				currency, ok := activity.Params[common.ParamToken].(string)
 				if !ok {
-					f.l.Warnw("activity Params token can't be converted to type string", "token", activity.Params["token"])
+					f.l.Warnw("activity Params token can't be converted to type string", common.ParamToken, activity.Params[common.ParamToken])
 					continue
 				}
 				status, err = exchange.DepositStatus(id, txHash, currency, amount, timepoint)
 				f.l.Infof("Got deposit status for %v: (%s), error(%s)", activity, status, common.ErrorToString(err))
 			case common.ActionWithdraw:
-				amountStr, ok := activity.Params["amount"].(string)
+				amountStr, ok := activity.Params[common.ParamAmount].(string)
 				if !ok {
-					f.l.Warnw("activity Params amount can't be converted to type string", "amount", activity.Params["amount"])
+					f.l.Warnw("activity Params amount can't be converted to type string", common.ParamAmount, activity.Params[common.ParamAmount])
 					continue
 				}
 				amount, uErr := strconv.ParseFloat(amountStr, 64)
 				if uErr != nil {
-					f.l.Warnw("can't parse activity Params amount to float64", "amount", amountStr)
+					f.l.Warnw("can't parse activity Params amount to float64", common.ParamAmount, amountStr)
 					continue
 				}
-				currency, ok := activity.Params["token"].(string)
+				currency, ok := activity.Params[common.ParamToken].(string)
 				if !ok {
-					f.l.Warnw("activity Params token can't be converted to type string", "token", activity.Params["token"])
+					f.l.Warnw("activity Params token can't be converted to type string", common.ParamToken, activity.Params[common.ParamToken])
 					continue
 				}
-				txID := activity.Result["tx"]
+				txID := activity.Result[common.ResultTx]
 				if txID == nil {
 					continue
 				}
 				if _, ok = txID.(string); !ok {
-					f.l.Warnw("activity Result tx can't be converted to type string", "tx", fmt.Sprintf("%+v", txID))
+					f.l.Warnw("activity Result tx can't be converted to type string", common.ResultTx, fmt.Sprintf("%+v", txID))
 					continue
 				}
 				status, tx, err = exchange.WithdrawStatus(id.EID, currency, amount, timepoint)

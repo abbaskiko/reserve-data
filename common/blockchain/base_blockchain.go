@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"os"
-	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	ether "github.com/ethereum/go-ethereum"
@@ -44,6 +43,11 @@ type BaseBlockchain struct {
 	contractCaller *ContractCaller
 	erc20abi       abi.ABI
 	l              *zap.SugaredLogger
+}
+
+// EthClient return main client that BaseBlockchain use
+func (b *BaseBlockchain) EthClient() *ethclient.Client {
+	return b.client
 }
 
 func (b *BaseBlockchain) OperatorAddresses() map[string]ethereum.Address {
@@ -384,12 +388,7 @@ func NewBaseBlockchain(
 	broadcaster *Broadcaster,
 	contractcaller *ContractCaller) *BaseBlockchain {
 
-	file, err := os.Open(
-		filepath.Join(common.CurrentDir(), "ERC20.abi"))
-	if err != nil {
-		panic(err)
-	}
-	packabi, err := abi.JSON(file)
+	packabi, err := abi.JSON(strings.NewReader(ERC20ABI))
 	if err != nil {
 		panic(err)
 	}

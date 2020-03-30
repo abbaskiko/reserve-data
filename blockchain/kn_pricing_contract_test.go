@@ -15,6 +15,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	baseblockchain "github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/common/config"
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingsstorage "github.com/KyberNetwork/reserve-data/settings/storage"
 )
@@ -86,7 +87,10 @@ func TestGeneratedGetListedTokens(t *testing.T) {
 		}
 	}()
 
-	blockchain, err := NewBlockchain(baseBlockchain, setting)
+	blockchain, err := NewBlockchain(baseBlockchain, setting, config.GasConfig{
+		PreferUseGasStation:     false,
+		FetchMaxGasCacheSeconds: 10,
+	})
 	require.NoError(t, err)
 
 	opts := blockchain.GetCallOpts(0)

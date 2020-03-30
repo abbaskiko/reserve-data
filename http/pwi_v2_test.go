@@ -204,7 +204,7 @@ func TestHTTPServerPWIEquationV2(t *testing.T) {
 	}
 	s := Server{
 		app:         data.NewReserveData(st, nil, nil, nil, nil, nil, setting),
-		core:        core.NewReserveCore(nil, st, setting),
+		core:        core.NewReserveCore(nil, st, setting, core.ConstGasPriceLimiter{}),
 		metric:      st,
 		authEnabled: false,
 		r:           gin.Default(),
