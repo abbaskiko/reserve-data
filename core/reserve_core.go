@@ -1,6 +1,7 @@
 package core
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"math"
@@ -56,37 +57,28 @@ func timebasedID(id string) common.ActivityID {
 }
 
 // CancelOrders cancel orders on centralized exchanges
-func (rc ReserveCore) CancelOrders(orderIDs []string, exchange common.Exchange) map[string]common.CancelOrderResult {
+func (rc ReserveCore) CancelOrders(orders []common.RequestOrder, exchange common.Exchange) map[string]common.CancelOrderResult {
 	var (
 		logger = rc.l.With("func", caller.GetCurrentFunctionName())
 	)
 	result := make(map[string]common.CancelOrderResult)
-	for _, orderID := range orderIDs {
-		activity, err := rc.activityStorage.GetActivity(exchange.ID(), orderID)
-		if err != nil {
-			logger.Warnw("failed to get order", "order id", orderID, "exchange", exchange.ID().String(), "error", err)
-			result[orderID] = common.CancelOrderResult{
+	for _, order := range orders {
+		_, err := rc.activityStorage.GetActivity(exchange.ID(), order.ID)
+		if err != nil && err != sql.ErrNoRows {
+			logger.Warnw("failed to get order", "order id", order.ID, "exchange", exchange.ID().String(), "error", err)
+			result[order.ID] = common.CancelOrderResult{
 				Success: false,
 				Error:   err.Error(),
 			}
 			continue
 		}
-		if activity.Action != common.ActionTrade {
-			result[orderID] = common.CancelOrderResult{
-				Success: false,
-				Error:   "This is not an order activity so cannot cancel",
-			}
-			continue
-		}
-		base := activity.Params.Base
-		quote := activity.Params.Quote
-		if err := exchange.CancelOrder(orderID, base, quote); err != nil {
-			result[orderID] = common.CancelOrderResult{
+		if err := exchange.CancelOrder(order.ID, order.Symbol); err != nil {
+			result[order.ID] = common.CancelOrderResult{
 				Success: false,
 				Error:   err.Error(),
 			}
 		} else {
-			result[orderID] = common.CancelOrderResult{
+			result[order.ID] = common.CancelOrderResult{
 				Success: true,
 			}
 		}

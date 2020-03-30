@@ -123,12 +123,11 @@ func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ether
 }
 
 // CancelOrder cancel order on binance
-func (bn *Binance) CancelOrder(id string, base, quote string) error {
+func (bn *Binance) CancelOrder(id, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return err
 	}
-	symbol := base + quote
 	_, err = bn.interf.CancelOrder(symbol, idNo)
 	if err != nil {
 		return err
