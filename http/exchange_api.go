@@ -37,7 +37,7 @@ func (s *Server) CancelAllOrders(c *gin.Context) {
 		}
 	}
 	for exchange, orderIDs := range cancelOrders {
-		result := s.core.CancelOrder(orderIDs, exchange)
+		result := s.core.CancelOrders(orderIDs, exchange)
 		for id, res := range result {
 			if !res.Success {
 				// save failed order id

@@ -3,6 +3,7 @@ package blockchain
 import (
 	"fmt"
 	"math/big"
+	"net/http"
 	"sync"
 	"time"
 
@@ -12,14 +13,10 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
-)
-
-const (
-	pricingOP = "pricingOP"
-	depositOP = "depositOP"
 )
 
 var (
@@ -60,17 +57,26 @@ type Blockchain struct {
 	listedTokens []ethereum.Address
 	mu           sync.RWMutex
 
-	localSetRateNonce     uint64
-	setRateNonceTimestamp uint64
-	contractAddress       *common.ContractAddressConfiguration
-	sr                    storage.SettingReader
-	l                     *zap.SugaredLogger
+	localSetRateNonce, localDepositNonce         uint64
+	setRateNonceTimestamp, depositNonceTimestamp uint64
+
+	contractAddress *common.ContractAddressConfiguration
+	sr              storage.SettingReader
+	l               *zap.SugaredLogger
+
+	gasConfig common.GasConfig
+	gsClient  *gasstation.Client
 }
 
 // StandardGasPrice get stand gas price from node
 func (bc *Blockchain) StandardGasPrice() float64 {
-	// we use node's recommended gas price because gas station is not returning
-	// correct gas price now
+	if bc.gasConfig.PreferUseGasStation {
+		gss, err := bc.gsClient.ETHGas()
+		if err == nil { // TODO: we can make decision to use gss.Fast to other if some one ask.
+			return gss.Fast / 10.0 // gas return by gas station is *10, so we need to divide it here
+		}
+		bc.l.Errorw("receive gas price from gasstation failed, failed back to node suggest", "err", err)
+	}
 	price, err := bc.RecommendedGasPriceFromNode()
 	if err != nil {
 		return 0
@@ -135,13 +141,13 @@ func (bc *Blockchain) LoadAndSetTokenIndices() error {
 // RegisterPricingOperator add address as reserve operator for set token rates
 func (bc *Blockchain) RegisterPricingOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	bc.l.Infow("reserve pricing address", "address", signer.GetAddress().Hex())
-	bc.MustRegisterOperator(pricingOP, blockchain.NewOperator(signer, nonceCorpus))
+	bc.MustRegisterOperator(blockchain.PricingOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
 // RegisterDepositOperator add address as depostor for reserve
 func (bc *Blockchain) RegisterDepositOperator(signer blockchain.Signer, nonceCorpus blockchain.NonceCorpus) {
 	bc.l.Infow("reserve depositor address", "address", signer.GetAddress().Hex())
-	bc.MustRegisterOperator(depositOP, blockchain.NewOperator(signer, nonceCorpus))
+	bc.MustRegisterOperator(blockchain.DepositOP, blockchain.NewOperator(signer, nonceCorpus))
 }
 
 func readablePrint(data map[ethereum.Address]byte) string {
@@ -208,7 +214,7 @@ func (bc *Blockchain) SetRates(
 		newCSells,
 		bc.tokenIndices,
 	)
-	opts, err := bc.GetTxOpts(pricingOP, nonce, gasPrice, nil)
+	opts, err := bc.GetTxOpts(blockchain.PricingOP, nonce, gasPrice, nil)
 	if err != nil {
 		bc.l.Infow("Getting transaction opts failed", "err", err)
 		return nil, err
@@ -248,7 +254,7 @@ func (bc *Blockchain) SetRates(
 	if err != nil {
 		return nil, err
 	}
-	return bc.SignAndBroadcast(tx, pricingOP)
+	return bc.SignAndBroadcast(tx, blockchain.PricingOP)
 
 }
 
@@ -256,9 +262,11 @@ func (bc *Blockchain) SetRates(
 func (bc *Blockchain) Send(
 	asset commonv3.Asset,
 	amount *big.Int,
-	dest ethereum.Address) (*types.Transaction, error) {
+	dest ethereum.Address,
+	nonce *big.Int,
+	gasPrice *big.Int) (*types.Transaction, error) {
 
-	opts, err := bc.GetTxOpts(depositOP, nil, nil, nil)
+	opts, err := bc.GetTxOpts(blockchain.DepositOP, nonce, gasPrice, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +278,7 @@ func (bc *Blockchain) Send(
 	if err != nil {
 		return nil, err
 	}
-	return bc.SignAndBroadcast(tx, depositOP)
+	return bc.SignAndBroadcast(tx, blockchain.DepositOP)
 }
 
 //====================== Readonly calls ============================
@@ -379,7 +387,7 @@ func (bc *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceType
 	return bc.GeneratedGetRate(opts, token, block, false, qty)
 }
 
-// SetRateMinedNonce returns nonce of the pricing operator in confirmed
+// GetMinedNonceWithOP returns nonce of the pricing operator in confirmed
 // state (not pending state).
 //
 // Getting mined nonce is not simple because there might be lag between
@@ -391,31 +399,41 @@ func (bc *Blockchain) GetPrice(token ethereum.Address, block *big.Int, priceType
 // for more than 15 mins, the local one is considered incorrect
 // because the chain might be reorganized so we will invalidate it
 // and assign it to the nonce from node.
-func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
+func (bc *Blockchain) GetMinedNonceWithOP(op string) (uint64, error) {
 	const localNonceExpiration = time.Minute * 2
-	nonceFromNode, err := bc.GetMinedNonce(pricingOP)
+	var localNonce, localTimestamp *uint64
+	// base on op value, we bind selected nonce and timestamp field to local var for easier use it with below main logic
+	switch op {
+	case blockchain.PricingOP:
+		localNonce, localTimestamp = &bc.localSetRateNonce, &bc.setRateNonceTimestamp
+	case blockchain.DepositOP:
+		localNonce, localTimestamp = &bc.localDepositNonce, &bc.depositNonceTimestamp
+	default:
+		return 0, fmt.Errorf("get minedNonce for unexpected op [%s]", op)
+	}
+	nonceFromNode, err := bc.GetMinedNonce(op)
 	if err != nil {
 		return nonceFromNode, err
 	}
-	if nonceFromNode < bc.localSetRateNonce {
-		bc.l.Infow("SET_RATE_MINED_NONCE: nonce returned from node is smaller than cached nonce",
-			"node_value", nonceFromNode, "cached_value", bc.localSetRateNonce)
-		if common.NowInMillis()-bc.setRateNonceTimestamp > uint64(localNonceExpiration/time.Millisecond) {
-			bc.l.Infow("SET_RATE_MINED_NONCE: cached nonce stalled, overwriting with nonce from node",
-				"cached_value", bc.localSetRateNonce, "node_value", nonceFromNode)
-			bc.localSetRateNonce = nonceFromNode
-			bc.setRateNonceTimestamp = common.NowInMillis()
+	if nonceFromNode < *localNonce {
+		bc.l.Infow("nonce returned from node is smaller than cached nonce", "op", op,
+			"node_value", nonceFromNode, "local_value", *localNonce)
+		if common.NowInMillis()-*localTimestamp > uint64(localNonceExpiration/time.Millisecond) {
+			bc.l.Infow("cached nonce stalled, overwriting with nonce from node", "op", op,
+				"local_value", *localNonce, "node_value", nonceFromNode)
+			*localNonce = nonceFromNode
+			*localTimestamp = common.NowInMillis()
 			return nonceFromNode, nil
 		}
-		bc.l.Infow("SET_RATE_MINED_NONCE: using cached nonce instead of nonce from node",
-			"cached_value", bc.localSetRateNonce, "node_value", nonceFromNode)
-		return bc.localSetRateNonce, nil
+		bc.l.Infow("using cached nonce instead of nonce from node", "op", op,
+			"local_value", *localNonce, "node_value", nonceFromNode)
+		return *localNonce, nil
 	}
 
-	bc.l.Infow("SET_RATE_MINED_NONCE: updating cached nonce",
-		"current", bc.localSetRateNonce, "new", nonceFromNode)
-	bc.localSetRateNonce = nonceFromNode
-	bc.setRateNonceTimestamp = common.NowInMillis()
+	bc.l.Infow("updating local cached nonce", "op", op,
+		"local_value", *localNonce, "node_value", nonceFromNode)
+	*localNonce = nonceFromNode
+	*localTimestamp = common.NowInMillis()
 	return nonceFromNode, nil
 }
 
@@ -423,6 +441,7 @@ func (bc *Blockchain) SetRateMinedNonce() (uint64, error) {
 func NewBlockchain(base *blockchain.BaseBlockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
 	sr storage.SettingReader,
+	gasConfig common.GasConfig,
 ) (*Blockchain, error) {
 	l := zap.S()
 	l.Infow("wrapper address", "address", contractAddressConf.Wrapper.Hex())
@@ -451,17 +470,19 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 		contractAddress: contractAddressConf,
 		sr:              sr,
 		l:               l,
+		gasConfig:       gasConfig,
+		gsClient:        gasstation.New(&http.Client{}),
 	}, nil
 }
 
 // GetPricingOPAddress return pricing op address
 func (bc *Blockchain) GetPricingOPAddress() ethereum.Address {
-	return bc.MustGetOperator(pricingOP).Address
+	return bc.MustGetOperator(blockchain.PricingOP).Address
 }
 
 // GetDepositOPAddress return deposit op address
 func (bc *Blockchain) GetDepositOPAddress() ethereum.Address {
-	return bc.MustGetOperator(depositOP).Address
+	return bc.MustGetOperator(blockchain.DepositOP).Address
 }
 
 // GetIntermediatorOPAddress return intermediator op address

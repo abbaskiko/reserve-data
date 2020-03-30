@@ -375,6 +375,11 @@ func (b *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error) {
 	return common.MiningStatusFailed, tx.BlockNumber().Uint64(), nil
 }
 
+// EthClient return main client that BaseBlockchain use
+func (b *BaseBlockchain) EthClient() *ethclient.Client {
+	return b.client
+}
+
 func NewBaseBlockchain(
 	rpcClient *rpc.Client,
 	client *ethclient.Client,

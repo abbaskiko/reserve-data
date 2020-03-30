@@ -762,6 +762,12 @@ type FetcherDelay struct {
 	TradeHistory  HumanDuration `json:"trade_history"`
 }
 
+// GasConfig ...
+type GasConfig struct {
+	PreferUseGasStation     bool  `json:"prefer_use_gas_station"`
+	FetchMaxGasCacheSeconds int64 `json:"fetch_max_gas_cache_seconds"`
+}
+
 // RawConfig include all configs read from files
 type RawConfig struct {
 	AWSConfig         archive.AWSConfig `json:"aws_config"`
@@ -770,6 +776,7 @@ type RawConfig struct {
 	ExchangeEndpoints ExchangeEndpoints `json:"exchange_endpoints"`
 	Nodes             Nodes             `json:"nodes"`
 	FetcherDelay      FetcherDelay      `json:"fetcher_delay"`
+	GasConfig         GasConfig         `json:"gas_config"`
 
 	HTTPAPIAddr string `json:"http_api_addr"`
 

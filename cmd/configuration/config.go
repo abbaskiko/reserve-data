@@ -46,6 +46,8 @@ type Config struct {
 
 	SettingStorage    storagev3.Interface
 	ContractAddresses *common.ContractAddressConfiguration
+
+	GasConfig common.GasConfig
 }
 
 // AddCoreConfig add config for core

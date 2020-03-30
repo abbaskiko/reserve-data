@@ -661,7 +661,7 @@ func (h *Huobi) ID() common.ExchangeID {
 func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, error) {
 	var (
 		logger   = h.l.With("func", caller.GetCurrentFunctionName())
-		result   []common.Order
+		result   = []common.Order{}
 		pairs    []commonv3.TradingPairSymbols
 		err      error
 		errGroup errgroup.Group
