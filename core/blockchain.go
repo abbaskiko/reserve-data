@@ -6,6 +6,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -16,7 +17,9 @@ type Blockchain interface {
 	Send(
 		asset common.Asset,
 		amount *big.Int,
-		address ethereum.Address) (*types.Transaction, error)
+		address ethereum.Address,
+		nonce *big.Int,
+		gasPrice *big.Int) (*types.Transaction, error)
 	SetRates(
 		tokens []ethereum.Address,
 		buys []*big.Int,
@@ -24,5 +27,5 @@ type Blockchain interface {
 		block *big.Int,
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
-	SetRateMinedNonce() (uint64, error)
+	blockchain.MinedNoncePicker
 }

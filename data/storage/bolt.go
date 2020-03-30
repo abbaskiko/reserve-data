@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/boltdb/bolt"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/boltutil"
 	"github.com/KyberNetwork/reserve-data/common"
@@ -683,22 +684,25 @@ func (bs *BoltStorage) GetAllRecords(fromTime, toTime uint64) ([]common.Activity
 	return result, err
 }
 
-func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+func getFirstAndCountPendingAction(
+	l *zap.SugaredLogger,
+	pendings []common.ActivityRecord,
+	minedNonce uint64, activityType string) (*common.ActivityRecord, uint64, error) {
 	var minNonce uint64 = math.MaxUint64
 	var minPrice uint64 = math.MaxUint64
 	var result *common.ActivityRecord
 	var count uint64
 	for i, act := range pendings {
-		if act.Action == common.ActionSetRate {
-			log.Printf("looking for pending set_rates: %+v", act)
+		if act.Action == activityType {
+			l.Infof("looking for pending (%s): %+v", activityType, act)
 			nonce := act.Result.Nonce
 			if nonce < minedNonce {
-				log.Printf("NONCE_ISSUE: stalled pending set rate transaction, pending: %d, mined: %d",
-					nonce, minedNonce)
+				l.Infof("NONCE_ISSUE: stalled pending %s transaction, pending: %d, mined: %d",
+					activityType, nonce, minedNonce)
 				continue
 			} else if nonce-minedNonce > 1 {
-				log.Printf("NONCE_ISSUE: pending set rate transaction for inconsecutive nonce, mined nonce: %d, request nonce: %d",
-					minedNonce, nonce)
+				l.Infof("NONCE_ISSUE: pending %s transaction for inconsecutive nonce, mined nonce: %d, request nonce: %d",
+					activityType, minedNonce, nonce)
 			}
 
 			gasPrice, err := strconv.ParseUint(act.Result.GasPrice, 10, 64)
@@ -722,9 +726,11 @@ func getFirstAndCountPendingSetrate(pendings []common.ActivityRecord, minedNonce
 	}
 
 	if result == nil {
-		log.Printf("NONCE_ISSUE: found no pending set rate transaction with nonce newer than equal to mined nonce: %d", minedNonce)
+		l.Infof("NONCE_ISSUE: found no pending %s transaction with nonce newer than equal to mined nonce: %d",
+			activityType, minedNonce)
 	} else {
-		log.Printf("NONCE_ISSUE: unmined pending set rate, nonce: %d, count: %d, mined nonce: %d", result.Result.Nonce, count, minedNonce)
+		l.Infof("NONCE_ISSUE: un-mined pending %s, nonce: %d, count: %d, mined nonce: %d",
+			activityType, result.Result.Nonce, count, minedNonce)
 	}
 
 	return result, count, nil
@@ -742,13 +748,13 @@ func (bs *BoltStorage) RemoveStalePendingActivities(tx *bolt.Tx, stales []common
 	return nil
 }
 
-//PendingSetRate return pending set rate activity
-func (bs *BoltStorage) PendingSetRate(minedNonce uint64) (*common.ActivityRecord, uint64, error) {
+//PendingActivityForAction return pending set rate activity
+func (bs *BoltStorage) PendingActivityForAction(minedNonce uint64, activityType string) (*common.ActivityRecord, uint64, error) {
 	pendings, err := bs.GetPendingActivities()
 	if err != nil {
 		return nil, 0, err
 	}
-	return getFirstAndCountPendingSetrate(pendings, minedNonce)
+	return getFirstAndCountPendingAction(zap.S(), pendings, minedNonce, activityType)
 }
 
 //GetPendingActivities return pending activities

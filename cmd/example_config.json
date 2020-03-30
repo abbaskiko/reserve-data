@@ -32,6 +32,10 @@
       "url": "https://api.pro.coinbase.com"
     }
   },
+  "gas_config": {
+    "prefer_use_gas_station": true,
+    "fetch_max_gas_cache_seconds": 120
+  },
   "world_endpoints": {
     "gold_data": {
       "url": "https://datafeed.digix.global/tick/"
