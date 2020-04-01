@@ -44,9 +44,12 @@ type createAssetParams struct {
 	BidMinMinSpread        *float64 `db:"bid_min_min_spread"`
 	BidPriceMultiplyFactor *float64 `db:"bid_price_multiply_factor"`
 
-	RebalanceQuadraticA *float64 `db:"rebalance_quadratic_a"`
-	RebalanceQuadraticB *float64 `db:"rebalance_quadratic_b"`
-	RebalanceQuadraticC *float64 `db:"rebalance_quadratic_c"`
+	RebalanceSizeQuadraticA  *float64 `db:"rebalance_size_quadratic_a"`
+	RebalanceSizeQuadraticB  *float64 `db:"rebalance_size_quadratic_b"`
+	RebalanceSizeQuadraticC  *float64 `db:"rebalance_size_quadratic_c"`
+	RebalancePriceQuadraticA *float64 `db:"rebalance_price_quadratic_a"`
+	RebalancePriceQuadraticB *float64 `db:"rebalance_price_quadratic_b"`
+	RebalancePriceQuadraticC *float64 `db:"rebalance_price_quadratic_c"`
 
 	TargetTotal              *float64 `db:"target_total"`
 	TargetReserve            *float64 `db:"target_reserve"`
@@ -328,9 +331,12 @@ func (s *Storage) createAsset(
 	}
 
 	if rb != nil {
-		arg.RebalanceQuadraticA = &rb.A
-		arg.RebalanceQuadraticB = &rb.B
-		arg.RebalanceQuadraticC = &rb.C
+		arg.RebalanceSizeQuadraticA = &rb.SizeA
+		arg.RebalanceSizeQuadraticB = &rb.SizeB
+		arg.RebalanceSizeQuadraticC = &rb.SizeC
+		arg.RebalancePriceQuadraticA = &rb.PriceA
+		arg.RebalancePriceQuadraticB = &rb.PriceB
+		arg.RebalancePriceQuadraticC = &rb.PriceC
 	}
 
 	if target != nil {
@@ -578,9 +584,12 @@ type assetDB struct {
 	PWIBidMinMinSpread        *float64 `db:"pwi_bid_min_min_spread"`
 	PWIBidPriceMultiplyFactor *float64 `db:"pwi_bid_price_multiply_factor"`
 
-	RebalanceQuadraticA *float64 `db:"rebalance_quadratic_a"`
-	RebalanceQuadraticB *float64 `db:"rebalance_quadratic_b"`
-	RebalanceQuadraticC *float64 `db:"rebalance_quadratic_c"`
+	RebalanceSizeQuadraticA  *float64 `db:"rebalance_size_quadratic_a"`
+	RebalanceSizeQuadraticB  *float64 `db:"rebalance_size_quadratic_b"`
+	RebalanceSizeQuadraticC  *float64 `db:"rebalance_size_quadratic_c"`
+	RebalancePriceQuadraticA *float64 `db:"rebalance_price_quadratic_a"`
+	RebalancePriceQuadraticB *float64 `db:"rebalance_price_quadratic_b"`
+	RebalancePriceQuadraticC *float64 `db:"rebalance_price_quadratic_c"`
 
 	TargetTotal              *float64 `db:"target_total"`
 	TargetReserve            *float64 `db:"target_reserve"`
@@ -653,11 +662,15 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 			},
 		}
 	}
-	if adb.RebalanceQuadraticA != nil && adb.RebalanceQuadraticB != nil && adb.RebalanceQuadraticC != nil {
+	if adb.RebalanceSizeQuadraticA != nil && adb.RebalanceSizeQuadraticB != nil && adb.RebalanceSizeQuadraticC != nil &&
+		adb.RebalancePriceQuadraticA != nil && adb.RebalancePriceQuadraticB != nil && adb.RebalancePriceQuadraticC != nil {
 		result.RebalanceQuadratic = &common.RebalanceQuadratic{
-			A: *adb.RebalanceQuadraticA,
-			B: *adb.RebalanceQuadraticB,
-			C: *adb.RebalanceQuadraticC,
+			SizeA:  *adb.RebalanceSizeQuadraticA,
+			SizeB:  *adb.RebalanceSizeQuadraticB,
+			SizeC:  *adb.RebalanceSizeQuadraticC,
+			PriceA: *adb.RebalancePriceQuadraticA,
+			PriceB: *adb.RebalancePriceQuadraticB,
+			PriceC: *adb.RebalancePriceQuadraticC,
 		}
 	}
 
@@ -898,9 +911,12 @@ type updateAssetParam struct {
 	BidMinMinSpread        *float64 `db:"bid_min_min_spread"`
 	BidPriceMultiplyFactor *float64 `db:"bid_price_multiply_factor"`
 
-	RebalanceQuadraticA *float64 `db:"rebalance_quadratic_a"`
-	RebalanceQuadraticB *float64 `db:"rebalance_quadratic_b"`
-	RebalanceQuadraticC *float64 `db:"rebalance_quadratic_c"`
+	RebalanceSizeQuadraticA  *float64 `db:"rebalance_size_quadratic_a"`
+	RebalanceSizeQuadraticB  *float64 `db:"rebalance_size_quadratic_b"`
+	RebalanceSizeQuadraticC  *float64 `db:"rebalance_size_quadratic_c"`
+	RebalancePriceQuadraticA *float64 `db:"rebalance_price_quadratic_a"`
+	RebalancePriceQuadraticB *float64 `db:"rebalance_price_quadratic_b"`
+	RebalancePriceQuadraticC *float64 `db:"rebalance_price_quadratic_c"`
 
 	TargetTotal              *float64 `db:"target_total"`
 	TargetReserve            *float64 `db:"target_reserve"`
@@ -975,9 +991,12 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id uint64, uo storage.UpdateAssetOpts
 	rb := uo.RebalanceQuadratic
 
 	if rb != nil {
-		arg.RebalanceQuadraticA = &rb.A
-		arg.RebalanceQuadraticB = &rb.B
-		arg.RebalanceQuadraticC = &rb.C
+		arg.RebalanceSizeQuadraticA = &rb.SizeA
+		arg.RebalanceSizeQuadraticB = &rb.SizeB
+		arg.RebalanceSizeQuadraticC = &rb.SizeC
+		arg.RebalancePriceQuadraticA = &rb.PriceA
+		arg.RebalancePriceQuadraticB = &rb.PriceB
+		arg.RebalancePriceQuadraticC = &rb.PriceC
 		updateMsgs = append(updateMsgs, fmt.Sprintf("rebalance_quadratic=%+v", rb))
 	}
 

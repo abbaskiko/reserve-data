@@ -33,9 +33,12 @@ curl -X POST "https://gateway.local/v3/setting-change-main" \
                 }
             },
             "rebalance_quadratic": {
-                "a": 0.000001754386,
-                "b": 0.0004894737,
-                "c": 0.9995088
+                "size_a": 0.000001754386,
+                "size_b": 0.0004894737,
+                "size_c": 0.9995088,
+                "price_a": 0.1234,
+                "price_a": 0.1235,
+                "price_a": 0.1236
             },
             "exchanges": [
                 {

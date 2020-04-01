@@ -53,9 +53,12 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 				PriceMultiplyFactor: 0,
 			},
 		}, &common.RebalanceQuadratic{
-			A: 0,
-			B: 0,
-			C: 0,
+			SizeA:  0,
+			SizeB:  0,
+			SizeC:  0,
+			PriceA: 0,
+			PriceB: 0,
+			PriceC: 0,
 		}, []common.AssetExchange{
 			{
 				Symbol:            "ABC",
@@ -240,9 +243,12 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								},
 							},
 							RebalanceQuadratic: &common.RebalanceQuadratic{
-								A: 12,
-								B: 34,
-								C: 24,
+								SizeA:  12,
+								SizeB:  34,
+								SizeC:  24,
+								PriceA: 9,
+								PriceB: 15,
+								PriceC: 21,
 							},
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
@@ -322,9 +328,12 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								},
 							},
 							RebalanceQuadratic: &common.RebalanceQuadratic{
-								A: 12,
-								B: 34,
-								C: 24,
+								SizeA:  12,
+								SizeB:  34,
+								SizeC:  24,
+								PriceA: 9,
+								PriceB: 15,
+								PriceC: 21,
 							},
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
@@ -509,9 +518,12 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								},
 							},
 							RebalanceQuadratic: &common.RebalanceQuadratic{
-								A: 12,
-								B: 34,
-								C: 24,
+								SizeA:  12,
+								SizeB:  34,
+								SizeC:  24,
+								PriceA: 9,
+								PriceB: 15,
+								PriceC: 21,
 							},
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
