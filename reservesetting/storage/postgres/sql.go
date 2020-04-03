@@ -5,13 +5,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// migrateScripts are queries apply after schema created
-// E.g: ALTER TYPE ... ADD cannot be executed from a function or multi-command string
-var migrateScripts = []string{
-	`ALTER TYPE "setting_change_cat" ADD VALUE IF NOT EXISTS 'update_exchange';`,
-	`ALTER TYPE "setting_change_cat" ADD VALUE IF NOT EXISTS 'set_feed_configuration';`,
-}
-
 type preparedStmts struct {
 	getExchanges        *sqlx.Stmt
 	getExchange         *sqlx.Stmt

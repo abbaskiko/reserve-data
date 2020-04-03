@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS "assets"
 
     created                       TIMESTAMPTZ NOT NULL,
     updated                       TIMESTAMPTZ NOT NULL,
+
+    is_enabled BOOLEAN NOT NULL DEFAULT TRUE
     -- if set_rate strategy is defined, pwi columns are required
     CONSTRAINT pwi_check CHECK (
             set_rate = 'not_set'
@@ -96,32 +98,6 @@ CREATE TABLE IF NOT EXISTS "assets"
              target_rebalance_threshold IS NOT NULL AND
              target_transfer_threshold IS NOT NULL))
 );
-
--- alter table for compatibility
-DO $$
-	BEGIN
-		BEGIN
-			ALTER TABLE "assets" 	ADD COLUMN stable_param_price_update_threshold	FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_ask_spread				FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_bid_spread				FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_single_feed_max_spread	FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_multiple_feeds_max_diff	FLOAT 	DEFAULT	0;
-		EXCEPTION 
-			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
-		END;
-	END;
-$$;
-
--- alter table for compatibility - add column is_enabled
-DO $$
-	BEGIN
-		BEGIN
-            ALTER TABLE "assets" ADD COLUMN is_enabled BOOLEAN NOT NULL DEFAULT TRUE;
-		EXCEPTION 
-			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
-		END;
-	END;
-$$;
 
 CREATE TABLE IF NOT EXISTS "feed_weight"
 (
@@ -184,7 +160,7 @@ $$
     BEGIN
         IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'setting_change_cat') THEN
             CREATE TYPE setting_change_cat AS ENUM ('set_target', 'set_pwis',
-                'set_stable_token','set_rebalance_quadratic', 'main', 'update_exchange');
+                'set_stable_token','set_rebalance_quadratic', 'main', 'update_exchange', 'set_feed_configuration');
         END IF;
     END
 $$;
