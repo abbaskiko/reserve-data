@@ -45,9 +45,12 @@ CREATE TABLE IF NOT EXISTS "assets"
     pwi_bid_min_min_spread        FLOAT     NULL,
     pwi_bid_price_multiply_factor FLOAT     NULL,
 
-    rebalance_quadratic_a         FLOAT     NULL,
-    rebalance_quadratic_b         FLOAT     NULL,
-    rebalance_quadratic_c         FLOAT     NULL,
+    rebalance_size_quadratic_a    FLOAT     NULL,
+    rebalance_size_quadratic_b    FLOAT     NULL,
+    rebalance_size_quadratic_c    FLOAT     NULL,
+    rebalance_price_quadratic_a   FLOAT     NULL,
+    rebalance_price_quadratic_b   FLOAT     NULL,
+    rebalance_price_quadratic_c   FLOAT     NULL,
 
     target_total                  FLOAT     NULL,
     target_reserve                FLOAT     NULL,
@@ -79,9 +82,12 @@ CREATE TABLE IF NOT EXISTS "assets"
     -- if rebalance is true, rebalance quadratic is required
     CONSTRAINT rebalance_quadratic_check CHECK (
             NOT rebalance OR
-            (rebalance_quadratic_a IS NOT NULL AND
-             rebalance_quadratic_b IS NOT NULL AND
-             rebalance_quadratic_c IS NOT NULL)),
+            (rebalance_size_quadratic_a IS NOT NULL AND
+             rebalance_size_quadratic_b IS NOT NULL AND
+             rebalance_size_quadratic_c IS NOT NULL AND
+             rebalance_price_quadratic_a IS NOT NULL AND
+             rebalance_price_quadratic_b IS NOT NULL AND
+             rebalance_price_quadratic_c IS NOT NULL)),
     -- if rebalance is true, target configuration is required
     CONSTRAINT target_check CHECK (
             NOT rebalance OR
@@ -114,56 +120,6 @@ DO $$
 		EXCEPTION 
 			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
 		END;
-	END;
-$$;
-
--- alter table for compatibility - add column rebalance_price_quadratic
-DO $$
-	BEGIN
-		BEGIN
-            ALTER TABLE "assets" ADD COLUMN rebalance_price_quadratic_a FLOAT NULL,
-                                 ADD COLUMN rebalance_price_quadratic_b FLOAT NULL,
-                                 ADD COLUMN rebalance_price_quadratic_c FLOAT NULL;
-		EXCEPTION 
-			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
-		END;
-	END;
-$$;
-
--- alter table for compatibility - rename rebalance_quadratic to rebalance_size_quadratic
-DO $$
-    BEGIN
-        IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name='rebalance_quadratic_a') 
-        THEN
-            ALTER TABLE "assets" RENAME COLUMN rebalance_quadratic_a TO rebalance_size_quadratic_a;
-        END IF;
-
-        IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name='rebalance_quadratic_b')
-        THEN
-            ALTER TABLE "assets" RENAME COLUMN rebalance_quadratic_b TO rebalance_size_quadratic_b;
-        END IF;
-
-        IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name='rebalance_quadratic_c') 
-        THEN
-            ALTER TABLE "assets" RENAME COLUMN rebalance_quadratic_c TO rebalance_size_quadratic_c;
-        END IF;
-	END;
-$$;
-
--- alter table for compatibility - modify constraint
-DO $$
-	BEGIN
-        ALTER TABLE "assets" 
-            DROP CONSTRAINT IF EXISTS rebalance_quadratic_check,
-            ADD  CONSTRAINT rebalance_quadratic_check CHECK (
-                NOT rebalance OR
-                (rebalance_size_quadratic_a IS NOT NULL AND
-                rebalance_size_quadratic_b IS NOT NULL AND
-                rebalance_size_quadratic_c IS NOT NULL AND
-                rebalance_price_quadratic_a IS NOT NULL AND
-                rebalance_price_quadratic_b IS NOT NULL AND
-                rebalance_price_quadratic_c IS NOT NULL)
-            );
 	END;
 $$;
 
