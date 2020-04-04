@@ -80,7 +80,7 @@ func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChange
 	if tx != nil {
 		sts = tx.Stmtx(sts)
 	}
-	err := sts.Get(&dbResult, id, nil)
+	err := sts.Get(&dbResult, id, nil, nil)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return common.SettingChangeResponse{}, common.ErrNotFound
@@ -96,10 +96,10 @@ func (s *Storage) getSettingChange(tx *sqlx.Tx, id uint64) (common.SettingChange
 }
 
 // GetSettingChanges return list setting change.
-func (s *Storage) GetSettingChanges(cat common.ChangeCatalog) ([]common.SettingChangeResponse, error) {
+func (s *Storage) GetSettingChanges(cat common.ChangeCatalog, status common.ChangeStatus) ([]common.SettingChangeResponse, error) {
 	s.l.Infow("get setting type", "catalog", cat)
 	var dbResult []settingChangeDB
-	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat.String())
+	err := s.stmts.getSettingChange.Select(&dbResult, nil, cat.String(), status.String())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, common.ErrNotFound
@@ -125,7 +125,7 @@ func (s *Storage) RejectSettingChange(id uint64) error {
 		return err
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
-	err = tx.Stmtx(s.stmts.deleteSettingChange).Get(&returnedID, id)
+	err = tx.Stmtx(s.stmts.updateSettingChangeStatus).Get(&returnedID, id, common.ChangeStatusRejected.String())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return common.ErrNotFound
@@ -235,7 +235,7 @@ func (s *Storage) ConfirmSettingChange(id uint64, commit bool) error {
 			return err
 		}
 	}
-	_, err = tx.Stmtx(s.stmts.deleteSettingChange).Exec(id)
+	_, err = tx.Stmtx(s.stmts.updateSettingChangeStatus).Exec(id, common.ChangeStatusAccepted.String())
 	if err != nil {
 		return err
 	}
