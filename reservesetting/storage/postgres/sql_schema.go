@@ -45,9 +45,12 @@ CREATE TABLE IF NOT EXISTS "assets"
     pwi_bid_min_min_spread        FLOAT     NULL,
     pwi_bid_price_multiply_factor FLOAT     NULL,
 
-    rebalance_quadratic_a         FLOAT     NULL,
-    rebalance_quadratic_b         FLOAT     NULL,
-    rebalance_quadratic_c         FLOAT     NULL,
+    rebalance_size_quadratic_a    FLOAT     NULL,
+    rebalance_size_quadratic_b    FLOAT     NULL,
+    rebalance_size_quadratic_c    FLOAT     NULL,
+    rebalance_price_quadratic_a   FLOAT     NULL,
+    rebalance_price_quadratic_b   FLOAT     NULL,
+    rebalance_price_quadratic_c   FLOAT     NULL,
 
     target_total                  FLOAT     NULL,
     target_reserve                FLOAT     NULL,
@@ -62,6 +65,8 @@ CREATE TABLE IF NOT EXISTS "assets"
 
     created                       TIMESTAMPTZ NOT NULL,
     updated                       TIMESTAMPTZ NOT NULL,
+
+    is_enabled BOOLEAN NOT NULL DEFAULT TRUE
     -- if set_rate strategy is defined, pwi columns are required
     CONSTRAINT pwi_check CHECK (
             set_rate = 'not_set'
@@ -79,9 +84,12 @@ CREATE TABLE IF NOT EXISTS "assets"
     -- if rebalance is true, rebalance quadratic is required
     CONSTRAINT rebalance_quadratic_check CHECK (
             NOT rebalance OR
-            (rebalance_quadratic_a IS NOT NULL AND
-             rebalance_quadratic_b IS NOT NULL AND
-             rebalance_quadratic_c IS NOT NULL)),
+            (rebalance_size_quadratic_a IS NOT NULL AND
+             rebalance_size_quadratic_b IS NOT NULL AND
+             rebalance_size_quadratic_c IS NOT NULL AND
+             rebalance_price_quadratic_a IS NOT NULL AND
+             rebalance_price_quadratic_b IS NOT NULL AND
+             rebalance_price_quadratic_c IS NOT NULL)),
     -- if rebalance is true, target configuration is required
     CONSTRAINT target_check CHECK (
             NOT rebalance OR
@@ -90,32 +98,6 @@ CREATE TABLE IF NOT EXISTS "assets"
              target_rebalance_threshold IS NOT NULL AND
              target_transfer_threshold IS NOT NULL))
 );
-
--- alter table for compatibility
-DO $$
-	BEGIN
-		BEGIN
-			ALTER TABLE "assets" 	ADD COLUMN stable_param_price_update_threshold	FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_ask_spread				FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_bid_spread				FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_single_feed_max_spread	FLOAT 	DEFAULT	0,
-									ADD COLUMN stable_param_multiple_feeds_max_diff	FLOAT 	DEFAULT	0;
-		EXCEPTION 
-			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
-		END;
-	END;
-$$;
-
--- alter table for compatibility - add column is_enabled
-DO $$
-	BEGIN
-		BEGIN
-            ALTER TABLE "assets" ADD COLUMN is_enabled BOOLEAN NOT NULL DEFAULT TRUE;
-		EXCEPTION 
-			WHEN duplicate_column THEN RAISE NOTICE 'column already exists';
-		END;
-	END;
-$$;
 
 CREATE TABLE IF NOT EXISTS "feed_weight"
 (
@@ -178,7 +160,10 @@ $$
     BEGIN
         IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'setting_change_cat') THEN
             CREATE TYPE setting_change_cat AS ENUM ('set_target', 'set_pwis',
-                'set_stable_token','set_rebalance_quadratic', 'main', 'update_exchange');
+                'set_stable_token','set_rebalance_quadratic', 'main', 'update_exchange', 'set_feed_configuration');
+        END IF;
+        IF NOT EXISTS(SELECT 1 FROM pg_type WHERE typname = 'setting_change_status') THEN
+            CREATE TYPE setting_change_status AS ENUM ('pending', 'accepted', 'rejected');
         END IF;
     END
 $$;
@@ -188,8 +173,9 @@ CREATE TABLE IF NOT EXISTS setting_change
 (
     id      SERIAL PRIMARY KEY,
     created TIMESTAMPTZ                 NOT NULL,
-    cat     setting_change_cat UNIQUE NOT NULL,
-    data    JSON                      NOT NULL
+    cat     setting_change_cat NOT NULL,
+    data    JSON                      NOT NULL,
+    status  setting_change_status DEFAULT 'pending'
 );
 
 CREATE TABLE IF NOT EXISTS price_factor
@@ -294,9 +280,12 @@ CREATE OR REPLACE FUNCTION new_asset(_symbol assets.symbol%TYPE,
                                      _pwi_bid_c assets.pwi_bid_c%TYPE,
                                      _pwi_bid_min_min_spread assets.pwi_bid_min_min_spread%TYPE,
                                      _pwi_bid_price_multiply_factor assets.pwi_bid_price_multiply_factor%TYPE,
-                                     _rebalance_quadratic_a assets.rebalance_quadratic_a%TYPE,
-                                     _rebalance_quadratic_b assets.rebalance_quadratic_b%TYPE,
-                                     _rebalance_quadratic_c assets.rebalance_quadratic_c%TYPE,
+                                     _rebalance_size_quadratic_a assets.rebalance_size_quadratic_a%TYPE,
+                                     _rebalance_size_quadratic_b assets.rebalance_size_quadratic_b%TYPE,
+                                     _rebalance_size_quadratic_c assets.rebalance_size_quadratic_c%TYPE,
+                                     _rebalance_price_quadratic_a assets.rebalance_price_quadratic_a%TYPE,
+                                     _rebalance_price_quadratic_b assets.rebalance_price_quadratic_b%TYPE,
+                                     _rebalance_price_quadratic_c assets.rebalance_price_quadratic_c%TYPE,
                                      _target_total assets.target_total%TYPE,
                                      _target_reserve assets.target_reserve%TYPE,
                                      _target_rebalance_threshold assets.target_rebalance_threshold%TYPE,
@@ -337,9 +326,12 @@ BEGIN
                 pwi_bid_c,
                 pwi_bid_min_min_spread,
                 pwi_bid_price_multiply_factor,
-                rebalance_quadratic_a,
-                rebalance_quadratic_b,
-                rebalance_quadratic_c,
+                rebalance_size_quadratic_a,
+                rebalance_size_quadratic_b,
+                rebalance_size_quadratic_c,
+                rebalance_price_quadratic_a,
+                rebalance_price_quadratic_b,
+                rebalance_price_quadratic_c,
                 target_total,
                 target_reserve,
                 target_rebalance_threshold,
@@ -370,9 +362,12 @@ BEGIN
             _pwi_bid_c,
             _pwi_bid_min_min_spread,
             _pwi_bid_price_multiply_factor,
-            _rebalance_quadratic_a,
-            _rebalance_quadratic_b,
-            _rebalance_quadratic_c,
+            _rebalance_size_quadratic_a,
+            _rebalance_size_quadratic_b,
+            _rebalance_size_quadratic_c,
+            _rebalance_price_quadratic_a,
+            _rebalance_price_quadratic_b,
+            _rebalance_price_quadratic_c,
             _target_total,
             _target_reserve,
             _target_rebalance_threshold,

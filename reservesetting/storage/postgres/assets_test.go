@@ -42,9 +42,12 @@ func TestUpdateAsset(t *testing.T) {
 		},
 	}
 	rebalance := &common.RebalanceQuadratic{
-		A: 3.1,
-		B: 3.2,
-		C: 3.3,
+		SizeA:  3.1,
+		SizeB:  3.2,
+		SizeC:  3.3,
+		PriceA: 9.1,
+		PriceB: 15.2,
+		PriceC: 21.3,
 	}
 	stableParam := &common.UpdateStableParam{
 		PriceUpdateThreshold: common.FloatPointer(1),

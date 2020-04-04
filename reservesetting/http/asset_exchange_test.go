@@ -54,7 +54,9 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 			Type: common.ChangeTypeUpdateAssetExchange,
 			Data: updateAxe,
 		},
-	}})
+	},
+		Message: "Update asset exchange",
+	})
 	require.NoError(t, err)
 	confirm, err := c.confirmSettingChange(pending.ID)
 	require.NoError(t, err)

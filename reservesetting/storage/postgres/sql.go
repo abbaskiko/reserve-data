@@ -5,13 +5,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// migrateScripts are queries apply after schema created
-// E.g: ALTER TYPE ... ADD cannot be executed from a function or multi-command string
-var migrateScripts = []string{
-	`ALTER TYPE "setting_change_cat" ADD VALUE IF NOT EXISTS 'update_exchange';`,
-	`ALTER TYPE "setting_change_cat" ADD VALUE IF NOT EXISTS 'set_feed_configuration';`,
-}
-
 type preparedStmts struct {
 	getExchanges        *sqlx.Stmt
 	getExchange         *sqlx.Stmt
@@ -45,9 +38,9 @@ type preparedStmts struct {
 	getTradingBy    *sqlx.Stmt
 	deleteTradingBy *sqlx.Stmt
 
-	newSettingChange    *sqlx.Stmt
-	deleteSettingChange *sqlx.Stmt
-	getSettingChange    *sqlx.Stmt
+	newSettingChange          *sqlx.Stmt
+	updateSettingChangeStatus *sqlx.Stmt
+	getSettingChange          *sqlx.Stmt
 
 	newPriceFactor      *sqlx.Stmt
 	getPriceFactor      *sqlx.Stmt
@@ -135,7 +128,7 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		return nil, err
 	}
 
-	newSettingChange, deleteSettingChange, getSettingChange, err := settingChangeStatements(db)
+	newSettingChange, updateSettingChangeStatus, getSettingChange, err := settingChangeStatements(db)
 	if err != nil {
 		return nil, err
 	}
@@ -198,9 +191,9 @@ func newPreparedStmts(db *sqlx.DB) (*preparedStmts, error) {
 		getTradingPairSymbols: tradingPairStmts.getBySymbolStmt,
 		getMinNotional:        getMinNotional,
 
-		newSettingChange:    newSettingChange,
-		deleteSettingChange: deleteSettingChange,
-		getSettingChange:    getSettingChange,
+		newSettingChange:          newSettingChange,
+		updateSettingChangeStatus: updateSettingChangeStatus,
+		getSettingChange:          getSettingChange,
 
 		newPriceFactor:      newPriceFactor,
 		getPriceFactor:      getPriceFactor,
@@ -362,9 +355,12 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 		             :bid_c,
 		             :bid_min_min_spread,
 		             :bid_price_multiply_factor,
-		             :rebalance_quadratic_a,
-		             :rebalance_quadratic_b,
-		             :rebalance_quadratic_c,
+		             :rebalance_size_quadratic_a,
+		             :rebalance_size_quadratic_b,
+		             :rebalance_size_quadratic_c,
+		             :rebalance_price_quadratic_a,
+		             :rebalance_price_quadratic_b,
+		             :rebalance_price_quadratic_c,
 		             :target_total,
 		             :target_reserve,
 		             :target_rebalance_threshold,
@@ -399,9 +395,12 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 								       assets.pwi_bid_c,
 								       assets.pwi_bid_min_min_spread,
 								       assets.pwi_bid_price_multiply_factor,
-								       assets.rebalance_quadratic_a,
-								       assets.rebalance_quadratic_b,
-								       assets.rebalance_quadratic_c,
+								       assets.rebalance_size_quadratic_a,
+								       assets.rebalance_size_quadratic_b,
+								       assets.rebalance_size_quadratic_c,
+								       assets.rebalance_price_quadratic_a,
+								       assets.rebalance_price_quadratic_b,
+								       assets.rebalance_price_quadratic_c,
 								       assets.target_total,
 								       assets.target_reserve,
 								       assets.target_rebalance_threshold,
@@ -438,9 +437,12 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 								         assets.pwi_bid_c,
 								         assets.pwi_bid_min_min_spread,
 								         assets.pwi_bid_price_multiply_factor,
-								         assets.rebalance_quadratic_a,
-								         assets.rebalance_quadratic_b,
-								         assets.rebalance_quadratic_c,
+								         assets.rebalance_size_quadratic_a,
+								         assets.rebalance_size_quadratic_b,
+								         assets.rebalance_size_quadratic_c,
+								         assets.rebalance_price_quadratic_a,
+								         assets.rebalance_price_quadratic_b,
+								         assets.rebalance_price_quadratic_c,
 								         assets.target_total,
 								         assets.target_reserve,
 								         assets.target_rebalance_threshold,
@@ -489,9 +491,12 @@ func assetStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, *sqlx.NamedStmt,
 			pwi_bid_c = COALESCE(:bid_c,pwi_bid_c),
 			pwi_bid_min_min_spread = COALESCE(:bid_min_min_spread,pwi_bid_min_min_spread),
 			pwi_bid_price_multiply_factor = COALESCE(:bid_price_multiply_factor,pwi_bid_price_multiply_factor),
-			rebalance_quadratic_a = COALESCE(:rebalance_quadratic_a,rebalance_quadratic_a),
-			rebalance_quadratic_b = COALESCE(:rebalance_quadratic_b,rebalance_quadratic_b),
-			rebalance_quadratic_c = COALESCE(:rebalance_quadratic_c,rebalance_quadratic_c),
+			rebalance_size_quadratic_a = COALESCE(:rebalance_size_quadratic_a,rebalance_size_quadratic_a),
+			rebalance_size_quadratic_b = COALESCE(:rebalance_size_quadratic_b,rebalance_size_quadratic_b),
+			rebalance_size_quadratic_c = COALESCE(:rebalance_size_quadratic_c,rebalance_size_quadratic_c),
+			rebalance_price_quadratic_a = COALESCE(:rebalance_price_quadratic_a,rebalance_price_quadratic_a),
+			rebalance_price_quadratic_b = COALESCE(:rebalance_price_quadratic_b,rebalance_price_quadratic_b),
+			rebalance_price_quadratic_c = COALESCE(:rebalance_price_quadratic_c,rebalance_price_quadratic_c),
 			target_total = COALESCE(:target_total,target_total),
 			target_reserve = COALESCE(:target_reserve,target_reserve),
 			target_rebalance_threshold = COALESCE(:target_rebalance_threshold,target_rebalance_threshold),
@@ -642,17 +647,18 @@ func settingChangeStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, *sqlx.Stmt, e
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	const deleteSettingChangeQuery = `DELETE FROM setting_change WHERE id=$1 returning id`
-	deleteSettingChangeStmt, err := db.Preparex(deleteSettingChangeQuery)
+	const updateSettingChangeStatus = `UPDATE setting_change SET status = $2 WHERE id=$1 returning id`
+	updateSettingChangeStatusStmt, err := db.Preparex(updateSettingChangeStatus)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	const listSettingChangeQuery = `SELECT id,created,data FROM setting_change WHERE id=COALESCE($1, setting_change.id) AND cat=COALESCE($2, setting_change.cat)`
+	const listSettingChangeQuery = `SELECT id,created,data FROM setting_change WHERE id=COALESCE($1, setting_change.id) AND cat=COALESCE($2, setting_change.cat)
+	AND status=COALESCE($3, 'pending'::setting_change_status)`
 	listSettingChangeStmt, err := db.Preparex(listSettingChangeQuery)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return newSettingChangeStmt, deleteSettingChangeStmt, listSettingChangeStmt, nil
+	return newSettingChangeStmt, updateSettingChangeStatusStmt, listSettingChangeStmt, nil
 }
 
 func priceFactorStatements(db *sqlx.DB) (*sqlx.Stmt, *sqlx.Stmt, error) {

@@ -12,9 +12,12 @@ curl -X POST "https://gateway.local/v3/setting-change-rbquadratic" \
           "data":{
               "asset_id":3,
               "rebalance_quadratic":{
-                "a":0.000001754386,
-                "b":0.000001754386,
-                "c":0.000001754386
+                "size_a":0.000001754386,
+                "size_b":0.000001754386,
+                "size_c":0.000001754386,
+                "price_a":0.1234,
+                "price_b":0.1235,
+                "price_c":0.1236
               }
           }
         },
@@ -23,9 +26,12 @@ curl -X POST "https://gateway.local/v3/setting-change-rbquadratic" \
           "data":{
               "asset_id":5,
               "rebalance_quadratic":{
-                "a":0.00000357143,
-                "b":0.0002285714,
-                "c":0.99976786
+                "size_a":0.00000357143,
+                "size_b":0.0002285714,
+                "size_c":0.99976786,
+                "price_a":0.1234,
+                "price_b":0.1235,
+                "price_c":0.1236
               }
           }
         },
@@ -76,9 +82,12 @@ curl -X GET "https://gateway.local/v3/setting-change-rbquadratic"
           "data":{
               "asset_id":3,
               "rebalance_quadratic":{
-                "a":0.000001754386,
-                "b":0.000001754386,
-                "c":0.000001754386
+                "size_a":0.000001754386,
+                "size_b":0.000001754386,
+                "size_c":0.000001754386,
+                "price_a":0.1234,
+                "price_b":0.1235,
+                "price_c":0.1236
               }
           }
         },
@@ -87,9 +96,12 @@ curl -X GET "https://gateway.local/v3/setting-change-rbquadratic"
           "data":{
               "asset_id":5,
               "rebalance_quadratic":{
-                "a":0.00000357143,
-                "b":0.0002285714,
-                "c":0.99976786
+                "size_a":0.00000357143,
+                "size_b":0.0002285714,
+                "size_c":0.99976786,
+                "price_a":0.1234,
+                "price_b":0.1235,
+                "price_c":0.1236
               }
           }
         },

@@ -53,9 +53,12 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 				PriceMultiplyFactor: 0,
 			},
 		}, &common.RebalanceQuadratic{
-			A: 0,
-			B: 0,
-			C: 0,
+			SizeA:  0,
+			SizeB:  0,
+			SizeC:  0,
+			PriceA: 0,
+			PriceB: 0,
+			PriceC: 0,
 		}, []common.AssetExchange{
 			{
 				Symbol:            "ABC",
@@ -155,6 +158,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						},
 					},
 				},
+				Message: "support huobi",
 			},
 			assert: httputil.ExpectSuccess,
 		},
@@ -240,9 +244,12 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								},
 							},
 							RebalanceQuadratic: &common.RebalanceQuadratic{
-								A: 12,
-								B: 34,
-								C: 24,
+								SizeA:  12,
+								SizeB:  34,
+								SizeC:  24,
+								PriceA: 9,
+								PriceB: 15,
+								PriceC: 21,
 							},
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
@@ -250,6 +257,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						},
 					},
 				},
+				Message: "create a new asset",
 			},
 			assert: httputil.ExpectSuccess,
 		},
@@ -322,9 +330,12 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								},
 							},
 							RebalanceQuadratic: &common.RebalanceQuadratic{
-								A: 12,
-								B: 34,
-								C: 24,
+								SizeA:  12,
+								SizeB:  34,
+								SizeC:  24,
+								PriceA: 9,
+								PriceB: 15,
+								PriceC: 21,
 							},
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
@@ -336,6 +347,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						},
 					},
 				},
+				Message: "create OMG",
 			},
 			assert: httputil.ExpectSuccess,
 		},
@@ -371,6 +383,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						},
 					},
 				},
+				Message: "Update feed weight",
 			},
 			assert: httputil.ExpectSuccess,
 		},
@@ -403,6 +416,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						},
 					},
 				},
+				Message: "Change quote type",
 			},
 			assert: httputil.ExpectSuccess,
 		},
@@ -436,6 +450,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						},
 					},
 				},
+				Message: "remove feed weight",
 			},
 			assert: httputil.ExpectSuccess,
 		},
@@ -509,9 +524,12 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								},
 							},
 							RebalanceQuadratic: &common.RebalanceQuadratic{
-								A: 12,
-								B: 34,
-								C: 24,
+								SizeA:  12,
+								SizeB:  34,
+								SizeC:  24,
+								PriceA: 9,
+								PriceB: 15,
+								PriceC: 21,
 							},
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
@@ -523,6 +541,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 						},
 					},
 				},
+				Message: "update feed weight",
 			},
 			assert: httputil.ExpectFailure,
 		},
@@ -611,6 +630,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 						},
 					},
 				},
+				Message: "Support huobi",
 			},
 		},
 		{
@@ -646,6 +666,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 						},
 					},
 				},
+				Message: "Create trading pair",
 			},
 		},
 		{
@@ -681,6 +702,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 						},
 					},
 				},
+				Message: "create trading pair",
 			},
 		},
 		{
@@ -716,6 +738,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 						},
 					},
 				},
+				Message: "create trading pair",
 			},
 		},
 		{
@@ -761,6 +784,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 						},
 					},
 				},
+				Message: "create new trading pair",
 			},
 		},
 		{
@@ -796,6 +820,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 						},
 					},
 				},
+				Message: "create new trading pair",
 			},
 		},
 		{
@@ -844,6 +869,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 						},
 					},
 				},
+				Message: "Update exchange",
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
@@ -913,6 +939,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 						},
 					},
 				},
+				Message: "update exchange fee",
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				msg := resp.Body.Bytes()
@@ -971,6 +998,7 @@ func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
 						},
 					},
 				},
+				Message: "update asset address",
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
@@ -1067,6 +1095,7 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 						},
 					},
 				},
+				Message: "delete trading pair",
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
@@ -1096,6 +1125,12 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 			},
 			method: http.MethodPut,
 			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "get setting change accepted",
+			endpoint: fmt.Sprintf("/v3/setting-change-main?status=%s", common.ChangeStatusAccepted.String()),
+			method:   http.MethodGet,
+			assert:   httputil.ExpectSuccess,
 		},
 		{
 			msg:      "get trading pair",
@@ -1149,6 +1184,7 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 						},
 					},
 				},
+				Message: "delete trading pair",
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
@@ -1184,6 +1220,7 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 						},
 					},
 				},
+				Message: "delete asset exchange",
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
@@ -1256,19 +1293,22 @@ func TestCreateTradingPair(t *testing.T) {
 	server := NewServer(s, "", supportedExchanges, "", "")
 	c := apiClient{s: server}
 	quote := uint64(1) // ETH
-	postRes, err := c.createSettingChange(common.SettingChange{ChangeList: []common.SettingChangeEntry{
-		{
-			Type: common.ChangeTypeCreateTradingPair,
-			Data: common.CreateTradingPairEntry{
-				TradingPair: common.TradingPair{
-					Base:  id,
-					Quote: quote, // ETH
+	postRes, err := c.createSettingChange(common.SettingChange{
+		ChangeList: []common.SettingChangeEntry{
+			{
+				Type: common.ChangeTypeCreateTradingPair,
+				Data: common.CreateTradingPairEntry{
+					TradingPair: common.TradingPair{
+						Base:  id,
+						Quote: quote, // ETH
+					},
+					AssetID:    id,
+					ExchangeID: binance,
 				},
-				AssetID:    id,
-				ExchangeID: binance,
 			},
 		},
-	}})
+		Message: "create trading pair",
+	})
 	require.NoError(t, err)
 	_, err = c.confirmSettingChange(postRes.ID)
 	require.NoError(t, err)
@@ -1334,6 +1374,7 @@ func TestSetFeedConfiguration(t *testing.T) {
 						},
 					},
 				},
+				Message: "set feed configuration",
 			},
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				var idResponse struct {
