@@ -56,9 +56,12 @@ curl -X POST "https://gateway.local/v3/setting-change-rbquadratic" \
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 asset_id | uint64 | true | nil | ID of asset
-a | float64 | false | nil | 
-b | float64 | false | nil | 
-c | float64 | false | nil | 
+size_a | float64 | false | nil | 
+size_b | float64 | false | nil | 
+size_c | float64 | false | nil | 
+price_a | float64 | false | nil | 
+price_b | float64 | false | nil | 
+price_c | float64 | false | nil | 
 <aside class="notice">Write key is required</aside>
 
 ## Get pending setting rbquadratic
