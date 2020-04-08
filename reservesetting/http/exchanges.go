@@ -35,7 +35,7 @@ func (s *Server) getExchange(c *gin.Context) {
 }
 
 type exchangeStatusEntry struct {
-	Disable bool `json:"disable" binding:"required"`
+	Disable bool `form:"disable" binding:"required"`
 }
 
 func (s *Server) updateExchangeStatus(c *gin.Context) {
