@@ -26,7 +26,6 @@ p, %[1]s, /v3/setting-change-rbquadratic, POST
 p, %[1]s, /v3/setting-change-main, POST
 p, %[1]s, /v3/setting-change-stable, POST
 p, %[1]s, /v3/setting-change-feed-configuration, POST
-p, %[1]s, /v3/update-exchange-status/:id, PUT
 p, %[1]s, /v3/update-feed-status/:name, PUT`, key)
 }
 
@@ -43,6 +42,7 @@ p, %[1]s, /v3/setting-change-feed-configuration/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/hold-rebalance, POST
 p, %[1]s, /v3/enable-rebalance, POST
 p, %[1]s, /v3/hold-set-rate, POST
+p, %[1]s, /v3/update-exchange-status/:id, PUT
 p, %[1]s, /v3/enable-set-rate, POST`, key)
 }
 
