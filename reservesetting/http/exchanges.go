@@ -34,11 +34,11 @@ func (s *Server) getExchange(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(exchange))
 }
 
-type exchangeStatusEntry struct {
+type exchangeEnabledEntry struct {
 	Disable bool `json:"disable" binding:"exists"`
 }
 
-func (s *Server) updateExchangeStatus(c *gin.Context) {
+func (s *Server) setExchangeEnabled(c *gin.Context) {
 	var input struct {
 		ID uint64 `uri:"id" binding:"required"`
 	}
@@ -52,7 +52,7 @@ func (s *Server) updateExchangeStatus(c *gin.Context) {
 		return
 	}
 
-	var exStatus exchangeStatusEntry
+	var exStatus exchangeEnabledEntry
 	if err = c.ShouldBindJSON(&exStatus); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
