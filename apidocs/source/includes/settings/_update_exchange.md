@@ -118,7 +118,7 @@ curl -X DELETE "https://gateway.local/v3/setting-change-update-exchange/1"
 ## Enable/Disable exchange 
 
 ```shell
-curl -X PUT "https://gateway.local/v3/update-exchange-status/:exchange_id" \
+curl -X PUT "https://gateway.local/v3/set-exchange-enabled/:exchange_id" \
 -H 'Content-Type: application/json' \
 -d '{"disable": true}'
 ```
