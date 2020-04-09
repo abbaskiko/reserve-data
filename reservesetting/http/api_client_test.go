@@ -154,8 +154,8 @@ func createRequest(method, url string, data interface{}) (*http.Request, error) 
 	return http.NewRequest(method, url, bytes.NewBuffer(body))
 }
 
-func (c *apiClient) updateExchangeStatus(id uint64, exs exchangeStatusEntry) (commonResponse, error) {
-	req, err := createRequest(http.MethodPut, fmt.Sprintf("/v3/update-exchange-status/%d", id), exs)
+func (c *apiClient) updateExchangeStatus(id uint64, exs exchangeEnabledEntry) (commonResponse, error) {
+	req, err := createRequest(http.MethodPut, fmt.Sprintf("/v3/set-exchange-enabled/%d", id), exs)
 	if err != nil {
 		return commonResponse{}, err
 	}

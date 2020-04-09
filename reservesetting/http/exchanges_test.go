@@ -72,13 +72,13 @@ func TestUpdateExchangeStatus(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	status, err := c.updateExchangeStatus(binance, exchangeStatusEntry{
-		Disable: true,
+	status, err := c.updateExchangeStatus(binance, exchangeEnabledEntry{
+		Disable: false,
 	})
 	require.NoError(t, err)
 	assert.True(t, status.Success)
 
 	ex, err := c.getExchange(binance)
 	require.NoError(t, err)
-	assert.Equal(t, ex.Exchange.Disable, true)
+	assert.Equal(t, ex.Exchange.Disable, false)
 }

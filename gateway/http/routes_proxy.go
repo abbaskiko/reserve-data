@@ -96,7 +96,7 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 		g.POST("/setting-change-update-exchange", settingProxyMW)
 		g.PUT("/setting-change-update-exchange/:id", settingProxyMW)
 		g.DELETE("/setting-change-update-exchange/:id", settingProxyMW)
-		g.PUT("/update-exchange-status/:id", settingProxyMW)
+		g.PUT("/set-exchange-enabled/:id", settingProxyMW)
 
 		g.POST("/setting-change-feed-configuration", settingProxyMW)
 		g.GET("/setting-change-feed-configuration", settingProxyMW)
