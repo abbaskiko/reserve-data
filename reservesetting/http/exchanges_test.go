@@ -80,5 +80,5 @@ func TestUpdateExchangeStatus(t *testing.T) {
 
 	ex, err := c.getExchange(binance)
 	require.NoError(t, err)
-	assert.Equal(t, ex.Exchange.Disable, true)
+	assert.Equal(t, ex.Exchange.Disable, false)
 }
