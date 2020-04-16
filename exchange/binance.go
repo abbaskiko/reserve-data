@@ -252,7 +252,8 @@ func (bn *Binance) Trade(tradeType string, base common.Token, quote common.Token
 	if err != nil {
 		return "", 0, 0, false, err
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 5; i++ { // sometime binance get trouble when query order info right after it created, so we
+		// add a retry to handle it here
 		done, remaining, finished, err = bn.QueryOrder(
 			base.ID+quote.ID,
 			result.OrderID,
@@ -260,7 +261,7 @@ func (bn *Binance) Trade(tradeType string, base common.Token, quote common.Token
 		if err == nil {
 			break
 		}
-		bn.l.Errorw("failed to query order info", "i", i, "orderID", result.OrderID, "base", base.ID, "quote", quote.ID)
+		bn.l.Errorw("failed to query order info", "err", err, "i", i, "orderID", result.OrderID, "base", base.ID, "quote", quote.ID)
 		if strings.Contains(err.Error(), "Order does not exist") { // only retry if got specified error
 			time.Sleep(time.Second)
 			continue
