@@ -194,7 +194,7 @@ type Binawithdrawals struct {
 
 type Binawithdrawal struct {
 	ID        string  `json:"id"`
-	Amount    float64 `json:"amount,string"`
+	Amount    float64 `json:"amount"`
 	Address   string  `json:"address"`
 	Asset     string  `json:"asset"`
 	TxID      string  `json:"txId"`
