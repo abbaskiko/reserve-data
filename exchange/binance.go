@@ -252,10 +252,22 @@ func (bn *Binance) Trade(tradeType string, base common.Token, quote common.Token
 	if err != nil {
 		return "", 0, 0, false, err
 	}
-	done, remaining, finished, err = bn.QueryOrder(
-		base.ID+quote.ID,
-		result.OrderID,
-	)
+	for i := 0; i < 5; i++ {
+		done, remaining, finished, err = bn.QueryOrder(
+			base.ID+quote.ID,
+			result.OrderID,
+		)
+		if err == nil {
+			break
+		}
+		if strings.Contains(err.Error(), "Order does not exist") {
+			time.Sleep(time.Second)
+		}
+	}
+	if err != nil {
+		bn.l.Errorw("failed to query order info", "orderID", result.OrderID, "base", base.ID, "quote", quote.ID)
+	}
+
 	id = strconv.FormatUint(result.OrderID, 10)
 	return id, done, remaining, finished, err
 }
