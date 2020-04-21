@@ -50,7 +50,7 @@ func (c *Coinbase) MarshalText() (text []byte, err error) {
 
 // GetTradeHistory return history of order created on coinbase
 func (c *Coinbase) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
-	return nil, nil
+	return common.ExchangeTradeHistory{}, nil
 }
 
 // GetLiveExchangeInfos return live exchange info from coinbase
