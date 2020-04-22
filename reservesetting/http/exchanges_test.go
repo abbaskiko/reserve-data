@@ -38,7 +38,7 @@ func TestExchanges(t *testing.T) {
 	assert.Equal(t, ex.Exchange.Name, v1common.Binance.String())
 	exs, err := c.getExchanges()
 	require.NoError(t, err)
-	assert.Len(t, exs.Exchanges, 4)
+	assert.Len(t, exs.Exchanges, 3)
 
 	ex3, err := c.getExchange(10)
 	assert.NoError(t, err)

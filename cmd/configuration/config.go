@@ -17,7 +17,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/data/fetcher/httprunner"
 	"github.com/KyberNetwork/reserve-data/data/storage"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
-	"github.com/KyberNetwork/reserve-data/exchange/coinbase"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	storagev3 "github.com/KyberNetwork/reserve-data/reservesetting/storage"
 	"github.com/KyberNetwork/reserve-data/world"
@@ -52,7 +51,7 @@ type Config struct {
 
 // AddCoreConfig add config for core
 func (c *Config) AddCoreConfig(cliCtx *cli.Context, rcf common.RawConfig, bi binance.Interface,
-	hi huobi.Interface, cb coinbase.Interface, settingStore storagev3.Interface) error {
+	hi huobi.Interface, settingStore storagev3.Interface) error {
 	l := zap.S()
 	db, err := NewDBFromContext(cliCtx)
 	if err != nil {
@@ -105,7 +104,6 @@ func (c *Config) AddCoreConfig(cliCtx *cli.Context, rcf common.RawConfig, bi bin
 		dpl,
 		bi,
 		hi,
-		cb,
 		settingStore,
 	)
 	if err != nil {

@@ -27,9 +27,6 @@
     },
     "houbi": {
       "url": "https://api.huobi.pro"
-    },
-    "coinbase": {
-      "url": "https://api.pro.coinbase.com"
     }
   },
   "gas_config": {

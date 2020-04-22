@@ -18,7 +18,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	binanceStorage "github.com/KyberNetwork/reserve-data/exchange/binance/storage"
-	"github.com/KyberNetwork/reserve-data/exchange/coinbase"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	huobiStorage "github.com/KyberNetwork/reserve-data/exchange/huobi/storage"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
@@ -149,15 +148,14 @@ func NewExchangePool(
 	dpl deployment.Deployment,
 	bi binance.Interface,
 	hi huobi.Interface,
-	cb coinbase.Interface,
 	assetStorage storage.Interface,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
 	var (
-		be            exchange.BinanceInterface
-		he            exchange.HuobiInterface
-		bin, hb, cbex common.Exchange
-		s             = zap.S()
+		be      exchange.BinanceInterface
+		he      exchange.HuobiInterface
+		bin, hb common.Exchange
+		s       = zap.S()
 	)
 
 	enabledExchanges, err := NewExchangesFromContext(c)
@@ -212,10 +210,6 @@ func NewExchangePool(
 				return nil, fmt.Errorf("can not create exchange Huobi: (%s)", err.Error())
 			}
 			exchanges[hb.ID()] = hb
-		case common.Coinbase:
-			ep := coinbase.NewCoinbaseEndpoint(cb, httpClient)
-			cbex = exchange.NewCoinbase(s, common.Coinbase, ep, assetStorage)
-			exchanges[common.Coinbase] = cbex
 		}
 	}
 

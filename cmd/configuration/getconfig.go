@@ -10,7 +10,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
-	"github.com/KyberNetwork/reserve-data/exchange/coinbase"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 	"github.com/KyberNetwork/reserve-data/world"
@@ -22,7 +21,6 @@ func GetConfig(
 	nodeConf *EthereumNodeConfiguration,
 	bi binance.Interface,
 	hi huobi.Interface,
-	cb coinbase.Interface,
 	contractAddressConf *common.ContractAddressConfiguration,
 	settingStorage storage.Interface,
 	rcf common.RawConfig,
@@ -80,7 +78,7 @@ func GetConfig(
 	}
 
 	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
-	if err = config.AddCoreConfig(cliCtx, rcf, bi, hi, cb, settingStorage); err != nil {
+	if err = config.AddCoreConfig(cliCtx, rcf, bi, hi, settingStorage); err != nil {
 		return nil, err
 	}
 	return config, nil
