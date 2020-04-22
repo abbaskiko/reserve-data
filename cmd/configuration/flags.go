@@ -13,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
-	"github.com/KyberNetwork/reserve-data/exchange/coinbase"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	"github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
@@ -166,7 +165,6 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 
 	bi := binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL)
 	hi := huobi.NewRealInterface(rcf.ExchangeEndpoints.Houbi.URL)
-	coinbaseEndpoint := coinbase.NewRealInterface(rcf.ExchangeEndpoints.Coinbase.URL)
 
 	contractAddressConf := &common.ContractAddressConfiguration{
 		Reserve: rcf.ContractAddresses.Reserve,
@@ -192,7 +190,6 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 		ethereumNodeConf,
 		bi,
 		hi,
-		coinbaseEndpoint,
 		contractAddressConf,
 		sr,
 		rcf,

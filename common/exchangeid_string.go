@@ -11,12 +11,11 @@ func _() {
 	_ = x[Binance-1]
 	_ = x[Huobi-2]
 	_ = x[Binance2-3]
-	_ = x[Coinbase-4]
 }
 
-const _ExchangeID_name = "binancehuobibinance_2coinbase"
+const _ExchangeID_name = "binancehuobibinance_2"
 
-var _ExchangeID_index = [...]uint8{0, 7, 12, 21, 29}
+var _ExchangeID_index = [...]uint8{0, 7, 12, 21}
 
 func (i ExchangeID) String() string {
 	i -= 1
