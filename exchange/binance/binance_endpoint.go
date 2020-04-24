@@ -293,6 +293,26 @@ func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.Binacancel, 
 	return result, err
 }
 
+// CancelAllOrders cancel all open order of an symbols
+func (ep *Endpoint) CancelAllOrders(symbol string) ([]exchange.Binaorder, error) {
+	var result []exchange.Binaorder
+	respBody, err := ep.GetResponse(
+		"DELETE",
+		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
+		map[string]string{
+			"symbol": symbol,
+		},
+		true,
+		common.NowInMillis(),
+	)
+	if err == nil {
+		if err = json.Unmarshal(respBody, &result); err != nil {
+			return result, err
+		}
+	}
+	return result, err
+}
+
 // OrderStatus return status of orders
 func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, error) {
 	result := exchange.Binaorder{}

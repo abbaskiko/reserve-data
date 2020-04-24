@@ -37,6 +37,10 @@ func (te TestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
 
+func (te TestExchange) CancelAllOrders(symbol string) error {
+	return nil
+}
+
 // MarshalText mock function
 func (te TestExchange) MarshalText() (text []byte, err error) {
 	return []byte("bittrex"), nil

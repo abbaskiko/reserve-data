@@ -1,56 +1,34 @@
 package http
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 )
 
-type failedCancelOrder struct {
-	Reason string `json:"reason"`
+type cancelAllOrderRequest struct {
+	ExchangeID uint64 `json:"exchange_id"`
+	Symbol     string `json:"symbol" binding:"required"`
 }
 
 // CancelAllOrders cancel all orders
 func (s *Server) CancelAllOrders(c *gin.Context) {
 	var (
-		response []failedCancelOrder
+		query cancelAllOrderRequest
 	)
-	pendingActivites, err := s.app.GetPendingActivities()
-	if err != nil {
+	if err := c.ShouldBindJSON(&query); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+	}
+	exchange, ok := common.SupportedExchanges[common.ExchangeID(query.ExchangeID)]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", query.ExchangeID)))
+		return
+	}
+	if err := exchange.CancelAllOrders(query.Symbol); err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	cancelOrders := make(map[common.Exchange][]common.RequestOrder)
-	for _, activity := range pendingActivites {
-		if activity.Action == common.ActionTrade {
-			exchangeID := activity.Params.Exchange
-			// Cancel order
-			exchange, ok := common.SupportedExchanges[exchangeID]
-			if !ok {
-				httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("exchange %s does not exist", exchange.ID().String())))
-				return
-			}
-			cancelOrders[exchange] = append(cancelOrders[exchange],
-				common.RequestOrder{
-					ID:     activity.EID,
-					Symbol: activity.Params.Base + activity.Params.Quote,
-				})
-		}
-	}
-	for exchange, orders := range cancelOrders {
-		result := s.core.CancelOrders(orders, exchange)
-		for id, res := range result {
-			if !res.Success {
-				// save failed order id
-				response = append(response, failedCancelOrder{
-					Reason: fmt.Sprintf("exchange: %s, order: %s, err: %s", exchange.ID().String(), id, err),
-				})
-			}
-		}
-	}
-
-	httputil.ResponseSuccess(c, httputil.WithData(response))
+	httputil.ResponseSuccess(c)
 }

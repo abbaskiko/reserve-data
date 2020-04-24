@@ -173,6 +173,11 @@ func (h *Huobi) CancelOrder(id, symbol string) error {
 	return nil
 }
 
+// CancelAllOrders cancel all open orders of an symbol
+func (h *Huobi) CancelAllOrders(symbol string) error {
+	return errors.New("huobi does not support this kind of api yet, please using cancel order using order ids")
+}
+
 // FetchOnePairData return data of one pair
 func (h *Huobi) FetchOnePairData(
 	wg *sync.WaitGroup,

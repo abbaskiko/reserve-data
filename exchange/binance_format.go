@@ -67,7 +67,7 @@ type FilterLimit struct {
 type BinanceSymbol struct {
 	Symbol             string        `json:"symbol"`
 	BaseAssetPrecision int           `json:"baseAssetPrecision"`
-	QuotePrecision     int           `json:"quotePrecision"`
+	QuotePrecision     int           `json:"quoteAssetPrecision"`
 	Filters            []FilterLimit `json:"filters"`
 }
 
