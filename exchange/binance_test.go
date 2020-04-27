@@ -65,6 +65,10 @@ func (bi *binanceTestInterface) CancelOrder(symbol string, id uint64) (Binacance
 	panic("implement me")
 }
 
+func (bi *binanceTestInterface) CancelAllOrders(symbol string) ([]Binaorder, error) {
+	return nil, nil
+}
+
 func (bi *binanceTestInterface) DepositHistory(startTime, endTime uint64) (Binadeposits, error) {
 	panic("implement me")
 }

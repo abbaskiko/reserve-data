@@ -34,6 +34,8 @@ type BinanceInterface interface {
 
 	CancelOrder(symbol string, id uint64) (Binacancel, error)
 
+	CancelAllOrders(symbol string) ([]Binaorder, error)
+
 	DepositHistory(startTime, endTime uint64) (Binadeposits, error)
 
 	WithdrawHistory(startTime, endTime uint64) (Binawithdrawals, error)

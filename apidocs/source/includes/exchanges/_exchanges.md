@@ -129,13 +129,53 @@ curl -X POST "http://gateway.local/v3/cancel-orders"
 
 ### HTTP request
 
-`POST https://gateway.local/v3/cancelorder`
+`POST https://gateway.local/v3/cancel-orders`
 <aside class="notice">Rebalance key is required</aside>
 
 Param | Type | Required | Default | Description
 ----- | ---- | -------- | ------- | -----------
 order_ids | string array | true | nil | list of order ids to be cancelled
 exchange | string | true | nil | exchange to cancel order
+
+## Cancel all open orders of a symbol
+
+```shell
+curl -X POST "http://gateway.local/v3/cancel-all-orders"
+-H 'Content-Type: application/json'
+-d '{
+    "exchange_id": 1,
+    "symbol": "KNC"
+}'
+
+// ex: 1 is binance id
+```
+
+> sample response
+
+```json
+{
+    "success": true,
+}
+```  
+or  
+```json
+{
+    "success": false,
+    "error": "cannot cancel order",
+}
+```
+
+
+
+### HTTP request
+
+`POST https://gateway.local/v3/cance-all-orders`
+<aside class="notice">Rebalance key is required</aside>
+
+Param | Type | Required | Default | Description
+----- | ---- | -------- | ------- | -----------
+symbol| string | true | nil | symbol to cancel open orders
+exchange | string | true | nil | exchange to cancel orders
 
 ## Withdraw
 
