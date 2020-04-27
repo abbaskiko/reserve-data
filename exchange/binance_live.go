@@ -51,7 +51,7 @@ func (bl *BinanceLive) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSym
 		if strings.ToUpper(symbol.Symbol) == pairName {
 			//update precision
 			result.Precision.Amount = symbol.BaseAssetPrecision
-			result.Precision.Price = symbol.QuotePrecision
+			result.Precision.Price = symbol.QuoteAssetPrecision
 			// update limit
 			for _, filter := range symbol.Filters {
 				if filter.FilterType == "LOT_SIZE" {

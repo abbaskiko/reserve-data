@@ -297,7 +297,7 @@ func (ep *Endpoint) CancelOrder(symbol string, id uint64) (exchange.Binacancel, 
 func (ep *Endpoint) CancelAllOrders(symbol string) ([]exchange.Binaorder, error) {
 	var result []exchange.Binaorder
 	respBody, err := ep.GetResponse(
-		"DELETE",
+		http.MethodDelete,
 		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
 		map[string]string{
 			"symbol": symbol,
