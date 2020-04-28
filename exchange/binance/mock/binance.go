@@ -33,6 +33,9 @@ func (bte *BinanceTestExchange) Trade(tradeType string, base common.Token, quote
 func (bte *BinanceTestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
+func (bte *BinanceTestExchange) CancelAllOrders(symbol string) error {
+	return nil
+}
 func (bte *BinanceTestExchange) MarshalText() (text []byte, err error) {
 	return []byte("binance"), nil
 }
