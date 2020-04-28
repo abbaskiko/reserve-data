@@ -123,7 +123,7 @@ func (bn *Binance) getPrecisionLimitFromSymbols(pair common.TokenPairID, symbols
 		if strings.ToUpper(symbol.Symbol) == pairName {
 			//update precision
 			result.Precision.Amount = symbol.BaseAssetPrecision
-			result.Precision.Price = symbol.QuotePrecision
+			result.Precision.Price = symbol.QuoteAssetPrecision
 			// update limit
 			for _, filter := range symbol.Filters {
 				if filter.FilterType == "LOT_SIZE" {
@@ -283,6 +283,15 @@ func (bn *Binance) CancelOrder(id string, symbol string) error {
 		return err
 	}
 	_, err = bn.interf.CancelOrder(symbol, idNo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//CancelAllOrders cancel all open orders on a symbol
+func (bn *Binance) CancelAllOrders(symbol string) error {
+	_, err := bn.interf.CancelAllOrders(symbol)
 	if err != nil {
 		return err
 	}

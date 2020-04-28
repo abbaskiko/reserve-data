@@ -1191,6 +1191,7 @@ func (s *Server) register() {
 		s.r.GET("/open-orders", s.GetOpenOrders)
 		s.r.POST("/cancelorder/:exchangeid", s.CancelOrder)
 		s.r.POST("/cancel-order-by-order-id", s.CancelOrderByOrderID)
+		s.r.POST("/cancel-all-orders", s.CancelAllOrders)
 
 		s.r.POST("/deposit/:exchangeid", s.Deposit)
 		s.r.POST("/withdraw/:exchangeid", s.Withdraw)

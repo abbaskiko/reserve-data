@@ -33,6 +33,9 @@ func (te testExchange) Trade(tradeType string, base common.Token, quote common.T
 func (te testExchange) CancelOrder(id string, symbol string) error {
 	return nil
 }
+func (te testExchange) CancelAllOrders(symbol string) error {
+	return nil
+}
 func (te testExchange) MarshalText() (text []byte, err error) {
 	return []byte("bittrex"), nil
 }
