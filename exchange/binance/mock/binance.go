@@ -54,6 +54,9 @@ func (bte *BinanceTestExchange) GetInfo() (common.ExchangeInfo, error) {
 func (bte *BinanceTestExchange) UpdateDepositAddress(token common.Token, address string) error {
 	return nil
 }
+func (bte *BinanceTestExchange) UpdatePairsPrecision() error {
+	return nil
+}
 func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
 }
