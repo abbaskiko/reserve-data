@@ -45,6 +45,9 @@ func (te TestExchange) GetInfo() (ExchangeInfo, error) {
 func (te TestExchange) UpdateDepositAddress(token Token, address string) error {
 	return nil
 }
+func (te TestExchange) UpdatePairsPrecision() error {
+	return nil
+}
 func (te TestExchange) GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error) {
 	return ExchangeTradeHistory{}, nil
 }

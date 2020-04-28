@@ -37,13 +37,17 @@ func asyncUpdateDepositAddress(ex common.Exchange, tokenID, addr string, wait *s
 func NewExchangePool(
 	ac config.AppConfig,
 	blockchain *bbc.BaseBlockchain, setting *settings.Settings) (*ExchangePool, error) {
+	var (
+		stableEx, bin, hExchange common.Exchange
+		err                      error
+	)
 	exchanges := map[common.ExchangeID]interface{}{}
 	exparams := settings.RunningExchanges()
 	l := zap.S()
 	for _, exparam := range exparams {
 		switch exparam {
 		case "stable_exchange":
-			stableEx, err := exchange.NewStableEx(
+			stableEx, err = exchange.NewStableEx(
 				setting,
 			)
 			if err != nil {
@@ -60,7 +64,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("can not create Binance storage: (%+v)", err)
 			}
-			bin, err := exchange.NewBinance(client, storage, setting)
+			bin, err = exchange.NewBinance(client, storage, setting)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Binance: (%+v)", err)
 			}
@@ -91,7 +95,7 @@ func NewExchangePool(
 			}
 			intermediatorSigner := bbc.NewEthereumSigner(ac.HoubiKeystorePath, ac.HuobiPassphrase)
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
-			hExchange, err := exchange.NewHuobi(client, blockchain,
+			hExchange, err = exchange.NewHuobi(client, blockchain,
 				intermediatorSigner, intermediatorNonce, storage, setting,
 			)
 			if err != nil {
