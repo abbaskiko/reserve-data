@@ -55,6 +55,10 @@ func (te testExchange) UpdateDepositAddress(token common.Token, address string) 
 	return nil
 }
 
+func (te testExchange) UpdatePairsPrecision() error {
+	return nil
+}
+
 func (te testExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	return common.ExchangeTradeHistory{}, nil
 }

@@ -43,6 +43,10 @@ func (se *StableEx) UpdateDepositAddress(token common.Token, address string) err
 	return errors.New("dgx doesn't support update deposit addresses")
 }
 
+func (se *StableEx) UpdatePairsPrecision() error {
+	return errors.New("stable exchange does not support update pair precision")
+}
+
 func (se *StableEx) GetInfo() (common.ExchangeInfo, error) {
 	return se.setting.GetExchangeInfo(settings.StableExchange)
 }
@@ -131,6 +135,10 @@ func (se *StableEx) Withdraw(token common.Token, amount *big.Int, address ethere
 
 func (se *StableEx) CancelOrder(id, symbol string) error {
 	return errors.New("dgx doesn't support trade cancelling")
+}
+
+func (se *StableEx) CancelAllOrders(symbol string) error {
+	return errors.New("stable exchange doesn't support this type of api")
 }
 
 func (se *StableEx) FetchPriceData(timepoint uint64, fetchBTCPrice bool) (map[common.TokenPairID]common.ExchangePrice, error) {
