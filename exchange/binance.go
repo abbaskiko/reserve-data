@@ -150,6 +150,12 @@ func (bn *Binance) CancelOrder(id, symbol string) error {
 	return nil
 }
 
+// CancelAllOrders cancel all open orders of a symbol
+func (bn *Binance) CancelAllOrders(symbol string) error {
+	_, err := bn.interf.CancelAllOrders(symbol)
+	return err
+}
+
 // FetchOnePairData fetch price data for one pair of token
 func (bn *Binance) FetchOnePairData(
 	wg *sync.WaitGroup,
