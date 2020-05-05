@@ -1,4 +1,4 @@
-package coinbase
+package kraken
 
 import (
 	"encoding/json"
@@ -95,6 +95,12 @@ func (f *Fetcher) GetData() common.Feed {
 			Error: err.Error(),
 		}
 	}
-	f.sugar.Debugw("Response from coinbase", "resp", resp)
+	f.sugar.Debugw("Response from kraken", "resp", resp)
+	if len(resp.Error) > 0 {
+		errorString, _ := json.Marshal(resp.Error)
+		return common.Feed{
+			Error: string(errorString),
+		}
+	}
 	return resp.toFeed(f.requireAmount)
 }

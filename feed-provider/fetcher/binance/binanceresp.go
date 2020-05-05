@@ -1,4 +1,4 @@
-package coinbase
+package binance
 
 import (
 	"encoding/json"
@@ -7,14 +7,13 @@ import (
 )
 
 type Price struct {
-	Price    float64 `json:",string"`
-	Size     float64 `json:",string"`
-	NumOrder int
+	Price float64 `json:",string"`
+	Size  float64 `json:",string"`
 }
 
 func (p *Price) UnmarshalJSON(buf []byte) error {
 	var price, size json.Number
-	tmp := []interface{}{&price, &size, &p.NumOrder}
+	tmp := []interface{}{&price, &size}
 	err := json.Unmarshal(buf, &tmp)
 	if err != nil {
 		return err
@@ -43,12 +42,12 @@ type Resp struct {
 	Asks     []Price `json:"asks"`
 }
 
-func (c *Resp) toOrderbooks() common.Orderbooks {
+func (r *Resp) toOrderbooks() common.Orderbooks {
 	var asks, bids []common.Price
-	for _, ask := range c.Asks {
+	for _, ask := range r.Asks {
 		asks = append(asks, ask.toCommonPrice())
 	}
-	for _, bid := range c.Bids {
+	for _, bid := range r.Bids {
 		bids = append(bids, bid.toCommonPrice())
 	}
 	return common.Orderbooks{
@@ -57,7 +56,7 @@ func (c *Resp) toOrderbooks() common.Orderbooks {
 	}
 }
 
-func (c *Resp) toFeed(amount float64) common.Feed {
-	orderbook := c.toOrderbooks()
+func (r *Resp) toFeed(amount float64) common.Feed {
+	orderbook := r.toOrderbooks()
 	return orderbook.ToFeed(amount)
 }
