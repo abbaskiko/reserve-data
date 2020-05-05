@@ -47,19 +47,19 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	coinbaseETHDAI10000Fetcher, err := coinbase.NewFetcher(config.CoinbaseETHDAI10000, l)
+	coinbaseETHDAI10000Fetcher, err := coinbase.NewFetcher(config.CoinbaseETHDAI10000.URL, 10_000, l)
 	if err != nil {
 		return err
 	}
-	krakenETHDAI10000Fetcher, err := kraken.NewFetcher(config.KrakenETHDAI10000, l)
+	krakenETHDAI10000Fetcher, err := kraken.NewFetcher(config.KrakenETHDAI10000.URL, 10_000, l)
 	if err != nil {
 		return err
 	}
-	coinbaseETHBTC3Fetcher, err := coinbase.NewFetcher(config.CoinbaseETHBTC3, l)
+	coinbaseETHBTC3Fetcher, err := coinbase.NewFetcher(config.CoinbaseETHBTC3.URL, 3, l)
 	if err != nil {
 		return err
 	}
-	binanceETHBTC3Fetcher, err := binance.NewFetcher(config.BinanceETHBTC3, l)
+	binanceETHBTC3Fetcher, err := binance.NewFetcher(config.BinanceETHBTC3.URL, 3, l)
 	if err != nil {
 		return err
 	}

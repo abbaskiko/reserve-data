@@ -15,8 +15,7 @@ const (
 
 // Config base config for fetcher
 type Config struct {
-	URL    string  `json:"url"`
-	Amount float64 `json:"amount"`
+	URL string `json:"url"`
 }
 
 // Configs config for init setup

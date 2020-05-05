@@ -1,18 +1,14 @@
 {
   "CoinbaseETHDAI10000": {
-    "Amount": 10000,
     "URL": "https://api.pro.coinbase.com/products/eth-dai/book?level=2"
   },
   "KrakenETHDAI10000": {
-    "Amount": 10000,
     "URL": "https://api.kraken.com/0/public/Depth?pair=ETHDAI"
   },
   "CoinbaseETHBTC3": {
-    "Amount": 3,
     "URL": "https://api.pro.coinbase.com/products/eth-btc/book?level=2"
   },
   "BinanceETHBTC3": {
-    "Amount": 3,
     "URL": "https://api.binance.com/api/v3/depth?symbol=ETHBTC&limit=10"
   }
 }

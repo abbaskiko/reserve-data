@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-data/feed-provider/common"
-	"github.com/KyberNetwork/reserve-data/feed-provider/fetcher"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"go.uber.org/zap"
@@ -20,15 +19,15 @@ type Fetcher struct {
 	client        *http.Client
 }
 
-func NewFetcher(c fetcher.Config, sugar *zap.SugaredLogger) (*Fetcher, error) {
-	err := validation.Validate(c.URL, validation.Required, is.URL)
+func NewFetcher(url string, amount float64, sugar *zap.SugaredLogger) (*Fetcher, error) {
+	err := validation.Validate(url, validation.Required, is.URL)
 	if err != nil {
 		return nil, err
 	}
 	return &Fetcher{
 		sugar:         sugar,
-		endpoint:      c.URL,
-		requireAmount: c.Amount,
+		endpoint:      url,
+		requireAmount: amount,
 		client: &http.Client{
 			Timeout: time.Minute,
 		},
