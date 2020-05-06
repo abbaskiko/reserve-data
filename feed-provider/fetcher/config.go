@@ -3,7 +3,6 @@ package fetcher
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 
 	"github.com/urfave/cli"
 )
@@ -41,12 +40,10 @@ func NewConfigCliFlags() []cli.Flag {
 // NewConfigFromCli load config from file and create new instance
 func NewConfigFromCli(c *cli.Context) (*Configs, error) {
 	fileLocation := c.String(configLocationFlag)
-	jsonFile, err := os.Open(fileLocation)
+	byteValue, err := ioutil.ReadFile(fileLocation)
 	if err != nil {
 		return nil, err
 	}
-	defer jsonFile.Close()
-	byteValue, _ := ioutil.ReadAll(jsonFile)
 	var configs Configs
 	err = json.Unmarshal(byteValue, &configs)
 	return &configs, err

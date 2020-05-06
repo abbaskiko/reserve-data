@@ -46,6 +46,8 @@ func getAfp(orderbooks []Price, amount float64, isBid bool) (float64, error) {
 		}
 		return orderbooks[p].Price < orderbooks[q].Price
 	})
+	// read orderbook from mid until require size is meet
+	// and calculate avg_price = sum_product(price, size)/sum(size)
 	for _, o := range orderbooks {
 		size := o.Size
 		if remain < o.Price*size {
