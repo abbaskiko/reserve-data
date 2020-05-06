@@ -7,16 +7,16 @@ import (
 // BTCData is the data returned by /btc-feed API.
 type BTCData struct {
 	Timestamp uint64
-	Coinbase  CoinbaseData `json:"CoinbaseBTC"`
-	Gemini    GeminiData   `json:"GeminiBTC"`
+	Coinbase  FeedProviderResponse `json:"CoinbaseBTC"`
+	Binance   FeedProviderResponse `json:"BinanceBTC"`
 }
 
 // ToMap convert to map result.
 func (b BTCData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"Timestamp":                  b.Timestamp,
-		feed.CoinbaseETHBTC.String(): b.Coinbase,
-		feed.GeminiETHBTC.String():   b.Gemini,
+		"Timestamp":                   b.Timestamp,
+		feed.CoinbaseETHBTC3.String(): b.Coinbase,
+		feed.BinanceETHBTC3.String():  b.Binance,
 	}
 }
 
@@ -71,20 +71,4 @@ type GeminiData struct {
 	Ask    string           `json:"ask"`
 	Volume GeminiDataVolume `json:"volume"`
 	Last   string           `json:"last"`
-}
-
-// BitFinexData is the data return by BitFinex
-type BitFinexData struct {
-	Valid           bool
-	Error           string
-	Bid             float64 `json:"bid"`
-	BidSize         float64 `json:"bid_size"`
-	Ask             float64 `json:"ask"`
-	AskSize         float64 `json:"ask_size"`
-	DailyChange     float64 `json:"daily_change"`
-	DailyChangePerc float64 `json:"daily_change_perc"`
-	LastPrice       float64 `json:"last_price"`
-	Volume          float64 `json:"volume"`
-	High            float64 `json:"high"`
-	Low             float64 `json:"low"`
 }
