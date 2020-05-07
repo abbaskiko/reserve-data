@@ -341,8 +341,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								AskSpread: expectedAskSpread,
 							},
 							FeedWeight: &common.FeedWeight{
-								feed.GeminiETHBTC.String():   3.0,
-								feed.CoinbaseETHBTC.String(): 1.2,
+								feed.CoinbaseETHBTC3.String(): 3.0,
+								feed.BinanceETHBTC3.String():  1.2,
 							},
 						},
 					},
@@ -378,7 +378,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							SetRate: &btcFeed,
 							AssetID: 6,
 							FeedWeight: &common.FeedWeight{
-								feed.GeminiETHBTC.String(): 3.0,
+								feed.BinanceETHBTC3.String(): 3.0,
 							},
 						},
 					},
@@ -535,8 +535,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								AskSpread: expectedAskSpread,
 							},
 							FeedWeight: &common.FeedWeight{
-								"some_random_feed":         1.2,
-								feed.GeminiETHBTC.String(): 3.0,
+								"some_random_feed":           1.2,
+								feed.BinanceETHBTC3.String(): 3.0,
 							},
 						},
 					},
@@ -1341,7 +1341,7 @@ func TestSetFeedConfiguration(t *testing.T) {
 		setFeedConfigurationEndpoint = "/v3/setting-change-feed-configuration"
 		setFeedConfigurationID       uint64
 
-		fname                 = feed.GeminiETHUSD.String()
+		fname                 = feed.CoinbaseETHDAI10000.String()
 		setRate               = common.USDFeed
 		fenabled              = false
 		fbaseVolatilitySpread = 1.1

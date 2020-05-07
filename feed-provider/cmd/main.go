@@ -9,7 +9,9 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/feed-provider/collector"
 	"github.com/KyberNetwork/reserve-data/feed-provider/fetcher"
+	"github.com/KyberNetwork/reserve-data/feed-provider/fetcher/binance"
 	"github.com/KyberNetwork/reserve-data/feed-provider/fetcher/coinbase"
+	"github.com/KyberNetwork/reserve-data/feed-provider/fetcher/kraken"
 	"github.com/KyberNetwork/reserve-data/feed-provider/httpserver"
 	"github.com/KyberNetwork/reserve-data/feed-provider/storage"
 	"github.com/KyberNetwork/reserve-data/lib/app"
@@ -39,13 +41,36 @@ func run(c *cli.Context) error {
 		flusher()
 	}()
 	zap.ReplaceGlobals(l.Desugar())
-	coinbaseETHDAI10000fetcher, err := coinbase.NewFetcherFromCli(c, l)
+
+	config, err := fetcher.NewConfigFromCli(c)
 	if err != nil {
 		return err
 	}
-	fetchers := map[string]fetcher.Fetcher{
-		"CoinbaseETHDAI10000": coinbaseETHDAI10000fetcher,
+
+	coinbaseETHDAI10000Fetcher, err := coinbase.NewFetcher(config.CoinbaseETHDAI10000.URL, 10_000, l)
+	if err != nil {
+		return err
 	}
+	krakenETHDAI10000Fetcher, err := kraken.NewFetcher(config.KrakenETHDAI10000.URL, 10_000, l)
+	if err != nil {
+		return err
+	}
+	coinbaseETHBTC3Fetcher, err := coinbase.NewFetcher(config.CoinbaseETHBTC3.URL, 3, l)
+	if err != nil {
+		return err
+	}
+	binanceETHBTC3Fetcher, err := binance.NewFetcher(config.BinanceETHBTC3.URL, 3, l)
+	if err != nil {
+		return err
+	}
+
+	fetchers := map[string]fetcher.Fetcher{
+		"CoinbaseETHDAI10000": coinbaseETHDAI10000Fetcher,
+		"KrakenETHDAI10000":   krakenETHDAI10000Fetcher,
+		"CoinbaseETHBTC3":     coinbaseETHBTC3Fetcher,
+		"BinanceETHBTC3":      binanceETHBTC3Fetcher,
+	}
+
 	s := storage.NewRAMStorage()
 	host := httputil.NewHTTPAddressFromContext(c)
 	server, err := httpserver.NewHTTPServer(l, s, host)

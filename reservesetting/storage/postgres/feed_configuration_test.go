@@ -42,7 +42,7 @@ func TestSetFeedConfigurations(t *testing.T) {
 	require.Equal(t, len(feed.AllFeeds().Gold)+len(feed.AllFeeds().USD)+len(feed.AllFeeds().BTC), len(fcs))
 
 	var (
-		fname                 = feed.GeminiETHUSD.String()
+		fname                 = feed.CoinbaseETHDAI10000.String()
 		fenabled              = false
 		fbaseVolatilitySpread = 1.1
 		fnormalSpread         = 1.2
@@ -78,7 +78,7 @@ func TestUpdateFeedStatus(t *testing.T) {
 
 	s, err := NewStorage(db)
 	require.NoError(t, err)
-	fname := feed.GeminiETHUSD.String()
+	fname := feed.CoinbaseETHDAI10000.String()
 	fcs, err := s.GetFeedConfiguration(fname, common.USDFeed)
 	require.NoError(t, err)
 	var (

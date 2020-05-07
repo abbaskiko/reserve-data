@@ -12,42 +12,25 @@ const (
 	KrakenETHUSD                   // KrakenETHUSD
 	GeminiETHUSD                   // GeminiETHUSD
 
-	CoinbaseETHBTC // CoinbaseETHBTC
-	GeminiETHBTC   // GeminiETHBTC
+	CoinbaseETHBTC3 // CoinbaseETHBTC3
+	BinanceETHBTC3  // BinanceETHBTC3
 
-	CoinbaseETHUSDC     // CoinbaseETHUSDC
-	BinanceETHUSDC      // BinanceETHUSDC
-	CoinbaseETHUSD      // CoinbaseETHUSD
-	CoinbaseETHDAI      // CoinbaseETHDAI
 	CoinbaseETHDAI10000 // CoinbaseETHDAI10000
-	HitBTCETHDAI        // HitBTCETHDAI
-	BitFinexETHUSDT     // BitFinexETHUSDT
-	BinanceETHUSDT      // BinanceETHUSDT
-	BinanceETHPAX       // BinanceETHPAX
-	BinanceETHTUSD      // BinanceETHTUSD
+	KrakenETHDAI10000   // KarakenETHDAI10000
 )
 
 var (
 	dummyStruct = struct{}{}
 	// usdFeeds list of supported usd feeds
 	usdFeeds = map[string]struct{}{
-		CoinbaseETHUSD.String():      dummyStruct,
-		GeminiETHUSD.String():        dummyStruct,
-		CoinbaseETHUSDC.String():     dummyStruct,
-		BinanceETHUSDC.String():      dummyStruct,
-		CoinbaseETHDAI.String():      dummyStruct,
 		CoinbaseETHDAI10000.String(): dummyStruct,
-		HitBTCETHDAI.String():        dummyStruct,
-		BitFinexETHUSDT.String():     dummyStruct,
-		BinanceETHPAX.String():       dummyStruct,
-		BinanceETHTUSD.String():      dummyStruct,
-		BinanceETHUSDT.String():      dummyStruct,
+		KrakenETHDAI10000.String():   dummyStruct,
 	}
 
 	// btcFeeds list of supported btc feeds
 	btcFeeds = map[string]struct{}{
-		CoinbaseETHBTC.String(): dummyStruct,
-		GeminiETHBTC.String():   dummyStruct,
+		BinanceETHBTC3.String():  dummyStruct,
+		CoinbaseETHBTC3.String(): dummyStruct,
 	}
 
 	goldFeeds = map[string]struct{}{

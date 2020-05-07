@@ -23,8 +23,8 @@ func TestFeedWeight(t *testing.T) {
 
 	// Test feed weight is supported
 	testFeedWeightIsSupported := common.FeedWeight{
-		feed.CoinbaseETHBTC.String(): 0.1,
-		feed.GeminiETHBTC.String():   0.2,
+		feed.CoinbaseETHBTC3.String(): 0.1,
+		feed.BinanceETHBTC3.String():  0.2,
 	}
 	err = checkFeedWeight(&testSetRateBTCFeed, &testFeedWeightIsSupported)
 	assert.NoError(t, err)
@@ -35,16 +35,8 @@ func TestFeedWeight(t *testing.T) {
 	require.NotNil(t, err)
 
 	testFeedWeightUSDIsSupported := common.FeedWeight{
-		feed.CoinbaseETHUSD.String():  0.2,
-		feed.GeminiETHUSD.String():    0.1,
-		feed.CoinbaseETHUSDC.String(): 0.3,
-		feed.BinanceETHUSDC.String():  1.1,
-		feed.CoinbaseETHDAI.String():  1.2,
-		feed.HitBTCETHDAI.String():    1.3,
-		feed.BitFinexETHUSDT.String(): 1.4,
-		feed.BinanceETHPAX.String():   1.5,
-		feed.BinanceETHTUSD.String():  0.6,
-		feed.BinanceETHUSDT.String():  0.7,
+		feed.CoinbaseETHDAI10000.String(): 0.1,
+		feed.KrakenETHDAI10000.String():   0.2,
 	}
 	err = checkFeedWeight(&testSetRateUSDFeed, &testFeedWeightUSDIsSupported)
 	assert.NoError(t, err)

@@ -21,7 +21,6 @@ require (
 	github.com/elastic/gosigar v0.10.3 // indirect
 	github.com/ethereum/go-ethereum v1.9.13
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 // indirect
-	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
 	github.com/getsentry/raven-go v0.2.0
 	github.com/getsentry/sentry-go v0.3.0
 	github.com/gin-contrib/cors v1.3.0
@@ -34,7 +33,6 @@ require (
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.1.0
-	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
@@ -45,7 +43,6 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/julienschmidt/httprouter v1.2.0 // indirect
 	github.com/lib/pq v1.1.1
-	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/oschwald/maxminddb-golang v1.3.1 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
@@ -55,20 +52,15 @@ require (
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/status-im/keycard-go v0.0.0-20190424133014-d95853db0f48 // indirect
-	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570 // indirect
-	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/urfave/cli v1.22.1
-	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208 // indirect
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/tools v0.0.0-20200422022333-3d57cf2e726e // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
-	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 )
 
 go 1.13

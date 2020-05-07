@@ -1,4 +1,4 @@
-package coinbase
+package kraken
 
 import (
 	"encoding/json"
@@ -34,7 +34,7 @@ func NewFetcher(url string, amount float64, sugar *zap.SugaredLogger) (*Fetcher,
 	}, nil
 }
 
-// GetResponse call to binance endpoint and get response
+// GetResponse call to kraken endpoint and get response
 func (f *Fetcher) GetResponse(method string, url string, params map[string]string) ([]byte, error) {
 	var (
 		err      error
@@ -53,7 +53,7 @@ func (f *Fetcher) GetResponse(method string, url string, params map[string]strin
 	}
 	req.URL.RawQuery = q.Encode()
 
-	f.sugar.Infof("request to coinbase: %s", req.URL)
+	f.sugar.Infof("request to kraken: %s", req.URL)
 	resp, err := f.client.Do(req)
 	if err != nil {
 		return respBody, err
@@ -65,7 +65,7 @@ func (f *Fetcher) GetResponse(method string, url string, params map[string]strin
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return respBody, &common.RespError{
-			Msg:        "coinbase return not OK code",
+			Msg:        "kraken return not OK code",
 			StatusCode: resp.StatusCode,
 			Body:       respBody,
 		}
@@ -85,15 +85,21 @@ func (f *Fetcher) getData() (Resp, error) {
 	return respData, nil
 }
 
-// GetData get orderbook from coinbase and convert to feed data
+// GetData get orderbook from kraken and convert to feed data
 func (f *Fetcher) GetData() common.Feed {
 	resp, err := f.getData()
 	if err != nil {
-		f.sugar.Errorw("Get error while get coinbase feed", "error", err)
+		f.sugar.Errorw("Get error while get kraken feed", "error", err)
 		return common.Feed{
 			Error: err.Error(),
 		}
 	}
-	f.sugar.Debugw("Response from coinbase", "resp", resp)
+	f.sugar.Debugw("Response from kraken", "resp", resp)
+	if len(resp.Error) > 0 {
+		errorString, _ := json.Marshal(resp.Error)
+		return common.Feed{
+			Error: string(errorString),
+		}
+	}
 	return resp.toFeed(f.requireAmount)
 }
