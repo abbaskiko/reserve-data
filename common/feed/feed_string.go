@@ -20,9 +20,9 @@ func _() {
 	_ = x[KrakenETHDAI10000-10]
 }
 
-const _Feed_name = "GoldDataOneForgeXAUETHOneForgeXAUUSDGDAXETHUSDKrakenETHUSDGeminiETHUSDCoinbaseETHBTCC3BinanceETHBTC3CoinbaseETHDAI10000KarakenETHDAI10000"
+const _Feed_name = "GoldDataOneForgeXAUETHOneForgeXAUUSDGDAXETHUSDKrakenETHUSDGeminiETHUSDCoinbaseETHBTC3BinanceETHBTC3CoinbaseETHDAI10000KarakenETHDAI10000"
 
-var _Feed_index = [...]uint8{0, 8, 22, 36, 46, 58, 70, 86, 100, 119, 137}
+var _Feed_index = [...]uint8{0, 8, 22, 36, 46, 58, 70, 85, 99, 118, 136}
 
 func (i Feed) String() string {
 	i -= 1

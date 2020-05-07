@@ -12,7 +12,7 @@ const (
 	KrakenETHUSD                   // KrakenETHUSD
 	GeminiETHUSD                   // GeminiETHUSD
 
-	CoinbaseETHBTC3 // CoinbaseETHBTCC3
+	CoinbaseETHBTC3 // CoinbaseETHBTC3
 	BinanceETHBTC3  // BinanceETHBTC3
 
 	CoinbaseETHDAI10000 // CoinbaseETHDAI10000
