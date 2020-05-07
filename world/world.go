@@ -149,26 +149,22 @@ func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 	}, nil
 }
 
+func (tw *TheWorld) getFeedProviderInfo(ep string) common.FeedProviderResponse {
+	var (
+		url    = ep
+		result = common.FeedProviderResponse{}
+	)
+	if err := tw.getPublic(url, &result); err != nil {
+		result.Valid = false
+		result.Error = err.Error()
+	}
+	return result
+}
+
 //NewTheWorld return new world instance
 func NewTheWorld(worldEndpoints common.WorldEndpoints) *TheWorld {
 	return &TheWorld{
 		endpoint: worldEndpoints,
 		l:        zap.S(),
 	}
-}
-
-func (tw *TheWorld) getBinanceInfo(ep string) common.BinanceData {
-	var (
-		url    = ep
-		result = common.BinanceData{}
-	)
-
-	err := tw.getPublic(url, &result)
-	if err != nil {
-		result.Error = err.Error()
-		result.Valid = false
-	} else {
-		result.Valid = true
-	}
-	return result
 }

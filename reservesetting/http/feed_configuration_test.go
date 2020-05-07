@@ -52,15 +52,8 @@ func TestCheckFeedConfiguration(t *testing.T) {
 	// test match supported feeds name and set rate value
 	// USD feed
 	supportedUSDFeed := []feed.Feed{
-		feed.CoinbaseETHUSDC,
-		feed.BinanceETHUSDC,
-		feed.CoinbaseETHUSD,
-		feed.CoinbaseETHDAI,
-		feed.HitBTCETHDAI,
-		feed.BitFinexETHUSDT,
-		feed.BinanceETHUSDT,
-		feed.BinanceETHPAX,
-		feed.BinanceETHTUSD,
+		feed.CoinbaseETHDAI10000,
+		feed.KrakenETHDAI10000,
 	}
 
 	for _, feedName := range supportedUSDFeed {
@@ -75,8 +68,8 @@ func TestCheckFeedConfiguration(t *testing.T) {
 	// test match supported feeds name and set rate value
 	// USD feed
 	supportedBTCFeed := []feed.Feed{
-		feed.CoinbaseETHBTC,
-		feed.GeminiETHBTC,
+		feed.CoinbaseETHBTC3,
+		feed.BinanceETHBTC3,
 	}
 
 	for _, feedName := range supportedBTCFeed {

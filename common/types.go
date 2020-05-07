@@ -703,22 +703,12 @@ type WorldEndpoints struct {
 	GDAXData        SiteConfig `json:"gdax_data"`
 	KrakenData      SiteConfig `json:"kraken_data"`
 	GeminiData      SiteConfig `json:"gemini_data"`
-	GeminiBTC       SiteConfig `json:"gemini_btc"`
 
-	CoinbaseBTC SiteConfig `json:"coinbase_btc"`
-	BinanceBTC  SiteConfig `json:"binance_btc"`
+	CoinbaseETHBTC3 SiteConfig `json:"coinbase_eth_btc_3"`
+	BinanceETHBTC3  SiteConfig `json:"binance_eth_btc_3"`
 
-	CoinbaseUSDC     SiteConfig `json:"coinbase_usdc"`
-	BinanceUSDC      SiteConfig `json:"binance_usdc"`
-	CoinbaseUSD      SiteConfig `json:"coinbase_usd"`
-	CoinbaseDAI      SiteConfig `json:"coinbase_dai"`
-	CoinbaseDAI10000 SiteConfig `json:"coinbase_dai_10000"`
-	HitDai           SiteConfig `json:"hit_dai"`
-
-	BitFinexUSDT SiteConfig `json:"bit_finex_usdt"`
-	BinanceUSDT  SiteConfig `json:"binance_usdt"`
-	BinancePAX   SiteConfig `json:"binance_pax"`
-	BinanceTUSD  SiteConfig `json:"binance_tusd"`
+	CoinbaseETHDAI10000 SiteConfig `json:"coinbase_eth_dai_10000"`
+	KrakenETHDAI10000   SiteConfig `json:"kraken_eth_dai_10000"`
 }
 
 // ContractAddresses ...
@@ -800,4 +790,12 @@ type RawConfig struct {
 
 	IntermediatorKeystore   string `json:"keystore_intermediator_path"`
 	IntermediatorPassphrase string `json:"passphrase_intermediate_account"`
+}
+
+// FeedProviderResponse ...
+type FeedProviderResponse struct {
+	Valid bool
+	Error string
+	Bid   float64 `json:"bid,string"`
+	Ask   float64 `json:"ask,string"`
 }
