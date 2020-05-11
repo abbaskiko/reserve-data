@@ -371,8 +371,8 @@ func (s *Server) checkUpdateAssetParams(updateEntry common.UpdateAssetEntry) err
 		return errors.Errorf("%v at asset id: %v", common.ErrPWIMissing.Error(), updateEntry.AssetID)
 	}
 
-	if *updateEntry.SetRate != common.SetRateNotSet {
-		if err := s.checkTokenIndices(*updateEntry.Address); err != nil {
+	if updateEntry.SetRate != nil && *updateEntry.SetRate != common.SetRateNotSet {
+		if err := s.checkTokenIndices(asset.Address); err != nil {
 			return err
 		}
 	}
