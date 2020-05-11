@@ -88,7 +88,7 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 		for _, ae := range asset.Exchanges {
 			switch ae.ExchangeID {
 			case uint64(common.Binance), uint64(common.Binance2):
-				l.Warnw("updating deposit address for asset", "asset_id", asset.ID,
+				l.Infow("updating deposit address for asset", "asset_id", asset.ID,
 					"exchange", common.Binance.String(), "symbol", ae.Symbol)
 				if be == nil {
 					l.Warnw("abort updating deposit address due binance exchange disabled")
@@ -110,8 +110,7 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 					continue
 				}
 			case uint64(common.Huobi):
-				l.Warnw("updating deposit address for asset",
-					"asset_id", asset.ID,
+				l.Infow("updating deposit address for asset", "asset_id", asset.ID,
 					"exchange", common.Huobi.String(),
 					"symbol", ae.Symbol)
 				if he == nil {
