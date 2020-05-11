@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/pkg/errors"
@@ -370,6 +371,12 @@ func (s *Server) checkUpdateAssetParams(updateEntry common.UpdateAssetEntry) err
 		return errors.Errorf("%v at asset id: %v", common.ErrPWIMissing.Error(), updateEntry.AssetID)
 	}
 
+	if *updateEntry.SetRate != common.SetRateNotSet {
+		if err := s.checkTokenIndices(*updateEntry.Address); err != nil {
+			return err
+		}
+	}
+
 	if updateEntry.Transferable != nil && *updateEntry.Transferable {
 		for _, exchange := range asset.Exchanges {
 			if common.IsZeroAddress(exchange.DepositAddress) {
@@ -507,39 +514,46 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 	return nil
 }
 
+func (s *Server) checkTokenIndices(tokenAddress ethereum.Address) error {
+	if s.coreEndpoint != "" { // check to by pass test as local test does not need this
+		// check token indice in core
+		endpoint := fmt.Sprintf("%s/v3/check-token-indice?address=%s", s.coreEndpoint, tokenAddress.Hex())
+		req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create new check token indice request: %s", err)
+		}
+		client := http.Client{
+			Timeout: defaultTimeout,
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return common.ErrAssetAddressIsNotIndexInContract
+		}
+		if resp.StatusCode != http.StatusOK {
+			return common.ErrAssetAddressIsNotIndexInContract
+		}
+
+		// update token indice in core
+		endpoint = fmt.Sprintf("%s/v3/update-token-indice", s.coreEndpoint)
+		req, err = http.NewRequest(http.MethodPut, endpoint, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create new update token indices request: %s", err)
+		}
+		resp, err = client.Do(req)
+		if err != nil {
+			return fmt.Errorf("failed to update token indice: %s", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("update token endpoint failed, status code: %d", resp.StatusCode)
+		}
+	}
+	return nil
+}
+
 func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) error {
 	if createEntry.SetRate != common.SetRateNotSet {
-		if s.coreEndpoint != "" { // check to by pass test as local test does not need this
-			// check token indice in core
-			endpoint := fmt.Sprintf("%s/v3/check-token-indice?address=%s", s.coreEndpoint, createEntry.Address.Hex())
-			req, err := http.NewRequest(http.MethodGet, endpoint, nil)
-			if err != nil {
-				return fmt.Errorf("failed to create new check token indice request: %s", err)
-			}
-			client := http.Client{
-				Timeout: defaultTimeout,
-			}
-			resp, err := client.Do(req)
-			if err != nil {
-				return common.ErrAssetAddressIsNotIndexInContract
-			}
-			if resp.StatusCode != http.StatusOK {
-				return common.ErrAssetAddressIsNotIndexInContract
-			}
-
-			// update token indice in core
-			endpoint = fmt.Sprintf("%s/v3/update-token-indice", s.coreEndpoint)
-			req, err = http.NewRequest(http.MethodPut, endpoint, nil)
-			if err != nil {
-				return fmt.Errorf("failed to create new update token indices request: %s", err)
-			}
-			resp, err = client.Do(req)
-			if err != nil {
-				return fmt.Errorf("failed to update token indice: %s", err)
-			}
-			if resp.StatusCode != http.StatusOK {
-				return fmt.Errorf("update token endpoint failed, status code: %d", resp.StatusCode)
-			}
+		if err := s.checkTokenIndices(createEntry.Address); err != nil {
+			return err
 		}
 	}
 	if createEntry.Rebalance && createEntry.RebalanceQuadratic == nil {
