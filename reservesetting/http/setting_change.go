@@ -508,7 +508,7 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 }
 
 func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) error {
-	if createEntry.Transferable {
+	if createEntry.SetRate != common.SetRateNotSet {
 		if s.coreEndpoint != "" { // check to by pass test as local test does not need this
 			// check token indice in core
 			endpoint := fmt.Sprintf("%s/v3/check-token-indice?address=%s", s.coreEndpoint, createEntry.Address.Hex())
