@@ -330,7 +330,13 @@ func (b *BaseBlockchain) TransactionByHash(ctx context.Context, hash ethereum.Ha
 	return json, json.BlockNumber().Cmp(ethereum.Big0) == 0, nil
 }
 
+// TxStatus check status of tx
 func (b *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error) {
+	var (
+		logger = b.l.With(
+			"hash", hash,
+		)
+	)
 	option := context.Background()
 	tx, pending, err := b.TransactionByHash(option, hash)
 	if err != nil {
@@ -349,6 +355,7 @@ func (b *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error) {
 	receipt, err = b.client.TransactionReceipt(option, hash)
 	if err != nil {
 		if err == ether.NotFound {
+			logger.Warnw("tx is lost", "error", err)
 			return common.MiningStatusLost, 0, nil
 		}
 		// incompatibily between geth and parity
@@ -362,9 +369,11 @@ func (b *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error) {
 				// successful tx
 				return common.MiningStatusMined, tx.BlockNumber().Uint64(), nil
 			}
+			logger.Warnw("tx failed to mine", "status", receipt.Status)
 			return common.MiningStatusFailed, tx.BlockNumber().Uint64(), nil
 		}
 		// networking issue
+		logger.Infow("get receipt networking issue", "error", err)
 		return "", 0, err
 	}
 	if receipt.Status == 1 {
@@ -372,6 +381,7 @@ func (b *BaseBlockchain) TxStatus(hash ethereum.Hash) (string, uint64, error) {
 		return common.MiningStatusMined, tx.BlockNumber().Uint64(), nil
 	}
 	// failed tx
+	logger.Warnw("tx failed to mine", "status", receipt.Status)
 	return common.MiningStatusFailed, tx.BlockNumber().Uint64(), nil
 }
 
