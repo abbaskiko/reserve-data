@@ -2,9 +2,7 @@ package http
 
 import (
 	"fmt"
-	"net/http"
 	"reflect"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -15,10 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/feed"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
-)
-
-const (
-	defaultTimeout = 5 * time.Second
 )
 
 func (s *Server) validateChangeEntry(e common.SettingChangeType, changeType common.ChangeType) error {
@@ -515,36 +509,12 @@ func checkFeedWeight(setrate *common.SetRate, feedWeight *common.FeedWeight) err
 }
 
 func (s *Server) checkTokenIndices(tokenAddress ethereum.Address) error {
-	if s.coreEndpoint != "" { // check to by pass test as local test does not need this
-		// check token indice in core
-		endpoint := fmt.Sprintf("%s/v3/check-token-indice?address=%s", s.coreEndpoint, tokenAddress.Hex())
-		req, err := http.NewRequest(http.MethodGet, endpoint, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create new check token indice request: %s", err)
+	if s.coreClient != nil { // check to by pass test as local test does not need this
+		if err := s.coreClient.CheckTokenIndice(tokenAddress); err != nil {
+			return err
 		}
-		client := http.Client{
-			Timeout: defaultTimeout,
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			return common.ErrAssetAddressIsNotIndexInContract
-		}
-		if resp.StatusCode != http.StatusOK {
-			return common.ErrAssetAddressIsNotIndexInContract
-		}
-
-		// update token indice in core
-		endpoint = fmt.Sprintf("%s/v3/update-token-indice", s.coreEndpoint)
-		req, err = http.NewRequest(http.MethodPut, endpoint, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create new update token indices request: %s", err)
-		}
-		resp, err = client.Do(req)
-		if err != nil {
-			return fmt.Errorf("failed to update token indice: %s", err)
-		}
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("update token endpoint failed, status code: %d", resp.StatusCode)
+		if err := s.coreClient.UpdateTokenIndice(); err != nil {
+			return err
 		}
 	}
 	return nil
