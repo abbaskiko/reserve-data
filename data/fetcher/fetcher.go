@@ -361,6 +361,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 					err,
 				)
 			case common.MiningStatusFailed:
+				f.l.Warnw("transaction failed to mine", "tx", tx)
 				result[activity.ID] = common.NewActivityStatus(
 					activity.ExchangeStatus,
 					txStr,
