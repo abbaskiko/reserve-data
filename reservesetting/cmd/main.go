@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,15 +19,14 @@ import (
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	libapp "github.com/KyberNetwork/reserve-data/lib/app"
+	coreclient "github.com/KyberNetwork/reserve-data/lib/core-client"
 	"github.com/KyberNetwork/reserve-data/lib/httputil"
 	settinghttp "github.com/KyberNetwork/reserve-data/reservesetting/http"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
 )
 
 const (
-	defaultDB           = "reserve_data"
-	coreEndpointFlag    = "core-endpoint"
-	defaultCoreEndpoint = "http://localhost:8000" // suppose to change
+	defaultDB = "reserve_data"
 )
 
 func main() {
@@ -44,12 +42,7 @@ func main() {
 	app.Flags = append(app.Flags, configuration.NewExchangeCliFlag())
 	app.Flags = append(app.Flags, profiler.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewSentryFlags()...)
-	app.Flags = append(app.Flags, cli.StringFlag{
-		Name:   coreEndpointFlag,
-		Usage:  "core endpoint URL",
-		EnvVar: "CORE_ENDPOINT",
-		Value:  defaultCoreEndpoint,
-	})
+	app.Flags = append(app.Flags, coreclient.NewCoreFlag())
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -99,10 +92,10 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("failed to initiate live exchanges: %s", err)
 	}
 
-	coreEndpoint := c.String(coreEndpointFlag)
-	if !checkCoreEndpoint(coreEndpoint) {
+	coreClient, err := coreclient.NewCoreClientFromContext(c)
+	if err != nil {
 		sugar.Error("core endpoint is not provided, if you create new asset, you cannot update token indice, please provide.")
-		return errors.New("core endpoint is required")
+		return err
 	}
 	sr, err := postgres.NewStorage(db)
 	if err != nil {
@@ -110,7 +103,7 @@ func run(c *cli.Context) error {
 	}
 
 	sentryDSN := libapp.SentryDSNFromFlag(c)
-	server := settinghttp.NewServer(sr, host, liveExchanges, sentryDSN, coreEndpoint)
+	server := settinghttp.NewServer(sr, host, liveExchanges, sentryDSN, coreClient)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}
@@ -133,22 +126,4 @@ func getLiveExchanges(enabledExchanges []v1common.ExchangeID, bi exchange.Binanc
 		}
 	}
 	return liveExchanges, nil
-}
-
-func checkCoreEndpoint(endpoint string) bool {
-	if endpoint == "" {
-		return true
-	}
-
-	resp, err := http.Get(fmt.Sprintf("%s/v3/timeserver", endpoint))
-	if err != nil {
-		log.Printf("Failed to check time server, error: %s", err.Error())
-		return false
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return false
-	}
-
-	return true
 }

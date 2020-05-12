@@ -123,7 +123,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 	assetID, err := createSampleAsset(s)
 	require.NoError(t, err)
 
-	server := NewServer(s, "", supportedExchanges, "", "")
+	server := NewServer(s, "", supportedExchanges, "", nil)
 
 	emptyFeedWeight := make(common.FeedWeight)
 	btcFeed := common.BTCFeed
@@ -594,7 +594,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(asset)
 
-	server := NewServer(s, "", supportedExchanges, "", "")
+	server := NewServer(s, "", supportedExchanges, "", nil)
 
 	var tests = []testCase{
 		{
@@ -849,7 +849,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 
 	exchangeID := uint64(1)
 	// pre-insert exchange
-	server := NewServer(s, "", nil, "", "")
+	server := NewServer(s, "", nil, "", nil)
 	const updateExchange = "/v3/setting-change-update-exchange"
 	var updateExchID uint64
 	var tests = []testCase{
@@ -980,7 +980,7 @@ func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", supportedExchanges, "", "")
+	server := NewServer(s, "", supportedExchanges, "", nil)
 	const changeAssetAddress = "/v3/setting-change-main"
 	var changeID uint64
 	var tests = []testCase{
@@ -1075,7 +1075,7 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	t.Log(s)
-	server := NewServer(s, "", supportedExchanges, "", "")
+	server := NewServer(s, "", supportedExchanges, "", nil)
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
@@ -1162,7 +1162,7 @@ func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
 	}
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
-	server := NewServer(s, "", supportedExchanges, "", "")
+	server := NewServer(s, "", supportedExchanges, "", nil)
 	_, err = createSampleAsset(s)
 	require.NoError(t, err)
 
@@ -1290,7 +1290,7 @@ func TestCreateTradingPair(t *testing.T) {
 	require.NoError(t, err)
 	id, err := createSampleAsset(s)
 	require.NoError(t, err)
-	server := NewServer(s, "", supportedExchanges, "", "")
+	server := NewServer(s, "", supportedExchanges, "", nil)
 	c := apiClient{s: server}
 	quote := uint64(1) // ETH
 	postRes, err := c.createSettingChange(common.SettingChange{
@@ -1336,7 +1336,7 @@ func TestSetFeedConfiguration(t *testing.T) {
 	s, err := postgres.NewStorage(db)
 	require.NoError(t, err)
 	supportedExchanges := make(map[v1common.ExchangeID]v1common.LiveExchange)
-	server := NewServer(s, "", supportedExchanges, "", "")
+	server := NewServer(s, "", supportedExchanges, "", nil)
 	var (
 		setFeedConfigurationEndpoint = "/v3/setting-change-feed-configuration"
 		setFeedConfigurationID       uint64
