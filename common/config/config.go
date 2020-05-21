@@ -32,11 +32,11 @@ type WorldEndpoints struct {
 	CoinbaseDAI  SiteConfig `json:"coinbase_dai"`
 	HitDai       SiteConfig `json:"hit_dai"`
 
-	BitFinexUSDT    SiteConfig `json:"bit_finex_usdt"`
-	BinanceUSDT     SiteConfig `json:"binance_usdt"`
-	BinancePAX      SiteConfig `json:"binance_pax"`
-	BinanceTUSD     SiteConfig `json:"binance_tusd"`
-	BinanceBUSD1000 SiteConfig `json:"binance_busd_1000"`
+	BitFinexUSDT     SiteConfig `json:"bit_finex_usdt"`
+	BinanceUSDT      SiteConfig `json:"binance_usdt"`
+	BinancePAX       SiteConfig `json:"binance_pax"`
+	BinanceTUSD      SiteConfig `json:"binance_tusd"`
+	BinanceBUSD10000 SiteConfig `json:"binance_busd_10000"`
 }
 
 // ExchangeEndpoints ...

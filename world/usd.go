@@ -50,8 +50,8 @@ func (tw *TheWorld) getBitFinexInfo(url string) common.BitFinexData {
 	return result
 }
 
-func (tw *TheWorld) getBinanceBUSD1000(url string) common.BinanceBUSD1000 {
-	var result common.BinanceBUSD1000
+func (tw *TheWorld) getBinanceBUSD10000(url string) common.BinanceBUSD10000 {
+	var result common.BinanceBUSD10000
 	err := tw.getPublic(url, &result)
 	if err != nil {
 		result.Error = err.Error()
@@ -64,17 +64,17 @@ func (tw *TheWorld) getBinanceBUSD1000(url string) common.BinanceBUSD1000 {
 
 func (tw *TheWorld) GetUSDInfo() (common.USDData, error) {
 	return common.USDData{
-		Timestamp:       0,
-		CoinbaseUSD:     tw.getCoinbaseInfo(tw.endpoint.CoinbaseUSDEndpoint()),
-		GeminiUSD:       tw.getGeminiGoldInfo(),
-		CoinbaseUSDC:    tw.getCoinbaseInfo(tw.endpoint.CoinbaseUSDCEndpoint()),
-		BinanceUSDC:     tw.getBinanceInfo(tw.endpoint.BinanceUSDCEndpoint()),
-		CoinbaseDAI:     tw.getCoinbaseInfo(tw.endpoint.CoinbaseDAIEndpoint()),
-		HitDAI:          tw.getHitInfo(tw.endpoint.HitDaiEndpoint()),
-		BitFinex:        tw.getBitFinexInfo(tw.endpoint.BitFinexUSDTEndpoint()),
-		BinancePAX:      tw.getBinanceInfo(tw.endpoint.BinancePAXEndpoint()),
-		BinanceTUSD:     tw.getBinanceInfo(tw.endpoint.BinanceTUSDEndpoint()),
-		BinanceUSDT:     tw.getBinanceInfo(tw.endpoint.BinanceUSDTEndpoint()),
-		BinanceBUSD1000: tw.getBinanceBUSD1000(tw.endpoint.BinanceBUSD1000Endpoint()),
+		Timestamp:        0,
+		CoinbaseUSD:      tw.getCoinbaseInfo(tw.endpoint.CoinbaseUSDEndpoint()),
+		GeminiUSD:        tw.getGeminiGoldInfo(),
+		CoinbaseUSDC:     tw.getCoinbaseInfo(tw.endpoint.CoinbaseUSDCEndpoint()),
+		BinanceUSDC:      tw.getBinanceInfo(tw.endpoint.BinanceUSDCEndpoint()),
+		CoinbaseDAI:      tw.getCoinbaseInfo(tw.endpoint.CoinbaseDAIEndpoint()),
+		HitDAI:           tw.getHitInfo(tw.endpoint.HitDaiEndpoint()),
+		BitFinex:         tw.getBitFinexInfo(tw.endpoint.BitFinexUSDTEndpoint()),
+		BinancePAX:       tw.getBinanceInfo(tw.endpoint.BinancePAXEndpoint()),
+		BinanceTUSD:      tw.getBinanceInfo(tw.endpoint.BinanceTUSDEndpoint()),
+		BinanceUSDT:      tw.getBinanceInfo(tw.endpoint.BinanceUSDTEndpoint()),
+		BinanceBUSD10000: tw.getBinanceBUSD10000(tw.endpoint.BinanceBUSD10000Endpoint()),
 	}, nil
 }

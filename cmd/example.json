@@ -11,7 +11,6 @@
   "passphrase_deposit": "123456789",
   "keystore_intermediator_path": "intermediate_account_keystore",
   "passphrase_intermediate_account": "123456789",
-
   "authentication": {
     "kn_secret": "secret",
     "kn_readonly": "readonly",
@@ -33,7 +32,6 @@
   },
   "setting_db": "dev_setting.db",
   "data_db": "dev.db",
-
   "fetcher_delay": {
     "order_book": "7s",
     "auth_data": "5s",
@@ -41,7 +39,6 @@
     "block_fetching": "5s",
     "global_data": "10s"
   },
-
   "nodes": {
     "main": "https://eth-mainnet.alchemyapi.io/jsonrpc/projetid",
     "backup": [
@@ -71,7 +68,6 @@
   },
   "http_api_addr": "localhost:8000",
   "http_simulation_runner_addr": "localhost:8001",
-
   "contract_addresses": {
     "wrapper": "0x6172AFC8c00c46E0D07ce3AF203828198194620a",
     "network_proxy": "0x818E6FECD516Ecc3849DAf6845e3EC868087B755",
@@ -138,8 +134,8 @@
     "binance_tusd": {
       "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHTUSD"
     },
-    "binance_busd_1000": {
-      "url": "http://localhost:8003/feed/BinanceETHBUSD1000"
+    "binance_busd_10000": {
+      "url": "http://localhost:8003/feed/BinanceETHBUSD10000"
     }
   }
 }
