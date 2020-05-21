@@ -137,6 +137,9 @@
     },
     "binance_tusd": {
       "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHTUSD"
+    },
+    "binance_busd_1000": {
+      "url": "http://localhost:8003/feed/BinanceETHBUSD1000"
     }
   }
 }
