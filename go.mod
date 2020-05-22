@@ -23,6 +23,7 @@ require (
 	github.com/gin-contrib/sentry v0.0.0-20170917021533-5806d6ecb7b2
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.4.0
+	github.com/go-ozzo/ozzo-validation/v4 v4.2.1 // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
