@@ -174,3 +174,15 @@ func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 		Gemini:      tw.getGeminiGoldInfo(),
 	}, nil
 }
+
+func (tw *TheWorld) getFeedInfo(url string) common.FeedProviderResponse {
+	var result common.FeedProviderResponse
+	err := tw.getPublic(url, &result)
+	if err != nil {
+		result.Error = err.Error()
+		result.Valid = false
+	} else {
+		result.Valid = true
+	}
+	return result
+}

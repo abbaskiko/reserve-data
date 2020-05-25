@@ -29,24 +29,14 @@ type HitData struct {
 
 // USDData ...
 type USDData struct {
-	Timestamp        uint64
-	CoinbaseUSD      CoinbaseData     `json:"CoinbaseUSD"`
-	GeminiUSD        GeminiGoldData   `json:"GeminiUSD"` // gold and usd use the same url
-	CoinbaseUSDC     CoinbaseData     `json:"CoinbaseUSDC"`
-	BinanceUSDC      BinanceData      `json:"BinanceUSDC"`
-	CoinbaseDAI      CoinbaseData     `json:"CoinbaseDAI"`
-	HitDAI           HitData          `json:"HitDAI"`
-	BitFinex         BitFinexData     `json:"BitFinexUSD"`
-	BinanceUSDT      BinanceData      `json:"BinanceUSDT"`
-	BinancePAX       BinanceData      `json:"BinancePAX"`
-	BinanceTUSD      BinanceData      `json:"BinanceTUSD"`
-	BinanceBUSD10000 BinanceBUSD10000 `json:"BinanceBUSD10000"`
-}
-
-// BinanceBUSD10000 ...
-type BinanceBUSD10000 struct {
-	Valid bool
-	Error string
-	Bid   float64 `json:"bid,string"`
-	Ask   float64 `json:"ask,string"`
+	Timestamp            uint64
+	CoinbaseETHUSD10000  FeedProviderResponse `json:"CoinbaseETHUSD10000"`
+	GeminiETHUSD10000    FeedProviderResponse `json:"GeminiETHUSD10000"`
+	CoinbaseETHUSDC10000 FeedProviderResponse `json:"CoinbaseETHUSDC10000"`
+	BinanceETHUSDC10000  FeedProviderResponse `json:"BinanceETHUSDC10000"`
+	CoinbaseETHDAI5000   FeedProviderResponse `json:"CoinbaseETHDAI5000"`
+	BitfinexETHUSDT10000 FeedProviderResponse `json:"BitfinexETHUSDT10000"`
+	BinanceETHUSDT10000  FeedProviderResponse `json:"BinanceETHUSDT10000"`
+	BinanceETHPAX5000    FeedProviderResponse `json:"BinanceETHPAX5000"`
+	BinanceETHBUSD100000 FeedProviderResponse `json:"BinanceETHBUSD100000"`
 }
