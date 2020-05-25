@@ -17,12 +17,9 @@ var (
 		"BinanceETHBTC3",
 
 		"CoinbaseETHUSD10000",
-
 		"CoinbaseETHUSDC10000",
 		"BinanceETHUSDC10000",
-
 		"CoinbaseETHDAI5000",
-
 		"BitfinexETHUSDT10000",
 		"BinanceETHUSDT10000",
 		"BinanceETHPAX5000",
