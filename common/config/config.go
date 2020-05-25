@@ -26,15 +26,15 @@ type WorldEndpoints struct {
 	CoinbaseETHBTC3 SiteConfig `json:"coinbase_eth_btc_3"`
 	BinanceETHBTC3  SiteConfig `json:"binance_eth_btc_3"`
 
-	CoinbaseETHUSDC10000 SiteConfig `json:"coinbase_eth_usdc_10000"`
-	BinanceETHUSDC10000  SiteConfig `json:"binance_eth_usdc_10000"`
-	CoinbaseETHUSD10000  SiteConfig `json:"coinbase_eth_usd_10000"`
-	CoinbaseETHDAI5000   SiteConfig `json:"coinbase_eth_dai_5000"`
-	BitfinexETHUSDT10000 SiteConfig `json:"bitfinex_eth_usdt_10000"`
-	BinanceETHUSDT10000  SiteConfig `json:"binance_eth_usdt_10000"`
-	BinanceETHPAX5000    SiteConfig `json:"binance_eth_pax_5000"`
-	BinanceETHBUSD100000 SiteConfig `json:"binance_busd_100000"`
-	GeminiETHUSD10000    SiteConfig `json:"gemini_eth_usd_10000"`
+	CoinbaseETHUSDC10000  SiteConfig `json:"coinbase_eth_usdc_10000"`
+	BinanceETHUSDC10000   SiteConfig `json:"binance_eth_usdc_10000"`
+	CoinbaseETHUSD10000   SiteConfig `json:"coinbase_eth_usd_10000"`
+	CoinbaseETHUSDDAI5000 SiteConfig `json:"coinbase_eth_usd_dai_5000"`
+	BitfinexETHUSDT10000  SiteConfig `json:"bitfinex_eth_usdt_10000"`
+	BinanceETHUSDT10000   SiteConfig `json:"binance_eth_usdt_10000"`
+	BinanceETHPAX5000     SiteConfig `json:"binance_eth_pax_5000"`
+	BinanceETHBUSD100000  SiteConfig `json:"binance_busd_100000"`
+	GeminiETHUSD10000     SiteConfig `json:"gemini_eth_usd_10000"`
 }
 
 // ExchangeEndpoints ...

@@ -19,7 +19,7 @@ var (
 		"CoinbaseETHUSD10000",
 		"CoinbaseETHUSDC10000",
 		"BinanceETHUSDC10000",
-		"CoinbaseETHDAI5000",
+		"CoinbaseETHUSDDAI5000",
 		"BitfinexETHUSDT10000",
 		"BinanceETHUSDT10000",
 		"BinanceETHPAX5000",
@@ -49,7 +49,7 @@ type Endpoint interface {
 	CoinbaseETHUSDC10000Endpoint() string
 	BinanceETHUSDC10000Endpoint() string
 	CoinbaseETHUSD10000Endpoint() string
-	CoinbaseETHDAI5000Endpoint() string
+	CoinbaseETHUSDDAI5000Endpoint() string
 	BitfinexETHUSDT10000Endpoint() string
 	BinanceETHUSDT10000Endpoint() string
 	BinanceETHPAX5000Endpoint() string
@@ -87,8 +87,8 @@ func (ep Endpoints) BinanceETHBUSD100000Endpoint() string {
 	return ep.eps.BinanceETHBUSD100000.URL
 }
 
-func (ep Endpoints) CoinbaseETHDAI5000Endpoint() string {
-	return ep.eps.CoinbaseETHDAI5000.URL
+func (ep Endpoints) CoinbaseETHUSDDAI5000Endpoint() string {
+	return ep.eps.CoinbaseETHUSDDAI5000.URL
 }
 
 func (ep Endpoints) CoinbaseETHUSD10000Endpoint() string {
