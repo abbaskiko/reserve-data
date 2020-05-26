@@ -2,13 +2,17 @@ package app
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/TheZeroSlave/zapsentry"
 	"github.com/getsentry/sentry-go"
 	"github.com/pkg/errors"
+	"github.com/robfig/cron"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
 )
@@ -22,6 +26,9 @@ const (
 	warnLevel          = "warn"
 	fatalLevel         = "fatal"
 	infoLevel          = "info"
+
+	logOutputFlag = "log-output"
+	// defaultLogOutput = "./log.log"
 )
 
 // NewSentryFlags returns flags to init sentry client
@@ -36,6 +43,10 @@ func NewSentryFlags() []cli.Flag {
 			EnvVar: "SENTRY_LEVEL",
 			Usage:  "log level report message to sentry (info, error, warn, fatal)",
 			Value:  defaultSentryLevel,
+		}, cli.StringFlag{
+			Name:   logOutputFlag,
+			EnvVar: "LOG_OUTPUT",
+			Usage:  "log path to log file",
 		},
 	}
 }
@@ -53,18 +64,53 @@ func NewFlusher(s syncer) func() {
 	}
 }
 
+func configRotateLog(outputFile string) io.Writer {
+	var mw io.Writer
+	if outputFile != "" {
+		return io.MultiWriter(os.Stdout)
+	}
+	logger := &lumberjack.Logger{
+		Filename:   outputFile,
+		MaxBackups: 0,
+		MaxAge:     0,
+	}
+	mw = io.MultiWriter(os.Stdout, logger)
+
+	c := cron.New()
+	err := c.AddFunc("@daily", func() {
+		if lErr := logger.Rotate(); lErr != nil {
+			panic(fmt.Sprintf("failed to rotate log, error: %s", lErr))
+		}
+	})
+	if err != nil {
+		panic(fmt.Sprintf("failed to create log rotate daily: %s", err))
+	}
+	c.Start()
+	return mw
+}
+
 // NewLogger creates a new logger instance.
 // The type of logger instance will be different with different application running modes.
 func NewLogger(c *cli.Context) (*zap.Logger, error) {
+	var (
+		l       *zap.Logger
+		encoder zapcore.Encoder
+	)
 	modeConfig := c.GlobalString(modeFlag)
+	logOutPutFile := c.String(logOutputFlag)
+
+	w := configRotateLog(logOutPutFile)
 	switch modeConfig {
 	case mode.Production.String():
-		return zap.NewProduction()
+		encoder = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 	case mode.Development.String():
-		return zap.NewDevelopment()
+		encoder = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 	default:
 		return nil, fmt.Errorf("invalid running mode: %q", modeConfig)
 	}
+	l = zap.New(zapcore.NewCore(encoder, zapcore.AddSync(w), zap.DebugLevel))
+
+	return l, nil
 }
 
 // SentryDSNFromFlag return sentry dsn string from flag input
