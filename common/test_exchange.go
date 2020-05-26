@@ -24,6 +24,9 @@ func (te TestExchange) Trade(tradeType string, base Token, quote Token, rate flo
 func (te TestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
+func (te TestExchange) CancelAllOrders(symbol string) error {
+	return nil
+}
 func (te TestExchange) MarshalText() (text []byte, err error) {
 	return []byte("bittrex"), nil
 }
@@ -40,6 +43,9 @@ func (te TestExchange) GetInfo() (ExchangeInfo, error) {
 	return ExchangeInfo{}, nil
 }
 func (te TestExchange) UpdateDepositAddress(token Token, address string) error {
+	return nil
+}
+func (te TestExchange) UpdatePairsPrecision() error {
 	return nil
 }
 func (te TestExchange) GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error) {

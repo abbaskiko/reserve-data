@@ -33,6 +33,9 @@ func (bte *BinanceTestExchange) Trade(tradeType string, base common.Token, quote
 func (bte *BinanceTestExchange) CancelOrder(id, symbol string) error {
 	return nil
 }
+func (bte *BinanceTestExchange) CancelAllOrders(symbol string) error {
+	return nil
+}
 func (bte *BinanceTestExchange) MarshalText() (text []byte, err error) {
 	return []byte("binance"), nil
 }
@@ -49,6 +52,9 @@ func (bte *BinanceTestExchange) GetInfo() (common.ExchangeInfo, error) {
 	return common.ExchangeInfo{}, nil
 }
 func (bte *BinanceTestExchange) UpdateDepositAddress(token common.Token, address string) error {
+	return nil
+}
+func (bte *BinanceTestExchange) UpdatePairsPrecision() error {
 	return nil
 }
 func (bte *BinanceTestExchange) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {

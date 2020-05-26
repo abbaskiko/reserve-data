@@ -14,10 +14,12 @@ type Exchange interface {
 	// Otherwise return false. This function will prioritize live address from exchange above the current stored address.
 	Address(token Token) (address ethereum.Address, supported bool)
 	UpdateDepositAddress(token Token, addr string) error
+	UpdatePairsPrecision() error
 	Withdraw(token Token, amount *big.Int, address ethereum.Address, timepoint uint64) (string, error)
 	Trade(tradeType string, base, quote Token, rate, amount float64, timepoint uint64) (id string, done, remaining float64, finished bool, err error)
 	OpenOrders() ([]Order, error)
 	CancelOrder(id, symbol string) error
+	CancelAllOrders(symbol string) error
 	MarshalText() (text []byte, err error)
 	GetInfo() (ExchangeInfo, error)
 	GetExchangeInfo(TokenPairID) (ExchangePrecisionLimit, error)

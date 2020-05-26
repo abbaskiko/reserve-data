@@ -30,3 +30,26 @@ func (s *Server) CancelOrderByOrderID(c *gin.Context) {
 	}
 	httputil.ResponseSuccess(c)
 }
+
+// CancelAllOrders cancel all open orders of a symbol
+func (s *Server) CancelAllOrders(c *gin.Context) {
+	postForm, ok := s.Authenticated(c, []string{"exchange_id", "symbol"}, []Permission{RebalancePermission})
+	if !ok {
+		return
+	}
+
+	exchangeParam := postForm.Get("exchange_id")
+	symbol := postForm.Get("symbol")
+
+	exchange, err := common.GetExchange(exchangeParam)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	err = exchange.CancelAllOrders(symbol)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c)
+}

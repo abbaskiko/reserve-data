@@ -30,6 +30,7 @@ var (
 		"BinanceUSDT",
 		"BinancePAX",
 		"BinanceTUSD",
+		"BinanceBUSD10000",
 	}
 	// remove unused feeds
 )
@@ -61,6 +62,7 @@ type Endpoint interface {
 	BinancePAXEndpoint() string
 	BinanceTUSDEndpoint() string
 	BinanceBTCEndpoint() string
+	BinanceBUSD10000Endpoint() string
 }
 
 // Endpoints implement endpoint for testing in simulate.
@@ -87,6 +89,10 @@ func (ep Endpoints) BinancePAXEndpoint() string {
 
 func (ep Endpoints) BinanceTUSDEndpoint() string {
 	return ep.eps.BinanceTUSD.URL
+}
+
+func (ep Endpoints) BinanceBUSD10000Endpoint() string {
+	return ep.eps.BinanceBUSD10000.URL
 }
 
 func (ep Endpoints) CoinbaseDAIEndpoint() string {
