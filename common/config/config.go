@@ -33,7 +33,7 @@ type WorldEndpoints struct {
 	BitfinexETHUSDT10000  SiteConfig `json:"bitfinex_eth_usdt_10000"`
 	BinanceETHUSDT10000   SiteConfig `json:"binance_eth_usdt_10000"`
 	BinanceETHPAX5000     SiteConfig `json:"binance_eth_pax_5000"`
-	BinanceETHBUSD100000  SiteConfig `json:"binance_busd_100000"`
+	BinanceETHBUSD10000   SiteConfig `json:"binance_busd_10000"`
 	GeminiETHUSD10000     SiteConfig `json:"gemini_eth_usd_10000"`
 }
 
