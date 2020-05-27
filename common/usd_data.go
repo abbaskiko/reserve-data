@@ -11,5 +11,5 @@ type USDData struct {
 	BitfinexETHUSDT10000  FeedProviderResponse `json:"BitfinexETHUSDT10000"`
 	BinanceETHUSDT10000   FeedProviderResponse `json:"BinanceETHUSDT10000"`
 	BinanceETHPAX5000     FeedProviderResponse `json:"BinanceETHPAX5000"`
-	BinanceETHBUSD100000  FeedProviderResponse `json:"BinanceETHBUSD100000"`
+	BinanceETHBUSD10000   FeedProviderResponse `json:"BinanceETHBUSD10000"`
 }

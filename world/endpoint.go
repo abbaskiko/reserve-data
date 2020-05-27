@@ -23,7 +23,7 @@ var (
 		"BitfinexETHUSDT10000",
 		"BinanceETHUSDT10000",
 		"BinanceETHPAX5000",
-		"BinanceETHBUSD100000",
+		"BinanceETHBUSD10000",
 		"GeminiETHUSD10000",
 	}
 	// remove unused feeds
@@ -53,7 +53,7 @@ type Endpoint interface {
 	BitfinexETHUSDT10000Endpoint() string
 	BinanceETHUSDT10000Endpoint() string
 	BinanceETHPAX5000Endpoint() string
-	BinanceETHBUSD100000Endpoint() string
+	BinanceETHBUSD10000Endpoint() string
 	GeminiETHUSD10000Endpoint() string
 }
 
@@ -83,8 +83,8 @@ func (ep Endpoints) BinanceETHPAX5000Endpoint() string {
 	return ep.eps.BinanceETHPAX5000.URL
 }
 
-func (ep Endpoints) BinanceETHBUSD100000Endpoint() string {
-	return ep.eps.BinanceETHBUSD100000.URL
+func (ep Endpoints) BinanceETHBUSD10000Endpoint() string {
+	return ep.eps.BinanceETHBUSD10000.URL
 }
 
 func (ep Endpoints) CoinbaseETHUSDDAI5000Endpoint() string {

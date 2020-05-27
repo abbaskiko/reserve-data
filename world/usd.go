@@ -15,6 +15,6 @@ func (tw *TheWorld) GetUSDInfo() (common.USDData, error) {
 		BitfinexETHUSDT10000:  tw.getFeedInfo(tw.endpoint.BitfinexETHUSDT10000Endpoint()),
 		BinanceETHPAX5000:     tw.getFeedInfo(tw.endpoint.BinanceETHPAX5000Endpoint()),
 		BinanceETHUSDT10000:   tw.getFeedInfo(tw.endpoint.BinanceETHUSDT10000Endpoint()),
-		BinanceETHBUSD100000:  tw.getFeedInfo(tw.endpoint.BinanceETHBUSD100000Endpoint()),
+		BinanceETHBUSD10000:   tw.getFeedInfo(tw.endpoint.BinanceETHBUSD10000Endpoint()),
 	}, nil
 }
