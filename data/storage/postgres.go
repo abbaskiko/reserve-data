@@ -126,7 +126,21 @@ func (ps *PostgresStorage) currentVersion(dataType fetchDataType, timepoint uint
 		id int64
 	)
 	timestamp := common.MillisToTime(timepoint)
-	query := fmt.Sprintf(`SELECT id FROM "%s" WHERE created <= $1 AND $1 - created <= interval '150' second AND type = $2 ORDER BY created DESC LIMIT 1`,
+	query := fmt.Sprintf(`SELECT id
+FROM (
+	SELECT
+		id,
+		created
+	FROM
+		"%s"
+	WHERE
+		created <= $1
+		AND TYPE = $2
+	ORDER BY
+		created DESC
+	LIMIT 1) a1
+WHERE
+	$1 - created <= interval '150' second`,
 		fetchDataTable) // max duration block is 10 ~ 150 second
 	if err := ps.db.Get(&id, query, timestamp, dataType); err != nil {
 		if err == sql.ErrNoRows {
