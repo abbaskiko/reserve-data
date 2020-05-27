@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	maxTimespot      uint64 = 4124425154000
 	defaultTimeRange uint64 = 86400000
 )
 
@@ -41,21 +40,17 @@ type Server struct {
 	l              *zap.SugaredLogger
 }
 
-func getTimePoint(c *gin.Context, useDefault bool, l *zap.SugaredLogger) uint64 {
+func getTimePoint(c *gin.Context, l *zap.SugaredLogger) uint64 {
 	timestamp := c.DefaultQuery("timestamp", "")
 	if timestamp == "" {
-		if useDefault {
-			l.Debugw("Interpreted timestamp to default", "maxTimespot", maxTimespot)
-			return maxTimespot
-		}
 		timepoint := common.NowInMillis()
 		l.Debugw("Interpreted timestamp to current time", "timepoint", timepoint)
 		return timepoint
 	}
 	timepoint, err := strconv.ParseUint(timestamp, 10, 64)
 	if err != nil {
-		l.Debugw("Interpreted timestamp to default", "timestamp", timestamp, "maxTimespot", maxTimespot)
-		return maxTimespot
+		l.Debugw("Interpreted timestamp to default", "timestamp", timestamp)
+		return common.NowInMillis()
 	}
 	l.Debugw("Interpreted timestamp", "timestamp", timestamp, "timepoint", timepoint)
 	return timepoint
@@ -64,7 +59,7 @@ func getTimePoint(c *gin.Context, useDefault bool, l *zap.SugaredLogger) uint64 
 // AllPricesVersion return current version of all token
 func (s *Server) AllPricesVersion(c *gin.Context) {
 	s.l.Infow("Getting all prices version")
-	data, err := s.app.CurrentPriceVersion(getTimePoint(c, true, s.l))
+	data, err := s.app.CurrentPriceVersion(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -83,7 +78,7 @@ type price struct {
 // AllPrices return prices of all tokens
 func (s *Server) AllPrices(c *gin.Context) {
 	s.l.Infow("Getting all prices")
-	data, err := s.app.GetAllPrices(getTimePoint(c, true, s.l))
+	data, err := s.app.GetAllPrices(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -142,7 +137,7 @@ func (s *Server) Price(c *gin.Context) {
 // AuthDataVersion return current version of auth data
 func (s *Server) AuthDataVersion(c *gin.Context) {
 	s.l.Infow("Getting current auth data snapshot version")
-	data, err := s.app.CurrentAuthDataVersion(getTimePoint(c, true, s.l))
+	data, err := s.app.CurrentAuthDataVersion(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -153,7 +148,7 @@ func (s *Server) AuthDataVersion(c *gin.Context) {
 // AuthData return current auth data
 func (s *Server) AuthData(c *gin.Context) {
 	s.l.Infow("Getting current auth data snapshot \n")
-	data, err := s.app.GetAuthData(getTimePoint(c, true, s.l))
+	data, err := s.app.GetAuthData(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -186,7 +181,7 @@ func (s *Server) GetRates(c *gin.Context) {
 // GetRate return rate of a token
 func (s *Server) GetRate(c *gin.Context) {
 	s.l.Infow("Getting all rates")
-	data, err := s.app.GetRate(getTimePoint(c, true, s.l))
+	data, err := s.app.GetRate(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 	} else {
@@ -391,7 +386,7 @@ func (s *Server) Deposit(c *gin.Context) {
 
 	s.l.Infow("Depositing", "amount", request.Amount.Text(10), "asset_id", asset.ID,
 		"asset_symbol", asset.Symbol, "exchange", exchange.ID().String())
-	id, err := s.core.Deposit(exchange, asset, request.Amount, getTimePoint(c, false, s.l))
+	id, err := s.core.Deposit(exchange, asset, request.Amount, getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
