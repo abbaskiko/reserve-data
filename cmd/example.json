@@ -128,7 +128,7 @@
     "binance_eth_pax_5000": {
       "url": "http://localhost:8003/feed/BinanceETHPAX5000"
     },
-    "binance_busd_100000": {
+    "binance_busd_10000": {
       "url": "http://localhost:8003/feed/BinanceETHBUSD10000"
     },
     "gemini_eth_usd_10000": {
