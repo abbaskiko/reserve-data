@@ -1,5 +1,9 @@
 package common
 
+import (
+	"encoding/json"
+)
+
 type GoldRate struct {
 	Symbol string  `json:"symbol"`
 	Price  float64 `json:"price"`
@@ -15,11 +19,11 @@ type DGXGoldData struct {
 }
 
 type OneForgeGoldData struct {
-	Value     float64 `json:"value"`
-	Text      string  `json:"text"`
-	Timestamp uint64  `json:"timestamp"`
-	Error     bool    `json:"error"`
-	Message   string  `json:"message"`
+	Value     json.Number `json:"value"`
+	Text      string      `json:"text"`
+	Timestamp uint64      `json:"timestamp"`
+	Error     bool        `json:"error"`
+	Message   string      `json:"message"`
 }
 
 type GDAXGoldData struct {
