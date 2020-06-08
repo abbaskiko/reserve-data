@@ -374,14 +374,14 @@ func TestGoldData(t *testing.T) {
 		OneForgeETH: common.OneForgeGoldData{
 			Text:      "",
 			Error:     true,
-			Value:     0,
+			Value:     "0",
 			Message:   "API Key Not Valid. Please go to 1forge.com to get an API key. If you have any questions please email us at contact@1forge.com",
 			Timestamp: 0,
 		},
 		OneForgeUSD: common.OneForgeGoldData{
 			Text:      "",
 			Error:     true,
-			Value:     0,
+			Value:     "0",
 			Message:   "API Key Not Valid. Please go to 1forge.com to get an API key. If you have any questions please email us at contact@1forge.com",
 			Timestamp: 0,
 		},
