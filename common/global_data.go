@@ -1,6 +1,8 @@
 package common
 
 import (
+	"encoding/json"
+
 	"github.com/KyberNetwork/reserve-data/common/feed"
 )
 
@@ -22,7 +24,7 @@ type DGXGoldData struct {
 
 // OneForgeGoldData oneforge gold data
 type OneForgeGoldData struct {
-	Value     float64
+	Value     json.Number
 	Text      string
 	Timestamp uint64
 	Error     bool
