@@ -277,8 +277,6 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 				logger.Errorw("failed to get asset from storage", "error", err)
 				return common.EBalanceEntry{}, err
 			}
-			logger.Debugw("assets", "list", assets)
-			logger.Debugw("binance response", "res", respData)
 			for _, b := range respData.Balances {
 				tokenSymbol := b.Asset
 				for _, asset := range assets {
@@ -295,7 +293,6 @@ func (bn *Binance) FetchEBalanceData(timepoint uint64) (common.EBalanceEntry, er
 			}
 		}
 	}
-	logger.Debugw("binance balance", "value", result)
 	return result, nil
 }
 

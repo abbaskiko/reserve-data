@@ -384,7 +384,6 @@ func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 		common.NowInMillis(),
 	)
 	if err == nil {
-		logger.Debugw("info response from binance", "response", respBody)
 		if err = json.Unmarshal(respBody, &result); err != nil {
 			return result, err
 		}
