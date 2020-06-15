@@ -287,7 +287,7 @@ func (s *Server) OpenOrders(c *gin.Context) {
 	for exchangeID, exchange := range getExchange {
 		openOrders, err := exchange.OpenOrders(pair)
 		if err != nil {
-			logger.Errorw("failed to get open orders", "exchange", exchange.ID().String, "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
+			logger.Errorw("failed to get open orders", "exchange", exchange.ID().String(), "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
