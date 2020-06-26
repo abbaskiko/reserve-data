@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -22,6 +23,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
@@ -175,7 +177,8 @@ func configLog(stdoutLog bool) io.Writer {
 
 // CreateBlockchain create new blockchain instance
 func CreateBlockchain(config *configuration.AppState) (bc *blockchain.Blockchain, err error) {
-	bc, err = blockchain.NewBlockchain(config.Blockchain, config.Setting, config.AppConfig.GasConfig)
+	bc, err = blockchain.NewBlockchain(config.Blockchain, config.Setting, config.AppConfig.GasConfig,
+		gasstation.New(&http.Client{}, config.AppConfig.GasConfig.GasStationAPIKey))
 
 	if err != nil {
 		panic(err)
