@@ -26,13 +26,15 @@ type ETHGas struct {
 type Client struct {
 	client  *http.Client
 	baseURL string
+	apiKey  string
 }
 
 // New create a new Client object
-func New(c *http.Client) *Client {
+func New(c *http.Client, apiKey string) *Client {
 	return &Client{
 		client:  c,
 		baseURL: "https://ethgasstation.info",
+		apiKey:  apiKey,
 	}
 }
 
@@ -40,6 +42,11 @@ func (c *Client) doRequest(method, path string, response interface{}) error {
 	req, err := http.NewRequest(method, c.baseURL+path, nil)
 	if err != nil {
 		return err
+	}
+	if c.apiKey != "" {
+		q := req.URL.Query()
+		q.Set("api-key", c.apiKey)
+		req.URL.RawQuery = q.Encode()
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -62,6 +69,7 @@ func (c *Client) doRequest(method, path string, response interface{}) error {
 // ETHGas get gasstation gas data
 func (c *Client) ETHGas() (ETHGas, error) {
 	var res ETHGas
-	err := c.doRequest(http.MethodGet, "/json/ethgasAPI.json", &res)
+	qp := "/json/ethgasAPI.json"
+	err := c.doRequest(http.MethodGet, qp, &res)
 	return res, err
 }
