@@ -760,8 +760,9 @@ type FetcherDelay struct {
 
 // GasConfig ...
 type GasConfig struct {
-	PreferUseGasStation     bool  `json:"prefer_use_gas_station"`
-	FetchMaxGasCacheSeconds int64 `json:"fetch_max_gas_cache_seconds"`
+	PreferUseGasStation     bool   `json:"prefer_use_gas_station"`
+	FetchMaxGasCacheSeconds int64  `json:"fetch_max_gas_cache_seconds"`
+	GasStationAPIKey        string `json:"gas_station_api_key"`
 }
 
 // RawConfig include all configs read from files

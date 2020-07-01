@@ -30,6 +30,7 @@
     }
   },
   "gas_config": {
+    "gas_station_api_key": "",
     "prefer_use_gas_station": true,
     "fetch_max_gas_cache_seconds": 120
   },
