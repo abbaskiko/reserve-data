@@ -471,7 +471,7 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 		sr:              sr,
 		l:               l,
 		gasConfig:       gasConfig,
-		gsClient:        gasstation.New(&http.Client{}),
+		gsClient:        gasstation.New(&http.Client{}, gasConfig.GasStationAPIKey),
 	}, nil
 }
 
