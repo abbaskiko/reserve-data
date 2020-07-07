@@ -528,6 +528,7 @@ func (rc ReserveCore) SetRates(
 
 	tx, err = rc.GetSetRateResult(assets, buys, sells, afpMids, block)
 	if err != nil {
+		rc.l.Errorw("failed to get set rate result", "err", err)
 		miningStatus = common.MiningStatusFailed
 	} else {
 		miningStatus = common.MiningStatusSubmitted
