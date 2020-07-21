@@ -39,7 +39,7 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 	assetResp, err := c.getAsset(assetID)
 	require.NoError(t, err)
 
-	selectAssetExchange := assetResp.Asset.Exchanges[0]
+	selectAssetExchange := assetResp.Asset.AssetExchanges[0]
 	updateAxe := common.UpdateAssetExchangeEntry{
 		ID:                selectAssetExchange.ID,
 		Symbol:            common.StringPointer("XYZ"),
@@ -65,15 +65,15 @@ func TestServer_UpdateAssetExchange(t *testing.T) {
 	require.NoError(t, err)
 	found := false
 
-	for _, x := range updatedResp.Asset.Exchanges {
-		if x.ID == selectAssetExchange.ID {
+	for _, assetExchange := range updatedResp.Asset.AssetExchanges {
+		if assetExchange.ID == selectAssetExchange.ID {
 			found = true
-			assert.Equal(t, *updateAxe.MinDeposit, x.MinDeposit)
-			assert.Equal(t, *updateAxe.WithdrawFee, x.WithdrawFee)
-			assert.Equal(t, *updateAxe.TargetRecommended, x.TargetRecommended)
-			assert.Equal(t, *updateAxe.TargetRatio, x.TargetRatio)
-			assert.Equal(t, *updateAxe.DepositAddress, x.DepositAddress)
-			assert.Equal(t, *updateAxe.Symbol, x.Symbol)
+			assert.Equal(t, *updateAxe.MinDeposit, assetExchange.MinDeposit)
+			assert.Equal(t, *updateAxe.WithdrawFee, assetExchange.WithdrawFee)
+			assert.Equal(t, *updateAxe.TargetRecommended, assetExchange.TargetRecommended)
+			assert.Equal(t, *updateAxe.TargetRatio, assetExchange.TargetRatio)
+			assert.Equal(t, *updateAxe.DepositAddress, assetExchange.DepositAddress)
+			assert.Equal(t, *updateAxe.Symbol, assetExchange.Symbol)
 			break
 		}
 	}
