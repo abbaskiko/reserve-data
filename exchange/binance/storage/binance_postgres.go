@@ -8,6 +8,9 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	"github.com/golang-migrate/migrate/v4"
+	migratepostgres "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file" // driver for migration
 )
 
 const (
@@ -36,7 +39,10 @@ type preparedStmt struct {
 }
 
 // NewPostgresStorage creates new obj exchange.BinanceStorage with db engine = postgres
-func NewPostgresStorage(db *sqlx.DB) (exchange.BinanceStorage, error) {
+func NewPostgresStorage(db *sqlx.DB, migrationFolderPath, databaseName string) (exchange.BinanceStorage, error) {
+	var (
+		err error
+	)
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("failed to intialize database schema err=%s", err.Error())
 	}
@@ -44,7 +50,25 @@ func NewPostgresStorage(db *sqlx.DB) (exchange.BinanceStorage, error) {
 	storage := &postgresStorage{
 		db: db,
 	}
-	err := storage.prepareStmts()
+	err = storage.prepareStmts()
+
+	if migrationFolderPath != "" {
+		driver, err := migratepostgres.WithInstance(db.DB, &migratepostgres.Config{})
+		if err != nil {
+			return storage, err
+		}
+		m, err := migrate.NewWithDatabaseInstance(
+			fmt.Sprintf("file://%s", migrationFolderPath),
+			databaseName, driver,
+		)
+		if err != nil {
+			return storage, err
+		}
+		if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+			return storage, err
+		}
+	}
+
 	return storage, err
 }
 
@@ -59,7 +83,8 @@ func (s *postgresStorage) prepareStmts() error {
 	}
 	s.stmts.getHistoryStmt, err = s.db.Preparex(`SELECT pair_id, trade_id, price, qty, type, time 
 		FROM "binance_trade_history"
-		WHERE time >= $1 AND time <= $2`)
+		JOIN trading_pairs ON binance_trade_history.pair_id = trading_pairs.id
+		WHERE trading_pairs.exchange_id = $1 AND time >= $2 AND time <= $3`)
 	if err != nil {
 		return err
 	}
@@ -112,10 +137,10 @@ func (s *postgresStorage) StoreTradeHistory(data common.ExchangeTradeHistory) er
 }
 
 // GetTradeHistory implements exchange.BinanceStorage and get trade history within a time period
-func (s *postgresStorage) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
+func (s *postgresStorage) GetTradeHistory(exchangeID, fromTime, toTime uint64) (common.ExchangeTradeHistory, error) {
 	var result = make(common.ExchangeTradeHistory)
 	var records []exchangeTradeHistoryDB
-	err := s.stmts.getHistoryStmt.Select(&records, fromTime, toTime)
+	err := s.stmts.getHistoryStmt.Select(&records, exchangeID, fromTime, toTime)
 	if err != nil {
 		return result, err
 	}
