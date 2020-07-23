@@ -245,6 +245,12 @@ type ActivityRecord struct {
 	Timestamp      Timestamp       `json:"timestamp,omitempty"`
 }
 
+// AssetRateTrigger keep result of calculate token rate trigger
+type AssetRateTrigger struct {
+	AssetID AssetID `json:"asset_id"`
+	Count   int     `json:"count"`
+}
+
 // ActivityParams is params for activity
 type ActivityParams struct {
 	// deposit, withdraw params
@@ -260,10 +266,11 @@ type ActivityParams struct {
 	AFPMid []*big.Int `json:"afpMid,omitempty"`
 	Msgs   []string   `json:"msgs,omitempty"`
 	// Trade params
-	Type  string  `json:"type,omitempty"`
-	Base  string  `json:"base,omitempty"`
-	Quote string  `json:"quote,omitempty"`
-	Rate  float64 `json:"rate,omitempty"`
+	Type     string  `json:"type,omitempty"`
+	Base     string  `json:"base,omitempty"`
+	Quote    string  `json:"quote,omitempty"`
+	Rate     float64 `json:"rate,omitempty"`
+	Triggers []bool  `json:"triggers,omitempty"`
 }
 
 // ActivityResult is result of an activity
@@ -760,8 +767,9 @@ type FetcherDelay struct {
 
 // GasConfig ...
 type GasConfig struct {
-	PreferUseGasStation     bool  `json:"prefer_use_gas_station"`
-	FetchMaxGasCacheSeconds int64 `json:"fetch_max_gas_cache_seconds"`
+	PreferUseGasStation     bool   `json:"prefer_use_gas_station"`
+	FetchMaxGasCacheSeconds int64  `json:"fetch_max_gas_cache_seconds"`
+	GasStationAPIKey        string `json:"gas_station_api_key"`
 }
 
 // RawConfig include all configs read from files
@@ -790,6 +798,9 @@ type RawConfig struct {
 
 	IntermediatorKeystore   string `json:"keystore_intermediator_path"`
 	IntermediatorPassphrase string `json:"passphrase_intermediate_account"`
+
+	MigrationPath string `json:"migration_folder_path"`
+	DatabaseName  string `json:"database_name"`
 }
 
 // FeedProviderResponse ...

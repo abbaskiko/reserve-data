@@ -509,13 +509,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 }
 
 // SetRates to reserve
-func (rc ReserveCore) SetRates(
-	assets []commonv3.Asset,
-	buys []*big.Int,
-	sells []*big.Int,
-	block *big.Int,
-	afpMids []*big.Int,
-	additionalMsgs []string) (common.ActivityID, error) {
+func (rc ReserveCore) SetRates(assets []commonv3.Asset, buys, sells []*big.Int, block *big.Int, afpMids []*big.Int, msgs []string, triggers []bool) (common.ActivityID, error) {
 
 	var (
 		tx           *types.Transaction
@@ -528,6 +522,7 @@ func (rc ReserveCore) SetRates(
 
 	tx, err = rc.GetSetRateResult(assets, buys, sells, afpMids, block)
 	if err != nil {
+		rc.l.Errorw("failed to get set rate result", "err", err)
 		miningStatus = common.MiningStatusFailed
 	} else {
 		miningStatus = common.MiningStatusSubmitted
@@ -554,12 +549,13 @@ func (rc ReserveCore) SetRates(
 		uid,
 		"blockchain",
 		common.ActivityParams{
-			Assets: assetsID,
-			Buys:   buys,
-			Sells:  sells,
-			Block:  block,
-			AFPMid: afpMids,
-			Msgs:   additionalMsgs,
+			Assets:   assetsID,
+			Buys:     buys,
+			Sells:    sells,
+			Block:    block,
+			AFPMid:   afpMids,
+			Msgs:     msgs,
+			Triggers: triggers,
 		},
 		activityResult,
 		"",

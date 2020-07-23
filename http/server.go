@@ -287,7 +287,11 @@ func (s *Server) OpenOrders(c *gin.Context) {
 	for exchangeID, exchange := range getExchange {
 		openOrders, err := exchange.OpenOrders(pair)
 		if err != nil {
-			logger.Errorw("failed to get open orders", "exchange", exchange.ID().String(), "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
+			logger.Errorw("failed to get open orders",
+				"exchange", exchange.ID().String(),
+				"base", pair.BaseSymbol,
+				"quote", pair.QuoteSymbol,
+				"error", err)
 			httputil.ResponseFailure(c, httputil.WithError(err))
 			return
 		}
@@ -481,6 +485,19 @@ func (s *Server) updateTokenIndice(c *gin.Context) {
 	httputil.ResponseSuccess(c)
 }
 
+func (s *Server) getTriggers(c *gin.Context) {
+	fromTime, toTime, ok := s.ValidateTimeInput(c)
+	if !ok {
+		return
+	}
+	triggers, err := s.app.GetAssetRateTriggers(fromTime, toTime)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(triggers))
+}
+
 type checkTokenIndiceRequest struct {
 	Address string `form:"address" binding:"required"`
 }
@@ -545,6 +562,7 @@ func (s *Server) register() {
 
 		g.PUT("/update-token-indice", s.updateTokenIndice)
 		g.GET("/check-token-indice", s.checkTokenIndice)
+		g.GET("/token-rate-trigger", s.getTriggers)
 	}
 }
 
