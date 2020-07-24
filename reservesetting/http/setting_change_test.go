@@ -87,7 +87,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 			RebalanceThreshold: 1.0,
 			Reserve:            1.0,
 			Total:              100.0,
-		}, nil, nil)
+		}, nil, nil, 0.1, 0.2)
 	if err != nil {
 		return 0, err
 	}
@@ -254,6 +254,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
 							},
+							NormalUpdatePerPeriod: 0.123,
+							MaxImbalanceRatio:     0.456,
 						},
 					},
 				},
@@ -273,6 +275,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
 				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+				require.Equal(t, 0.123, asset.NormalUpdatePerPeriod)
+				require.Equal(t, 0.456, asset.MaxImbalanceRatio)
 			},
 		},
 		{
@@ -344,6 +348,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								feed.CoinbaseETHBTC3.String(): 3.0,
 								feed.BinanceETHBTC3.String():  1.2,
 							},
+							NormalUpdatePerPeriod: 0.123,
+							MaxImbalanceRatio:     0.456,
 						},
 					},
 				},
@@ -538,6 +544,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								"some_random_feed":           1.2,
 								feed.BinanceETHBTC3.String(): 3.0,
 							},
+							NormalUpdatePerPeriod: 0.123,
+							MaxImbalanceRatio:     0.456,
 						},
 					},
 				},
