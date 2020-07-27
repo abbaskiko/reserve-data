@@ -87,7 +87,7 @@ func createSampleAsset(store *postgres.Storage) (uint64, error) {
 			RebalanceThreshold: 1.0,
 			Reserve:            1.0,
 			Total:              100.0,
-		}, nil, nil)
+		}, nil, nil, 0.1, 0.2)
 	if err != nil {
 		return 0, err
 	}
@@ -112,7 +112,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 		supportedExchanges[exchangeID] = exchange
 	}
 
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -254,6 +254,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							StableParam: &common.StableParam{
 								AskSpread: expectedAskSpread,
 							},
+							NormalUpdatePerPeriod: 0.123,
+							MaxImbalanceRatio:     0.456,
 						},
 					},
 				},
@@ -273,6 +275,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, 0.0, asset.StableParam.PriceUpdateThreshold)
 				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
+				require.Equal(t, 0.123, asset.NormalUpdatePerPeriod)
+				require.Equal(t, 0.456, asset.MaxImbalanceRatio)
 			},
 		},
 		{
@@ -344,6 +348,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								feed.CoinbaseETHBTC3.String(): 3.0,
 								feed.BinanceETHBTC3.String():  1.2,
 							},
+							NormalUpdatePerPeriod: 0.123,
+							MaxImbalanceRatio:     0.456,
 						},
 					},
 				},
@@ -538,6 +544,8 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 								"some_random_feed":           1.2,
 								feed.BinanceETHBTC3.String(): 3.0,
 							},
+							NormalUpdatePerPeriod: 0.123,
+							MaxImbalanceRatio:     0.456,
 						},
 					},
 				},
@@ -570,7 +578,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 		supportedExchanges[exchangeID] = exchange
 	}
 
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -840,7 +848,7 @@ func TestHTTPServerAssetExchangeWithOptionalTradingPair(t *testing.T) {
 }
 
 func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -963,7 +971,7 @@ func TestHTTPServer_SettingChangeUpdateExchange(t *testing.T) {
 }
 
 func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -1058,7 +1066,7 @@ func TestHTTPServer_ChangeAssetAddress(t *testing.T) {
 }
 
 func TestHTTPServer_DeleteTradingPair(t *testing.T) {
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -1146,7 +1154,7 @@ func TestHTTPServer_DeleteTradingPair(t *testing.T) {
 }
 
 func TestHTTPServer_DeleteAssetExchange(t *testing.T) {
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -1281,7 +1289,7 @@ func TestCreateTradingPair(t *testing.T) {
 		supportedExchanges[exchangeID] = exchange
 	}
 
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -1329,7 +1337,7 @@ func TestCreateTradingPair(t *testing.T) {
 }
 
 func TestSetFeedConfiguration(t *testing.T) {
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()

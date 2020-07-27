@@ -127,6 +127,8 @@ func initData(t *testing.T, s *Storage) {
 					BidSpread:            12,
 					SingleFeedMaxSpread:  13,
 				},
+				NormalUpdatePerPeriod: 0.5,
+				MaxImbalanceRatio:     0.6,
 			},
 		},
 		{
@@ -189,6 +191,8 @@ func initData(t *testing.T, s *Storage) {
 					RebalanceThreshold: 3,
 					TransferThreshold:  4,
 				},
+				NormalUpdatePerPeriod: 0.5,
+				MaxImbalanceRatio:     0.6,
 			},
 		},
 	}})
@@ -198,7 +202,7 @@ func initData(t *testing.T, s *Storage) {
 }
 
 func TestStorage_SettingChangeCreate(t *testing.T) {
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
@@ -218,15 +222,17 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 					{
 						Type: common.ChangeTypeCreateAsset,
 						Data: common.CreateAssetEntry{
-							Symbol:       "DAI",
-							Name:         "DAI",
-							Address:      common3.HexToAddress("0x1199"),
-							Decimals:     18,
-							Transferable: true,
-							SetRate:      common.ExchangeFeed,
-							Rebalance:    false,
-							IsQuote:      false,
-							PWI:          nil,
+							Symbol:                "DAI",
+							Name:                  "DAI",
+							Address:               common3.HexToAddress("0x1199"),
+							Decimals:              18,
+							Transferable:          true,
+							SetRate:               common.ExchangeFeed,
+							Rebalance:             false,
+							IsQuote:               false,
+							PWI:                   nil,
+							NormalUpdatePerPeriod: 0.5,
+							MaxImbalanceRatio:     0.6,
 						},
 					},
 				},
@@ -243,15 +249,17 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 					{
 						Type: common.ChangeTypeCreateAsset,
 						Data: common.CreateAssetEntry{
-							Symbol:       "DAI",
-							Name:         "DAI",
-							Address:      common3.HexToAddress("0x1199"),
-							Decimals:     18,
-							Transferable: true,
-							SetRate:      common.SetRateNotSet,
-							Rebalance:    true,
-							IsQuote:      false,
-							PWI:          nil,
+							Symbol:                "DAI",
+							Name:                  "DAI",
+							Address:               common3.HexToAddress("0x1199"),
+							Decimals:              18,
+							Transferable:          true,
+							SetRate:               common.SetRateNotSet,
+							Rebalance:             true,
+							IsQuote:               false,
+							PWI:                   nil,
+							NormalUpdatePerPeriod: 0.5,
+							MaxImbalanceRatio:     0.6,
 							Exchanges: []common.AssetExchange{
 								{
 									ID:                0,
@@ -310,6 +318,8 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 								RebalanceThreshold: 0,
 								TransferThreshold:  0,
 							},
+							NormalUpdatePerPeriod: 0.5,
+							MaxImbalanceRatio:     0.6,
 						},
 					},
 				},
@@ -356,6 +366,8 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 								PriceB: 15,
 								PriceC: 21,
 							},
+							NormalUpdatePerPeriod: 0.5,
+							MaxImbalanceRatio:     0.6,
 						},
 					},
 				},
@@ -416,15 +428,17 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 					{
 						Type: common.ChangeTypeCreateAsset,
 						Data: common.CreateAssetEntry{
-							Symbol:       "DAI",
-							Name:         "DAI",
-							Address:      common3.HexToAddress("0x12"),
-							Decimals:     18,
-							Transferable: true,
-							SetRate:      common.SetRateNotSet,
-							Rebalance:    true,
-							IsQuote:      false,
-							PWI:          nil,
+							Symbol:                "DAI",
+							Name:                  "DAI",
+							Address:               common3.HexToAddress("0x12"),
+							Decimals:              18,
+							Transferable:          true,
+							SetRate:               common.SetRateNotSet,
+							Rebalance:             true,
+							IsQuote:               false,
+							PWI:                   nil,
+							NormalUpdatePerPeriod: 0.5,
+							MaxImbalanceRatio:     0.6,
 							Exchanges: []common.AssetExchange{
 								{
 									ExchangeID:        binance,
@@ -460,15 +474,17 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 					{
 						Type: common.ChangeTypeCreateAsset,
 						Data: common.CreateAssetEntry{
-							Symbol:       "DAI",
-							Name:         "DAI",
-							Address:      common3.HexToAddress("0x12"),
-							Decimals:     18,
-							Transferable: true,
-							SetRate:      common.SetRateNotSet,
-							Rebalance:    true,
-							IsQuote:      false,
-							PWI:          nil,
+							Symbol:                "DAI",
+							Name:                  "DAI",
+							Address:               common3.HexToAddress("0x12"),
+							Decimals:              18,
+							Transferable:          true,
+							SetRate:               common.SetRateNotSet,
+							Rebalance:             true,
+							IsQuote:               false,
+							PWI:                   nil,
+							NormalUpdatePerPeriod: 0.5,
+							MaxImbalanceRatio:     0.6,
 							Target: &common.AssetTarget{
 								Total:              0,
 								Reserve:            0,
@@ -537,6 +553,86 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
+		{
+			msg: "test update asset, update normal_update_per_period",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:               2,
+							NormalUpdatePerPeriod: common.FloatPointer(0.123),
+						},
+					},
+				},
+			},
+
+			assertFn: func(t *testing.T, u uint64, e error) {
+				assert.NoError(t, e)
+				asset, err := s.GetAsset(2)
+				assert.NoError(t, err)
+				assert.Equal(t, 0.123, asset.NormalUpdatePerPeriod)
+			},
+		},
+		{
+			msg: "test update asset, update normal_update_per_period < 0",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:               2,
+							NormalUpdatePerPeriod: common.FloatPointer(-123),
+						},
+					},
+				},
+			},
+
+			assertFn: func(t *testing.T, u uint64, e error) {
+				assert.Error(t, e)
+				assert.NoError(t, s.RejectSettingChange(u))
+			},
+		},
+		{
+			msg: "test update asset, update max_imbalance_ratio",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:           2,
+							MaxImbalanceRatio: common.FloatPointer(0.456),
+						},
+					},
+				},
+			},
+
+			assertFn: func(t *testing.T, u uint64, e error) {
+				assert.NoError(t, e)
+				asset, err := s.GetAsset(2)
+				assert.NoError(t, err)
+				assert.Equal(t, 0.456, asset.MaxImbalanceRatio)
+			},
+		},
+		{
+			msg: "test update asset, update max_imbalance_ratio < 0",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:           2,
+							MaxImbalanceRatio: common.FloatPointer(-456),
+						},
+					},
+				},
+			},
+
+			assertFn: func(t *testing.T, u uint64, e error) {
+				assert.Error(t, e)
+				assert.NoError(t, s.RejectSettingChange(u))
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Logf("running test case for: %s", tc.msg)
@@ -548,7 +644,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 }
 
 func TestStorage_GetDepositAddresses(t *testing.T) {
-	db, tearDown := testutil.MustNewDevelopmentDB()
+	db, tearDown := testutil.MustNewDevelopmentDB(migrationPath)
 	defer func() {
 		assert.NoError(t, tearDown())
 	}()
