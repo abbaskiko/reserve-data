@@ -18,12 +18,10 @@ func TestGeneralData(t *testing.T) {
 	assert.NoError(t, err)
 	var (
 		dataTest1 = common.GeneralData{
-			ID:    1,
 			Key:   "test data",
 			Value: "123.456",
 		}
 		dataTest2 = common.GeneralData{
-			ID:    2,
 			Key:   "test data",
 			Value: "456.789",
 		}

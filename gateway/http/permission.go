@@ -26,8 +26,7 @@ p, %[1]s, /v3/setting-change-rbquadratic, POST
 p, %[1]s, /v3/setting-change-main, POST
 p, %[1]s, /v3/setting-change-stable, POST
 p, %[1]s, /v3/setting-change-feed-configuration, POST
-p, %[1]s, /v3/update-feed-status/:name, PUT
-p, %[1]s, /v3/rate-trigger-period, POST`, key)
+p, %[1]s, /v3/update-feed-status/:name, PUT`, key)
 }
 
 func addKeyConfirmPolicy(key string) string {
@@ -44,7 +43,8 @@ p, %[1]s, /v3/hold-rebalance, POST
 p, %[1]s, /v3/enable-rebalance, POST
 p, %[1]s, /v3/hold-set-rate, POST
 p, %[1]s, /v3/set-exchange-enabled/:id, PUT
-p, %[1]s, /v3/enable-set-rate, POST`, key)
+p, %[1]s, /v3/enable-set-rate, POST
+p, %[1]s, /v3/rate-trigger-period, POST`, key)
 }
 
 func addKeyRebalancePolicy(key string) string {
