@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -10,8 +11,10 @@ import (
 )
 
 const (
-	key = "rate_trigger_period"
+	rateTriggerPeriodKey = "rate_trigger_period"
 )
+
+type rateTriggerPeriod map[string]float64
 
 func (s *Server) setRateTriggerPeriod(c *gin.Context) {
 	var input struct {
@@ -25,11 +28,11 @@ func (s *Server) setRateTriggerPeriod(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(fmt.Errorf("value must greater than zero, value=%f", input.Value)))
 		return
 	}
-	data := common.RateTriggerPeriod{
-		Key:   key,
-		Value: input.Value,
+	gdata := common.GeneralData{
+		Key:   rateTriggerPeriodKey,
+		Value: strconv.FormatFloat(input.Value, 'f', -1, 64),
 	}
-	id, err := s.storage.SetGeneralData(data.ToGeneralData())
+	id, err := s.storage.SetGeneralData(gdata)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
@@ -38,15 +41,17 @@ func (s *Server) setRateTriggerPeriod(c *gin.Context) {
 }
 
 func (s *Server) getRateTriggerPeriod(c *gin.Context) {
-	gdata, err := s.storage.GetGeneralData(key)
+	gdata, err := s.storage.GetGeneralData(rateTriggerPeriodKey)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	data, err := gdata.ToRateTriggerPeriod()
+	value, err := strconv.ParseFloat(gdata.Value, 64)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	httputil.ResponseSuccess(c, httputil.WithData(data))
+	httputil.ResponseSuccess(c, httputil.WithData(rateTriggerPeriod{
+		rateTriggerPeriodKey: value,
+	}))
 }

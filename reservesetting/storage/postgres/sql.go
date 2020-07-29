@@ -764,7 +764,7 @@ func generalDataStatements(db *sqlx.DB) (*sqlx.NamedStmt, *sqlx.Stmt, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	const getQuery = `SELECT id, key, value FROM general_data WHERE key=$1 ORDER BY timestamp DESC LIMIT 1;`
+	const getQuery = `SELECT key, value FROM general_data WHERE key=$1 ORDER BY timestamp DESC LIMIT 1;`
 	getGeneralDataStmt, err := db.Preparex(getQuery)
 	if err != nil {
 		return nil, nil, err
