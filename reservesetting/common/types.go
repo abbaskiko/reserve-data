@@ -1,6 +1,7 @@
 package common
 
 import (
+	"strconv"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -354,6 +355,7 @@ type DeleteAssetExchangeEntry struct {
 	AssetExchangeID uint64 `json:"id"`
 }
 
+// UpdateStableTokenParamsEntry ...
 type UpdateStableTokenParamsEntry struct {
 	settingChangeMarker
 	Params map[string]interface{} `json:"params"`
@@ -366,4 +368,39 @@ type FeedConfiguration struct {
 	Enabled              bool    `json:"enabled" db:"enabled"`
 	BaseVolatilitySpread float64 `json:"base_volatility_spread" db:"base_volatility_spread"`
 	NormalSpread         float64 `json:"normal_spread" db:"normal_spread"`
+}
+
+// GeneralData ...
+type GeneralData struct {
+	ID    uint64 `db:"id"`
+	Key   string `db:"key"`
+	Value string `db:"value"`
+}
+
+// ToRateTriggerPeriod ...
+func (g GeneralData) ToRateTriggerPeriod() (RateTriggerPeriod, error) {
+	value, err := strconv.ParseFloat(g.Value, 64)
+	if err != nil {
+		return RateTriggerPeriod{}, err
+	}
+	return RateTriggerPeriod{
+		ID:    g.ID,
+		Key:   g.Key,
+		Value: value,
+	}, nil
+}
+
+// RateTriggerPeriod ...
+type RateTriggerPeriod struct {
+	ID    uint64  `json:"-"`
+	Key   string  `json:"key"`
+	Value float64 `json:"value"`
+}
+
+// ToGeneralData ...
+func (r RateTriggerPeriod) ToGeneralData() GeneralData {
+	return GeneralData{
+		Key:   r.Key,
+		Value: strconv.FormatFloat(r.Value, 'f', -1, 64),
+	}
 }
