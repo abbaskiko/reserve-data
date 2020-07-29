@@ -42,8 +42,8 @@ curl -X GET "https://gateway.local/v3/asset/1"
             "size_b": 0.0004894737,
             "size_c": 0.9995088,
             "price_a": 0.1234,
-            "price_a": 0.1235,
-            "price_a": 0.1236
+            "price_b": 0.1235,
+            "price_c": 0.1236
         },
         "exchanges": [
             {
@@ -188,8 +188,8 @@ curl -X GET "https://gateway.local/v3/asset"
                 "size_b": 0.0004894737,
                 "size_c": 0.9995088,
                 "price_a": 0.1234,
-                "price_a": 0.1235,
-                "price_a": 0.1236
+                "price_b": 0.1235,
+                "price_c": 0.1236
             },
             "exchanges": [
                 {
@@ -247,8 +247,8 @@ curl -X GET "https://gateway.local/v3/asset"
                 "size_b": 0.0004894737,
                 "size_c": 0.9995088,
                 "price_a": 0.1234,
-                "price_a": 0.1235,
-                "price_a": 0.1236
+                "price_b": 0.1235,
+                "price_c": 0.1236
             },
             "exchanges": [
                 {
