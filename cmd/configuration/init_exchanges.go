@@ -167,7 +167,7 @@ func NewExchangePool(
 	if err != nil {
 		return nil, fmt.Errorf("can not init postgres storage: (%s)", err.Error())
 	}
-	httpClient := &http.Client{Timeout: time.Second * 30}
+	httpClient := &http.Client{Transport: exchange.NewTransportRateLimiter(&http.Client{Timeout: time.Second * 30})}
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.Binance, common.Binance2:
