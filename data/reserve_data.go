@@ -197,6 +197,10 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 		tokenBalance.Symbol = token.Symbol
 		var exchangeBalances []common.ExchangeBalance
 		for exchangeID, balances := range data.ExchangeBalances {
+			if _, exist := balances.AvailableBalance[common.AssetID(token.ID)]; !exist {
+				continue
+			}
+
 			exchangeBalance := common.ExchangeBalance{
 				ExchangeID: exchanges[exchangeID.String()].ID,
 				Name:       exchangeID.String(),
@@ -205,12 +209,11 @@ func (rd ReserveData) GetAuthData(timepoint uint64) (common.AuthDataResponseV3, 
 				exchangeBalance.Error = balances.Error
 				tokenBalance.Valid = false
 			}
-			if _, exist := balances.AvailableBalance[common.AssetID(token.ID)]; exist {
-				exchangeBalance.ExchangeID = exchanges[exchangeID.String()].ID
-				exchangeBalance.Available = balances.AvailableBalance[common.AssetID(token.ID)]
-				exchangeBalance.Locked = balances.LockedBalance[common.AssetID(token.ID)]
-				exchangeBalances = append(exchangeBalances, exchangeBalance)
-			}
+			exchangeBalance.ExchangeID = exchanges[exchangeID.String()].ID
+			exchangeBalance.Available = balances.AvailableBalance[common.AssetID(token.ID)]
+			exchangeBalance.Locked = balances.LockedBalance[common.AssetID(token.ID)]
+			exchangeBalances = append(exchangeBalances, exchangeBalance)
+
 		}
 		tokenBalance.Exchanges = exchangeBalances
 		if balance, exist := data.ReserveBalances[assetID]; exist {

@@ -70,7 +70,7 @@ func (b *TransportRateLimiter) roundTripBinance(request *http.Request) (*http.Re
 	_ = resp.Body.Close()
 	resp.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 
 	// binance return Retry-After in second, and a timestamp in message,
