@@ -318,7 +318,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 	result := exchange.Binaorder{}
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.AuthenticatedEndpoint()+"/api/v3/order",
+		fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
 		map[string]string{
 			"symbol":  symbol,
 			"orderId": fmt.Sprintf("%d", id),
@@ -404,7 +404,7 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair *commonv3.TradingPairSymbols) (exc
 	}
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
+		fmt.Sprintf("%s/api/v3/openOrders/%s", ep.accountDataBaseURL, ep.accountID),
 		params,
 		true,
 		common.NowInMillis(),
