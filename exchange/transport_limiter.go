@@ -33,10 +33,13 @@ func NewTransportRateLimiter(c *http.Client) *TransportRateLimiter {
 	}
 }
 
-func nextMin() time.Time {
-	now := time.Now()
+func nextMin(now time.Time) time.Time {
 	nextMin := now.Add(time.Minute)
-	return nextMin.Truncate(time.Minute)
+	nextMin = nextMin.Truncate(time.Minute)
+	if nextMin.Equal(now) || nextMin.Before(now) {
+		nextMin = nextMin.Add(time.Minute)
+	}
+	return nextMin
 }
 
 func (b *TransportRateLimiter) roundTripBinance(request *http.Request) (*http.Response, error) {
@@ -57,10 +60,14 @@ func (b *TransportRateLimiter) roundTripBinance(request *http.Request) (*http.Re
 	if resp.StatusCode == http.StatusTooManyRequests {
 		// binance reset rate limiter on every new minute, 1200 request is allowed per minute
 		// so each time we get a StatusTooManyRequests, we should wait until the counter reset on next min.
-		blockUntil = nextMin()
+		if t, err := http.ParseTime(resp.Header.Get("Date")); err == nil {
+			now = t
+		}
+		blockUntil = nextMin(now)
 		b.lock.Lock()
 		b.blockUntil = blockUntil
 		b.lock.Unlock()
+
 		return nil, fmt.Errorf("rate limit guard, until %s", blockUntil.String())
 	}
 	if resp.StatusCode != http.StatusTeapot {

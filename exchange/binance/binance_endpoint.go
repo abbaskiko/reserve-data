@@ -26,13 +26,15 @@ import (
 // interf for calling api in different env
 // timedelta to make sure calling api in time
 type Endpoint struct {
-	signer            Signer
-	interf            Interface
-	timeDelta         int64
-	l                 *zap.SugaredLogger
-	exchangeID        common.ExchangeID
-	client            *http.Client
-	marketDataBaseURL string
+	signer             Signer
+	interf             Interface
+	timeDelta          int64
+	l                  *zap.SugaredLogger
+	exchangeID         common.ExchangeID
+	client             *http.Client
+	marketDataBaseURL  string
+	accountDataBaseURL string
+	accountID          string
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
@@ -316,7 +318,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 	result := exchange.Binaorder{}
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.AuthenticatedEndpoint()+"/api/v3/order",
+		fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
 		map[string]string{
 			"symbol":  symbol,
 			"orderId": fmt.Sprintf("%d", id),
@@ -373,9 +375,9 @@ func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	result := exchange.Binainfo{}
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.AuthenticatedEndpoint()+"/api/v3/account",
+		fmt.Sprintf("%s/api/v3/account/%s", ep.accountDataBaseURL, ep.accountID),
 		map[string]string{},
-		true,
+		false,
 		common.NowInMillis(),
 	)
 	if err == nil {
@@ -402,7 +404,7 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair *commonv3.TradingPairSymbols) (exc
 	}
 	respBody, err := ep.GetResponse(
 		"GET",
-		ep.interf.AuthenticatedEndpoint()+"/api/v3/openOrders",
+		fmt.Sprintf("%s/api/v3/openOrders/%s", ep.accountDataBaseURL, ep.accountID),
 		params,
 		true,
 		common.NowInMillis(),
@@ -489,9 +491,19 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 }
 
 //NewBinanceEndpoint return new endpoint instance for using binance
-func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client, exparam common.ExchangeID, marketDataBaseURL string) *Endpoint {
+func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client, exparam common.ExchangeID,
+	marketDataBaseURL, accountDataBaseURL, accountID string) *Endpoint {
 	l := zap.S()
-	endpoint := &Endpoint{signer: signer, interf: interf, l: l, client: client, exchangeID: exparam, marketDataBaseURL: marketDataBaseURL}
+	endpoint := &Endpoint{
+		signer:             signer,
+		interf:             interf,
+		l:                  l,
+		client:             client,
+		exchangeID:         exparam,
+		marketDataBaseURL:  marketDataBaseURL,
+		accountDataBaseURL: accountDataBaseURL,
+		accountID:          accountID,
+	}
 	switch dpl {
 	case deployment.Simulation:
 		l.Info("Simulate environment, no updateTime called...")
