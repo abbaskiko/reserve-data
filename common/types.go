@@ -789,18 +789,21 @@ type RawConfig struct {
 	DepositKeystore   string `json:"keystore_deposit_path"`
 	DepositPassphrase string `json:"passphrase_deposit"`
 
-	BinanceKey     string `json:"binance_key"`
-	BinanceSecret  string `json:"binance_secret"`
-	Binance2Key    string `json:"binance_2_key"`
-	Binance2Secret string `json:"binance_2_secret"`
-	HoubiKey       string `json:"huobi_key"`
-	HoubiSecret    string `json:"huobi_secret"`
+	BinanceAccountID  string `json:"binance_account_id"`
+	BinanceKey        string `json:"binance_key"`
+	BinanceSecret     string `json:"binance_secret"`
+	BinanceAccount2ID string `json:"binance_account_2_id"`
+	Binance2Key       string `json:"binance_2_key"`
+	Binance2Secret    string `json:"binance_2_secret"`
+	HoubiKey          string `json:"huobi_key"`
+	HoubiSecret       string `json:"huobi_secret"`
 
 	IntermediatorKeystore   string `json:"keystore_intermediator_path"`
 	IntermediatorPassphrase string `json:"passphrase_intermediate_account"`
 
-	MigrationPath     string `json:"migration_folder_path"`
-	MarketDataBaseURL string `json:"market_data_base_url"`
+	MigrationPath      string `json:"migration_folder_path"`
+	MarketDataBaseURL  string `json:"market_data_base_url"`
+	AccountDataBaseURL string `json:"account_data_base_url"`
 }
 
 // FeedProviderResponse ...

@@ -171,12 +171,16 @@ func NewExchangePool(
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.Binance, common.Binance2:
+			accountID := rcf.BinanceAccountID
 			binanceSigner := binance.NewSigner(rcf.BinanceKey, rcf.BinanceSecret)
 			if exparam == common.Binance2 {
+				accountID = rcf.BinanceAccount2ID
 				binanceSigner = binance.NewSigner(rcf.Binance2Key, rcf.Binance2Secret)
 			}
 			marketDataBaseURL := strings.TrimSuffix(rcf.MarketDataBaseURL, "/")
-			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient, exparam, marketDataBaseURL)
+			accountDataBaseURL := strings.TrimSuffix(rcf.AccountDataBaseURL, "/")
+			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient, exparam,
+				marketDataBaseURL, accountDataBaseURL, accountID)
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("cannot create Binance storage: (%s)", err.Error())
