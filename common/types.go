@@ -704,7 +704,6 @@ type SiteConfig struct {
 
 // WorldEndpoints hold detail information to fetch feed(url,header, api key...)
 type WorldEndpoints struct {
-	GoldData        SiteConfig `json:"gold_data"`
 	OneForgeGoldETH SiteConfig `json:"one_forge_gold_eth"`
 	OneForgeGoldUSD SiteConfig `json:"one_forge_gold_usd"`
 	GDAXData        SiteConfig `json:"gdax_data"`
