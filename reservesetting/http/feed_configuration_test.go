@@ -32,7 +32,6 @@ func TestCheckFeedConfiguration(t *testing.T) {
 	// test match supported feeds name and set rate value
 	// gold feed
 	supportedGoldFeed := []feed.Feed{
-		feed.GoldData,
 		feed.OneForgeXAUETH,
 		feed.OneForgeXAUUSD, // OneForgeXAUUSD
 		feed.GDAXETHUSD,     // GDAXETHUSD

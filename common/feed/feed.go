@@ -5,8 +5,7 @@ type Feed int
 // Feed ..
 //go:generate stringer -type=Feed -linecomment
 const (
-	GoldData       Feed = iota + 1 // GoldData
-	OneForgeXAUETH                 // OneForgeXAUETH
+	OneForgeXAUETH Feed = iota + 1 // OneForgeXAUETH
 	OneForgeXAUUSD                 // OneForgeXAUUSD
 	GDAXETHUSD                     // GDAXETHUSD
 	KrakenETHUSD                   // KrakenETHUSD
@@ -34,7 +33,6 @@ var (
 	}
 
 	goldFeeds = map[string]struct{}{
-		GoldData.String():       dummyStruct,
 		OneForgeXAUETH.String(): dummyStruct,
 		OneForgeXAUUSD.String(): dummyStruct,
 		GDAXETHUSD.String():     dummyStruct,

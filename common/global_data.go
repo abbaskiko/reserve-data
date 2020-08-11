@@ -6,22 +6,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/common/feed"
 )
 
-// GoldRate gold rate
-type GoldRate struct {
-	Symbol string  `json:"symbol"`
-	Price  float64 `json:"price"`
-	Time   uint64  `json:"time"`
-}
-
-// DGXGoldData dgx gold data
-type DGXGoldData struct {
-	Valid     bool
-	Timestamp uint64
-	Status    string     `json:"success"`
-	Data      []GoldRate `json:"data"`
-	Error     string
-}
-
 // OneForgeGoldData oneforge gold data
 type OneForgeGoldData struct {
 	Value     json.Number
@@ -79,7 +63,6 @@ type GeminiGoldData struct {
 // GoldData gold data info
 type GoldData struct {
 	Timestamp   uint64
-	DGX         DGXGoldData
 	OneForgeETH OneForgeGoldData
 	OneForgeUSD OneForgeGoldData
 	GDAX        GDAXGoldData
@@ -90,7 +73,6 @@ type GoldData struct {
 func (d GoldData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
 		"Timestamp":                  d.Timestamp,
-		feed.GoldData.String():       d.DGX,
 		feed.OneForgeXAUETH.String(): d.OneForgeETH,
 		feed.OneForgeXAUUSD.String(): d.OneForgeUSD,
 		feed.GDAXETHUSD.String():     d.GDAX,

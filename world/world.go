@@ -85,19 +85,6 @@ func (tw *TheWorld) getOneForgeGoldETHInfo() common.OneForgeGoldData {
 	return result
 }
 
-func (tw *TheWorld) getDGXGoldInfo() common.DGXGoldData {
-	url := tw.endpoint.GoldData.URL
-	result := common.DGXGoldData{
-		Valid: true,
-	}
-	err := tw.getPublic(url, &result)
-	if err != nil {
-		result.Valid = false
-		result.Error = err.Error()
-	}
-	return result
-}
-
 func (tw *TheWorld) getGDAXGoldInfo() common.GDAXGoldData {
 	url := tw.endpoint.GDAXData.URL
 	result := common.GDAXGoldData{
@@ -140,7 +127,6 @@ func (tw *TheWorld) getGeminiGoldInfo() common.GeminiGoldData {
 
 func (tw *TheWorld) GetGoldInfo() (common.GoldData, error) {
 	return common.GoldData{
-		DGX:         tw.getDGXGoldInfo(),
 		OneForgeETH: tw.getOneForgeGoldETHInfo(),
 		OneForgeUSD: tw.getOneForgeGoldUSDInfo(),
 		GDAX:        tw.getGDAXGoldInfo(),
