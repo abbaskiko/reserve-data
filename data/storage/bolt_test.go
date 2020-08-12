@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/data/testutil"
 )
@@ -99,4 +101,25 @@ func TestConvertTargetQtyV1toV2(t *testing.T) {
 			t.Fatalf("Expected data is a inteface of metric")
 		}
 	}
+}
+
+func TestStoreGas(t *testing.T) {
+	boltFile := "test_bolt.db"
+	tmpDir, err := ioutil.TempDir("", "pending_deposit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	storage, err := NewBoltStorage(filepath.Join(tmpDir, boltFile))
+	if err != nil {
+		t.Fatalf("Couldn't init bolt storage %v", err)
+	}
+	err = storage.SetGasThreshold(common.GasThreshold{
+		High: 100,
+		Low:  50,
+	})
+	require.NoError(t, err)
+	v, err := storage.GetGasThreshold()
+	require.NoError(t, err)
+	require.Equal(t, 100.0, v.High)
+	require.Equal(t, 50.0, v.Low)
 }
