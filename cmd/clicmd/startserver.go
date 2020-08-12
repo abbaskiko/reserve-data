@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+	"net/http"
 	"path/filepath"
 	"runtime"
 
@@ -13,8 +14,9 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/config"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	"github.com/KyberNetwork/reserve-data/core"
-	"github.com/KyberNetwork/reserve-data/http"
+	apphttp "github.com/KyberNetwork/reserve-data/http"
 )
 
 const (
@@ -65,6 +67,8 @@ func serverStart(_ *cobra.Command, _ []string) {
 		rData reserve.Data
 		rCore reserve.Core
 		bc    *blockchain.Blockchain
+
+		gasstationClient = gasstation.New(&http.Client{}, ac.GasConfig.GasStationAPIKey)
 	)
 
 	bc, err = CreateBlockchain(appState)
@@ -94,7 +98,7 @@ func serverStart(_ *cobra.Command, _ []string) {
 		common.SupportedExchanges[ex.ID()] = ex
 	}
 
-	server := http.NewHTTPServer(
+	server := apphttp.NewHTTPServer(
 		rData, rCore,
 		appState.MetricStorage,
 		ac.HTTPAPIAddr,
@@ -103,6 +107,7 @@ func serverStart(_ *cobra.Command, _ []string) {
 		appState.AuthEngine,
 		kyberENV,
 		bc, appState.Setting,
+		gasstationClient,
 	)
 
 	if !dryRun {

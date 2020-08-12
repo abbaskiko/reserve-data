@@ -756,3 +756,9 @@ type RunnerConfig struct {
 	BlockFetchingInterval      time.Duration
 	GlobalDataFetchingInterval time.Duration
 }
+
+// GasThreshold keep high-low threshold value that we will start and stop set rate
+type GasThreshold struct {
+	High float64 `json:"high"`
+	Low  float64 `json:"low"`
+}

@@ -45,6 +45,7 @@ const (
 	disabledFeedsBucket             string = "disabled_feeds"
 	feedSetting                     string = "feed_setting"
 	pendingFeedSetting              string = "pending_feed_setting"
+	generalBucket                   string = "general_bucket"
 
 	// pendingTargetQuantityV2 constant for bucket name for pending target quantity v2
 	pendingTargetQuantityV2 string = "pending_target_qty_v2"
@@ -94,6 +95,7 @@ var buckets = []string{
 	fetcherConfigurationBucket,
 	feedSetting,
 	pendingFeedSetting,
+	generalBucket,
 }
 
 // BoltStorage is the storage implementation of data.Storage interface
@@ -227,6 +229,33 @@ func (bs *BoltStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Version, 
 		return err
 	})
 	return common.Version(result), err
+}
+
+var gasThresholdKey = []byte(`gas_threshold`)
+
+func (bs *BoltStorage) SetGasThreshold(v common.GasThreshold) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	return bs.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(generalBucket))
+		return b.Put(gasThresholdKey, data)
+	})
+}
+
+func (bs *BoltStorage) GetGasThreshold() (common.GasThreshold, error) {
+	var res common.GasThreshold
+	err := bs.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(generalBucket))
+		d := b.Get(gasThresholdKey)
+		if d == nil {
+			return errors.New("entry not found in storage")
+		}
+		return json.Unmarshal(d, &res)
+	})
+
+	return res, err
 }
 
 func (bs *BoltStorage) UpdateFeedConfiguration(name string, enabled bool) error {

@@ -22,6 +22,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/metric"
 )
@@ -49,6 +50,7 @@ type Server struct {
 	blockchain     Blockchain
 	setting        Setting
 	l              *zap.SugaredLogger
+	gasStation     *gasstation.Client
 }
 
 func getTimePoint(c *gin.Context, useDefault bool) uint64 {
@@ -572,6 +574,74 @@ func (s *Server) GetActivities(c *gin.Context) {
 	} else {
 		httputil.ResponseSuccess(c, httputil.WithData(data))
 	}
+}
+
+type GsGas struct {
+	Fast     float64 `json:"fast"`
+	Standard float64 `json:"standard"`
+	Slow     float64 `json:"slow"`
+}
+type gasStatusResult struct {
+	GasStation    GsGas   `json:"eth_gas_station"`
+	HighThreshold float64 `json:"high_threshold"`
+	LowThreshold  float64 `json:"low_threshold"`
+}
+
+func (s *Server) GetGasStatus(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission})
+	if !ok {
+		return
+	}
+	gasPrice, err := s.gasStation.ETHGas()
+	if err != nil {
+		s.l.Errorw("query gasstation failed", "err", err)
+		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
+		return
+	}
+	gasThreshold, err := s.app.GetGasThreshold()
+	if err != nil {
+		s.l.Errorw("failed to get gas threshold", "err", err)
+		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
+		return
+	}
+	result := gasStatusResult{
+		GasStation: GsGas{
+			Fast:     gasPrice.Fast / 10.0,
+			Standard: gasPrice.Average / 10.0,
+			Slow:     gasPrice.SafeLow / 10.0,
+		},
+		HighThreshold: gasThreshold.High,
+		LowThreshold:  gasThreshold.Low,
+	}
+	httputil.ResponseSuccess(c, httputil.WithData(result))
+}
+
+func (s *Server) SetGasThreshold(c *gin.Context) {
+	high := c.Query("high")
+	low := c.Query("low")
+	_, ok := s.Authenticated(c, []string{"high", "low"}, []Permission{ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	h, err := strconv.ParseFloat(high, 64)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithReason("invalid high value"))
+		return
+	}
+	l, err := strconv.ParseFloat(low, 64)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithReason("invalid low value"))
+		return
+	}
+	if l >= h {
+		httputil.ResponseFailure(c, httputil.WithReason("high must > low value"))
+		return
+	}
+	if err := s.app.SetGasThreshold(common.GasThreshold{High: h, Low: l}); err != nil {
+		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
+		return
+	}
+	httputil.ResponseSuccess(c)
 }
 
 // StopFetcher request to stop fetcher
@@ -1257,6 +1327,8 @@ func (s *Server) register() {
 		s.r.POST("/set-fetcher-configuration", s.UpdateFetcherConfiguration)
 		s.r.GET("/get-all-fetcher-configuration", s.GetAllFetcherConfiguration)
 		s.r.GET("/version", s.getVersion)
+		s.r.GET("/gas-threshold", s.GetGasStatus)
+		s.r.POST("/gas-threshold", s.SetGasThreshold)
 	}
 }
 
@@ -1272,17 +1344,8 @@ func (s *Server) Run() {
 }
 
 // NewHTTPServer create new server instance
-func NewHTTPServer(
-	app reserve.Data,
-	core reserve.Core,
-	metric metric.Storage,
-	bindAddr string,
-	enableAuth bool,
-	profilerPrefix string,
-	authEngine Authentication,
-	env string,
-	bc Blockchain,
-	setting Setting) *Server {
+func NewHTTPServer(app reserve.Data, core reserve.Core, metric metric.Storage, bindAddr string, enableAuth bool,
+	profilerPrefix string, authEngine Authentication, env string, bc Blockchain, setting Setting, client *gasstation.Client) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
 		"https://bf15053001464a5195a81bc41b644751:eff41ac715114b20b940010208271b13@sentry.io/228067",
@@ -1315,6 +1378,7 @@ func NewHTTPServer(
 		blockchain:     bc,
 		setting:        setting,
 		l:              zap.S(),
+		gasStation:     client,
 	}
 
 	return s
