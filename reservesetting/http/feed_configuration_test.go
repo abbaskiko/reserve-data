@@ -32,7 +32,6 @@ func TestCheckFeedConfiguration(t *testing.T) {
 	// test match supported feeds name and set rate value
 	// gold feed
 	supportedGoldFeed := []feed.Feed{
-		feed.GoldData,
 		feed.OneForgeXAUETH,
 		feed.OneForgeXAUUSD, // OneForgeXAUUSD
 		feed.GDAXETHUSD,     // GDAXETHUSD
@@ -52,8 +51,7 @@ func TestCheckFeedConfiguration(t *testing.T) {
 	// test match supported feeds name and set rate value
 	// USD feed
 	supportedUSDFeed := []feed.Feed{
-		feed.CoinbaseETHDAI10000,
-		feed.KrakenETHDAI10000,
+		feed.CoinbaseETHUSDDAI5000,
 	}
 
 	for _, feedName := range supportedUSDFeed {

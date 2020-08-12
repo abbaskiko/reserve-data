@@ -8,21 +8,19 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[GoldData-1]
-	_ = x[OneForgeXAUETH-2]
-	_ = x[OneForgeXAUUSD-3]
-	_ = x[GDAXETHUSD-4]
-	_ = x[KrakenETHUSD-5]
-	_ = x[GeminiETHUSD-6]
-	_ = x[CoinbaseETHBTC3-7]
-	_ = x[BinanceETHBTC3-8]
-	_ = x[CoinbaseETHDAI10000-9]
-	_ = x[KrakenETHDAI10000-10]
+	_ = x[OneForgeXAUETH-1]
+	_ = x[OneForgeXAUUSD-2]
+	_ = x[GDAXETHUSD-3]
+	_ = x[KrakenETHUSD-4]
+	_ = x[GeminiETHUSD-5]
+	_ = x[CoinbaseETHBTC3-6]
+	_ = x[BinanceETHBTC3-7]
+	_ = x[CoinbaseETHUSDDAI5000-8]
 }
 
-const _Feed_name = "GoldDataOneForgeXAUETHOneForgeXAUUSDGDAXETHUSDKrakenETHUSDGeminiETHUSDCoinbaseETHBTC3BinanceETHBTC3CoinbaseETHDAI10000KarakenETHDAI10000"
+const _Feed_name = "OneForgeXAUETHOneForgeXAUUSDGDAXETHUSDKrakenETHUSDGeminiETHUSDCoinbaseETHBTC3BinanceETHBTC3CoinbaseETHUSDDAI5000"
 
-var _Feed_index = [...]uint8{0, 8, 22, 36, 46, 58, 70, 85, 99, 118, 136}
+var _Feed_index = [...]uint8{0, 14, 28, 38, 50, 62, 77, 91, 112}
 
 func (i Feed) String() string {
 	i -= 1

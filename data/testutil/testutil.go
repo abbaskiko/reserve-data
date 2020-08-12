@@ -30,13 +30,13 @@ func NewGlobalStorageTestSuite(t *testing.T, dgs data.GlobalStorage, fgs fetcher
 func (ts *GlobalStorageTestSuite) Run() {
 	ts.t.Helper()
 
-	dgxSts := []string{"first", "second", "third"}
-	for _, dgxSt := range dgxSts {
+	gdaxTradeIDs := []uint64{1, 2, 3}
+	for _, tradeID := range gdaxTradeIDs {
 		err := ts.fgs.StoreGoldInfo(common.GoldData{
 			Timestamp: common.NowInMillis(),
-			DGX: common.DGXGoldData{
-				Valid:  true,
-				Status: dgxSt,
+			GDAX: common.GDAXGoldData{
+				Valid:   true,
+				TradeID: tradeID,
 			},
 		})
 		if err != nil {
@@ -57,8 +57,8 @@ func (ts *GlobalStorageTestSuite) Run() {
 	}
 	ts.t.Logf("latest gold info version: %d", version)
 
-	lastDgxSt := dgxSts[(len(dgxSts) - 1)]
-	if goldInfo.DGX.Status != lastDgxSt {
-		ts.t.Errorf("getting wrong dgx status, expected: %s, got: %s", lastDgxSt, goldInfo.DGX.Status)
+	lastGdaxTradeID := gdaxTradeIDs[(len(gdaxTradeIDs) - 1)]
+	if goldInfo.GDAX.TradeID != lastGdaxTradeID {
+		ts.t.Errorf("getting wrong dgx status, expected: %d, got: %d", lastGdaxTradeID, goldInfo.GDAX.TradeID)
 	}
 }

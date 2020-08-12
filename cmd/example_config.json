@@ -37,9 +37,6 @@
     "fetch_max_gas_cache_seconds": 120
   },
   "world_endpoints": {
-    "gold_data": {
-      "url": "https://datafeed.digix.global/tick/"
-    },
     "one_forge_gold_eth": {
       "url": "https://api.1forge.com/convert?from=XAU&to=ETH&quantity=1&api_key=mykey"
     },
@@ -61,11 +58,8 @@
     "binance_eth_btc_3": {
       "url": "http://localhost:8003/feed/BinanceETHBTC3"
     },
-    "coinbase_eth_dai_10000": {
-      "url": "http://localhost:8003/feed/CoinbaseETHDAI10000"
-    },
-    "kraken_eth_dai_10000": {
-      "url": "http://localhost:8003/feed/KrakenETHDAI10000"
+    "coinbase_eth_usd_dai_5000": {
+      "url": "http://localhost:8003/feed/CoinbaseETHUSDDAI5000"
     }
   }
 }

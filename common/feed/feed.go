@@ -5,8 +5,7 @@ type Feed int
 // Feed ..
 //go:generate stringer -type=Feed -linecomment
 const (
-	GoldData       Feed = iota + 1 // GoldData
-	OneForgeXAUETH                 // OneForgeXAUETH
+	OneForgeXAUETH Feed = iota + 1 // OneForgeXAUETH
 	OneForgeXAUUSD                 // OneForgeXAUUSD
 	GDAXETHUSD                     // GDAXETHUSD
 	KrakenETHUSD                   // KrakenETHUSD
@@ -15,16 +14,14 @@ const (
 	CoinbaseETHBTC3 // CoinbaseETHBTC3
 	BinanceETHBTC3  // BinanceETHBTC3
 
-	CoinbaseETHDAI10000 // CoinbaseETHDAI10000
-	KrakenETHDAI10000   // KarakenETHDAI10000
+	CoinbaseETHUSDDAI5000 // CoinbaseETHUSDDAI5000
 )
 
 var (
 	dummyStruct = struct{}{}
 	// usdFeeds list of supported usd feeds
 	usdFeeds = map[string]struct{}{
-		CoinbaseETHDAI10000.String(): dummyStruct,
-		KrakenETHDAI10000.String():   dummyStruct,
+		CoinbaseETHUSDDAI5000.String(): dummyStruct,
 	}
 
 	// btcFeeds list of supported btc feeds
@@ -34,7 +31,6 @@ var (
 	}
 
 	goldFeeds = map[string]struct{}{
-		GoldData.String():       dummyStruct,
 		OneForgeXAUETH.String(): dummyStruct,
 		OneForgeXAUUSD.String(): dummyStruct,
 		GDAXETHUSD.String():     dummyStruct,

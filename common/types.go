@@ -288,6 +288,8 @@ type ActivityResult struct {
 	//
 	StatusError string `json:"status_error,omitempty"`
 	BlockNumber uint64 `json:"blockNumber,omitempty"`
+	//
+	WithdrawFee float64 `json:"withdraw_fee,omitempty"`
 }
 
 //NewActivityRecord return an activity record
@@ -355,16 +357,18 @@ type ActivityStatus struct {
 	Tx             string
 	BlockNumber    uint64
 	MiningStatus   string
+	WithdrawFee    float64
 	Error          error
 }
 
 // NewActivityStatus creates a new ActivityStatus instance.
-func NewActivityStatus(exchangeStatus, tx string, blockNumber uint64, miningStatus string, err error) ActivityStatus {
+func NewActivityStatus(exchangeStatus, tx string, blockNumber uint64, miningStatus string, withdrawFee float64, err error) ActivityStatus {
 	return ActivityStatus{
 		ExchangeStatus: exchangeStatus,
 		Tx:             tx,
 		BlockNumber:    blockNumber,
 		MiningStatus:   miningStatus,
+		WithdrawFee:    withdrawFee,
 		Error:          err,
 	}
 }
@@ -704,7 +708,6 @@ type SiteConfig struct {
 
 // WorldEndpoints hold detail information to fetch feed(url,header, api key...)
 type WorldEndpoints struct {
-	GoldData        SiteConfig `json:"gold_data"`
 	OneForgeGoldETH SiteConfig `json:"one_forge_gold_eth"`
 	OneForgeGoldUSD SiteConfig `json:"one_forge_gold_usd"`
 	GDAXData        SiteConfig `json:"gdax_data"`
@@ -714,8 +717,7 @@ type WorldEndpoints struct {
 	CoinbaseETHBTC3 SiteConfig `json:"coinbase_eth_btc_3"`
 	BinanceETHBTC3  SiteConfig `json:"binance_eth_btc_3"`
 
-	CoinbaseETHDAI10000 SiteConfig `json:"coinbase_eth_dai_10000"`
-	KrakenETHDAI10000   SiteConfig `json:"kraken_eth_dai_10000"`
+	CoinbaseETHUSDDAI5000 SiteConfig `json:"coinbase_eth_usd_dai_5000"`
 }
 
 // ContractAddresses ...

@@ -280,19 +280,6 @@ func TestGoldData(t *testing.T) {
 	require.NoError(t, err)
 
 	goldTest := common.GoldData{
-		DGX: common.DGXGoldData{
-			Data: []common.GoldRate{
-				{
-					Time:   1568356189,
-					Price:  0.27008084,
-					Symbol: "DGXETH",
-				},
-			},
-			Error:     "",
-			Valid:     true,
-			Status:    "",
-			Timestamp: 0,
-		},
 		GDAX: common.GDAXGoldData{
 			Ask:     "179.52",
 			Bid:     "179.51",
@@ -430,12 +417,7 @@ func TestUSDData(t *testing.T) {
 	require.NoError(t, err)
 
 	usdTest := common.USDData{
-		CoinbaseETHDAI10000: common.FeedProviderResponse{
-			Bid:   0.123,
-			Ask:   0.234,
-			Valid: true,
-		},
-		KrakenETHDAI10000: common.FeedProviderResponse{
+		CoinbaseETHUSDDAI5000: common.FeedProviderResponse{
 			Bid:   0.123,
 			Ask:   0.234,
 			Valid: true,
