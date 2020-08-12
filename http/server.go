@@ -588,7 +588,7 @@ type gasStatusResult struct {
 }
 
 func (s *Server) GetGasStatus(c *gin.Context) {
-	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission})
+	_, ok := s.Authenticated(c, []string{}, []Permission{ReadOnlyPermission, RebalancePermission, ConfigurePermission, ConfirmConfPermission})
 	if !ok {
 		return
 	}
