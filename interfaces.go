@@ -38,6 +38,9 @@ type Data interface {
 	GetPendingFeedSetting() (common.MapFeedSetting, error)
 	GetFeedSetting() (common.MapFeedSetting, error)
 
+	SetGasThreshold(v common.GasThreshold) error
+	GetGasThreshold() (common.GasThreshold, error)
+
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error
 

@@ -1470,10 +1470,6 @@ response:
 {
   "data": [
     {
-      "name": "DGX",
-      "enabled": true
-    },
-    {
       "name": "OneForgeETH",
       "enabled": true
     },

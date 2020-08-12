@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -197,6 +198,8 @@ func (b *BaseBlockchain) transactTx(context context.Context, opts TxOpts, contra
 		msg := ether.CallMsg{From: opts.Operator.Address, To: &contract, Value: value, Data: input}
 		gasLimit, err = b.client.EstimateGas(ensureContext(context), msg)
 		if err != nil {
+			b.l.Errorw("failed to estimate_gas", "err", err, "input", hex.EncodeToString(input),
+				"from", opts.Operator.Address.String(), "to", contract.String(), "value", value.String())
 			return nil, fmt.Errorf("failed to estimate gas needed: %v", err)
 		}
 		// add gas limit by 50K gas

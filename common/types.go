@@ -767,3 +767,9 @@ type FeedProviderResponse struct {
 	Bid   float64 `json:"bid,string"`
 	Ask   float64 `json:"ask,string"`
 }
+
+// GasThreshold keep high-low threshold value that we will start and stop set rate
+type GasThreshold struct {
+	High float64 `json:"high"`
+	Low  float64 `json:"low"`
+}

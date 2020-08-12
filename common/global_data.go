@@ -4,20 +4,6 @@ import (
 	"encoding/json"
 )
 
-type GoldRate struct {
-	Symbol string  `json:"symbol"`
-	Price  float64 `json:"price"`
-	Time   uint64  `json:"time"`
-}
-
-type DGXGoldData struct {
-	Valid     bool
-	Timestamp uint64
-	Status    string     `json:"status"`
-	Data      []GoldRate `json:"data"`
-	Error     string
-}
-
 type OneForgeGoldData struct {
 	Value     json.Number `json:"value"`
 	Text      string      `json:"text"`
@@ -70,7 +56,6 @@ type GeminiGoldData struct {
 
 type GoldData struct {
 	Timestamp   uint64
-	DGX         DGXGoldData
 	OneForgeETH OneForgeGoldData
 	OneForgeUSD OneForgeGoldData
 	GDAX        GDAXGoldData
