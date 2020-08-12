@@ -6,7 +6,6 @@ import (
 
 var (
 	allFeeds = []string{
-		"DGX",
 		"OneForgeETH",
 		"OneForgeUSD",
 		"GDAX",
@@ -36,7 +35,6 @@ func AllFeeds() []string {
 
 // Endpoint returns all API endpoints to use in TheWorld struct.
 type Endpoint interface {
-	GoldDataEndpoint() string
 	OneForgeGoldETHDataEndpoint() string
 	OneForgeGoldUSDDataEndpoint() string
 	GDAXDataEndpoint() string
@@ -102,10 +100,6 @@ func (ep Endpoints) CoinbaseETHUSDC10000Endpoint() string {
 
 func (ep Endpoints) BinanceETHUSDC10000Endpoint() string {
 	return ep.eps.BinanceETHUSDC10000.URL
-}
-
-func (ep Endpoints) GoldDataEndpoint() string {
-	return ep.eps.GoldData.URL
 }
 
 func (ep Endpoints) OneForgeGoldETHDataEndpoint() string {
