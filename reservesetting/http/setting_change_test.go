@@ -1349,7 +1349,7 @@ func TestSetFeedConfiguration(t *testing.T) {
 		setFeedConfigurationEndpoint = "/v3/setting-change-feed-configuration"
 		setFeedConfigurationID       uint64
 
-		fname                 = feed.CoinbaseETHDAI10000.String()
+		fname                 = feed.CoinbaseETHUSDDAI5000.String()
 		setRate               = common.USDFeed
 		fenabled              = false
 		fbaseVolatilitySpread = 1.1

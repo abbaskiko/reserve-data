@@ -717,8 +717,7 @@ type WorldEndpoints struct {
 	CoinbaseETHBTC3 SiteConfig `json:"coinbase_eth_btc_3"`
 	BinanceETHBTC3  SiteConfig `json:"binance_eth_btc_3"`
 
-	CoinbaseETHDAI10000 SiteConfig `json:"coinbase_eth_dai_10000"`
-	KrakenETHDAI10000   SiteConfig `json:"kraken_eth_dai_10000"`
+	CoinbaseETHUSDDAI5000 SiteConfig `json:"coinbase_eth_usd_dai_5000"`
 }
 
 // ContractAddresses ...

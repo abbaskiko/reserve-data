@@ -35,8 +35,7 @@ func TestFeedWeight(t *testing.T) {
 	require.NotNil(t, err)
 
 	testFeedWeightUSDIsSupported := common.FeedWeight{
-		feed.CoinbaseETHDAI10000.String(): 0.1,
-		feed.KrakenETHDAI10000.String():   0.2,
+		feed.CoinbaseETHUSDDAI5000.String(): 0.1,
 	}
 	err = checkFeedWeight(&testSetRateUSDFeed, &testFeedWeightUSDIsSupported)
 	assert.NoError(t, err)

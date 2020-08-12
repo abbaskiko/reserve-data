@@ -17,16 +17,14 @@ type BinanceData struct {
 
 // USDData ...
 type USDData struct {
-	Timestamp           uint64
-	CoinbaseETHDAI10000 FeedProviderResponse `json:"CoinbaseDAI10000"`
-	KrakenETHDAI10000   FeedProviderResponse `json:"KrakenETHDAI10000"`
+	Timestamp             uint64
+	CoinbaseETHUSDDAI5000 FeedProviderResponse `json:"CoinbaseETHUSDDAI5000"`
 }
 
 // ToMap convert to map result.
 func (u USDData) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"Timestamp":                       u.Timestamp,
-		feed.CoinbaseETHDAI10000.String(): u.CoinbaseETHDAI10000,
-		feed.KrakenETHDAI10000.String():   u.KrakenETHDAI10000,
+		"Timestamp":                         u.Timestamp,
+		feed.CoinbaseETHUSDDAI5000.String(): u.CoinbaseETHUSDDAI5000,
 	}
 }

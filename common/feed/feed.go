@@ -14,16 +14,14 @@ const (
 	CoinbaseETHBTC3 // CoinbaseETHBTC3
 	BinanceETHBTC3  // BinanceETHBTC3
 
-	CoinbaseETHDAI10000 // CoinbaseETHDAI10000
-	KrakenETHDAI10000   // KarakenETHDAI10000
+	CoinbaseETHUSDDAI5000 // CoinbaseETHUSDDAI5000
 )
 
 var (
 	dummyStruct = struct{}{}
 	// usdFeeds list of supported usd feeds
 	usdFeeds = map[string]struct{}{
-		CoinbaseETHDAI10000.String(): dummyStruct,
-		KrakenETHDAI10000.String():   dummyStruct,
+		CoinbaseETHUSDDAI5000.String(): dummyStruct,
 	}
 
 	// btcFeeds list of supported btc feeds

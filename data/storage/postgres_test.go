@@ -417,12 +417,7 @@ func TestUSDData(t *testing.T) {
 	require.NoError(t, err)
 
 	usdTest := common.USDData{
-		CoinbaseETHDAI10000: common.FeedProviderResponse{
-			Bid:   0.123,
-			Ask:   0.234,
-			Valid: true,
-		},
-		KrakenETHDAI10000: common.FeedProviderResponse{
+		CoinbaseETHUSDDAI5000: common.FeedProviderResponse{
 			Bid:   0.123,
 			Ask:   0.234,
 			Valid: true,
