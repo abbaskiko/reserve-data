@@ -113,6 +113,12 @@ func (rd ReserveData) GetAllPrices(timepoint uint64) (common.AllPriceResponse, e
 	result.Block = data.Block
 	return result, err
 }
+func (rd ReserveData) SetGasThreshold(v common.GasThreshold) error {
+	return rd.globalStorage.SetGasThreshold(v)
+}
+func (rd ReserveData) GetGasThreshold() (common.GasThreshold, error) {
+	return rd.globalStorage.GetGasThreshold()
+}
 
 func (rd ReserveData) GetOnePrice(pairID common.TokenPairID, timepoint uint64) (common.OnePriceResponse, error) {
 	timestamp := common.GetTimestamp()
