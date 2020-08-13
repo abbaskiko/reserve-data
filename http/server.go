@@ -583,8 +583,8 @@ type GsGas struct {
 }
 type gasStatusResult struct {
 	GasStation    GsGas   `json:"eth_gas_station"`
-	HighThreshold float64 `json:"high_threshold"`
-	LowThreshold  float64 `json:"low_threshold"`
+	HighThreshold float64 `json:"high"`
+	LowThreshold  float64 `json:"low"`
 }
 
 func (s *Server) GetGasStatus(c *gin.Context) {
@@ -617,8 +617,8 @@ func (s *Server) GetGasStatus(c *gin.Context) {
 }
 
 func (s *Server) SetGasThreshold(c *gin.Context) {
-	high := c.Query("high")
-	low := c.Query("low")
+	high := c.Request.FormValue("high")
+	low := c.Request.FormValue("low")
 	_, ok := s.Authenticated(c, []string{"high", "low"}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
