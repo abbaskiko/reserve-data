@@ -583,8 +583,8 @@ type GsGas struct {
 }
 type gasStatusResult struct {
 	GasStation    GsGas   `json:"eth_gas_station"`
-	HighThreshold float64 `json:"high_threshold"`
-	LowThreshold  float64 `json:"low_threshold"`
+	HighThreshold float64 `json:"high"`
+	LowThreshold  float64 `json:"low"`
 }
 
 func (s *Server) GetGasStatus(c *gin.Context) {
