@@ -617,8 +617,8 @@ func (s *Server) GetGasStatus(c *gin.Context) {
 }
 
 func (s *Server) SetGasThreshold(c *gin.Context) {
-	high := c.Query("high")
-	low := c.Query("low")
+	high := c.Request.FormValue("high")
+	low := c.Request.FormValue("low")
 	_, ok := s.Authenticated(c, []string{"high", "low"}, []Permission{ConfirmConfPermission})
 	if !ok {
 		return
