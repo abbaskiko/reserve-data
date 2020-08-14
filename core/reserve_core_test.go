@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/settings"
 	"github.com/KyberNetwork/reserve-data/settings/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -72,6 +73,18 @@ func (te testExchange) OpenOrders() ([]common.Order, error) {
 }
 
 type testBlockchain struct {
+}
+
+func (tbc testBlockchain) BuildSendETHTx(opts blockchain.TxOpts, address ethereum.Address) (*types.Transaction, error) {
+	return nil, nil
+}
+
+func (tbc testBlockchain) GetDepositOPAddress() ethereum.Address {
+	return ethereum.Address{}
+}
+
+func (tbc testBlockchain) SignAndBroadcast(tx *types.Transaction, from string) (*types.Transaction, error) {
+	return nil, nil
 }
 
 func (tbc testBlockchain) SetListedToken(listedTokens []ethereum.Address) {}
