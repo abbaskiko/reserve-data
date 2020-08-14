@@ -296,7 +296,7 @@ func (ar ActivityRecord) IsPending() bool {
 	case ActionTrade:
 		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted) &&
 			ar.ExchangeStatus != ExchangeStatusFailed
-	case ActionSetRate:
+	case ActionSetRate, ActionCancelSetRate:
 		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
 			ar.ExchangeStatus != ExchangeStatusFailed
 	}

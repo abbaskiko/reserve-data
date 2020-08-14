@@ -23,4 +23,8 @@ type Blockchain interface {
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
 	blockchain.MinedNoncePicker
+
+	BuildSendETHTx(opts blockchain.TxOpts, to ethereum.Address) (*types.Transaction, error)
+	GetDepositOPAddress() ethereum.Address
+	SignAndBroadcast(tx *types.Transaction, from string) (*types.Transaction, error)
 }

@@ -447,6 +447,70 @@ func requireSameLength(tokens []common.Token, buys, sells, afpMids []*big.Int) e
 	return nil
 }
 
+// CancelSetRate create and send a tx with higher gas price to cancel all pending set rate tx
+func (rc ReserveCore) CancelSetRate() (common.ActivityID, error) {
+	minedNonce, err := rc.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
+	if err != nil {
+		return common.ActivityID{}, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
+	}
+	oldNonce, initPrice, _, err := rc.pendingActionInfo(minedNonce, common.ActionSetRate)
+	if err != nil {
+		rc.l.Errorw("failed to find pending setRate to cancel", "err", err)
+		return common.ActivityID{}, err
+	}
+	_1Gwei := common.GweiToWei(1)
+	gasPrice := big.NewInt(0).Add(initPrice, _1Gwei)
+
+	tx, err := rc.blockchain.BuildSendETHTx(blockchain.TxOpts{
+		Nonce:    oldNonce,
+		Value:    big.NewInt(0),
+		GasPrice: gasPrice,
+	}, rc.blockchain.GetDepositOPAddress())
+	if err != nil {
+		rc.l.Errorw("failed to build cancel setRate tx", "err", err)
+		return common.ActivityID{}, err
+	}
+	btx, err := rc.blockchain.SignAndBroadcast(tx, blockchain.PricingOP)
+	if err != nil {
+		rc.l.Errorw("failed to sign and broadcast tx", "err", err)
+	}
+
+	var (
+		txhex        = ethereum.Hash{}.Hex()
+		txnonce      = "0"
+		txprice      = "0"
+		miningStatus string
+	)
+
+	if err != nil {
+		miningStatus = common.MiningStatusFailed
+	} else {
+		miningStatus = common.MiningStatusSubmitted
+		txhex = btx.Hash().Hex()
+		txnonce = strconv.FormatUint(btx.Nonce(), 10)
+		txprice = btx.GasPrice().Text(10)
+	}
+	uid := timebasedID(txhex)
+	sErr := rc.activityStorage.Record(
+		common.ActionCancelSetRate,
+		uid,
+		"blockchain",
+		map[string]interface{}{}, map[string]interface{}{
+			common.ResultTx:       txhex,
+			common.ResultNonce:    txnonce,
+			common.ResultGasPrice: txprice,
+			common.ResultError:    common.ErrorToString(err),
+		},
+		"",
+		miningStatus,
+		common.GetTimepoint(),
+	)
+	rc.l.Infow("sent cancel setRate tx", "tx", btx.Hash().String(), "gasPrice",
+		gasPrice.String(), "nonce", oldNonce.String())
+
+	return uid, common.CombineActivityStorageErrs(err, sErr)
+}
+
 // GetSetRateResult get set rate result
 func (rc ReserveCore) GetSetRateResult(tokens []common.Token,
 	buys, sells, afpMids []*big.Int,
