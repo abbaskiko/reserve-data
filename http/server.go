@@ -366,6 +366,19 @@ func (s *Server) SetRate(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+func (s *Server) cancelSetRate(c *gin.Context) {
+	_, ok := s.Authenticated(c, []string{}, []Permission{RebalancePermission, ConfirmConfPermission})
+	if !ok {
+		return
+	}
+	id, err := s.core.CancelSetRate()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithField("id", id))
+}
+
 // Trade do trade action to centralize exchanges
 func (s *Server) Trade(c *gin.Context) {
 	postForm, ok := s.Authenticated(c, []string{"base", "quote", "amount", "rate", "type"}, []Permission{RebalancePermission})
@@ -1267,6 +1280,7 @@ func (s *Server) register() {
 		s.r.POST("/withdraw/:exchangeid", s.Withdraw)
 		s.r.POST("/trade/:exchangeid", s.Trade)
 		s.r.POST("/setrates", s.SetRate)
+		s.r.POST("/cancel-setrates", s.cancelSetRate)
 		s.r.GET("/exchangeinfo", s.GetExchangeInfo)
 		s.r.GET("/exchangefees", s.GetFee)
 		s.r.GET("/exchange-min-deposit", s.GetMinDeposit)
