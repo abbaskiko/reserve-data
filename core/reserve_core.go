@@ -453,18 +453,24 @@ func (rc ReserveCore) CancelSetRate() (common.ActivityID, error) {
 	if err != nil {
 		return common.ActivityID{}, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
 	}
-	oldNonce, initPrice, _, err := rc.pendingActionInfo(minedNonce, common.ActionSetRate)
-	if err != nil {
+	oldNonce, initPrice, count, err := rc.pendingActionInfo(minedNonce, common.ActionCancelSetRate)
+	if err != nil || oldNonce == nil { // if there's no pending cancel setrate exist, we use nonce from actionSetRate
+		oldNonce, initPrice, count, err = rc.pendingActionInfo(minedNonce, common.ActionSetRate)
+	}
+	if err != nil || oldNonce == nil {
 		rc.l.Errorw("failed to find pending setRate to cancel", "err", err)
 		return common.ActivityID{}, err
 	}
-	_1Gwei := common.GweiToWei(1)
-	gasPrice := big.NewInt(0).Add(initPrice, _1Gwei)
+	highBoundGasPrice := rc.maxGasPrice()
+	newPrice := calculateNewGasPrice(initPrice, count, highBoundGasPrice)
+
+	rc.l.Infow("cancel setRate tx with info", "newPrice", newPrice.String(), "highBoundGasPrice", highBoundGasPrice,
+		"count", count, "nonce", oldNonce.String())
 
 	tx, err := rc.blockchain.BuildSendETHTx(blockchain.TxOpts{
 		Nonce:    oldNonce,
 		Value:    big.NewInt(0),
-		GasPrice: gasPrice,
+		GasPrice: newPrice,
 	}, rc.blockchain.GetDepositOPAddress())
 	if err != nil {
 		rc.l.Errorw("failed to build cancel setRate tx", "err", err)
@@ -506,7 +512,7 @@ func (rc ReserveCore) CancelSetRate() (common.ActivityID, error) {
 		common.GetTimepoint(),
 	)
 	rc.l.Infow("sent cancel setRate tx", "tx", btx.Hash().String(), "gasPrice",
-		gasPrice.String(), "nonce", oldNonce.String())
+		newPrice.String(), "nonce", oldNonce.String())
 
 	return uid, common.CombineActivityStorageErrs(err, sErr)
 }
