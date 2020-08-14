@@ -638,7 +638,10 @@ func (f *Fetcher) FetchAuthDataFromExchange(
 func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.ActivityRecord, timepoint uint64) map[common.ActivityID]common.ActivityStatus {
 	result := map[common.ActivityID]common.ActivityStatus{}
 	for _, activity := range pendings {
-		if activity.IsExchangePending() && activity.Destination == exchange.ID().String() {
+		if activity.Destination != exchange.ID().String() {
+			continue
+		}
+		if activity.IsExchangePending() {
 			var (
 				err        error
 				status, tx string
@@ -690,8 +693,9 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
 				f.l.Infof("Activity %+v has invalid timestamp. Just ignore it.", activity)
-			} else if activity.Destination == exchange.ID().String() &&
-				activity.ExchangeStatus == common.ExchangeStatusDone &&
+				continue
+			}
+			if activity.ExchangeStatus == common.ExchangeStatusDone &&
 				common.NowInMillis()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 				// the activity is still pending but its exchange status is done and it is stuck there for more than
 				// maxActivityLifeTime. This activity is considered failed.
