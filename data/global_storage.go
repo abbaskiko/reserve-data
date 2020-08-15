@@ -25,4 +25,7 @@ type GlobalStorage interface {
 
 	UpdateFetcherConfiguration(common.FetcherConfiguration) error
 	GetAllFetcherConfiguration() (common.FetcherConfiguration, error)
+
+	SetGasThreshold(v common.GasThreshold) error
+	GetGasThreshold() (common.GasThreshold, error)
 }

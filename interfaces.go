@@ -38,6 +38,9 @@ type Data interface {
 	GetPendingFeedSetting() (common.MapFeedSetting, error)
 	GetFeedSetting() (common.MapFeedSetting, error)
 
+	SetGasThreshold(v common.GasThreshold) error
+	GetGasThreshold() (common.GasThreshold, error)
+
 	GetExchangeStatus() (common.ExchangesStatus, error)
 	UpdateExchangeStatus(exchange string, status bool, timestamp uint64) error
 
@@ -85,4 +88,5 @@ type Core interface {
 
 	// blockchain related action
 	SetRates(tokens []common.Token, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string) (common.ActivityID, error)
+	CancelSetRate() (common.ActivityID, error)
 }

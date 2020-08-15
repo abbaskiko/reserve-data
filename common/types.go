@@ -296,7 +296,7 @@ func (ar ActivityRecord) IsPending() bool {
 	case ActionTrade:
 		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted) &&
 			ar.ExchangeStatus != ExchangeStatusFailed
-	case ActionSetRate:
+	case ActionSetRate, ActionCancelSetRate:
 		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
 			ar.ExchangeStatus != ExchangeStatusFailed
 	}
@@ -755,4 +755,10 @@ type RunnerConfig struct {
 	RateFetchingInterval       time.Duration
 	BlockFetchingInterval      time.Duration
 	GlobalDataFetchingInterval time.Duration
+}
+
+// GasThreshold keep high-low threshold value that we will start and stop set rate
+type GasThreshold struct {
+	High float64 `json:"high"`
+	Low  float64 `json:"low"`
 }
