@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -176,9 +175,8 @@ func configLog(stdoutLog bool) io.Writer {
 }
 
 // CreateBlockchain create new blockchain instance
-func CreateBlockchain(config *configuration.AppState) (bc *blockchain.Blockchain, err error) {
-	bc, err = blockchain.NewBlockchain(config.Blockchain, config.Setting, config.AppConfig.GasConfig,
-		gasstation.New(&http.Client{}, config.AppConfig.GasConfig.GasStationAPIKey))
+func CreateBlockchain(config *configuration.AppState, client *gasstation.Client) (bc *blockchain.Blockchain, err error) {
+	bc, err = blockchain.NewBlockchain(config.Blockchain, config.Setting, config.AppConfig.GasConfig, client)
 
 	if err != nil {
 		panic(err)

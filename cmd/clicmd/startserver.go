@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -38,6 +39,22 @@ var (
 	secretFile  string
 )
 
+func initEthClient(ac config.AppConfig) (*common.EthClient, []*common.EthClient, error) {
+	mainNode, err := common.NewEthClient(ac.Node.Main)
+	if err != nil {
+		return nil, nil, err
+	}
+	bks := make([]*common.EthClient, 0, len(ac.Node.Backup))
+	for _, v := range ac.Node.Backup {
+		bkNode, err := common.NewEthClient(v)
+		if err != nil {
+			return nil, nil, fmt.Errorf("connect backup node %s error %+v", v, err)
+		}
+		bks = append(bks, bkNode)
+	}
+	return mainNode, bks, nil
+}
+
 func serverStart(_ *cobra.Command, _ []string) {
 	numCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(numCPU)
@@ -57,7 +74,20 @@ func serverStart(_ *cobra.Command, _ []string) {
 	if err = config.LoadConfig(secretFile, &ac); err != nil {
 		s.Panicw("failed to load secret file", "err", err, "file", secretFile)
 	}
-	appState := configuration.InitAppState(!noAuthEnable, ac)
+
+	mainNode, backupNodes, err := initEthClient(ac)
+	if err != nil {
+		s.Panicw("failed to init eth client", "err", err)
+	}
+	kyberNetworkProxy, err := blockchain.NewNetworkProxy(ac.ContractAddresses.Proxy,
+		mainNode.Client)
+	if err != nil {
+		log.Panicf("cannot create network proxy client, err %+v", err)
+	}
+	gasPriceLimiter := core.NewNetworkGasPriceLimiter(kyberNetworkProxy, ac.GasConfig.FetchMaxGasCacheSeconds)
+	gasstationClient := gasstation.New(&http.Client{}, ac.GasConfig.GasStationAPIKey)
+
+	appState := configuration.InitAppState(!noAuthEnable, ac, mainNode, backupNodes, gasstationClient, gasPriceLimiter)
 	//backup other log daily
 	backupLog(appState.Archive, "@daily", "core.+\\.log")
 	//backup core.log every 2 hour
@@ -67,21 +97,11 @@ func serverStart(_ *cobra.Command, _ []string) {
 		rData reserve.Data
 		rCore reserve.Core
 		bc    *blockchain.Blockchain
-
-		gasstationClient = gasstation.New(&http.Client{}, ac.GasConfig.GasStationAPIKey)
 	)
-
-	bc, err = CreateBlockchain(appState)
+	bc, err = CreateBlockchain(appState, gasstationClient)
 	if err != nil {
 		log.Panicf("Can not create blockchain: (%s)", err)
 	}
-
-	kyberNetworkProxy, err := blockchain.NewNetworkProxy(appState.AppConfig.ContractAddresses.Proxy,
-		appState.Blockchain.EthClient())
-	if err != nil {
-		log.Panicf("cannot create network proxy client, err %+v", err)
-	}
-	gasPriceLimiter := core.NewNetworkGasPriceLimiter(kyberNetworkProxy, appState.AppConfig.GasConfig.FetchMaxGasCacheSeconds)
 
 	rData, rCore = CreateDataCore(appState, kyberENV, bc, gasPriceLimiter)
 	if !dryRun {
