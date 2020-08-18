@@ -550,6 +550,7 @@ func (s *Server) register() {
 		g.POST("/withdraw", s.Withdraw)
 		g.POST("/trade", s.Trade)
 		g.POST("/setrates", s.SetRate)
+		g.POST("/cancel-setrates", s.cancelSetRate)
 		g.GET("/tradehistory", s.GetTradeHistory)
 
 		g.GET("/timeserver", s.GetTimeServer)

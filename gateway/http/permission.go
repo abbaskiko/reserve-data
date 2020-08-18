@@ -55,7 +55,8 @@ p, %[1]s, /v3/cancel-orders, POST
 p, %[1]s, /v3/cancel-all-orders, POST
 p, %[1]s, /v3/deposit, POST
 p, %[1]s, /v3/withdraw, POST
-p, %[1]s, /v3/trade, POST
+p, %[1]s, /v3/trade, POST,
+p, %[1]s, /v3/cancel-setrates, POST,
 p, %[1]s, /v3/setrates, POST`, key)
 }
 

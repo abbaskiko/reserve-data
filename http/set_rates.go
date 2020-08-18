@@ -52,6 +52,15 @@ func (s *Server) checkDelistedTokens(assets []v3common.Asset, bigBuys, bigSells,
 	return assets, bigBuys, bigSells, bigAfpMid, triggers, nil
 }
 
+func (s *Server) cancelSetRate(c *gin.Context) {
+	id, err := s.core.CancelSetRate()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithField("id", id))
+}
+
 // SetRate is for setting token rate
 func (s *Server) SetRate(c *gin.Context) {
 	var (
