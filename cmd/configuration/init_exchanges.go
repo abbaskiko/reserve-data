@@ -11,6 +11,8 @@ import (
 	bbc "github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
 	"github.com/KyberNetwork/reserve-data/common/config"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
+	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
@@ -34,9 +36,8 @@ func asyncUpdateDepositAddress(ex common.Exchange, tokenID, addr string, wait *s
 	}
 }
 
-func NewExchangePool(
-	ac config.AppConfig,
-	blockchain *bbc.BaseBlockchain, setting *settings.Settings) (*ExchangePool, error) {
+func NewExchangePool(ac config.AppConfig, blockchain *bbc.BaseBlockchain, setting *settings.Settings,
+	gasClient *gasstation.Client, gasLimiter core.GasPriceLimiter) (*ExchangePool, error) {
 	var (
 		stableEx, bin, hExchange common.Exchange
 		err                      error
@@ -96,7 +97,7 @@ func NewExchangePool(
 			intermediatorSigner := bbc.NewEthereumSigner(ac.HoubiKeystorePath, ac.HuobiPassphrase)
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
 			hExchange, err = exchange.NewHuobi(client, blockchain,
-				intermediatorSigner, intermediatorNonce, storage, setting,
+				intermediatorSigner, intermediatorNonce, storage, setting, gasClient, gasLimiter,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("can not create exchange Huobi: (%+v)", err)

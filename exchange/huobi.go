@@ -17,6 +17,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
+	"github.com/KyberNetwork/reserve-data/core"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	huobihttp "github.com/KyberNetwork/reserve-data/exchange/huobi/http"
 	"github.com/KyberNetwork/reserve-data/settings"
@@ -32,6 +34,8 @@ type Huobi struct {
 	storage    HuobiStorage
 	setting    Setting
 	l          *zap.SugaredLogger
+	gasClient  *gasstation.Client
+	gasLimiter core.GasPriceLimiter
 }
 
 func (h *Huobi) TokenAddresses() (map[string]ethereum.Address, error) {
@@ -556,6 +560,25 @@ func (h *Huobi) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTradeHi
 	return h.storage.GetTradeHistory(fromTime, toTime)
 }
 
+// StandardGasPrice return standard gas price
+func (h *Huobi) gasPrice() float64 {
+	gss, err := h.gasClient.ETHGas()
+	if err == nil { // TODO: we can make decision to use gss.Fast to other if some one ask.
+		res := gss.Fast / 10.0
+		h.l.Infow("use gas_price from gasstation", "value", res)
+		return res // gas return by gas station is *10, so we need to divide it here
+	}
+	h.l.Errorw("receive gas price from gasstation failed, failed back to node suggest", "err", err)
+
+	price, err := h.blockchain.RecommendedGasPriceFromNode()
+	if err != nil {
+		return 0
+	}
+	res := common.BigToFloat(price, 9)
+	h.l.Infow("use gas_price from node", "value", res)
+	return res
+}
+
 func (h *Huobi) Send2ndTransaction(amount float64, token common.Token, exchangeAddress ethereum.Address) (*types.Transaction, error) {
 	IAmount := common.FloatToBigInt(amount, token.Decimals)
 	// Check balance, removed from huobi's blockchain object.
@@ -568,10 +591,22 @@ func (h *Huobi) Send2ndTransaction(amount float64, token common.Token, exchangeA
 	// }
 	var tx *types.Transaction
 	var err error
-	if token.ID == "ETH" {
-		tx, err = h.blockchain.SendETHFromAccountToExchange(IAmount, exchangeAddress)
+	recommendedPrice := h.gasPrice()
+	var gasPrice *big.Int
+	highBoundGasPrice, err := h.gasLimiter.MaxGasPrice()
+	if err != nil {
+		highBoundGasPrice = 100.0
+	}
+	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
+		gasPrice = common.GweiToWei(10)
 	} else {
-		tx, err = h.blockchain.SendTokenFromAccountToExchange(IAmount, exchangeAddress, ethereum.HexToAddress(token.Address))
+		gasPrice = common.GweiToWei(recommendedPrice)
+	}
+	h.l.Infof("Send2ndTransaction, gas price: %s", gasPrice.String())
+	if token.ID == "ETH" {
+		tx, err = h.blockchain.SendETHFromAccountToExchange(IAmount, exchangeAddress, gasPrice)
+	} else {
+		tx, err = h.blockchain.SendTokenFromAccountToExchange(IAmount, exchangeAddress, ethereum.HexToAddress(token.Address), gasPrice)
 	}
 	if err != nil {
 		h.l.Warnw("Can not send transaction to exchange", "err", err, "token_id", token.ID)
@@ -816,13 +851,8 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 }
 
 //NewHuobi creates new Huobi exchange instance
-func NewHuobi(
-	interf HuobiInterface,
-	blockchain *blockchain.BaseBlockchain,
-	signer blockchain.Signer,
-	nonce blockchain.NonceCorpus,
-	storage HuobiStorage,
-	setting Setting) (*Huobi, error) {
+func NewHuobi(interf HuobiInterface, blockchain *blockchain.BaseBlockchain, signer blockchain.Signer,
+	nonce blockchain.NonceCorpus, storage HuobiStorage, setting Setting, gasClient *gasstation.Client, gasLimiter core.GasPriceLimiter) (*Huobi, error) {
 
 	bc, err := huobiblockchain.NewBlockchain(blockchain, signer, nonce)
 	if err != nil {
@@ -835,6 +865,8 @@ func NewHuobi(
 		storage:    storage,
 		setting:    setting,
 		l:          zap.S(),
+		gasClient:  gasClient,
+		gasLimiter: gasLimiter,
 	}
 	huobiObj.FetchTradeHistory()
 	huobiServer := huobihttp.NewHuobiHTTPServer(&huobiObj)
