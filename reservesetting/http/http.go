@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	v1common "github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	coreclient "github.com/KyberNetwork/reserve-data/lib/core-client"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
@@ -23,11 +24,12 @@ type Server struct {
 	supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange
 	l                  *zap.SugaredLogger
 	coreClient         *coreclient.Client
+	gasStation         *gasstation.Client
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
 func NewServer(storage storage.Interface, host string, supportedExchanges map[v1common.ExchangeID]v1common.LiveExchange,
-	sentryDSN string, coreClient *coreclient.Client) *Server {
+	sentryDSN string, coreClient *coreclient.Client, gasStation *gasstation.Client) *Server {
 	l := zap.S()
 	r := gin.Default()
 	if sentryDSN != "" {
@@ -46,6 +48,7 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 		supportedExchanges: supportedExchanges,
 		l:                  l,
 		coreClient:         coreClient,
+		gasStation:         gasStation,
 	}
 	g := r.Group("/v3")
 
@@ -117,6 +120,8 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[v1
 
 	g.GET("/rate-trigger-period", server.getRateTriggerPeriod)
 	g.POST("/rate-trigger-period", server.setRateTriggerPeriod)
+	g.GET("/gas-threshold", server.GetGasStatus)
+	g.POST("/gas-threshold", server.SetGasThreshold)
 
 	return server
 }

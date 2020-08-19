@@ -28,6 +28,7 @@ includes:
   - exchanges/rebalance
   - stable-token-and-btc/apis
   - errors
+  - settings/gas_threshold
 
 search: true
 ---
