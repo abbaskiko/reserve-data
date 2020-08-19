@@ -57,13 +57,8 @@ func (s *Server) GetGasStatus(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
-type gasThreshold struct {
-	High float64 `json:"high"`
-	Low  float64 `json:"low"`
-}
-
 func (s *Server) SetGasThreshold(c *gin.Context) {
-	var v gasThreshold
+	var v GasThresholdSetting
 	if err := c.BindJSON(&v); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason("invalid high-low value"))
 		return
@@ -72,7 +67,7 @@ func (s *Server) SetGasThreshold(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithReason("high must > low value"))
 		return
 	}
-	data, err := json.Marshal(GasThresholdSetting{Low: v.Low, High: v.High})
+	data, err := json.Marshal(v)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 		return
