@@ -42,6 +42,7 @@ p, %[1]s, /v3/setting-change-feed-configuration/:id, (PUT)|(DELETE)
 p, %[1]s, /v3/hold-rebalance, POST
 p, %[1]s, /v3/enable-rebalance, POST
 p, %[1]s, /v3/hold-set-rate, POST
+p, %[1]s, /v3/gas-threshold, POST,
 p, %[1]s, /v3/set-exchange-enabled/:id, PUT
 p, %[1]s, /v3/enable-set-rate, POST
 p, %[1]s, /v3/rate-trigger-period, POST`, key)
@@ -55,7 +56,8 @@ p, %[1]s, /v3/cancel-orders, POST
 p, %[1]s, /v3/cancel-all-orders, POST
 p, %[1]s, /v3/deposit, POST
 p, %[1]s, /v3/withdraw, POST
-p, %[1]s, /v3/trade, POST
+p, %[1]s, /v3/trade, POST,
+p, %[1]s, /v3/cancel-setrates, POST,
 p, %[1]s, /v3/setrates, POST`, key)
 }
 

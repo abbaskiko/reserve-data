@@ -250,3 +250,12 @@ trigger | bool | yes |  | mark set rate on asset as trigger
 
 
 <aside class="notice">Rebalance key is required</aside>
+
+## Cancel SetRate
+
+### HTTP Request
+`POST https://gateway.local/v3/cancel-setrates`
+
+Cancel a pending setrate transaction by create a transfer 0 ETH to rate contract itself with higher gas price
+
+<aside class="notice">Rebalance key is required</aside>
