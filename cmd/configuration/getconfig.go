@@ -2,13 +2,14 @@ package configuration
 
 import (
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	ccfg "github.com/KyberNetwork/reserve-data/common/config"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
+	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/settings"
 	settingstorage "github.com/KyberNetwork/reserve-data/settings/storage"
@@ -45,7 +46,8 @@ func newTheWorld(exp ccfg.WorldEndpoints) (*world.TheWorld, error) {
 	return world.NewTheWorld(endpoint, zap.S()), nil
 }
 
-func InitAppState(authEnbl bool, ac ccfg.AppConfig) *AppState {
+func InitAppState(authEnbl bool, ac ccfg.AppConfig, mainNode *common.EthClient, backupNodes []*common.EthClient,
+	client *gasstation.Client, limiter core.GasPriceLimiter) *AppState {
 	l := zap.S()
 	theWorld, err := newTheWorld(ac.WorldEndpoints)
 	if err != nil {
@@ -60,38 +62,21 @@ func InitAppState(authEnbl bool, ac ccfg.AppConfig) *AppState {
 		Pricing: ac.ContractAddresses.Pricing.String(),
 		Proxy:   ac.ContractAddresses.Proxy.String(),
 	})
-	client, err := rpc.Dial(ac.Node.Main)
-	if err != nil {
-		panic(err)
-	}
 
-	mainClient := ethclient.NewClient(client)
 	bkClients := map[string]*ethclient.Client{}
-	bkClients[ac.Node.Main] = mainClient
-	var callClients []*common.EthClient
-	for _, ep := range ac.Node.Backup {
-		client, err := common.NewEthClient(ep)
-		if err != nil {
-			l.Warnw("Cannot connect to RPC,ignore it.", "endpoint", ep, "err", err)
-			continue
-		}
-		callClients = append(callClients, client)
-		bkClients[ep] = client.Client
+	callClient := make([]*common.EthClient, 0, len(backupNodes)+1)
+	callClient = append(callClient, mainNode)
+	for _, n := range backupNodes {
+		callClient = append(callClient, n)
+		bkClients[n.URL] = n.Client
 	}
-	if len(callClients) == 0 {
-		l.Warn("no backup client available")
-	}
-	callClients = append(callClients, &common.EthClient{
-		Client: mainClient,
-		URL:    ac.Node.Main,
-	})
+	bkClients[mainNode.URL] = mainNode.Client
 
 	bc := blockchain.NewBaseBlockchain(
-		client, mainClient, map[string]*blockchain.Operator{},
+		mainNode.RPCClient, mainNode.Client, map[string]*blockchain.Operator{},
 		blockchain.NewBroadcaster(bkClients),
-		blockchain.NewContractCaller(callClients),
+		blockchain.NewContractCaller(callClient),
 	)
-
 	if !authEnbl {
 		l.Warnw("WARNING: No authentication mode")
 	}
@@ -106,6 +91,8 @@ func InitAppState(authEnbl bool, ac ccfg.AppConfig) *AppState {
 		World:                   theWorld,
 		AddressSetting:          addressSetting,
 		AppConfig:               ac,
+		gasClient:               client,
+		gasLimiter:              limiter,
 	}
 
 	l.Infof("configured endpoint: %s, backup: %v", aps.EthereumEndpoint, aps.BackupEthereumEndpoints)
