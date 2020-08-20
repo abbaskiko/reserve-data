@@ -63,4 +63,5 @@ type Core interface {
 
 	// blockchain related action
 	SetRates(tokens []commonv3.Asset, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string, triggers []bool) (common.ActivityID, error)
+	CancelSetRate() (common.ActivityID, error)
 }

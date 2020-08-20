@@ -27,18 +27,20 @@ type Interface interface {
 	UpdateFeedStatus(name string, setRate v3.SetRate, enabled bool) error
 
 	SetGeneralData(data v3.GeneralData) (uint64, error)
+
+	UpdateAssetExchangeWithdrawFee(withdrawFee float64, assetExchangeID uint64) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
 type SettingReader interface {
 	GetAsset(id uint64) (v3.Asset, error)
 	GetAssetBySymbol(symbol string) (v3.Asset, error)
-	GetAssetExchangeBySymbol(exchangeID uint64, symbol string) (v3.Asset, error)
+	GetAssetExchangeBySymbol(exchangeID uint64, symbol string) (v3.AssetExchange, error)
 	GetAssetExchange(id uint64) (v3.AssetExchange, error)
 	GetExchange(id uint64) (v3.Exchange, error)
 	GetExchangeByName(name string) (v3.Exchange, error)
 	GetExchanges() ([]v3.Exchange, error)
-	GetTradingPair(id uint64) (v3.TradingPairSymbols, error)
+	GetTradingPair(id uint64, withDeleted bool) (v3.TradingPairSymbols, error)
 	GetTradingPairs(exchangeID uint64) ([]v3.TradingPairSymbols, error)
 	GetTradingBy(tradingByID uint64) (v3.TradingBy, error)
 	// TODO: check usages of this method to see if it should be replaced with GetDepositAddress(exchangeID, tokenID)

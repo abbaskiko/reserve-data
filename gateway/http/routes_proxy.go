@@ -30,6 +30,9 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.POST("/withdraw", coreProxyMW)
 		g.POST("/trade", coreProxyMW)
 		g.POST("/setrates", coreProxyMW)
+		g.POST("/cancel-setrates", coreProxyMW)
+		g.GET("/gas-threshold", coreProxyMW)
+		g.POST("/gas-threshold", coreProxyMW)
 		g.GET("/tradehistory", coreProxyMW)
 
 		g.GET("/timeserver", coreProxyMW)

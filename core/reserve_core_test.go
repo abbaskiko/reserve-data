@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"math/big"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/blockchain"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
@@ -50,7 +52,24 @@ func (te testExchange) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Or
 	return nil, nil
 }
 
+// GetLiveWithdrawFee ...
+func (te testExchange) GetLiveWithdrawFee(asset string) (float64, error) {
+	return 0.1, nil
+}
+
 type testBlockchain struct {
+}
+
+func (tbc testBlockchain) BuildSendETHTx(opts blockchain.TxOpts, to ethereum.Address) (*types.Transaction, error) {
+	return nil, errors.New("not supported")
+}
+
+func (tbc testBlockchain) GetDepositOPAddress() ethereum.Address {
+	return ethereum.Address{}
+}
+
+func (tbc testBlockchain) SignAndBroadcast(tx *types.Transaction, from string) (*types.Transaction, error) {
+	return nil, errors.New("not supported")
 }
 
 func (tbc testBlockchain) Send(

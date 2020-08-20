@@ -441,6 +441,32 @@ func (ep *Endpoint) GetDepositAddress(asset string) (exchange.Binadepositaddress
 	return result, err
 }
 
+// GetAllAssetDetail all asset detail on binance
+func (ep *Endpoint) GetAllAssetDetail() (map[string]exchange.BinanceAssetDetail, error) {
+	resp := struct {
+		Success     bool                                   `json:"success"`
+		Msg         string                                 `json:"msg"`
+		AssetDetail map[string]exchange.BinanceAssetDetail `json:"assetDetail"`
+	}{}
+	respBody, err := ep.GetResponse(
+		"GET",
+		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/assetDetail.html",
+		map[string]string{},
+		true,
+		common.NowInMillis(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(respBody, &resp); err != nil {
+		return nil, fmt.Errorf("cannot unmarshal asset info data from binance, err = %s", err)
+	}
+	if !resp.Success {
+		return nil, fmt.Errorf("failed to get asset detail, msg: %s", resp.Msg)
+	}
+	return resp.AssetDetail, nil
+}
+
 // GetExchangeInfo return exchange info
 // including base, quote precision for tokens
 // min, max price, min notional
