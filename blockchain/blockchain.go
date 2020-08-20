@@ -3,7 +3,6 @@ package blockchain
 import (
 	"fmt"
 	"math/big"
-	"net/http"
 	"sync"
 	"time"
 
@@ -456,6 +455,7 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
 	sr storage.SettingReader,
 	gasConfig common.GasConfig,
+	gasClient *gasstation.Client,
 ) (*Blockchain, error) {
 	l := zap.S()
 	l.Infow("wrapper address", "address", contractAddressConf.Wrapper.Hex())
@@ -485,7 +485,7 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 		sr:              sr,
 		l:               l,
 		gasConfig:       gasConfig,
-		gsClient:        gasstation.New(&http.Client{}, gasConfig.GasStationAPIKey),
+		gsClient:        gasClient,
 	}, nil
 }
 

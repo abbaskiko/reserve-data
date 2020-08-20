@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/urfave/cli"
@@ -13,9 +15,10 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/core"
-	"github.com/KyberNetwork/reserve-data/http"
+	apphttp "github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/lib/migration"
 )
@@ -33,6 +36,22 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func initEthClient(rc common.RawConfig) (*common.EthClient, []*common.EthClient, error) {
+	mainNode, err := common.NewEthClient(rc.Nodes.Main)
+	if err != nil {
+		return nil, nil, err
+	}
+	bks := make([]*common.EthClient, 0, len(rc.Nodes.Backup))
+	for _, v := range rc.Nodes.Backup {
+		bkNode, err := common.NewEthClient(v)
+		if err != nil {
+			return nil, nil, fmt.Errorf("connect backup node %s error %+v", v, err)
+		}
+		bks = append(bks, bkNode)
+	}
+	return mainNode, bks, nil
 }
 
 func run(c *cli.Context) error {
@@ -63,7 +82,19 @@ func run(c *cli.Context) error {
 
 	rcf.MigrationPath = migration.NewMigrationPathFromContext(c)
 
-	conf, err := configuration.NewConfigurationFromContext(c, rcf, l)
+	mainNode, backupNodes, err := initEthClient(rcf)
+	if err != nil {
+		l.Panicw("failed to init eth client", "err", err)
+	}
+	kyberNetworkProxy, err := blockchain.NewNetworkProxy(rcf.ContractAddresses.Proxy,
+		mainNode.Client)
+	if err != nil {
+		log.Panicf("cannot create network proxy client, err %+v", err)
+	}
+	gasPriceLimiter := core.NewNetworkGasPriceLimiter(kyberNetworkProxy, rcf.GasConfig.FetchMaxGasCacheSeconds)
+	gasstationClient := gasstation.New(&http.Client{}, rcf.GasConfig.GasStationAPIKey)
+
+	conf, err := configuration.NewConfigurationFromContext(c, rcf, l, mainNode, backupNodes, gasstationClient, gasPriceLimiter)
 	if err != nil {
 		return err
 	}
@@ -75,12 +106,6 @@ func run(c *cli.Context) error {
 	}
 
 	dryRun := configuration.NewDryRunFromContext(c)
-
-	kyberNetworkProxy, err := blockchain.NewNetworkProxy(conf.ContractAddresses.Proxy, bc.EthClient())
-	if err != nil {
-		log.Panicf("cannot create network proxy client, err %+v", err)
-	}
-	gasPriceLimiter := core.NewNetworkGasPriceLimiter(kyberNetworkProxy, conf.GasConfig.FetchMaxGasCacheSeconds)
 
 	rData, rCore := configuration.CreateDataCore(conf, dpl, bc, l, gasPriceLimiter)
 	if !dryRun {
@@ -101,7 +126,7 @@ func run(c *cli.Context) error {
 	}
 
 	host := rcf.HTTPAPIAddr
-	server := http.NewHTTPServer(
+	server := apphttp.NewHTTPServer(
 		rData, rCore,
 		host,
 		dpl,

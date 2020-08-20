@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
@@ -110,6 +111,7 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 		config.ContractAddresses,
 		config.SettingStorage,
 		config.GasConfig,
+		config.gasClient,
 	)
 	if err != nil {
 		l.Errorw("failed to create block chain", "err", err)
@@ -163,7 +165,9 @@ func CreateDataCore(config *Config,
 }
 
 // NewConfigurationFromContext returns the Configuration object from cli context.
-func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.SugaredLogger) (*Config, error) {
+func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.SugaredLogger,
+	mainNode *common.EthClient, backupNodes []*common.EthClient,
+	client *gasstation.Client, limiter core.GasPriceLimiter) (*Config, error) {
 
 	bi := binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL)
 	hi := huobi.NewRealInterface(rcf.ExchangeEndpoints.Houbi.URL)
@@ -199,6 +203,10 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 		contractAddressConf,
 		sr,
 		rcf,
+		mainNode,
+		backupNodes,
+		client,
+		limiter,
 	)
 	if err != nil {
 		return nil, err

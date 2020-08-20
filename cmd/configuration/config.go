@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/datapruner"
@@ -47,6 +48,9 @@ type Config struct {
 	ContractAddresses *common.ContractAddressConfiguration
 
 	GasConfig common.GasConfig
+
+	gasClient  *gasstation.Client
+	gasLimiter core.GasPriceLimiter
 }
 
 // AddCoreConfig add config for core
@@ -105,6 +109,8 @@ func (c *Config) AddCoreConfig(cliCtx *cli.Context, rcf common.RawConfig, bi bin
 		bi,
 		hi,
 		settingStore,
+		c.gasClient,
+		c.gasLimiter,
 	)
 	if err != nil {
 		l.Errorw("Can not create exchangePool", "err", err)

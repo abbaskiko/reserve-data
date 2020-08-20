@@ -15,6 +15,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	blockchaincommon "github.com/KyberNetwork/reserve-data/common/blockchain"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
+	"github.com/KyberNetwork/reserve-data/common/gasstation"
+	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
@@ -149,6 +151,8 @@ func NewExchangePool(
 	bi binance.Interface,
 	hi huobi.Interface,
 	assetStorage storage.Interface,
+	gasClient *gasstation.Client,
+	gasLimiter core.GasPriceLimiter,
 ) (*ExchangePool, error) {
 	exchanges := map[common.ExchangeID]interface{}{}
 	var (
@@ -210,6 +214,8 @@ func NewExchangePool(
 				intermediatorNonce,
 				huobistorage,
 				assetStorage,
+				gasClient,
+				gasLimiter,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("cannot create exchange Huobi: (%s)", err.Error())
