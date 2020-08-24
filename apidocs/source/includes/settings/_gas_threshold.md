@@ -43,7 +43,7 @@ curl -X GET "https://gateway.local/v3/gas-threshold"
 {
   "success": true,
   "data": {
-    "eth-gas-station": {
+    "eth_gas_station": {
       "fast": 100,
       "standard": 80,
       "low": 50
