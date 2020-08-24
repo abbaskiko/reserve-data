@@ -136,8 +136,6 @@ func (ep *Endpoint) GetDepthOnePair(
 		return respData, err
 	}
 	err = json.Unmarshal(respBody, &respData)
-	ep.l.Infow("data huobi", "pair", strings.ToLower(baseID)+strings.ToLower(quoteID), "value", respData)
-	panic("hi")
 	return respData, err
 }
 
