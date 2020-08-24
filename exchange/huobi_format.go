@@ -11,6 +11,19 @@ type HuobiDepth struct {
 	Reason string `json:"err-msg"`
 }
 
+type huobiPrice struct {
+	Price float64 `json:"price"`
+	Size  float64 `json:"size"`
+}
+
+// HuobiMarketDataResp huobi's market data
+type HuobiMarketDataResp struct {
+	Bids      []huobiPrice `json:"bids"`
+	Asks      []huobiPrice `json:"asks"`
+	TimeStamp uint64       `json:"timestamp"`
+	Error     string       `json:"error"`
+}
+
 // HuobiExchangeInfo exchange info
 type HuobiExchangeInfo struct {
 	Status string `json:"status"`

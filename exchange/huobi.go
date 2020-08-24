@@ -202,28 +202,25 @@ func (h *Huobi) FetchOnePairData(
 		result.Valid = false
 		result.Error = err.Error()
 	} else {
-		if respData.Status != "ok" {
+		if respData.Error != "" {
 			result.Valid = false
+			result.Error = respData.Error
 		} else {
-			for _, buy := range respData.Tick.Bids {
-				quantity := buy[1]
-				rate := buy[0]
+			for _, buy := range respData.Bids {
 				result.Bids = append(
 					result.Bids,
 					common.NewPriceEntry(
-						quantity,
-						rate,
+						buy.Size,
+						buy.Price,
 					),
 				)
 			}
-			for _, sell := range respData.Tick.Asks {
-				quantity := sell[1]
-				rate := sell[0]
+			for _, sell := range respData.Asks {
 				result.Asks = append(
 					result.Asks,
 					common.NewPriceEntry(
-						quantity,
-						rate,
+						sell.Size,
+						sell.Price,
 					),
 				)
 			}

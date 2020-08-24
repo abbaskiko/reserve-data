@@ -10,7 +10,7 @@ import (
 
 // HuobiInterface contains the methods to interact with Huobi centralized exchange.
 type HuobiInterface interface {
-	GetDepthOnePair(baseID, quoteID string) (HuobiDepth, error)
+	GetDepthOnePair(baseID, quoteID string) (HuobiMarketDataResp, error)
 
 	GetInfo() (HuobiInfo, error)
 
