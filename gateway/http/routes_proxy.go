@@ -31,8 +31,6 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.POST("/trade", coreProxyMW)
 		g.POST("/setrates", coreProxyMW)
 		g.POST("/cancel-setrates", coreProxyMW)
-		g.GET("/gas-threshold", coreProxyMW)
-		g.POST("/gas-threshold", coreProxyMW)
 		g.GET("/tradehistory", coreProxyMW)
 
 		g.GET("/timeserver", coreProxyMW)
@@ -122,6 +120,9 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 
 		g.GET("/rate-trigger-period", settingProxyMW)
 		g.POST("/rate-trigger-period", settingProxyMW)
+
+		g.GET("/gas-threshold", settingProxyMW)
+		g.POST("/gas-threshold", settingProxyMW)
 
 		return nil
 	}

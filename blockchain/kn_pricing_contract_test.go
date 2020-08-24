@@ -47,7 +47,7 @@ func TestGeneratedGetListedTokens(t *testing.T) {
 		Proxy:   ethereum.Address{},
 	}
 
-	blockchain, err := NewBlockchain(baseBlockchain, &contracts, nil, common.GasConfig{})
+	blockchain, err := NewBlockchain(baseBlockchain, &contracts, nil, common.GasConfig{}, nil)
 	require.NoError(t, err)
 
 	opts := blockchain.GetCallOpts(0)

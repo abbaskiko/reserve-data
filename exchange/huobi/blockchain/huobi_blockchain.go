@@ -18,8 +18,8 @@ func (b *Blockchain) GetIntermediatorAddr() ethereum.Address {
 	return b.OperatorAddresses()[HuobiOP]
 }
 
-func (b *Blockchain) SendTokenFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address, tokenAddress ethereum.Address) (*types.Transaction, error) {
-	opts, err := b.GetTxOpts(HuobiOP, nil, nil, nil)
+func (b *Blockchain) SendTokenFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address, tokenAddress ethereum.Address, gasPrice *big.Int) (*types.Transaction, error) {
+	opts, err := b.GetTxOpts(HuobiOP, nil, gasPrice, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +30,8 @@ func (b *Blockchain) SendTokenFromAccountToExchange(amount *big.Int, exchangeAdd
 	return b.SignAndBroadcast(tx, HuobiOP)
 }
 
-func (b *Blockchain) SendETHFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address) (*types.Transaction, error) {
-	opts, err := b.GetTxOpts(HuobiOP, nil, nil, amount)
+func (b *Blockchain) SendETHFromAccountToExchange(amount *big.Int, exchangeAddress ethereum.Address, gasPrice *big.Int) (*types.Transaction, error) {
+	opts, err := b.GetTxOpts(HuobiOP, nil, gasPrice, amount)
 	if err != nil {
 		return nil, err
 	}
