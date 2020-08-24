@@ -132,7 +132,7 @@ func run(c *cli.Context) error {
 
 	// dummy signer as live infos does not need to sign
 	huobiSigner := huobi.NewSigner("", "")
-	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi, httpClient)
+	huobiEndpoint := huobi.NewHuobiEndpoint(huobiSigner, hi, httpClient, "")
 	// TODO: binance exchange here must be use public function only.
 	liveExchanges, err := getLiveExchanges(enableExchanges, binanceEndpoint, huobiEndpoint, c.Duration(intervalUpdateWithdrawFeeLiveFlag))
 	if err != nil {
