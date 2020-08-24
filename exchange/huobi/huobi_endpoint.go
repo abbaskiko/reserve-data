@@ -23,10 +23,11 @@ import (
 
 //Endpoint endpoint object
 type Endpoint struct {
-	signer Signer
-	interf Interface
-	l      *zap.SugaredLogger
-	client *http.Client
+	signer            Signer
+	interf            Interface
+	l                 *zap.SugaredLogger
+	client            *http.Client
+	marketDataBaseURL string
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool) {
@@ -124,18 +125,13 @@ func (ep *Endpoint) GetAccounts() (exchange.HuobiAccounts, error) {
 
 // GetDepthOnePair get order book for one pair of token
 func (ep *Endpoint) GetDepthOnePair(
-	baseID, quoteID string) (exchange.HuobiDepth, error) {
-
+	baseID, quoteID string) (exchange.HuobiMarketDataResp, error) {
 	respBody, err := ep.GetResponse(
-		"GET", ep.interf.PublicEndpoint()+"/market/depth",
-		map[string]string{
-			"symbol": fmt.Sprintf("%s%s", strings.ToLower(baseID), strings.ToLower(quoteID)),
-			"type":   "step0",
-		},
+		"GET", fmt.Sprintf("%s/huobi/%s-%s", ep.marketDataBaseURL, strings.ToLower(baseID), strings.ToLower(quoteID)),
+		map[string]string{},
 		false,
 	)
-
-	respData := exchange.HuobiDepth{}
+	respData := exchange.HuobiMarketDataResp{}
 	if err != nil {
 		return respData, err
 	}
@@ -444,6 +440,12 @@ func (ep *Endpoint) GetAllAssetDetail() ([]exchange.HuobiAssetDetail, error) {
 }
 
 //NewHuobiEndpoint return new endpoint instance
-func NewHuobiEndpoint(signer Signer, interf Interface, client *http.Client) *Endpoint {
-	return &Endpoint{signer: signer, interf: interf, l: zap.S(), client: client}
+func NewHuobiEndpoint(signer Signer, interf Interface, client *http.Client, marketDataBaseURL string) *Endpoint {
+	return &Endpoint{
+		signer:            signer,
+		interf:            interf,
+		l:                 zap.S(),
+		client:            client,
+		marketDataBaseURL: marketDataBaseURL,
+	}
 }

@@ -172,6 +172,7 @@ func NewExchangePool(
 		return nil, fmt.Errorf("can not init postgres storage: (%s)", err.Error())
 	}
 	httpClient := &http.Client{Transport: exchange.NewTransportRateLimiter(&http.Client{Timeout: time.Second * 30})}
+	marketDataBaseURL := strings.TrimSuffix(rcf.MarketDataBaseURL, "/")
 	for _, exparam := range enabledExchanges {
 		switch exparam {
 		case common.Binance, common.Binance2:
@@ -181,7 +182,6 @@ func NewExchangePool(
 				accountID = rcf.BinanceAccount2ID
 				binanceSigner = binance.NewSigner(rcf.Binance2Key, rcf.Binance2Secret)
 			}
-			marketDataBaseURL := strings.TrimSuffix(rcf.MarketDataBaseURL, "/")
 			accountDataBaseURL := strings.TrimSuffix(rcf.AccountDataBaseURL, "/")
 			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient, exparam,
 				marketDataBaseURL, accountDataBaseURL, accountID)
@@ -200,7 +200,7 @@ func NewExchangePool(
 			exchanges[bin.ID()] = bin
 		case common.Huobi:
 			huobiSigner := huobi.NewSigner(rcf.HoubiKey, rcf.HoubiSecret)
-			he = huobi.NewHuobiEndpoint(huobiSigner, hi, httpClient)
+			he = huobi.NewHuobiEndpoint(huobiSigner, hi, httpClient, marketDataBaseURL)
 			huobistorage, err := huobiStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("cannot create Binance storage: (%s)", err.Error())

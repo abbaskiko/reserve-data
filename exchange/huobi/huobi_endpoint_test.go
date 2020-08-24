@@ -19,7 +19,7 @@ func TestGetDepositAddress(t *testing.T) {
 	secret := "" // enter only once for test
 	signer := NewSigner(key, secret)
 	interf := NewRealInterface(huobiEndpoint)
-	ep := NewHuobiEndpoint(signer, interf, &http.Client{Timeout: time.Second * 30})
+	ep := NewHuobiEndpoint(signer, interf, &http.Client{Timeout: time.Second * 30}, "")
 
 	depositAddress, err := ep.GetDepositAddress("ETH")
 	assert.NoError(t, err)
