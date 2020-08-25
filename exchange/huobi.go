@@ -462,16 +462,24 @@ func (h *Huobi) FindTx2InPending(id common.ActivityID) (common.TXEntry, bool) {
 	return common.TXEntry{}, false
 }
 
+const (
+	txNotFound = iota
+	txFoundIntermediate
+	txFoundPendingIntermediate
+)
+
 //FindTx2 : find Tx2 Record associates with activity ID, return
-func (h *Huobi) FindTx2(id common.ActivityID) (tx2 common.TXEntry, found bool) {
-	found = true
+func (h *Huobi) FindTx2(id common.ActivityID) (tx2 common.TXEntry, foundAt int) {
 	//first look it up in permanent bucket
 	tx2, err := h.storage.GetIntermedatorTx(id)
-	if err != nil {
-		//couldn't look for it in permanent bucket, look for it in pending bucket
-		tx2, found = h.FindTx2InPending(id)
+	if err == nil {
+		return tx2, txFoundIntermediate
 	}
-	return tx2, found
+	//couldn't look for it in permanent bucket, look for it in pending bucket
+	if tx2, found := h.FindTx2InPending(id); found {
+		return tx2, txFoundPendingIntermediate
+	}
+	return common.TXEntry{}, txNotFound
 }
 
 func (h *Huobi) exchangeDepositStatus(id common.ActivityID, tx2Entry common.TXEntry, assetID rtypes.AssetID, sentAmount float64) (string, error) {
@@ -572,12 +580,18 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID rtype
 
 // DepositStatus return status of a deposit
 func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID rtypes.AssetID, sentAmount float64, timepoint uint64) (string, error) {
-	var data common.TXEntry
-	tx2Entry, found := h.FindTx2(id)
-	//if not found, meaning there is no tx2 yet, process 1st Tx and send 2nd Tx.
-	if !found {
+
+	tx2Entry, foundAt := h.FindTx2(id)
+	switch foundAt {
+	case txFoundIntermediate:
+		return tx2Entry.ExchangeStatus, nil
+	case txFoundPendingIntermediate:
+		break
+	case txNotFound:
+		//if not found, meaning there is no tx2 yet, process 1st Tx and send 2nd Tx.
 		return h.process1stTx(id, tx1Hash, assetID, sentAmount)
 	}
+	var data common.TXEntry
 	// if there is tx2Entry, check it blockchain status and handle the status accordingly:
 	miningStatus, _, err := h.blockchain.TxStatus(ethereum.HexToHash(tx2Entry.Hash))
 	if err != nil {
