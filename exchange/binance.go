@@ -205,7 +205,7 @@ func (bn *Binance) FetchOnePairData(
 }
 
 // FetchPriceData fetch price data for all token that we supported
-func (bn *Binance) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
+func (bn *Binance) FetchPriceData(timepoint uint64) (map[rtypes.TradingPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := bn.TokenPairs()
@@ -225,10 +225,10 @@ func (bn *Binance) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangeP
 		wait.Wait()
 		i = x
 	}
-	result := map[uint64]common.ExchangePrice{}
+	result := map[rtypes.TradingPairID]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {
 		//if there is conversion error, continue to next key,val
-		tokenPairID, ok := key.(uint64)
+		tokenPairID, ok := key.(rtypes.TradingPairID)
 		if !ok {
 			err = fmt.Errorf("key (%v) cannot be asserted to TokenPairID", key)
 			return false
@@ -374,7 +374,7 @@ func (bn *Binance) GetTradeHistory(fromTime, toTime uint64) (common.ExchangeTrad
 }
 
 // DepositStatus return status of a deposit on binance
-func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID uint64, amount float64, timepoint uint64) (string, error) {
+func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID rtypes.AssetID, amount float64, timepoint uint64) (string, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
 	deposits, err := bn.interf.DepositHistory(startTime, endTime)
@@ -395,7 +395,7 @@ func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID ui
 }
 
 // WithdrawStatus return status of a withdrawal on binance
-func (bn *Binance) WithdrawStatus(id string, assetID uint64, amount float64, timepoint uint64) (string, string, float64, error) {
+func (bn *Binance) WithdrawStatus(id string, assetID rtypes.AssetID, amount float64, timepoint uint64) (string, string, float64, error) {
 	startTime := timepoint - 86400000
 	endTime := timepoint
 	withdraws, err := bn.interf.WithdrawHistory(startTime, endTime)
