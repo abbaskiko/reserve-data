@@ -231,7 +231,7 @@ func (h *Huobi) FetchOnePairData(
 }
 
 // FetchPriceData return price data from Huobi
-func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePrice, error) {
+func (h *Huobi) FetchPriceData(timepoint uint64) (map[rtypes.TradingPairID]common.ExchangePrice, error) {
 	wait := sync.WaitGroup{}
 	data := sync.Map{}
 	pairs, err := h.TokenPairs()
@@ -243,9 +243,9 @@ func (h *Huobi) FetchPriceData(timepoint uint64) (map[uint64]common.ExchangePric
 		go h.FetchOnePairData(&wait, pair, &data, timepoint)
 	}
 	wait.Wait()
-	result := map[uint64]common.ExchangePrice{}
+	result := map[rtypes.TradingPairID]common.ExchangePrice{}
 	data.Range(func(key, value interface{}) bool {
-		tokenPairID, ok := key.(uint64)
+		tokenPairID, ok := key.(rtypes.TradingPairID)
 		//if there is conversion error, continue to next key,val
 		if !ok {
 			err = fmt.Errorf("key (%v) cannot be asserted to TokenPairID", key)
@@ -640,7 +640,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID rtyp
 
 //WithdrawStatus return withdraw status from huobi
 func (h *Huobi) WithdrawStatus(
-	id string, assetID uint64, amount float64, timepoint uint64) (string, string, float64, error) {
+	id string, assetID rtypes.AssetID, amount float64, timepoint uint64) (string, string, float64, error) {
 	withdrawID, _ := strconv.ParseUint(id, 10, 64)
 	assets, err := h.sr.GetAssets()
 	if err != nil {
