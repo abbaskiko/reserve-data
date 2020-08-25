@@ -28,10 +28,11 @@ type HuobiMarketDataResp struct {
 type HuobiExchangeInfo struct {
 	Status string `json:"status"`
 	Data   []struct {
-		Base            string `json:"base-currency"`
-		Quote           string `json:"quote-currency"`
-		PricePrecision  int    `json:"price-precision"`
-		AmountPrecision int    `json:"amount-precision"`
+		Base            string  `json:"base-currency"`
+		Quote           string  `json:"quote-currency"`
+		PricePrecision  int     `json:"price-precision"`
+		AmountPrecision int     `json:"amount-precision"`
+		MinOrderValue   float64 `json:"min-order-value"`
 	} `json:"data"`
 	Reason string `json:"err-msg"`
 }
