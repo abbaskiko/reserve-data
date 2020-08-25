@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/postgres"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 )
 
 // postgresStorage implements huobi storage in postgres
@@ -65,7 +66,7 @@ func (s *postgresStorage) initStmts() error {
 	// pending stmts
 	s.stmts.storePendingTxStmt, err = s.db.Preparex(`INSERT INTO "huobi_pending_intermediate_tx"
 		(timepoint, eid, data)
-		VALUES ($1, $2, $3);`)
+		VALUES ($1, $2, $3) ON CONFLICT(timepoint,eid) DO UPDATE SET data=EXCLUDED.data`)
 	if err != nil {
 		return err
 	}
@@ -88,12 +89,12 @@ func (s *postgresStorage) initStmts() error {
 }
 
 type exchangeTradeHistoryDB struct {
-	PairID  uint64  `db:"pair_id"`
-	TradeID string  `db:"trade_id"`
-	Price   float64 `db:"price"`
-	Qty     float64 `db:"qty"`
-	Type    string  `db:"type"`
-	Time    uint64  `db:"time"`
+	PairID  rtypes.TradingPairID `db:"pair_id"`
+	TradeID string               `db:"trade_id"`
+	Price   float64              `db:"price"`
+	Qty     float64              `db:"qty"`
+	Type    string               `db:"type"`
+	Time    uint64               `db:"time"`
 }
 
 type TxDB struct {
