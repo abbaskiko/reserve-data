@@ -66,7 +66,7 @@ func (s *postgresStorage) initStmts() error {
 	// pending stmts
 	s.stmts.storePendingTxStmt, err = s.db.Preparex(`INSERT INTO "huobi_pending_intermediate_tx"
 		(timepoint, eid, data)
-		VALUES ($1, $2, $3);`)
+		VALUES ($1, $2, $3) ON CONFLICT(timepoint,eid) DO UPDATE SET data=EXCLUDED.data`)
 	if err != nil {
 		return err
 	}
