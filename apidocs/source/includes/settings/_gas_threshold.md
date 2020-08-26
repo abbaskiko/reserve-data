@@ -2,13 +2,15 @@
 
 ## Set GasThreshold
 
+the request must be application/json format.
+
 ``` shell
 curl -X POST "https://gateway.local/v3/gas-threshold" \
 -H 'Content-Type: application/json' \
 -d '{
-          "high": 10.0
-		  "low": 5.345
-	  }'
+    "high": 10.0,
+    "low": 5.345
+    }'
 ```
 
 > sample response
@@ -28,9 +30,9 @@ Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 high | float64 | yes |  | the high value
 low | float64 | yes |  | the low value
-<aside class="notice">Rebalance key is required</aside>
+<aside class="notice">Confirm key is required</aside>
 
-## Get rate trigger period
+## Get GasThreshold
 
 
 ```shell
@@ -56,5 +58,5 @@ curl -X GET "https://gateway.local/v3/gas-threshold"
 
 ### HTTP Request
 
-`GET https://gateway.local/v3/rate-trigger-period`
+`GET https://gateway.local/v3/gas-threshold`
 <aside class="notice">All keys are accepted</aside>

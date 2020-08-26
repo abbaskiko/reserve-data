@@ -113,7 +113,7 @@ func (hl *HuobiLive) getPrecisionLimitFromSymbols(pair commonv3.TradingPairSymbo
 		if symbolName == pairName {
 			result.Precision.Amount = symbol.AmountPrecision
 			result.Precision.Price = symbol.PricePrecision
-			result.MinNotional = 0.02
+			result.MinNotional = symbol.MinOrderValue
 			return result, true
 		}
 	}
