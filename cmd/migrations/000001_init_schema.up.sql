@@ -583,7 +583,7 @@ BEGIN
     FROM "trading_pairs"
              INNER JOIN "asset_exchanges"
                         ON (trading_pairs.base_id = asset_exchanges.asset_id OR
-                            trading_pairs.base_id = asset_exchanges.asset_id)
+                            trading_pairs.quote_id = asset_exchanges.asset_id)
                             AND trading_pairs.exchange_id = asset_exchanges.exchange_id
     WHERE asset_exchanges.id = _asset_exchange_id;
     IF FOUND THEN
