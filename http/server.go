@@ -1365,6 +1365,8 @@ func (s *Server) register() {
 		s.r.GET("/version", s.getVersion)
 		s.r.GET("/gas-threshold", s.GetGasStatus)
 		s.r.POST("/gas-threshold", s.SetGasThreshold)
+		s.r.GET("/gas-source", s.GetPreferGasSource)
+		s.r.POST("/gas-source", s.SetPreferGasSource)
 	}
 }
 
