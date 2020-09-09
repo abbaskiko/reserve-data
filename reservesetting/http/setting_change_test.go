@@ -88,7 +88,7 @@ func createSampleAsset(store *postgres.Storage) (rtypes.AssetID, error) {
 			RebalanceThreshold: 1.0,
 			Reserve:            1.0,
 			Total:              100.0,
-		}, nil, nil, 0.1, 0.2)
+		}, nil, nil, 0.1, 0.2, 10000)
 	if err != nil {
 		return 0, err
 	}
@@ -255,6 +255,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							},
 							NormalUpdatePerPeriod: 0.123,
 							MaxImbalanceRatio:     0.456,
+							OrderDurationMillis:   15000,
 						},
 					},
 				},
@@ -276,6 +277,40 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 				assert.Equal(t, expectedAskSpread, asset.StableParam.AskSpread)
 				require.Equal(t, 0.123, asset.NormalUpdatePerPeriod)
 				require.Equal(t, 0.456, asset.MaxImbalanceRatio)
+				require.Equal(t, uint64(15000), asset.OrderDurationMillis)
+			},
+		},
+		{
+			msg:      "update asset",
+			endpoint: settingChangePath,
+			method:   http.MethodPost,
+			data: &common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:               assetID,
+							NormalUpdatePerPeriod: common.FloatPointer(0.111),
+							MaxImbalanceRatio:     common.FloatPointer(0.222),
+							OrderDurationMillis:   common.Uint64Pointer(15666),
+						},
+					},
+				},
+				Message: "update asset",
+			},
+			assert: httputil.ExpectSuccess,
+		},
+		{
+			msg:      "confirm update setting change",
+			endpoint: fmt.Sprint(settingChangePath, "/", 3),
+			method:   http.MethodPut,
+			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				httputil.ExpectSuccess(t, resp)
+				asset, err := s.GetAsset(assetID)
+				require.NoError(t, err)
+				require.Equal(t, 0.111, asset.NormalUpdatePerPeriod)
+				require.Equal(t, 0.222, asset.MaxImbalanceRatio)
+				require.Equal(t, uint64(15666), asset.OrderDurationMillis)
 			},
 		},
 		{
@@ -349,6 +384,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 							},
 							NormalUpdatePerPeriod: 0.123,
 							MaxImbalanceRatio:     0.456,
+							OrderDurationMillis:   10000,
 						},
 					},
 				},
@@ -358,7 +394,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 		},
 		{
 			msg:      "confirm setting change with feed weight",
-			endpoint: fmt.Sprint(settingChangePath, "/", 3),
+			endpoint: fmt.Sprint(settingChangePath, "/", 4),
 			method:   http.MethodPut,
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				httputil.ExpectSuccess(t, resp)
@@ -394,7 +430,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 		},
 		{
 			msg:      "confirm update change with feed weight",
-			endpoint: fmt.Sprint(settingChangePath, "/", 4),
+			endpoint: fmt.Sprint(settingChangePath, "/", 5),
 			method:   http.MethodPut,
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				httputil.ExpectSuccess(t, resp)
@@ -427,7 +463,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 		},
 		{
 			msg:      "confirm update change with ignoring feed weight",
-			endpoint: fmt.Sprint(settingChangePath, "/", 5),
+			endpoint: fmt.Sprint(settingChangePath, "/", 6),
 			method:   http.MethodPut,
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				httputil.ExpectSuccess(t, resp)
@@ -461,7 +497,7 @@ func TestServer_SettingChangeBasic(t *testing.T) {
 		},
 		{
 			msg:      "confirm update change remove feed weight",
-			endpoint: fmt.Sprint(settingChangePath, "/", 6),
+			endpoint: fmt.Sprint(settingChangePath, "/", 7),
 			method:   http.MethodPut,
 			assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				httputil.ExpectSuccess(t, resp)

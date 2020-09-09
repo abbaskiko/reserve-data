@@ -152,6 +152,7 @@ type Asset struct {
 	FeedWeight            *FeedWeight         `json:"feed_weight,omitempty"`
 	NormalUpdatePerPeriod float64             `json:"normal_update_per_period"`
 	MaxImbalanceRatio     float64             `json:"max_imbalance_ratio"`
+	OrderDurationMillis   uint64              `json:"order_duration_millis"`
 }
 
 // TODO: write custom marshal json for created/updated fields
@@ -202,6 +203,7 @@ type CreateAssetEntry struct {
 	FeedWeight            *FeedWeight         `json:"feed_weight,omitempty"`
 	NormalUpdatePerPeriod float64             `json:"normal_update_per_period"`
 	MaxImbalanceRatio     float64             `json:"max_imbalance_ratio"`
+	OrderDurationMillis   uint64              `json:"order_duration_millis"`
 }
 
 // UpdateAssetEntry entry object for update asset
@@ -224,6 +226,7 @@ type UpdateAssetEntry struct {
 	FeedWeight            *FeedWeight         `json:"feed_weight,omitempty"`
 	NormalUpdatePerPeriod *float64            `json:"normal_update_per_period"`
 	MaxImbalanceRatio     *float64            `json:"max_imbalance_ratio"`
+	OrderDurationMillis   *uint64             `json:"order_duration_millis"`
 }
 
 type UpdateExchangeEntry struct {

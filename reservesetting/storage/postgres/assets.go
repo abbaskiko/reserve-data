@@ -65,6 +65,7 @@ type createAssetParams struct {
 
 	NormalUpdatePerPeriod float64 `db:"normal_update_per_period"`
 	MaxImbalanceRatio     float64 `db:"max_imbalance_ratio"`
+	OrderDurationMillis   uint64  `db:"order_duration_millis"`
 }
 
 // CreateAsset create a new asset
@@ -81,7 +82,7 @@ func (s *Storage) CreateAsset(
 	target *common.AssetTarget,
 	stableParam *common.StableParam,
 	feedWeight *common.FeedWeight,
-	normalUpdatePerPeriod, maxImbalanceRatio float64,
+	normalUpdatePerPeriod, maxImbalanceRatio float64, orderDurationMillis uint64,
 ) (rtypes.AssetID, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -90,7 +91,8 @@ func (s *Storage) CreateAsset(
 	defer pgutil.RollbackUnlessCommitted(tx)
 
 	id, err := s.createAsset(tx, symbol, name, address, decimals, transferable,
-		setRate, rebalance, isQuote, isEnabled, pwi, rb, exchanges, target, stableParam, feedWeight, normalUpdatePerPeriod, maxImbalanceRatio)
+		setRate, rebalance, isQuote, isEnabled, pwi, rb, exchanges, target, stableParam, feedWeight,
+		normalUpdatePerPeriod, maxImbalanceRatio, orderDurationMillis)
 	if err != nil {
 		return 0, err
 	}
@@ -257,22 +259,11 @@ func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id rtypes.AssetExchangeID, up
 	return nil
 }
 
-func (s *Storage) createAsset(
-	tx *sqlx.Tx,
-	symbol, name string,
-	address ethereum.Address,
-	decimals uint64,
-	transferable bool,
-	setRate common.SetRate,
-	rebalance, isQuote, isEnabled bool,
-	pwi *common.AssetPWI,
-	rb *common.RebalanceQuadratic,
-	exchanges []common.AssetExchange,
-	target *common.AssetTarget,
-	stableParam *common.StableParam,
-	feedWeight *common.FeedWeight,
-	normalUpdatePerPeriod, maxImbalanceRatio float64,
-) (rtypes.AssetID, error) {
+func (s *Storage) createAsset(tx *sqlx.Tx,
+	symbol, name string, address ethereum.Address, decimals uint64, transferable bool, setRate common.SetRate,
+	rebalance, isQuote, isEnabled bool, pwi *common.AssetPWI, rb *common.RebalanceQuadratic,
+	exchanges []common.AssetExchange, target *common.AssetTarget, stableParam *common.StableParam,
+	feedWeight *common.FeedWeight, normalUpdatePerPeriod, maxImbalanceRatio float64, orderDurationMillis uint64) (rtypes.AssetID, error) {
 	// create new asset
 	var assetID rtypes.AssetID
 
@@ -311,6 +302,7 @@ func (s *Storage) createAsset(
 		IsEnabled:             isEnabled,
 		NormalUpdatePerPeriod: normalUpdatePerPeriod,
 		MaxImbalanceRatio:     maxImbalanceRatio,
+		OrderDurationMillis:   orderDurationMillis,
 	}
 
 	if pwi != nil {
@@ -617,6 +609,7 @@ type assetDB struct {
 
 	NormalUpdatePerPeriod float64 `db:"normal_update_per_period"`
 	MaxImbalanceRatio     float64 `db:"max_imbalance_ratio"`
+	OrderDurationMillis   uint64  `db:"order_duration_millis"`
 
 	Created time.Time `db:"created"`
 	Updated time.Time `db:"updated"`
@@ -636,6 +629,7 @@ func (adb *assetDB) ToCommon() (common.Asset, error) {
 		Updated:               adb.Updated,
 		NormalUpdatePerPeriod: adb.NormalUpdatePerPeriod,
 		MaxImbalanceRatio:     adb.MaxImbalanceRatio,
+		OrderDurationMillis:   adb.OrderDurationMillis,
 	}
 
 	if adb.Address.Valid {
@@ -948,6 +942,7 @@ type updateAssetParam struct {
 	MultipleFeedsMaxDiff  *float64 `db:"stable_param_multiple_feeds_max_diff"`
 	NormalUpdatePerPeriod *float64 `db:"normal_update_per_period"`
 	MaxImbalanceRatio     *float64 `db:"max_imbalance_ratio"`
+	OrderDurationMillis   *uint64  `db:"order_duration_millis"`
 }
 
 func (s *Storage) updateAsset(tx *sqlx.Tx, id rtypes.AssetID, uo storage.UpdateAssetOpts) error {
@@ -962,6 +957,7 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id rtypes.AssetID, uo storage.UpdateA
 		IsEnabled:             uo.IsEnabled,
 		NormalUpdatePerPeriod: uo.NormalUpdatePerPeriod,
 		MaxImbalanceRatio:     uo.MaxImbalanceRatio,
+		OrderDurationMillis:   uo.OrderDurationMillis,
 	}
 
 	var updateMsgs []string
@@ -1001,6 +997,9 @@ func (s *Storage) updateAsset(tx *sqlx.Tx, id rtypes.AssetID, uo storage.UpdateA
 	}
 	if uo.MaxImbalanceRatio != nil {
 		updateMsgs = append(updateMsgs, fmt.Sprintf("max_imbalance_ratio=%f", *uo.MaxImbalanceRatio))
+	}
+	if uo.OrderDurationMillis != nil {
+		updateMsgs = append(updateMsgs, fmt.Sprintf("order_duration_millis=%d", *uo.OrderDurationMillis))
 	}
 	pwi := uo.PWI
 	if pwi != nil {
