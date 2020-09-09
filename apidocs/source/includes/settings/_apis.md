@@ -135,7 +135,10 @@ curl -X GET "https://gateway.local/v3/asset/1"
             "multiple_feeds_max_diff": 0.6
         },
         "created": "2019-07-31T07:50:28.604784Z",
-        "updated": "2019-07-31T08:53:20.585862Z"
+        "updated": "2019-07-31T08:53:20.585862Z",
+        "normal_update_per_period": 1.234,
+        "max_imbalance_ratio": 3.456,
+        "order_duration_millis": 20000
     },
     "success": true
 }
@@ -228,6 +231,9 @@ curl -X GET "https://gateway.local/v3/asset"
                 "single_feed_max_spread": 0.4,
                 "multiple_feeds_max_diff": 0.6
             },
+            "normal_update_per_period": 1.234,
+            "max_imbalance_ratio": 3.456,
+            "order_duration_millis": 20000,
             "created": "2019-07-31T07:50:28.604784Z",
             "updated": "2019-07-31T08:53:20.585862Z"
         },
@@ -287,6 +293,9 @@ curl -X GET "https://gateway.local/v3/asset"
                 "single_feed_max_spread": 0,
                 "multiple_feeds_max_diff": 0
             },
+            "normal_update_per_period": 1.234,
+            "max_imbalance_ratio": 3.456,
+            "order_duration_millis": 20000,
             "created": "2019-07-31T08:53:33.653734Z",
             "updated": "2019-07-31T08:53:33.653734Z"
         }
