@@ -752,6 +752,7 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 							Symbol:  order.Symbol,
 							Base:    pair.BaseSymbol,
 							Quote:   pair.QuoteSymbol,
+							Time:    order.CreatedAt,
 						})
 						mu.Unlock()
 					}

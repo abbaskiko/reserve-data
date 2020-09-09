@@ -471,6 +471,7 @@ func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order,
 			Price:   price,
 			Symbol:  order.Symbol,
 			Quote:   pair.QuoteSymbol,
+			Time:    order.Time,
 		})
 	}
 	return result, nil
