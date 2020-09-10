@@ -45,6 +45,7 @@ func (s *Storage) initAssets() error {
 		defaultNormalUpdatePerPeriod float64 = 1
 		defaultMaxImbalanceRatio     float64 = 2
 		ethAddr                              = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+		defaultOrderDurationMillis   uint64  = 20000
 	)
 	_, err := s.stmts.newAsset.Exec(&createAssetParams{
 		Symbol:                "ETH",
@@ -57,6 +58,7 @@ func (s *Storage) initAssets() error {
 		IsQuote:               true,
 		NormalUpdatePerPeriod: defaultNormalUpdatePerPeriod,
 		MaxImbalanceRatio:     defaultMaxImbalanceRatio,
+		OrderDurationMillis:   defaultOrderDurationMillis,
 	})
 	return err
 }

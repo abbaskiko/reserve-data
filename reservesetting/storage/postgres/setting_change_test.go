@@ -129,6 +129,7 @@ func initData(t *testing.T, s *Storage) {
 				},
 				NormalUpdatePerPeriod: 0.5,
 				MaxImbalanceRatio:     0.6,
+				OrderDurationMillis:   12000,
 			},
 		},
 		{
@@ -193,6 +194,7 @@ func initData(t *testing.T, s *Storage) {
 				},
 				NormalUpdatePerPeriod: 0.5,
 				MaxImbalanceRatio:     0.6,
+				OrderDurationMillis:   12000,
 			},
 		},
 	}})
@@ -208,7 +210,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 	}()
 
 	s, err := NewStorage(db)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	initData(t, s)
 	var tests = []struct {
 		msg      string
@@ -233,6 +235,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 							PWI:                   nil,
 							NormalUpdatePerPeriod: 0.5,
 							MaxImbalanceRatio:     0.6,
+							OrderDurationMillis:   12000,
 						},
 					},
 				},
@@ -260,6 +263,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 							PWI:                   nil,
 							NormalUpdatePerPeriod: 0.5,
 							MaxImbalanceRatio:     0.6,
+							OrderDurationMillis:   12000,
 							Exchanges: []common.AssetExchange{
 								{
 									ID:                0,
@@ -320,6 +324,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 							},
 							NormalUpdatePerPeriod: 0.5,
 							MaxImbalanceRatio:     0.6,
+							OrderDurationMillis:   12000,
 						},
 					},
 				},
@@ -368,6 +373,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 							},
 							NormalUpdatePerPeriod: 0.5,
 							MaxImbalanceRatio:     0.6,
+							OrderDurationMillis:   12000,
 						},
 					},
 				},
@@ -412,6 +418,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 								PriceB: 15,
 								PriceC: 21,
 							},
+							OrderDurationMillis: 12000,
 						},
 					},
 				},
@@ -439,6 +446,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 							PWI:                   nil,
 							NormalUpdatePerPeriod: 0.5,
 							MaxImbalanceRatio:     0.6,
+							OrderDurationMillis:   12000,
 							Exchanges: []common.AssetExchange{
 								{
 									ExchangeID:        binance,
@@ -485,6 +493,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 							PWI:                   nil,
 							NormalUpdatePerPeriod: 0.5,
 							MaxImbalanceRatio:     0.6,
+							OrderDurationMillis:   12000,
 							Target: &common.AssetTarget{
 								Total:              0,
 								Reserve:            0,
@@ -633,6 +642,46 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 				assert.NoError(t, s.RejectSettingChange(u))
 			},
 		},
+		{
+			msg: "test update asset, update order_duration_millis",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:             2,
+							OrderDurationMillis: common.Uint64Pointer(12111),
+						},
+					},
+				},
+			},
+
+			assertFn: func(t *testing.T, u rtypes.SettingChangeID, e error) {
+				assert.NoError(t, e)
+				asset, err := s.GetAsset(2)
+				assert.NoError(t, err)
+				assert.Equal(t, uint64(12111), asset.OrderDurationMillis)
+			},
+		},
+		{
+			msg: "test update asset, update order_duration_millis <= 0",
+			data: common.SettingChange{
+				ChangeList: []common.SettingChangeEntry{
+					{
+						Type: common.ChangeTypeUpdateAsset,
+						Data: common.UpdateAssetEntry{
+							AssetID:             2,
+							OrderDurationMillis: common.Uint64Pointer(0),
+						},
+					},
+				},
+			},
+
+			assertFn: func(t *testing.T, u rtypes.SettingChangeID, e error) {
+				assert.Error(t, e)
+				assert.NoError(t, s.RejectSettingChange(u))
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Logf("running test case for: %s", tc.msg)
@@ -649,7 +698,7 @@ func TestStorage_GetDepositAddresses(t *testing.T) {
 		assert.NoError(t, tearDown())
 	}()
 	s, err := NewStorage(db)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	initData(t, s)
 
 	depositAddr, err := s.GetDepositAddresses(binance)
@@ -665,7 +714,7 @@ func TestStorage_DeleteTradingPair(t *testing.T) {
 		assert.NoError(t, tearDown())
 	}()
 	s, err := NewStorage(db)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	initData(t, s)
 
 	_, err = s.GetTradingPair(1, false)
