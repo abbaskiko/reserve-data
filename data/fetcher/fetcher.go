@@ -179,8 +179,10 @@ func (f *Fetcher) RunAuthDataFetcher() {
 		f.l.Infof("waiting for signal from runner auth data channel")
 		t := <-f.runner.GetAuthDataTicker()
 		f.l.Infof("got signal in auth data channel with timestamp %d", common.TimeToMillis(t))
+		start := time.Now()
 		f.FetchAllAuthData(common.TimeToMillis(t))
-		f.l.Infof("fetched data from exchanges")
+		totalSecs := time.Since(start).Seconds()
+		f.l.Infow("fetched data from exchanges", "time_taken_secs", totalSecs)
 	}
 }
 
