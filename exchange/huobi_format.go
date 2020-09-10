@@ -140,6 +140,7 @@ type HuobiOpenOrders struct {
 		Type        string `json:"type"`
 		State       string `json:"state"`
 		ExecutedQty string `json:"field-amount"`
+		CreatedAt   uint64 `json:"created-at,omitempty"`
 	} `json:"data"`
 	Reason string `json:"err-msg,omitempty"`
 }
