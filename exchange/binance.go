@@ -464,14 +464,15 @@ func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order,
 		}
 
 		result = append(result, common.Order{
-			OrderID: strconv.FormatUint(order.OrderID, 10),
-			Side:    order.Side,
-			Type:    order.Type,
-			OrigQty: originalQty,
-			Price:   price,
-			Symbol:  order.Symbol,
-			Quote:   pair.QuoteSymbol,
-			Time:    order.Time,
+			OrderID:       strconv.FormatUint(order.OrderID, 10),
+			Side:          order.Side,
+			Type:          order.Type,
+			OrigQty:       originalQty,
+			Price:         price,
+			Symbol:        order.Symbol,
+			Quote:         pair.QuoteSymbol,
+			Time:          order.Time,
+			TradingPairID: pair.ID,
 		})
 	}
 	return result, nil

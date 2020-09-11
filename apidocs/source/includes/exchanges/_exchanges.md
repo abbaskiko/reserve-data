@@ -57,15 +57,17 @@ data is map exchange id with its corresponding open orders
     "data": {
         "1": [
             {
-                "Symbol": "KNCETH",
-                "Base": "KNC",
-                "Quote": "ETH",
-                "OrderID": "54649705",
-                "Price": 0.0018,
-                "OrigQty": 118,
-                "ExecutedQty": 0,
-                "Type": "LIMIT",
-                "Side": "BUY"
+                "symbol": "KNCETH",
+                "trading_pair_id": 3132131,
+                "base": "KNC",
+                "quote": "ETH",
+                "order_id": "54649705",
+                "price": 0.0018,
+                "orig_qty": 118,
+                "executed_qty": 0,
+                "type": "LIMIT",
+                "side": "BUY",
+                "time": 142342342
             }
         ]
     },
