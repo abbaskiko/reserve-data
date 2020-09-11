@@ -745,14 +745,15 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 						}
 						mu.Lock()
 						result = append(result, common.Order{
-							OrderID: strconv.FormatUint(order.OrderID, 10),
-							Type:    order.Type,
-							OrigQty: originalQty,
-							Price:   price,
-							Symbol:  order.Symbol,
-							Base:    pair.BaseSymbol,
-							Quote:   pair.QuoteSymbol,
-							Time:    order.CreatedAt,
+							OrderID:       strconv.FormatUint(order.OrderID, 10),
+							Type:          order.Type,
+							OrigQty:       originalQty,
+							Price:         price,
+							Symbol:        order.Symbol,
+							Base:          pair.BaseSymbol,
+							Quote:         pair.QuoteSymbol,
+							Time:          order.CreatedAt,
+							TradingPairID: pair.ID,
 						})
 						mu.Unlock()
 					}

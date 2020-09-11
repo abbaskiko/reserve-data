@@ -476,20 +476,21 @@ type RequestOrder struct {
 
 // Order accross multiple exchanges
 type Order struct {
-	ID          string  `json:"id,omitempty"` // standard id across multiple exchanges
-	Symbol      string  `json:"symbol,omitempty"`
-	Base        string  `json:"base"`
-	Quote       string  `json:"quote"`
-	OrderID     string  `json:"order_id"`
-	Price       float64 `json:"price"`
-	OrigQty     float64 `json:"orig_qty"`     // original quantity
-	ExecutedQty float64 `json:"executed_qty"` // matched quantity
-	TimeInForce string  `json:"time_in_force,omitempty"`
-	Type        string  `json:"type"` // market or limit
-	Side        string  `json:"side"` // buy or sell
-	StopPrice   string  `json:"stop_price,omitempty"`
-	IcebergQty  string  `json:"iceberg_qty,omitempty"`
-	Time        uint64  `json:"time,omitempty"`
+	ID            string               `json:"id,omitempty"` // standard id across multiple exchanges
+	Symbol        string               `json:"symbol,omitempty"`
+	Base          string               `json:"base"`
+	Quote         string               `json:"quote"`
+	OrderID       string               `json:"order_id"`
+	Price         float64              `json:"price"`
+	OrigQty       float64              `json:"orig_qty"`     // original quantity
+	ExecutedQty   float64              `json:"executed_qty"` // matched quantity
+	TimeInForce   string               `json:"time_in_force,omitempty"`
+	Type          string               `json:"type"` // market or limit
+	Side          string               `json:"side"` // buy or sell
+	StopPrice     string               `json:"stop_price,omitempty"`
+	IcebergQty    string               `json:"iceberg_qty,omitempty"`
+	Time          uint64               `json:"time,omitempty"`
+	TradingPairID rtypes.TradingPairID `json:"trading_pair_id,omitempty"`
 }
 
 type OrderEntry struct {
