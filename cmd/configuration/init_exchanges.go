@@ -78,7 +78,7 @@ func NewExchangePool(ac config.AppConfig, blockchain *bbc.BaseBlockchain, settin
 			}
 			wait.Wait()
 			if err = bin.UpdatePairsPrecision(); err != nil {
-				return nil, fmt.Errorf("can not Update Binance Pairs Precision: (%+v)", err)
+				l.Errorw("can not Update Binance Pairs Precision", "err", err)
 			}
 			exchanges[bin.ID()] = bin
 		case "huobi":
@@ -110,7 +110,7 @@ func NewExchangePool(ac config.AppConfig, blockchain *bbc.BaseBlockchain, settin
 			}
 			wait.Wait()
 			if err = hExchange.UpdatePairsPrecision(); err != nil {
-				return nil, fmt.Errorf("can not Update Huobi Pairs Precision: (%+v)", err)
+				l.Errorw("can not Update Huobi Pairs Precision", "err", err)
 			}
 			exchanges[hExchange.ID()] = hExchange
 		}
