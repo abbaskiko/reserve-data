@@ -53,7 +53,7 @@ func TestRate(t *testing.T) {
 	timepointTest := uint64(1568358532785)
 	currentRateVersion, err := ps.CurrentRateVersion(timepointTest)
 	require.NoError(t, err)
-	assert.Equal(t, common.Version(1), currentRateVersion)
+	assert.Equal(t, common.Version(timepoint), currentRateVersion)
 
 	// test there is no version
 	timepointTest = uint64(1568358532783)
@@ -120,7 +120,7 @@ func TestPrice(t *testing.T) {
 	timepointTest := uint64(1568358536753)
 	currentPriceVersion, err := ps.CurrentPriceVersion(timepointTest)
 	require.NoError(t, err)
-	assert.Equal(t, common.Version(1), currentPriceVersion)
+	assert.Equal(t, common.Version(timepoint), currentPriceVersion)
 
 	// test there is no version
 	timepointTest = uint64(1568358532783)

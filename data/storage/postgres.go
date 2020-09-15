@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -90,10 +91,10 @@ func (ps *PostgresStorage) storeFetchData(data interface{}, timepoint uint64) er
 func (ps *PostgresStorage) currentVersion(dataType fetchDataType, timepoint uint64) (common.Version, error) {
 	var (
 		v  common.Version
-		id int64
+		ts time.Time
 	)
 	timestamp := common.MillisToTime(timepoint)
-	query := fmt.Sprintf(`SELECT id
+	query := fmt.Sprintf(`SELECT created
 FROM (
 	SELECT
 		id,
@@ -109,13 +110,13 @@ FROM (
 WHERE
 	$1 - created <= interval '150' second`,
 		fetchDataTable) // max duration block is 10 ~ 150 second
-	if err := ps.db.Get(&id, query, timestamp, dataType); err != nil {
+	if err := ps.db.Get(&ts, query, timestamp, dataType); err != nil {
 		if err == sql.ErrNoRows {
 			return v, fmt.Errorf("there is no version at timestamp: %d", timepoint)
 		}
 		return v, err
 	}
-	v = common.Version(id)
+	v = common.Version(common.TimeToMillis(ts))
 	return v, nil
 }
 
@@ -123,9 +124,10 @@ func (ps *PostgresStorage) getData(o interface{}, v common.Version) error {
 	var (
 		data []byte
 	)
+	ts := common.MillisToTime(uint64(v))
 	dataType := getDataType(o)
-	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE id = $1 AND type = $2`, fetchDataTable)
-	if err := ps.db.Get(&data, query, v, dataType); err != nil {
+	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE created = $1 AND type = $2`, fetchDataTable)
+	if err := ps.db.Get(&data, query, ts, dataType); err != nil {
 		return err
 	}
 	return json.Unmarshal(data, o)
