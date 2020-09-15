@@ -438,21 +438,27 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 // OpenOrders get open orders from binance
 func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, error) {
 	var (
-		result = []common.Order{}
-		orders []Binaorder
-		err    error
+		result       = []common.Order{}
+		orders       []Binaorder
+		err          error
+		tradingPairs []commonv3.TradingPairSymbols
 	)
 	if pair.ID != 0 {
 		orders, err = bn.interf.OpenOrdersForOnePair(&pair)
 		if err != nil {
 			return nil, err
 		}
-	} else {
+	} else { // pair.ID == 0
 		orders, err = bn.interf.OpenOrdersForOnePair(nil)
 		if err != nil {
 			return nil, err
 		}
+		tradingPairs, err = bn.TokenPairs()
+		if err != nil {
+			return nil, err
+		}
 	}
+	pairBK := pair
 	for _, order := range orders {
 		originalQty, err := strconv.ParseFloat(order.OrigQty, 64)
 		if err != nil {
@@ -461,6 +467,14 @@ func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order,
 		price, err := strconv.ParseFloat(order.Price, 64)
 		if err != nil {
 			return nil, err
+		}
+		if pairBK.ID == 0 { // pair is not provided
+			for _, opair := range tradingPairs {
+				if strings.EqualFold(opair.BaseSymbol+opair.QuoteSymbol, order.Symbol) {
+					pair = opair
+					break
+				}
+			}
 		}
 
 		result = append(result, common.Order{
@@ -471,6 +485,7 @@ func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order,
 			Price:         price,
 			Symbol:        order.Symbol,
 			Quote:         pair.QuoteSymbol,
+			Base:          pair.BaseSymbol,
 			Time:          order.Time,
 			TradingPairID: pair.ID,
 		})
