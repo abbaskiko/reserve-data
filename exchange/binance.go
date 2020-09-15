@@ -458,6 +458,7 @@ func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order,
 			return nil, err
 		}
 	}
+	pairBK := pair
 	for _, order := range orders {
 		originalQty, err := strconv.ParseFloat(order.OrigQty, 64)
 		if err != nil {
@@ -467,10 +468,11 @@ func (bn *Binance) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order,
 		if err != nil {
 			return nil, err
 		}
-		if pair.ID == 0 { // get according pair from storage
+		if pairBK.ID == 0 { // pair is not provided
 			for _, opair := range tradingPairs {
 				if strings.EqualFold(opair.BaseSymbol+opair.QuoteSymbol, order.Symbol) {
 					pair = opair
+					break
 				}
 			}
 		}
