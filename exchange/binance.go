@@ -394,6 +394,15 @@ func (bn *Binance) DepositStatus(id common.ActivityID, txHash string, assetID rt
 	return "", nil
 }
 
+const (
+	binanceCancelled        = 1
+	binanceAwaitingApproval = 2
+	binanceRejected         = 3
+	binanceProcessing       = 4
+	binanceFailure          = 5
+	binanceCompleted        = 6
+)
+
 // WithdrawStatus return status of a withdrawal on binance
 func (bn *Binance) WithdrawStatus(id string, assetID rtypes.AssetID, amount float64, timepoint uint64) (string, string, float64, error) {
 	startTime := timepoint - 86400000
@@ -404,11 +413,14 @@ func (bn *Binance) WithdrawStatus(id string, assetID rtypes.AssetID, amount floa
 	}
 	for _, withdraw := range withdraws.Withdrawals {
 		if withdraw.ID == id {
-			if withdraw.Status == 3 || withdraw.Status == 5 { // 3 = rejected, 5 = failed
+			switch withdraw.Status {
+			case binanceRejected, binanceFailure: // 3 = rejected, 5 = failed
 				return common.ExchangeStatusFailed, withdraw.TxID, withdraw.Fee, nil
-			}
-			if withdraw.Status == 6 { // 6 = success
+			case binanceCompleted: // 6 = success
 				return common.ExchangeStatusDone, withdraw.TxID, withdraw.Fee, nil
+			case binanceCancelled: // 1 = cancelled
+				return common.ExchangeStatusCancelled, withdraw.TxID, withdraw.Fee, nil
+			case binanceAwaitingApproval, binanceProcessing: // no action, just leave it as pending
 			}
 			return "", withdraw.TxID, withdraw.Fee, nil
 		}
@@ -429,10 +441,14 @@ func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if order.Status == "NEW" || order.Status == "PARTIALLY_FILLED" || order.Status == "PENDING_CANCEL" {
+	switch order.Status {
+	case "CANCELED":
+		return common.ExchangeStatusCancelled, nil
+	case "NEW", "PARTIALLY_FILLED", "PENDING_CANCEL":
 		return "", nil
+	default:
+		return common.ExchangeStatusDone, nil
 	}
-	return common.ExchangeStatusDone, nil
 }
 
 // OpenOrders get open orders from binance
