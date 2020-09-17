@@ -10,6 +10,7 @@ const (
 	ExchangeStatusPending   = "pending"
 	ExchangeStatusFailed    = "failed"
 	ExchangeStatusSubmitted = "submitted"
+	ExchangeStatusCancelled = "cancelled"
 	ExchangeStatusLost      = "lost"
 	ActionDeposit           = "deposit"
 	ActionTrade             = "trade"

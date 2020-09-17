@@ -387,10 +387,9 @@ func (ps *PostgresStorage) UpdateActivity(id common.ActivityID, act common.Activ
 	if err != nil {
 		return err
 	}
-	if !act.IsPending() {
-		if _, err := ps.db.Exec(updateQuery, false, dataBytes, id.Timepoint, id.EID); err != nil {
-			return err
-		}
+	isPending := act.IsPending()
+	if _, err := ps.db.Exec(updateQuery, isPending, dataBytes, id.Timepoint, id.EID); err != nil {
+		return err
 	}
 	return nil
 }
