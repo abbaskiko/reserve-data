@@ -21,10 +21,6 @@ import (
 )
 
 const (
-	statusFailed    = "failed"
-	statusSubmitted = "submitted"
-	statusDone      = "done"
-
 	// maxGasPrice this value only use when it can't receive value from network contract
 	maxGasPrice float64 = 100.1
 )
@@ -143,7 +139,7 @@ func (rc ReserveCore) Trade(
 	}
 
 	if err = sanityCheckTrading(pair, rate, amount); err != nil {
-		if sErr := recordActivity("", statusFailed, 0, 0, false, err); sErr != nil {
+		if sErr := recordActivity("", common.ExchangeStatusFailed, 0, 0, false, err); sErr != nil {
 			rc.l.Warnw("failed to save activity record", "err", sErr)
 			return common.ActivityID{}, 0, 0, false, common.CombineActivityStorageErrs(err, sErr)
 		}
@@ -153,7 +149,7 @@ func (rc ReserveCore) Trade(
 	id, done, remaining, finished, err := exchange.Trade(tradeType, pair, rate, amount)
 	uid := timebasedID(id)
 	if err != nil {
-		if sErr := recordActivity(id, statusFailed, done, remaining, finished, err); sErr != nil {
+		if sErr := recordActivity(id, common.ExchangeStatusFailed, done, remaining, finished, err); sErr != nil {
 			rc.l.Warnw("failed to save activity record", "err", sErr)
 			return uid, done, remaining, finished, common.CombineActivityStorageErrs(err, sErr)
 		}
@@ -162,9 +158,9 @@ func (rc ReserveCore) Trade(
 
 	var status string
 	if finished {
-		status = statusDone
+		status = common.ExchangeStatusDone
 	} else {
-		status = statusSubmitted
+		status = common.ExchangeStatusSubmitted
 	}
 
 	sErr := recordActivity(id, status, done, remaining, finished, nil)
@@ -223,7 +219,7 @@ func (rc ReserveCore) Deposit(
 
 	tx, err := rc.doDeposit(exchange, asset, amount)
 	if err != nil {
-		sErr := recordActivity(statusFailed, "", 0, "", err)
+		sErr := recordActivity(common.MiningStatusFailed, "", 0, "", err)
 		if sErr != nil {
 			rc.l.Errorw("failed to save activity record", "err", sErr)
 		}
@@ -231,7 +227,7 @@ func (rc ReserveCore) Deposit(
 	}
 
 	sErr := recordActivity(
-		statusSubmitted,
+		common.MiningStatusSubmitted,
 		tx.Hash().Hex(),
 		tx.Nonce(),
 		tx.GasPrice().Text(10),
@@ -358,7 +354,7 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 	_, supported := exchange.Address(asset)
 	if !supported {
 		err = fmt.Errorf("exchange %s doesn't support asset %d", exchange.ID().String(), asset.ID)
-		sErr := activityRecord("", statusFailed, err)
+		sErr := activityRecord("", common.ExchangeStatusFailed, err)
 		if sErr != nil {
 			rc.l.Warnw("failed to store activity record", "err", sErr)
 		}
@@ -366,7 +362,7 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 	}
 
 	if err = sanityCheckAmount(exchange, asset, amount); err != nil {
-		sErr := activityRecord("", statusFailed, err)
+		sErr := activityRecord("", common.ExchangeStatusFailed, err)
 		if sErr != nil {
 			rc.l.Warnw("failed to store activity record", "err", sErr)
 		}
@@ -377,14 +373,14 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 
 	id, err := exchange.Withdraw(asset, amount, reserveAddr)
 	if err != nil {
-		sErr := activityRecord("", statusFailed, err)
+		sErr := activityRecord("", common.ExchangeStatusFailed, err)
 		if sErr != nil {
 			rc.l.Warnw("failed to store activity record", "err", sErr)
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
 
-	sErr := activityRecord(id, statusSubmitted, nil)
+	sErr := activityRecord(id, common.ExchangeStatusSubmitted, nil)
 	return timebasedID(id), common.CombineActivityStorageErrs(err, sErr)
 }
 

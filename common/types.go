@@ -315,7 +315,7 @@ func (ar ActivityRecord) IsExchangePending() bool {
 			ar.MiningStatus != MiningStatusFailed
 	case ActionDeposit:
 		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusPending) &&
-			ar.MiningStatus != MiningStatusFailed
+			ar.MiningStatus != MiningStatusFailed // if a mining fail, it may never reach to exchange
 	case ActionTrade:
 		return ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted
 	}
@@ -325,8 +325,11 @@ func (ar ActivityRecord) IsExchangePending() bool {
 // IsBlockchainPending return true if activity is pending on blockchain
 func (ar ActivityRecord) IsBlockchainPending() bool {
 	switch ar.Action {
-	case ActionWithdraw, ActionDeposit, ActionSetRate:
+	case ActionWithdraw:
 		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) && ar.ExchangeStatus != ExchangeStatusFailed
+	// for withdraw ExchangeStatusFailed mean will there's no tx => consider it's not a pending anymore.
+	case ActionDeposit, ActionSetRate, ActionCancelSetRate:
+		return ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted
 	}
 	return true
 }
@@ -338,16 +341,16 @@ func (ar ActivityRecord) IsPending() bool {
 		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted ||
 			ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
 			ar.MiningStatus != MiningStatusFailed && ar.ExchangeStatus != ExchangeStatusFailed
+		// a failed status mining failed also confirm withdraw is done(and failed)
 	case ActionDeposit:
 		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusPending ||
 			ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
 			ar.MiningStatus != MiningStatusFailed && ar.ExchangeStatus != ExchangeStatusFailed
+		// mining fail confirm it's done, not sure we will ever see exchange failed here but no harmful
 	case ActionTrade:
-		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted) &&
-			ar.ExchangeStatus != ExchangeStatusFailed
+		return ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted
 	case ActionSetRate, ActionCancelSetRate:
-		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
-			ar.ExchangeStatus != ExchangeStatusFailed
+		return ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted
 	}
 	return true
 }
