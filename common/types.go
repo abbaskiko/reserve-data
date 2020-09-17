@@ -326,8 +326,9 @@ func (ar ActivityRecord) IsExchangePending() bool {
 func (ar ActivityRecord) IsBlockchainPending() bool {
 	switch ar.Action {
 	case ActionWithdraw:
-		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) && ar.ExchangeStatus != ExchangeStatusFailed
-	// for withdraw ExchangeStatusFailed mean will there's no tx => consider it's not a pending anymore.
+		// for withdraw ExchangeStatusFailed/ExchangeStatusCancelled mean will there's no tx => consider it's not a pending anymore.
+		return (ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
+			ar.ExchangeStatus != ExchangeStatusFailed && ar.ExchangeStatus != ExchangeStatusCancelled
 	case ActionDeposit, ActionSetRate, ActionCancelSetRate:
 		return ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted
 	}
@@ -338,9 +339,11 @@ func (ar ActivityRecord) IsBlockchainPending() bool {
 func (ar ActivityRecord) IsPending() bool {
 	switch ar.Action {
 	case ActionWithdraw:
+		// a withdraw is pending if (estatus | m_status == pending), AND mining fail or e_status == failed/cancelled also confirm it's not pending
 		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusSubmitted ||
 			ar.MiningStatus == "" || ar.MiningStatus == MiningStatusSubmitted) &&
-			ar.MiningStatus != MiningStatusFailed && ar.ExchangeStatus != ExchangeStatusFailed
+			ar.MiningStatus != MiningStatusFailed &&
+			ar.ExchangeStatus != ExchangeStatusFailed && ar.ExchangeStatus != ExchangeStatusCancelled
 		// a failed status mining failed also confirm withdraw is done(and failed)
 	case ActionDeposit:
 		return (ar.ExchangeStatus == "" || ar.ExchangeStatus == ExchangeStatusPending ||

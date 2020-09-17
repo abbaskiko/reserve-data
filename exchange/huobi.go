@@ -695,10 +695,14 @@ func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if order.Data.State == "pre-submitted" || order.Data.State == "submitting" || order.Data.State == "submitted" || order.Data.State == "partial-filled" || order.Data.State == "partial-canceled" {
+	switch order.Data.State {
+	case "canceled":
+		return common.ExchangeStatusCancelled, nil
+	case "pre-submitted", "submitting", "submitted", "partial-filled", "partial-canceled":
 		return "", nil
+	default:
+		return common.ExchangeStatusDone, nil
 	}
-	return common.ExchangeStatusDone, nil
 }
 
 // ID return exchange ID
