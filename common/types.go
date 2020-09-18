@@ -267,11 +267,12 @@ type ActivityParams struct {
 	AFPMid []*big.Int       `json:"afpMid,omitempty"`
 	Msgs   []string         `json:"msgs,omitempty"`
 	// Trade params
-	Type     string  `json:"type,omitempty"`
-	Base     string  `json:"base,omitempty"`
-	Quote    string  `json:"quote,omitempty"`
-	Rate     float64 `json:"rate,omitempty"`
-	Triggers []bool  `json:"triggers,omitempty"`
+	Type          string               `json:"type,omitempty"`
+	Base          string               `json:"base,omitempty"`
+	Quote         string               `json:"quote,omitempty"`
+	Rate          float64              `json:"rate,omitempty"`
+	Triggers      []bool               `json:"triggers,omitempty"`
+	TradingPairID rtypes.TradingPairID `json:"trading_pair_id,omitempty"`
 }
 
 // ActivityResult is result of an activity
