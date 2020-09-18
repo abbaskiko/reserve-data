@@ -199,7 +199,8 @@ curl -X GET "https://gateway.local/v3/authdata"
                         "type": "buy",
                         "base": "KNC",
                         "quote": "ETH",
-                        "rate": 0.0031299
+                        "rate": 0.0031299,
+                        "trading_pair_id": 123243
                     },
                     "result": {
                         "id": "106845707",
