@@ -118,6 +118,26 @@ func (rd ReserveData) GetOnePrice(pairID rtypes.TradingPairID, timepoint uint64)
 	return result, err
 }
 
+// SetGasThreshold ...
+func (rd ReserveData) SetGasThreshold(v common.GasThreshold) error {
+	return rd.globalStorage.SetGasThreshold(v)
+}
+
+// GetGasThreshold ...
+func (rd ReserveData) GetGasThreshold() (common.GasThreshold, error) {
+	return rd.globalStorage.GetGasThreshold()
+}
+
+// SetPreferGasSource ...
+func (rd ReserveData) SetPreferGasSource(v common.PreferGasSource) error {
+	return rd.globalStorage.SetPreferGasSource(v)
+}
+
+// GetPreferGasSource ...
+func (rd ReserveData) GetPreferGasSource() (common.PreferGasSource, error) {
+	return rd.globalStorage.GetPreferGasSource()
+}
+
 // CurrentAuthDataVersion return current version of auth data
 func (rd ReserveData) CurrentAuthDataVersion(timepoint uint64) (common.Version, error) {
 	return rd.storage.CurrentAuthDataVersion(timepoint)

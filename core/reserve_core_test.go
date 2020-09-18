@@ -11,6 +11,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/common/gasinfo"
+	gaspricedataclient "github.com/KyberNetwork/reserve-data/common/gaspricedata-client"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
@@ -148,12 +150,35 @@ func (tas testActivityStorage) HasPendingDeposit(token commonv3.Asset, exchange 
 func getTestCore(hasPendingDeposit bool) *ReserveCore {
 	addressSetting := &common.ContractAddressConfiguration{}
 
-	return NewReserveCore(
-		testBlockchain{},
-		testActivityStorage{hasPendingDeposit},
-		addressSetting,
-		&ConstGasPriceLimiter{},
-	)
+	return NewReserveCore(testBlockchain{}, testActivityStorage{hasPendingDeposit}, addressSetting,
+		gasinfo.NewGasPriceInfo(&gasinfo.ConstGasPriceLimiter{}, &ExampleGasConfig{}, &ExampleGasClient{}))
+}
+
+type ExampleGasConfig struct {
+}
+
+func (e ExampleGasConfig) SetPreferGasSource(v common.PreferGasSource) error {
+	panic("implement me")
+}
+
+func (e ExampleGasConfig) GetPreferGasSource() (common.PreferGasSource, error) {
+	return common.PreferGasSource{Name: "ethgasstation"}, nil
+}
+
+type ExampleGasClient struct {
+}
+
+func (e ExampleGasClient) GetGas() (gaspricedataclient.GasResult, error) {
+	return gaspricedataclient.GasResult{
+		"ethgasstation": gaspricedataclient.SourceData{
+			Value: gaspricedataclient.Data{
+				Fast:     100,
+				Standard: 80,
+				Slow:     50,
+			},
+			Timestamp: time.Now().Unix() * 1000,
+		},
+	}, nil
 }
 
 func TestNotAllowDeposit(t *testing.T) {

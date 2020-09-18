@@ -771,9 +771,8 @@ type FetcherDelay struct {
 
 // GasConfig ...
 type GasConfig struct {
-	PreferUseGasStation     bool   `json:"prefer_use_gas_station"`
 	FetchMaxGasCacheSeconds int64  `json:"fetch_max_gas_cache_seconds"`
-	GasStationAPIKey        string `json:"gas_station_api_key"`
+	GasPriceURL             string `json:"gas_price_url"`
 }
 
 // RawConfig include all configs read from files
@@ -816,4 +815,15 @@ type FeedProviderResponse struct {
 	Error string
 	Bid   float64 `json:"bid,string"`
 	Ask   float64 `json:"ask,string"`
+}
+
+// GasThreshold keep high-low threshold value that we will start and stop set rate
+type GasThreshold struct {
+	High float64 `json:"high"`
+	Low  float64 `json:"low"`
+}
+
+// PreferGasSource keep prefer gas source name
+type PreferGasSource struct {
+	Name string `json:"name"`
 }

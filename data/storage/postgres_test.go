@@ -427,3 +427,32 @@ func TestUSDData(t *testing.T) {
 	err = ps.StoreUSDInfo(usdTest)
 	assert.NoError(t, err)
 }
+
+func TestSetGeneralData(t *testing.T) {
+	db, teardown := testutil.MustNewDevelopmentDB(migrationPath)
+	defer func() {
+		require.NoError(t, teardown())
+	}()
+
+	ps, err := NewPostgresStorage(db)
+	require.NoError(t, err)
+
+	data := common.GasThreshold{
+		High: 10,
+		Low:  1,
+	}
+	err = ps.SetGasThreshold(data)
+	assert.NoError(t, err)
+	gth, err := ps.GetGasThreshold()
+	assert.NoError(t, err)
+	assert.Equal(t, data, gth)
+
+	data2 := common.PreferGasSource{
+		Name: "etherscan",
+	}
+	err = ps.SetPreferGasSource(data2)
+	assert.NoError(t, err)
+	pgs, err := ps.GetPreferGasSource()
+	assert.NoError(t, err)
+	assert.Equal(t, data2, pgs)
+}

@@ -8,8 +8,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/archive"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
-	"github.com/KyberNetwork/reserve-data/common/gasstation"
-	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
@@ -26,7 +24,6 @@ func GetConfig(
 	settingStorage storage.Interface,
 	rcf common.RawConfig,
 	mainNode *common.EthClient, backupNodes []*common.EthClient,
-	gasClient *gasstation.Client, gasLimiter core.GasPriceLimiter,
 ) (*Config, error) {
 	l := zap.S()
 
@@ -58,8 +55,6 @@ func GetConfig(
 		World:                   theWorld,
 		ContractAddresses:       contractAddressConf,
 		SettingStorage:          settingStorage,
-		gasClient:               gasClient,
-		gasLimiter:              gasLimiter,
 	}
 
 	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
