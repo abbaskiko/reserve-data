@@ -7,11 +7,11 @@ import (
 )
 
 func (s *Server) setPreferGasSource(c *gin.Context) {
-	name := c.Request.FormValue("name")
-	if name == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("name is required"))
+	var input common.PreferGasSource
+	if err := c.BindJSON(input); err != nil {
+		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 	}
-	if err := s.storage.SetPreferGasSource(common.PreferGasSource{Name: name}); err != nil {
+	if err := s.storage.SetPreferGasSource(input); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 		return
 	}

@@ -14,7 +14,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
 	v1common "github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/common/gasstation"
+	gaspricedataclient "github.com/KyberNetwork/reserve-data/common/gaspricedata-client"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
 	"github.com/KyberNetwork/reserve-data/exchange"
 	"github.com/KyberNetwork/reserve-data/exchange/binance"
@@ -34,7 +34,8 @@ const (
 
 	binanceAPIKeyFlag    = "binance-api-key"
 	binanceSecretKeyFlag = "binance-secret-key"
-	gasStationKeyFlag    = "gas-station-key"
+	gasPriceURLFlag      = "gas-price-url"
+	defaultGasPriceURL   = "https://staging-market-data.knstats.com/gas/price"
 
 	intervalUpdateWithdrawFeeDBFlag      = "interval-update-withdraw-fee-db"
 	defaultIntervalUpdateWithdrawFeeDB   = 10 * time.Minute
@@ -82,9 +83,10 @@ func main() {
 			EnvVar: "INTERVAL_UPDATE_WITHDRAW_FEE_LIVE",
 		},
 		cli.StringFlag{
-			Name:   gasStationKeyFlag,
-			Usage:  "gas station api key",
-			EnvVar: "GAS_STATION_KEY",
+			Name:   gasPriceURLFlag,
+			Usage:  "gas price url",
+			EnvVar: "GAS_PRICE_URL",
+			Value:  defaultGasPriceURL,
 		},
 	)
 
@@ -159,10 +161,9 @@ func run(c *cli.Context) error {
 			}
 		}()
 	}
-	gasStation := gasstation.New(httpClient, c.String(gasStationKeyFlag))
 
 	sentryDSN := libapp.SentryDSNFromFlag(c)
-	server := settinghttp.NewServer(sr, host, liveExchanges, sentryDSN, coreClient, gasStation)
+	server := settinghttp.NewServer(sr, host, liveExchanges, sentryDSN, coreClient, gaspricedataclient.New(httpClient, c.String(gasPriceURLFlag)))
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}

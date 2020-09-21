@@ -5,19 +5,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	gaspricedataclient "github.com/KyberNetwork/reserve-data/common/gaspricedata-client"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
-type GsGas struct {
-	Fast     float64 `json:"fast"`
-	Standard float64 `json:"standard"`
-	Slow     float64 `json:"slow"`
-}
 type gasStatusResult struct {
-	GasStation GsGas `json:"eth_gas_station"`
+	GasPrice gaspricedataclient.GasResult `json:"gas_price"`
 	GasThresholdSetting
 }
+
+// GasThresholdSetting ...
 type GasThresholdSetting struct {
 	High float64 `json:"high"`
 	Low  float64 `json:"low"`
@@ -27,10 +25,10 @@ const (
 	gasThresholdKey = "gas_threshold" // key in general setting table
 )
 
-func (s *Server) GetGasStatus(c *gin.Context) {
-	gasPrice, err := s.gasStation.ETHGas()
+func (s *Server) getGasStatus(c *gin.Context) {
+	gasPrice, err := s.gasClient.GetGas()
 	if err != nil {
-		s.l.Errorw("query gasstation failed", "err", err)
+		s.l.Errorw("query gas price failed", "err", err)
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 		return
 	}
@@ -49,15 +47,11 @@ func (s *Server) GetGasStatus(c *gin.Context) {
 		return
 	}
 
-	result.GasStation = GsGas{
-		Fast:     gasPrice.Fast / 10.0,
-		Standard: gasPrice.Average / 10.0,
-		Slow:     gasPrice.SafeLow / 10.0,
-	}
+	result.GasPrice = gasPrice
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
-func (s *Server) SetGasThreshold(c *gin.Context) {
+func (s *Server) setGasThreshold(c *gin.Context) {
 	var v GasThresholdSetting
 	if err := c.BindJSON(&v); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason("invalid high-low value"))

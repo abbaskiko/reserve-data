@@ -381,5 +381,5 @@ type GeneralData struct {
 
 // PreferGasSource keep prefer gas source name
 type PreferGasSource struct {
-	Name string `json:"name"`
+	Name string `json:"name" binding:"required"`
 }
