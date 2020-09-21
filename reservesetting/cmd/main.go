@@ -35,7 +35,7 @@ const (
 	binanceAPIKeyFlag    = "binance-api-key"
 	binanceSecretKeyFlag = "binance-secret-key"
 	gasPriceURLFlag      = "gas-price-url"
-	defaultGasPriceURL   = "https://staging-market-data.knstats.com/gas/price"
+	defaultGasPriceURL   = "http://localhost:8088/gas/price"
 
 	intervalUpdateWithdrawFeeDBFlag      = "interval-update-withdraw-fee-db"
 	defaultIntervalUpdateWithdrawFeeDB   = 10 * time.Minute
