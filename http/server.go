@@ -644,8 +644,11 @@ func (s *Server) register() {
 		g.GET("/check-token-indice", s.checkTokenIndice)
 		g.GET("/token-rate-trigger", s.getTriggers)
 
-		s.r.GET("/gas-threshold", s.getGasStatus)
-		s.r.POST("/gas-threshold", s.setGasThreshold)
+		g.GET("/gas-threshold", s.getGasStatus)
+		g.POST("/gas-threshold", s.setGasThreshold)
+
+		g.GET("/gas-source", s.getPreferGasSource)
+		g.POST("/gas-source", s.setPreferGasSource)
 	}
 }
 
