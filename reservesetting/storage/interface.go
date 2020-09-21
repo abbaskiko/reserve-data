@@ -29,6 +29,8 @@ type Interface interface {
 	SetGeneralData(data v3.GeneralData) (uint64, error)
 
 	UpdateAssetExchangeWithdrawFee(withdrawFee float64, assetExchangeID rtypes.AssetExchangeID) error
+
+	SetPreferGasSource(v v3.PreferGasSource) error
 }
 
 // SettingReader is the common interface for reading exchanges, assets configuration.
@@ -55,6 +57,7 @@ type SettingReader interface {
 	GetFeedConfiguration(name string, setRate v3.SetRate) (v3.FeedConfiguration, error)
 
 	GetGeneralData(key string) (v3.GeneralData, error)
+	GetPreferGasSource() (v3.PreferGasSource, error)
 }
 
 // ControlInfoInterface ...

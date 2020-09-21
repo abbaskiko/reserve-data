@@ -20,7 +20,6 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/gasinfo"
-	gaspricedataclient "github.com/KyberNetwork/reserve-data/common/gaspricedata-client"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/lib/caller"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
@@ -533,81 +532,6 @@ func (s *Server) checkTokenIndice(c *gin.Context) {
 	)
 }
 
-type gasStatusResult struct {
-	GasPrice      gaspricedataclient.GasResult `json:"gas_price"`
-	HighThreshold float64                      `json:"high"`
-	LowThreshold  float64                      `json:"low"`
-}
-
-// getGasStatus ...
-func (s *Server) getGasStatus(c *gin.Context) {
-	gasPrice, err := s.gasInfo.AllSourceGas()
-	if err != nil {
-		s.l.Errorw("query gas price failed", "err", err)
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-		return
-	}
-	gasThreshold, err := s.app.GetGasThreshold()
-	if err != nil {
-		s.l.Errorw("failed to get gas threshold", "err", err)
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-		return
-	}
-	result := gasStatusResult{
-		GasPrice:      gasPrice,
-		HighThreshold: gasThreshold.High,
-		LowThreshold:  gasThreshold.Low,
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(result))
-}
-
-func (s *Server) setGasThreshold(c *gin.Context) {
-	high := c.Request.FormValue("high")
-	low := c.Request.FormValue("low")
-
-	h, err := strconv.ParseFloat(high, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason("invalid high value"))
-		return
-	}
-	l, err := strconv.ParseFloat(low, 64)
-	if err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason("invalid low value"))
-		return
-	}
-	if l >= h {
-		httputil.ResponseFailure(c, httputil.WithReason("high must > low value"))
-		return
-	}
-	if err := s.app.SetGasThreshold(common.GasThreshold{High: h, Low: l}); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (s *Server) setPreferGasSource(c *gin.Context) {
-	name := c.Request.FormValue("name")
-	if name == "" {
-		httputil.ResponseFailure(c, httputil.WithReason("name is required"))
-	}
-	if err := s.app.SetPreferGasSource(common.PreferGasSource{Name: name}); err != nil {
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-		return
-	}
-	httputil.ResponseSuccess(c)
-}
-
-func (s *Server) getPreferGasSource(c *gin.Context) {
-	preferredGasSource, err := s.app.GetPreferGasSource()
-	if err != nil {
-		s.l.Errorw("failed to get prefered gas source", "err", err)
-		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
-		return
-	}
-	httputil.ResponseSuccess(c, httputil.WithData(preferredGasSource))
-}
-
 func (s *Server) register() {
 	if s.core != nil && s.app != nil {
 		g := s.r.Group("/v3")
@@ -643,12 +567,6 @@ func (s *Server) register() {
 		g.PUT("/update-token-indice", s.updateTokenIndice)
 		g.GET("/check-token-indice", s.checkTokenIndice)
 		g.GET("/token-rate-trigger", s.getTriggers)
-
-		g.GET("/gas-threshold", s.getGasStatus)
-		g.POST("/gas-threshold", s.setGasThreshold)
-
-		g.GET("/gas-source", s.getPreferGasSource)
-		g.POST("/gas-source", s.setPreferGasSource)
 	}
 }
 

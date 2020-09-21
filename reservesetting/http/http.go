@@ -123,6 +123,8 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[rt
 	g.POST("/rate-trigger-period", server.setRateTriggerPeriod)
 	g.GET("/gas-threshold", server.GetGasStatus)
 	g.POST("/gas-threshold", server.SetGasThreshold)
+	g.GET("/gas-source", server.getPreferGasSource)
+	g.POST("/gas-source", server.setPreferGasSource)
 
 	return server
 }

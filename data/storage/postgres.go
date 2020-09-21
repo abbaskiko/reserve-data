@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
@@ -20,9 +19,8 @@ import (
 )
 
 const (
-	fetchDataTable   = "fetch_data" // data fetch from exchange and blockchain
-	activityTable    = "activity"
-	generalDataTable = "general_data"
+	fetchDataTable = "fetch_data" // data fetch from exchange and blockchain
+	activityTable  = "activity"
 	// data type constant
 
 	authDataExpiredDuration uint64 = 10 * 86400000 //10day in milisec
@@ -584,69 +582,4 @@ func (ps *PostgresStorage) CurrentBTCInfoVersion(timepoint uint64) (common.Versi
 // CurrentUSDInfoVersion return current btc info version
 func (ps *PostgresStorage) CurrentUSDInfoVersion(timepoint uint64) (common.Version, error) {
 	return ps.currentVersion(usdDataType, timepoint)
-}
-
-var (
-	keyGasThreshold    = "gas-threshold"
-	keyPreferGasSource = "prefer-gas-source"
-)
-
-// SetGasThreshold ...
-func (ps *PostgresStorage) SetGasThreshold(v common.GasThreshold) error {
-	return ps.insertGeneralData(keyGasThreshold, v)
-}
-
-// GetGasThreshold ...
-func (ps *PostgresStorage) GetGasThreshold() (common.GasThreshold, error) {
-	var (
-		result common.GasThreshold
-	)
-	err := ps.getGeneralData(keyGasThreshold, &result)
-	return result, err
-}
-
-// SetPreferGasSource ...
-func (ps *PostgresStorage) SetPreferGasSource(v common.PreferGasSource) error {
-	return ps.insertGeneralData(keyPreferGasSource, v)
-}
-
-// GetPreferGasSource ...
-func (ps *PostgresStorage) GetPreferGasSource() (common.PreferGasSource, error) {
-	var (
-		result common.PreferGasSource
-	)
-	err := ps.getGeneralData(keyPreferGasSource, &result)
-	return result, err
-}
-
-func (ps *PostgresStorage) insertGeneralData(key string, data interface{}) error {
-	var (
-		query = fmt.Sprintf(`INSERT INTO %s (key, value, timestamp) VALUES ($1, $2, now());`, generalDataTable)
-	)
-	byteData, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-	hex := hexutil.Encode(byteData)
-	if _, err := ps.db.Exec(query, key, hex); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ps *PostgresStorage) getGeneralData(key string, result interface{}) error {
-	var (
-		query = fmt.Sprintf(`SELECT value FROM %s WHERE key=$1 ORDER BY timestamp DESC LIMIT 1;`, generalDataTable)
-	)
-	var (
-		resultQuery string
-	)
-	if err := ps.db.Get(&resultQuery, query, key); err != nil {
-		return err
-	}
-	byteData, err := hexutil.Decode(resultQuery)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(byteData, result)
 }

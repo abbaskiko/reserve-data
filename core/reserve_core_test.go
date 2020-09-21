@@ -157,12 +157,12 @@ func getTestCore(hasPendingDeposit bool) *ReserveCore {
 type ExampleGasConfig struct {
 }
 
-func (e ExampleGasConfig) SetPreferGasSource(v common.PreferGasSource) error {
+func (e ExampleGasConfig) SetPreferGasSource(v commonv3.PreferGasSource) error {
 	panic("implement me")
 }
 
-func (e ExampleGasConfig) GetPreferGasSource() (common.PreferGasSource, error) {
-	return common.PreferGasSource{Name: "ethgasstation"}, nil
+func (e ExampleGasConfig) GetPreferGasSource() (commonv3.PreferGasSource, error) {
+	return commonv3.PreferGasSource{Name: "ethgasstation"}, nil
 }
 
 type ExampleGasClient struct {

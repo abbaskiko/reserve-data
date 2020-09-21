@@ -10,17 +10,14 @@ import (
 
 // GasConfig ...
 type GasConfig interface {
-	SetPreferGasSource(v common.PreferGasSource) error
-	GetPreferGasSource() (common.PreferGasSource, error)
+	SetPreferGasSource(v commonv3.PreferGasSource) error
+	GetPreferGasSource() (commonv3.PreferGasSource, error)
 }
 
 // Data is the interface of of all data query methods.
 // All methods' implementations must support concurrency.
 type Data interface {
 	GasConfig
-
-	SetGasThreshold(v common.GasThreshold) error
-	GetGasThreshold() (common.GasThreshold, error)
 
 	CurrentPriceVersion(timestamp uint64) (common.Version, error)
 	GetAllPrices(timestamp uint64) (common.AllPriceResponse, error)

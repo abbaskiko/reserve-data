@@ -15,10 +15,4 @@ type GlobalStorage interface {
 
 	GetUSDInfo(version common.Version) (common.USDData, error)
 	CurrentUSDInfoVersion(timepoint uint64) (common.Version, error)
-
-	SetGasThreshold(v common.GasThreshold) error
-	GetGasThreshold() (common.GasThreshold, error)
-
-	SetPreferGasSource(v common.PreferGasSource) error
-	GetPreferGasSource() (common.PreferGasSource, error)
 }
