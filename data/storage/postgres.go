@@ -621,7 +621,7 @@ func (ps *PostgresStorage) GetPreferGasSource() (common.PreferGasSource, error) 
 
 func (ps *PostgresStorage) insertGeneralData(key string, data interface{}) error {
 	var (
-		query = `INSERT INTO general_data (key, value, timestamp) VALUES ($1, $2, now());`
+		query = fmt.Sprintf(`INSERT INTO %s (key, value, timestamp) VALUES ($1, $2, now());`, generalDataTable)
 	)
 	byteData, err := json.Marshal(data)
 	if err != nil {
@@ -636,7 +636,7 @@ func (ps *PostgresStorage) insertGeneralData(key string, data interface{}) error
 
 func (ps *PostgresStorage) getGeneralData(key string, result interface{}) error {
 	var (
-		query = `SELECT value FROM general_data WHERE key=$1 ORDER BY timestamp DESC LIMIT 1;`
+		query = fmt.Sprintf(`SELECT value FROM %s WHERE key=$1 ORDER BY timestamp DESC LIMIT 1;`, generalDataTable)
 	)
 	var (
 		resultQuery string
