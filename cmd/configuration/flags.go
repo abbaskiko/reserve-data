@@ -1,6 +1,8 @@
 package configuration
 
 import (
+	"net/http"
+
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
@@ -9,7 +11,8 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain/nonce"
-	"github.com/KyberNetwork/reserve-data/common/gasstation"
+	"github.com/KyberNetwork/reserve-data/common/gasinfo"
+	gaspricedataclient "github.com/KyberNetwork/reserve-data/common/gaspricedata-client"
 	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/data"
 	"github.com/KyberNetwork/reserve-data/data/fetcher"
@@ -110,8 +113,6 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 		config.Blockchain,
 		config.ContractAddresses,
 		config.SettingStorage,
-		config.GasConfig,
-		config.gasClient,
 	)
 	if err != nil {
 		l.Errorw("failed to create block chain", "err", err)
@@ -132,7 +133,9 @@ func CreateDataCore(config *Config,
 	dpl deployment.Deployment,
 	bc *blockchain.Blockchain,
 	l *zap.SugaredLogger,
-	gasPriceLimiter core.GasPriceLimiter) (*data.ReserveData, *core.ReserveCore) {
+	kyberNetworkProxy *blockchain.NetworkProxy,
+	rcf common.RawConfig,
+	httpClient *http.Client) (*data.ReserveData, *core.ReserveCore, *gasinfo.GasPriceInfo) {
 	//get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
@@ -150,6 +153,7 @@ func CreateDataCore(config *Config,
 	bc.RegisterPricingOperator(config.BlockchainSigner, nonceCorpus)
 	bc.RegisterDepositOperator(config.DepositSigner, nonceDeposit)
 	dataFetcher.SetBlockchain(bc)
+
 	rData := data.NewReserveData(
 		config.DataStorage,
 		dataFetcher,
@@ -160,14 +164,16 @@ func CreateDataCore(config *Config,
 		config.SettingStorage,
 	)
 
-	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses, gasPriceLimiter)
-	return rData, rCore
+	gasPriceLimiter := gasinfo.NewNetworkGasPriceLimiter(kyberNetworkProxy, rcf.GasConfig.FetchMaxGasCacheSeconds)
+	gasInfo := gasinfo.NewGasPriceInfo(gasPriceLimiter, rData, gaspricedataclient.New(httpClient, rcf.GasConfig.GasPriceURL))
+
+	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses, gasInfo)
+	return rData, rCore, gasInfo
 }
 
 // NewConfigurationFromContext returns the Configuration object from cli context.
 func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.SugaredLogger,
-	mainNode *common.EthClient, backupNodes []*common.EthClient,
-	client *gasstation.Client, limiter core.GasPriceLimiter) (*Config, error) {
+	mainNode *common.EthClient, backupNodes []*common.EthClient) (*Config, error) {
 
 	bi := binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL)
 	hi := huobi.NewRealInterface(rcf.ExchangeEndpoints.Houbi.URL)
@@ -205,8 +211,6 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 		rcf,
 		mainNode,
 		backupNodes,
-		client,
-		limiter,
 	)
 	if err != nil {
 		return nil, err

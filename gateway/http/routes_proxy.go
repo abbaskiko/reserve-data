@@ -124,6 +124,9 @@ func WithSettingEndpoint(settingEndpoint string) Option {
 		g.GET("/gas-threshold", settingProxyMW)
 		g.POST("/gas-threshold", settingProxyMW)
 
+		g.GET("/gas-source", settingProxyMW)
+		g.POST("/gas-source", settingProxyMW)
+
 		return nil
 	}
 }

@@ -118,6 +118,16 @@ func (rd ReserveData) GetOnePrice(pairID rtypes.TradingPairID, timepoint uint64)
 	return result, err
 }
 
+// SetPreferGasSource ...
+func (rd ReserveData) SetPreferGasSource(v v3.PreferGasSource) error {
+	return rd.settingStorage.SetPreferGasSource(v)
+}
+
+// GetPreferGasSource ...
+func (rd ReserveData) GetPreferGasSource() (v3.PreferGasSource, error) {
+	return rd.settingStorage.GetPreferGasSource()
+}
+
 // CurrentAuthDataVersion return current version of auth data
 func (rd ReserveData) CurrentAuthDataVersion(timepoint uint64) (common.Version, error) {
 	return rd.storage.CurrentAuthDataVersion(timepoint)
