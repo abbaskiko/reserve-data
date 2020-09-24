@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/robfig/cron"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
@@ -19,6 +20,7 @@ import (
 	apphttp "github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/lib/migration"
+	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
 )
 
 func main() {
@@ -91,7 +93,15 @@ func run(c *cli.Context) error {
 		log.Panicf("cannot create network proxy client, err %+v", err)
 	}
 
-	conf, err := configuration.NewConfigurationFromContext(c, rcf, l, mainNode, backupNodes)
+	store, err := createStorage(c, rcf.MigrationPath)
+	if err != nil {
+		return err
+	}
+	if err = schedulePartition(store); err != nil {
+		return err
+	}
+
+	conf, err := configuration.NewConfigurationFromContext(c, rcf, store, mainNode, backupNodes)
 	if err != nil {
 		return err
 	}
@@ -150,4 +160,41 @@ func loadConfigFromFile(path string, rcf *common.RawConfig) error {
 		return err
 	}
 	return json.Unmarshal(data, rcf)
+}
+
+func createStorage(c *cli.Context, path string) (*postgres.Storage, error) {
+	db, err := configuration.NewDBFromContext(c)
+	if err != nil {
+		return nil, err
+	}
+	dbName := configuration.DatabaseNameFromContext(c)
+
+	if _, err := migration.RunMigrationUp(db.DB, path, dbName); err != nil {
+		return nil, err
+	}
+
+	// as this is core connect to setting db, the core endpoint is not needed
+	sr, err := postgres.NewStorage(db)
+	if err != nil {
+		return nil, err
+	}
+	return sr, nil
+}
+
+func schedulePartition(store *postgres.Storage) error {
+	err := store.MakeFetchDataTablePartition() // run immediately one shot
+	if err != nil {
+		return err
+	}
+	mc := cron.New()
+	err = mc.AddFunc("0 0 * * *", func() { // check everyday is good enough
+		if ex := store.MakeFetchDataTablePartition(); ex != nil {
+			zap.S().Errorw("failed to prepare partition", "err", err)
+		}
+	})
+	if err != nil {
+		return err
+	}
+	mc.Start()
+	return nil
 }

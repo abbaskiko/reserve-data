@@ -172,7 +172,7 @@ func CreateDataCore(config *Config,
 }
 
 // NewConfigurationFromContext returns the Configuration object from cli context.
-func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.SugaredLogger,
+func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, store *postgres.Storage,
 	mainNode *common.EthClient, backupNodes []*common.EthClient) (*Config, error) {
 
 	bi := binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL)
@@ -186,20 +186,6 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 	}
 
 	ethereumNodeConf := NewEthereumNodeConfiguration(rcf.Nodes.Main, rcf.Nodes.Backup)
-	db, err := NewDBFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-	dataName := c.String(postgresDatabaseFlag)
-	if _, err := migration.RunMigrationUp(db.DB, rcf.MigrationPath, dataName); err != nil {
-		return nil, err
-	}
-
-	// as this is core connect to setting db, the core endpoint is not needed
-	sr, err := postgres.NewStorage(db)
-	if err != nil {
-		return nil, err
-	}
 
 	config, err := GetConfig(
 		c,
@@ -207,7 +193,7 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, s *zap.Su
 		bi,
 		hi,
 		contractAddressConf,
-		sr,
+		store,
 		rcf,
 		mainNode,
 		backupNodes,
