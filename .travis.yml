@@ -8,7 +8,7 @@ services:
   - postgresql
 
 addons:
-  postgresql: "10"
+  postgresql: "12"
 
 env:
   global:
@@ -52,7 +52,6 @@ deploy:
     bucket: dev-reserve-data-docs.knstats.com
     skip_cleanup: true
     local-dir: apidocs/build
-    skip_cleanup: true
     on:
       all_branches: true
       condition: $TRAVIS_BRANCH =~ ^v3-develop$
