@@ -378,3 +378,8 @@ type GeneralData struct {
 	Key   string `db:"key"`
 	Value string `db:"value"`
 }
+
+// PreferGasSource keep prefer gas source name
+type PreferGasSource struct {
+	Name string `json:"name" binding:"required"`
+}

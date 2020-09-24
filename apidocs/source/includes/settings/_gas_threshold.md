@@ -45,10 +45,31 @@ curl -X GET "https://gateway.local/v3/gas-threshold"
 {
   "success": true,
   "data": {
-    "eth_gas_station": {
-      "fast": 100,
-      "standard": 80,
-      "low": 50
+    "gas_price": {
+      "etherscan": {
+        "value": {
+          "fast": 117,
+          "standard": 105,
+          "slow": 71
+        },
+        "timestamp": 1600748883444
+      },
+      "ethgasstation": {
+        "value": {
+          "fast": 105,
+          "standard": 97,
+          "slow": 90
+        },
+        "timestamp": 1600748883447
+      },
+      "gasnow": {
+        "value": {
+          "fast": 91,
+          "standard": 63,
+          "slow": 61
+        },
+        "timestamp": 1600748883691
+      }
     },
     "high": 150,
     "low": 120

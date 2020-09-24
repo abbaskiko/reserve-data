@@ -67,7 +67,7 @@ func TestGetActivities(t *testing.T) {
 		nil,
 		s,
 		nil,
-		&core.ConstGasPriceLimiter{},
+		nil,
 	)
 
 	sv := NewHTTPServer(
@@ -77,6 +77,7 @@ func TestGetActivities(t *testing.T) {
 		deployment.Development, // deployment mode
 		nil,                    // blockchain
 		nil,                    // storage
+		nil,
 	)
 
 	sv.register()

@@ -12,7 +12,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
-	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	huobiblockchain "github.com/KyberNetwork/reserve-data/exchange/huobi/blockchain"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
@@ -63,25 +62,6 @@ type Blockchain struct {
 	contractAddress *common.ContractAddressConfiguration
 	sr              storage.SettingReader
 	l               *zap.SugaredLogger
-
-	gasConfig common.GasConfig
-	gsClient  *gasstation.Client
-}
-
-// StandardGasPrice get stand gas price from node
-func (bc *Blockchain) StandardGasPrice() float64 {
-	if bc.gasConfig.PreferUseGasStation {
-		gss, err := bc.gsClient.ETHGas()
-		if err == nil { // TODO: we can make decision to use gss.Fast to other if some one ask.
-			return gss.Fast / 10.0 // gas return by gas station is *10, so we need to divide it here
-		}
-		bc.l.Errorw("receive gas price from gasstation failed, failed back to node suggest", "err", err)
-	}
-	price, err := bc.RecommendedGasPriceFromNode()
-	if err != nil {
-		return 0
-	}
-	return common.BigToFloat(price, 9)
 }
 
 // ListedTokens return listed tokens from pricing contract
@@ -455,8 +435,6 @@ func (bc *Blockchain) GetMinedNonceWithOP(op string) (uint64, error) {
 func NewBlockchain(base *blockchain.BaseBlockchain,
 	contractAddressConf *common.ContractAddressConfiguration,
 	sr storage.SettingReader,
-	gasConfig common.GasConfig,
-	gasClient *gasstation.Client,
 ) (*Blockchain, error) {
 	l := zap.S()
 	l.Infow("wrapper address", "address", contractAddressConf.Wrapper.Hex())
@@ -485,8 +463,6 @@ func NewBlockchain(base *blockchain.BaseBlockchain,
 		contractAddress: contractAddressConf,
 		sr:              sr,
 		l:               l,
-		gasConfig:       gasConfig,
-		gsClient:        gasClient,
 	}, nil
 }
 

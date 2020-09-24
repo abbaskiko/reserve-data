@@ -15,9 +15,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/configuration"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
-	"github.com/KyberNetwork/reserve-data/common/gasstation"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
-	"github.com/KyberNetwork/reserve-data/core"
 	apphttp "github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/lib/app"
 	"github.com/KyberNetwork/reserve-data/lib/migration"
@@ -81,6 +79,7 @@ func run(c *cli.Context) error {
 	}
 
 	rcf.MigrationPath = migration.NewMigrationPathFromContext(c)
+	httpClient := &http.Client{}
 
 	mainNode, backupNodes, err := initEthClient(rcf)
 	if err != nil {
@@ -91,10 +90,8 @@ func run(c *cli.Context) error {
 	if err != nil {
 		log.Panicf("cannot create network proxy client, err %+v", err)
 	}
-	gasPriceLimiter := core.NewNetworkGasPriceLimiter(kyberNetworkProxy, rcf.GasConfig.FetchMaxGasCacheSeconds)
-	gasstationClient := gasstation.New(&http.Client{}, rcf.GasConfig.GasStationAPIKey)
 
-	conf, err := configuration.NewConfigurationFromContext(c, rcf, l, mainNode, backupNodes, gasstationClient, gasPriceLimiter)
+	conf, err := configuration.NewConfigurationFromContext(c, rcf, l, mainNode, backupNodes)
 	if err != nil {
 		return err
 	}
@@ -107,7 +104,7 @@ func run(c *cli.Context) error {
 
 	dryRun := configuration.NewDryRunFromContext(c)
 
-	rData, rCore := configuration.CreateDataCore(conf, dpl, bc, l, gasPriceLimiter)
+	rData, rCore, gasInfo := configuration.CreateDataCore(conf, dpl, bc, l, kyberNetworkProxy, rcf, httpClient)
 	if !dryRun {
 		if dpl != deployment.Simulation {
 			if err = rData.RunStorageController(); err != nil {
@@ -132,6 +129,7 @@ func run(c *cli.Context) error {
 		dpl,
 		bc,
 		conf.SettingStorage,
+		gasInfo,
 	)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()

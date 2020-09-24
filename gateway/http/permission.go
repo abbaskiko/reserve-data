@@ -45,7 +45,8 @@ p, %[1]s, /v3/hold-set-rate, POST
 p, %[1]s, /v3/gas-threshold, POST
 p, %[1]s, /v3/set-exchange-enabled/:id, PUT
 p, %[1]s, /v3/enable-set-rate, POST
-p, %[1]s, /v3/rate-trigger-period, POST`, key)
+p, %[1]s, /v3/rate-trigger-period, POST
+p, %[1]s, /v3/gas-source, POST`, key)
 }
 
 func addKeyRebalancePolicy(key string) string {

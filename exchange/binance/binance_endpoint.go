@@ -157,13 +157,13 @@ func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, ra
 		"type":        orderType,
 		"timeInForce": "GTC",
 		"quantity":    strconv.FormatFloat(amount, 'f', -1, 64),
+		"price":       strconv.FormatFloat(rate, 'f', -1, 64),
 	}
-	params["price"] = strconv.FormatFloat(rate, 'f', -1, 64)
 	respBody, err := ep.GetResponse(
 		"POST",
-		ep.interf.AuthenticatedEndpoint()+"/api/v3/order",
+		fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
 		params,
-		true,
+		false,
 		common.NowInMillis(),
 	)
 	if err != nil {
@@ -324,7 +324,7 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 			"symbol":  symbol,
 			"orderId": fmt.Sprintf("%d", id),
 		},
-		true,
+		false,
 		common.NowInMillis(),
 	)
 	if err == nil {
@@ -407,7 +407,7 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair *commonv3.TradingPairSymbols) (exc
 		"GET",
 		fmt.Sprintf("%s/api/v3/openOrders/%s", ep.accountDataBaseURL, ep.accountID),
 		params,
-		true,
+		false,
 		common.NowInMillis(),
 	)
 	if err != nil {

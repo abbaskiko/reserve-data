@@ -19,6 +19,7 @@ import (
 	"github.com/KyberNetwork/reserve-data"
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/common/gasinfo"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/lib/caller"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
@@ -39,6 +40,7 @@ type Server struct {
 	blockchain     Blockchain
 	settingStorage storage.Interface
 	l              *zap.SugaredLogger
+	gasInfo        *gasinfo.GasPriceInfo
 }
 
 func getTimePoint(c *gin.Context, l *zap.SugaredLogger) uint64 {
@@ -589,6 +591,7 @@ func NewHTTPServer(
 	dpl deployment.Deployment,
 	bc Blockchain,
 	settingStorage storage.Interface,
+	gasInfo *gasinfo.GasPriceInfo,
 ) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
@@ -613,5 +616,6 @@ func NewHTTPServer(
 		blockchain:     bc,
 		settingStorage: settingStorage,
 		l:              zap.S(),
+		gasInfo:        gasInfo,
 	}
 }
