@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
@@ -79,7 +78,12 @@ func updateTradingPairConf(
 	}
 }
 
-func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInterface, he exchange.HuobiInterface) {
+func updateDepositAddress(assetStorage storage.Interface, exchanges map[rtypes.ExchangeID]interface{}) {
+	var (
+		bin *exchange.Binance
+		hb  *exchange.Huobi
+		ok  bool
+	)
 	l := zap.S()
 	assets, err := assetStorage.GetTransferableAssets()
 	if err != nil {
@@ -92,51 +96,47 @@ func updateDepositAddress(assetStorage storage.Interface, be exchange.BinanceInt
 			case rtypes.Binance, rtypes.Binance2:
 				l.Infow("updating deposit address for asset", "asset_id", asset.ID,
 					"exchange", ae.ExchangeID.String(), "symbol", ae.Symbol)
-				if be == nil {
-					l.Warnw("abort updating deposit address due binance exchange disabled")
-					continue
+				if bin, ok = exchanges[ae.ExchangeID].(*exchange.Binance); !ok {
+					l.Warnw("exchange does not exist", "exchange id", ae.ExchangeID)
 				}
-				depositAddress, err := be.GetDepositAddress(ae.Symbol)
-				if err != nil {
+				depositAddress, ok := bin.Address(asset)
+				if !ok {
 					l.Warnw("failed to get deposit address for asset",
 						"asset_id", asset.ID,
 						"exchange", ae.ExchangeID.String(), "symbol", ae.Symbol, "err", err.Error())
 					continue
 				}
-				err = assetStorage.UpdateDepositAddress(
+				if err = assetStorage.UpdateDepositAddress(
 					asset.ID,
 					ae.ExchangeID,
-					ethereum.HexToAddress(depositAddress.Address))
-				if err != nil {
-					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
-					continue
+					depositAddress); err != nil {
+					l.Warnw("failed to update deposit address", "err", err)
 				}
+				l.Infow("updated deposit address", "address", depositAddress.Hex())
 			case rtypes.Huobi:
 				l.Infow("updating deposit address for asset", "asset_id", asset.ID,
 					"exchange", ae.ExchangeID.String(),
 					"symbol", ae.Symbol)
-				if he == nil {
-					l.Warnw("abort updating deposit address due huobi exchange disabled")
-					continue
+				if hb, ok = exchanges[ae.ExchangeID].(*exchange.Huobi); !ok {
+					l.Warnw("exchange does not exist", "exchange id", ae.ExchangeID)
 				}
-				depositAddress, err := he.GetDepositAddress(ae.Symbol)
-				if err != nil {
+				depositAddress, ok := hb.Address(asset)
+				if !ok {
 					l.Warnw("failed to get deposit address for asset",
 						"asset_id", asset.ID,
 						"exchange", ae.ExchangeID.String(),
 						"symbol", ae.Symbol, "err", err)
 					continue
 				}
-				if len(depositAddress.Data) != 0 {
-					err = assetStorage.UpdateDepositAddress(
-						asset.ID,
-						rtypes.Huobi,
-						ethereum.HexToAddress(depositAddress.Data[0].Address))
-					if err != nil {
-						l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
-						continue
-					}
+				err = assetStorage.UpdateDepositAddress(
+					asset.ID,
+					rtypes.Huobi,
+					depositAddress)
+				if err != nil {
+					l.Warnw("assetStorage.UpdateDepositAddress", "err", err.Error())
+					continue
 				}
+				l.Infow("updated deposit address", "address", depositAddress.Hex())
 			}
 		}
 	}
@@ -219,7 +219,7 @@ func NewExchangePool(
 		}
 	}
 
-	go updateDepositAddress(assetStorage, be, he)
+	go updateDepositAddress(assetStorage, exchanges)
 	if bin, ok := exchanges[rtypes.Binance].(*exchange.Binance); ok {
 		go updateTradingPairConf(assetStorage, bin, bin.ID())
 	}
