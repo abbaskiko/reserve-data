@@ -349,7 +349,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 	result := exchange.Binawithdraw{}
 	respBody, err := ep.GetResponse(
 		"POST",
-		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/withdraw.html",
+		fmt.Sprintf("%s/wapi/v3/withdraw/%s", ep.accountDataBaseURL, ep.accountID),
 		map[string]string{
 			"asset":   symbol,
 			"address": address.Hex(),
