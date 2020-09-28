@@ -8,7 +8,7 @@ import (
 
 func (s *Server) setPreferGasSource(c *gin.Context) {
 	var input common.PreferGasSource
-	if err := c.BindJSON(input); err != nil {
+	if err := c.BindJSON(&input); err != nil {
 		httputil.ResponseFailure(c, httputil.WithReason(err.Error()))
 		return
 	}
