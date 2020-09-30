@@ -23,7 +23,7 @@ const (
 	activityTable  = "activity"
 	// data type constant
 
-	authDataExpiredDuration uint64 = 10 * 86400000 //10day in milisec
+	authDataExpiredDuration uint64 = 10 * 86400000 // 10day in milisec
 )
 
 //go:generate enumer -type=fetchDataType -linecomment -json=true -sql=true
@@ -270,7 +270,7 @@ func (ps *PostgresStorage) GetRate(v common.Version) (common.AllRateEntry, error
 	return rate, err
 }
 
-//GetRates return rate from time to time
+// GetRates return rate from time to time
 func (ps *PostgresStorage) GetRates(fromTime, toTime uint64) ([]common.AllRateEntry, error) {
 	var (
 		rates []common.AllRateEntry

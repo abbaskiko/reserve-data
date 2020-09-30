@@ -16,7 +16,7 @@ type stableTokenParamsDB struct {
 func (s *Storage) GetStableTokenParams() (map[string]interface{}, error) {
 	var r stableTokenParamsDB
 	var data = make(map[string]interface{})
-	//var jsonMsg json.RawMessage
+	// var jsonMsg json.RawMessage
 
 	err := s.stmts.getStableTokenParam.Get(&r)
 	if err != nil {

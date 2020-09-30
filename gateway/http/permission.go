@@ -62,8 +62,8 @@ p, %[1]s, /v3/cancel-setrates, POST
 p, %[1]s, /v3/setrates, POST`, key)
 }
 
-//NewPermissioner creates a gin Handle Func to controll permission
-//currently there is only 2 permission for POST/GET requests
+// NewPermissioner creates a gin Handle Func to controll permission
+// currently there is only 2 permission for POST/GET requests
 func NewPermissioner(readKeys, writeKeys, confirmKeys, rebalanceKeys []authenticator.KeyPair) (gin.HandlerFunc, error) {
 	const (
 		conf = `
