@@ -5,10 +5,10 @@ package rtypes
 type ExchangeID uint64
 
 const (
-	//Binance is the enumerated key for binance
-	Binance ExchangeID = iota + 1 //binance
-	//Huobi is the enumerated key for huobi
-	Huobi //huobi
+	// Binance is the enumerated key for binance
+	Binance ExchangeID = iota + 1 // binance
+	// Huobi is the enumerated key for huobi
+	Huobi // huobi
 	// Binance2 is second binance exchange
 	Binance2 // binance_2
 )

@@ -136,7 +136,7 @@ func CreateDataCore(config *Config,
 	kyberNetworkProxy *blockchain.NetworkProxy,
 	rcf common.RawConfig,
 	httpClient *http.Client) (*data.ReserveData, *core.ReserveCore, *gasinfo.GasPriceInfo) {
-	//get fetcher based on config and ENV == simulation.
+	// get fetcher based on config and ENV == simulation.
 	dataFetcher := fetcher.NewFetcher(
 		config.FetcherStorage,
 		config.FetcherGlobalStorage,

@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 
+	"github.com/KyberNetwork/cclog/lib/client"
 	"github.com/KyberNetwork/reserve-data/cmd/mode"
 )
 
@@ -29,6 +30,8 @@ const (
 
 	logOutputFlag = "log-output"
 	// defaultLogOutput = "./log.log"
+	ccLogAddr = "cclog-addr"
+	cclogName = "cclog-name"
 )
 
 // NewSentryFlags returns flags to init sentry client
@@ -47,6 +50,17 @@ func NewSentryFlags() []cli.Flag {
 			Name:   logOutputFlag,
 			EnvVar: "LOG_OUTPUT",
 			Usage:  "log path to log file",
+		},
+		cli.StringFlag{
+			Name:   ccLogAddr,
+			Usage:  "cclog-address",
+			Value:  "",
+			EnvVar: "CCLOG_ADDR",
+		}, cli.StringFlag{
+			Name:   cclogName,
+			Usage:  "cclog-name",
+			Value:  "cex-account-data",
+			EnvVar: "CCLOG_NAME",
 		},
 	}
 }
@@ -95,11 +109,22 @@ func NewLogger(c *cli.Context) (*zap.Logger, error) {
 	var (
 		l       *zap.Logger
 		encoder zapcore.Encoder
+		writers = []io.Writer{os.Stdout}
 	)
-	modeConfig := c.GlobalString(modeFlag)
 	logOutPutFile := c.String(logOutputFlag)
+	logAddr := c.GlobalString(ccLogAddr)
+	logName := c.GlobalString(cclogName)
+	if logAddr != "" && logName != "" {
+		ccw := client.NewAsyncLogClient(logName, logAddr, func(err error) {
+			fmt.Println("send log error", err)
+		})
+		writers = append(writers, &UnescapeWriter{w: ccw})
+		w := configRotateLog(logOutPutFile)
+		writers = append(writers, w)
+	}
+	w := io.MultiWriter(writers...)
 
-	w := configRotateLog(logOutPutFile)
+	modeConfig := c.GlobalString(modeFlag)
 	switch modeConfig {
 	case mode.Production.String():
 		encoder = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())

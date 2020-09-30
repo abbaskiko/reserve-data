@@ -44,7 +44,7 @@ func (c *core) Write(ent zapcore.Entry, fs []zapcore.Field) error {
 
 	event := sentry.NewEvent()
 	event.Message = ent.Message
-	event.Timestamp = ent.Time.Unix()
+	event.Timestamp = ent.Time
 	event.Level = sentrySeverity(ent.Level)
 	event.Platform = "Golang"
 	event.Extra = clone.fields
@@ -61,8 +61,11 @@ func (c *core) Write(ent zapcore.Entry, fs []zapcore.Field) error {
 		}
 	}
 
-	scope := sentry.CurrentHub().Scope()
-	_ = c.client.CaptureEvent(event, nil, scope)
+	hub := c.cfg.Hub
+	if hub == nil {
+		hub = sentry.CurrentHub()
+	}
+	_ = c.client.CaptureEvent(event, nil, hub.Scope())
 
 	// We may be crashing the program, so should flush any buffered events.
 	if ent.Level > zapcore.ErrorLevel {
@@ -97,6 +100,7 @@ func (c *core) with(fs []zapcore.Field) *core {
 	return &core{
 		client:       c.client,
 		cfg:          c.cfg,
+		flushTimeout: c.flushTimeout,
 		fields:       m,
 		LevelEnabler: c.LevelEnabler,
 	}

@@ -147,7 +147,7 @@ func (tw *TheWorld) getFeedProviderInfo(ep string) common.FeedProviderResponse {
 	return result
 }
 
-//NewTheWorld return new world instance
+// NewTheWorld return new world instance
 func NewTheWorld(worldEndpoints common.WorldEndpoints) *TheWorld {
 	return &TheWorld{
 		endpoint: worldEndpoints,
