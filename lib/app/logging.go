@@ -127,9 +127,9 @@ func NewLogger(c *cli.Context) (*zap.Logger, error) {
 	modeConfig := c.GlobalString(modeFlag)
 	switch modeConfig {
 	case mode.Production.String():
-		encoder = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+		encoder = zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig())
 	case mode.Development.String():
-		encoder = zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+		encoder = zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig())
 	default:
 		return nil, fmt.Errorf("invalid running mode: %q", modeConfig)
 	}
