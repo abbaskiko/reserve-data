@@ -18,7 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
 
-//ReserveData struct for reserve data
+// ReserveData struct for reserve data
 type ReserveData struct {
 	storage           Storage
 	fetcher           Fetcher
@@ -274,7 +274,7 @@ func isDuplicated(oldData, newData map[rtypes.AssetID]common.RateResponse) bool 
 }
 
 func getOneRateData(rate common.AllRateEntry) map[rtypes.AssetID]common.RateResponse {
-	//get data from rate object and return the data.
+	// get data from rate object and return the data.
 	data := map[rtypes.AssetID]common.RateResponse{}
 	for tokenID, r := range rate.Data {
 		data[tokenID] = common.RateResponse{
@@ -310,7 +310,7 @@ func (rd ReserveData) GetRates(fromTime, toTime uint64) ([]common.AllRateRespons
 	if err != nil {
 		return result, err
 	}
-	//current: the unchanged one so far
+	// current: the unchanged one so far
 	current := common.AllRateResponse{}
 	for _, rate := range rates {
 		one := common.AllRateResponse{}
@@ -318,7 +318,7 @@ func (rd ReserveData) GetRates(fromTime, toTime uint64) ([]common.AllRateRespons
 		one.ReturnTime = rate.ReturnTime
 		one.Data = getOneRateData(rate)
 		one.BlockNumber = rate.BlockNumber
-		//if one is the same as current
+		// if one is the same as current
 		if isDuplicated(one.Data, current.Data) {
 			if len(result) > 0 {
 				result[len(result)-1].ToBlockNumber = one.BlockNumber
@@ -381,17 +381,17 @@ func (rd ReserveData) GetPendingActivities() ([]common.ActivityRecord, error) {
 	return rd.storage.GetPendingActivities()
 }
 
-//Run run fetcher
+// Run run fetcher
 func (rd ReserveData) Run() error {
 	return rd.fetcher.Run()
 }
 
-//Stop stop the fetcher
+// Stop stop the fetcher
 func (rd ReserveData) Stop() error {
 	return rd.fetcher.Stop()
 }
 
-//ControlAuthDataSize pack old data to file, push to S3 and prune outdated data
+// ControlAuthDataSize pack old data to file, push to S3 and prune outdated data
 func (rd ReserveData) ControlAuthDataSize() error {
 	tmpDir, err := ioutil.TempDir("", "ExpiredAuthData")
 	if err != nil {
@@ -428,7 +428,7 @@ func (rd ReserveData) ControlAuthDataSize() error {
 
 					}
 					if err != nil || !integrity {
-						//if the intergrity check failed, remove the remote file.
+						// if the intergrity check failed, remove the remote file.
 						removalErr := rd.storageController.Arch.RemoveFile(rd.storageController.Arch.GetReserveDataBucketName(), rd.storageController.ExpiredAuthDataPath, fileName)
 						if removalErr != nil {
 							rd.l.Warnw("ERROR: DataPruner: cannot remove remote file", "err", removalErr, "file", fileName)
@@ -484,7 +484,7 @@ func (rd ReserveData) RunStorageController() error {
 	return nil
 }
 
-//NewReserveData initiate a new reserve instance
+// NewReserveData initiate a new reserve instance
 func NewReserveData(storage Storage,
 	fetcher Fetcher, storageControllerRunner datapruner.StorageControllerRunner,
 	arch archive.Archive, globalStorage GlobalStorage,

@@ -1,6 +1,6 @@
 package http
 
-//Option define initialize behavior for server
+// Option define initialize behavior for server
 type Option func(*Server) error
 
 // WithCoreEndpoint set endpoint gateway for V3

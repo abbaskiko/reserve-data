@@ -226,8 +226,8 @@ func (ep *Endpoint) GetAccountTradeHistory(
 func (ep *Endpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawithdrawals, error) {
 	result := exchange.Binawithdrawals{}
 	respBody, err := ep.GetResponse(
-		"GET",
-		ep.interf.AuthenticatedEndpoint()+"/wapi/v3/withdrawHistory.html",
+		http.MethodGet,
+		fmt.Sprintf("%s/wapi/v3/withdrawHistory/%s", ep.accountDataBaseURL, ep.accountID),
 		map[string]string{
 			"startTime": fmt.Sprintf("%d", startTime),
 			"endTime":   fmt.Sprintf("%d", endTime),
@@ -517,7 +517,7 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 	return nil
 }
 
-//NewBinanceEndpoint return new endpoint instance for using binance
+// NewBinanceEndpoint return new endpoint instance for using binance
 func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client, exparam rtypes.ExchangeID,
 	marketDataBaseURL, accountDataBaseURL, accountID string) *Endpoint {
 	l := zap.S()

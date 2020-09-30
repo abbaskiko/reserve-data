@@ -59,7 +59,7 @@ func getFileNameFromFilePath(filePath string) string {
 }
 
 func (a *S3Archive) CheckFileIntergrity(bucketName string, awsfolderPath string, filePath string) (bool, error) {
-	//get File info
+	// get File info
 	file, err := os.Open(filePath)
 	defer func() {
 		if cErr := file.Close(); cErr != nil {
@@ -73,7 +73,7 @@ func (a *S3Archive) CheckFileIntergrity(bucketName string, awsfolderPath string,
 	if err != nil {
 		return false, err
 	}
-	//get AWS's file info
+	// get AWS's file info
 
 	x := s3.ListObjectsInput{
 		Bucket: aws.String(bucketName),
