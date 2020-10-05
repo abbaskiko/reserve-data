@@ -227,6 +227,8 @@ func (rc ReserveCore) Deposit(
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
+	rc.l.Infow("deposit initialized", "exchange", exchange.ID().String(), "asset",
+		asset.Address.String(), "name", asset.Name, "amount", amount.String())
 
 	sErr := recordActivity(
 		common.MiningStatusSubmitted,
@@ -378,6 +380,8 @@ func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, a
 
 	id, err := exchange.Withdraw(asset, amount, reserveAddr)
 	if err != nil {
+		rc.l.Errorw("init withdraw failed", "err", err, "asset", asset.Address.String(),
+			"amount", amount.String(), "reserveAddr", reserveAddr)
 		sErr := activityRecord("", common.ExchangeStatusFailed, err)
 		if sErr != nil {
 			rc.l.Warnw("failed to store activity record", "err", sErr)

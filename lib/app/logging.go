@@ -125,15 +125,17 @@ func NewLogger(c *cli.Context) (*zap.Logger, error) {
 	w := io.MultiWriter(writers...)
 
 	modeConfig := c.GlobalString(modeFlag)
+	pConf := zap.NewProductionEncoderConfig()
+	pConf.EncodeTime = zapcore.ISO8601TimeEncoder
 	switch modeConfig {
 	case mode.Production.String():
-		encoder = zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig())
+		encoder = zapcore.NewConsoleEncoder(pConf)
 	case mode.Development.String():
-		encoder = zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig())
+		encoder = zapcore.NewConsoleEncoder(pConf)
 	default:
 		return nil, fmt.Errorf("invalid running mode: %q", modeConfig)
 	}
-	l = zap.New(zapcore.NewCore(encoder, zapcore.AddSync(w), zap.DebugLevel))
+	l = zap.New(zapcore.NewCore(encoder, zapcore.AddSync(w), zap.DebugLevel), zap.AddCaller())
 
 	return l, nil
 }

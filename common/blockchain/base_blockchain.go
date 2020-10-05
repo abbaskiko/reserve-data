@@ -192,7 +192,7 @@ func (b *BaseBlockchain) transactTx(context context.Context, opts TxOpts, contra
 		msg := ether.CallMsg{From: opts.Operator.Address, To: &contract, Value: value, Data: input}
 		gasLimit, err = b.client.EstimateGas(ensureContext(context), msg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to estimate gas needed: %v", err)
+			return types.NewTransaction(nonce, contract, value, gasLimit, opts.GasPrice, input), fmt.Errorf("failed to estimate gas needed: %v", err)
 		}
 		// add gas limit by 50K gas
 		gasLimit += 50000
