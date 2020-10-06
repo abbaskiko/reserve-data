@@ -669,7 +669,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				assetID := activity.Params.Asset
 
 				status, err = exchange.DepositStatus(id, txHash, assetID, amount, timepoint)
-				f.l.Infof("Got deposit status for %v: (%s), error(%v)", activity, status, err)
+				f.l.Infow("Got deposit status for tx %s - %v: (%s), error(%v)", txHash, activity, status, err)
 			case common.ActionWithdraw:
 				amount := activity.Params.Amount
 				assetID := activity.Params.Asset
