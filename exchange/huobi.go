@@ -712,7 +712,7 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 		mu       sync.Mutex
 	)
 	if pair.BaseSymbol == "" {
-		logger.Info("No pair token provided, get open orders for all token")
+		logger.Debug("No pair token provided, get open orders for all token")
 		pairs, err = h.TokenPairs()
 		if err != nil {
 			return nil, err
@@ -724,7 +724,7 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 		errGroup.Go(
 			func(pair commonv3.TradingPairSymbols) func() error {
 				return func() error {
-					logger.Infow("get open orders for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
+					logger.Debugw("get open orders for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
 					orders, err := h.interf.OpenOrdersForOnePair(pair)
 					if err != nil {
 						return err

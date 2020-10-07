@@ -139,7 +139,7 @@ func (s *Server) Price(c *gin.Context) {
 
 // AuthDataVersion return current version of auth data
 func (s *Server) AuthDataVersion(c *gin.Context) {
-	s.l.Infow("Getting current auth data snapshot version")
+	s.l.Debugw("Getting current auth data snapshot version")
 	data, err := s.app.CurrentAuthDataVersion(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -150,7 +150,7 @@ func (s *Server) AuthDataVersion(c *gin.Context) {
 
 // AuthData return current auth data
 func (s *Server) AuthData(c *gin.Context) {
-	s.l.Infow("Getting current auth data snapshot \n")
+	s.l.Debugw("Getting current auth data snapshot \n")
 	data, err := s.app.GetAuthData(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -284,7 +284,7 @@ func (s *Server) OpenOrders(c *gin.Context) {
 		}
 		logger.Infow("getting open orders for pair", "base", pair.BaseSymbol, "quote", pair.QuoteSymbol)
 	} else {
-		logger.Info("pair id not provide, getting open orders for all supported pairs")
+		logger.Debug("pair id not provide, getting open orders for all supported pairs")
 	}
 	result := make(map[rtypes.ExchangeID][]common.Order)
 	for exchangeID, exchange := range getExchange {

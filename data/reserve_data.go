@@ -405,7 +405,7 @@ func (rd ReserveData) ControlAuthDataSize() error {
 	}()
 
 	for {
-		rd.l.Info("DataPruner: waiting for signal from runner AuthData controller channel")
+		rd.l.Debug("DataPruner: waiting for signal from runner AuthData controller channel")
 		t := <-rd.storageController.Runner.GetAuthBucketTicker()
 		timepoint := common.TimeToMillis(t)
 		rd.l.Infow("DataPruner: got signal in AuthData controller channel", "timestamp", common.TimeToMillis(t))

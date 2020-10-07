@@ -198,6 +198,7 @@ func (rc *ReserveCore) Deposit(
 			Nonce:    txnonce,
 			GasPrice: txprice,
 			Error:    "",
+			TxTime:   common.TimeToMillis(time.Now()),
 		}
 
 		if err != nil {
@@ -673,6 +674,24 @@ func (rc *ReserveCore) SetRates(assets []commonv3.Asset, buys, sells []*big.Int,
 	)
 
 	return uid, common.CombineActivityStorageErrs(err, sErr)
+}
+
+// SpeedupDeposit send a new tx with same info, with higher gas
+func (rc *ReserveCore) SpeedupDeposit(tx ethereum.Hash) (*big.Int, error) {
+	newGas, err := rc.gasPriceInfo.GetCurrentGas()
+	if err != nil {
+		return nil, fmt.Errorf("speedup deposit failed due can't get gas price, %w", err)
+	}
+	maxGas, err := rc.gasPriceInfo.MaxGas()
+	if err != nil {
+		maxGas = maxGasPrice
+	}
+	if newGas > maxGas {
+		newGas = maxGas
+	}
+	gasPrice := common.GweiToWei(newGas)
+	err = rc.blockchain.SpeedupDeposit(tx, gasPrice)
+	return gasPrice, err
 }
 
 func sanityCheck(buys, afpMid, sells []*big.Int, l *zap.SugaredLogger) error {
