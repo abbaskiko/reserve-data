@@ -33,6 +33,8 @@ type ReserveCore struct {
 	addressConf     *common.ContractAddressConfiguration
 	l               *zap.SugaredLogger
 	gasPriceInfo    *gasinfo.GasPriceInfo
+	// nonce value will be use in deposit transaction
+	depositNonce int64
 }
 
 // NewReserveCore return reserve core
@@ -55,7 +57,7 @@ func timebasedID(id string) common.ActivityID {
 }
 
 // CancelOrders cancel orders on centralized exchanges
-func (rc ReserveCore) CancelOrders(orders []common.RequestOrder, exchange common.Exchange) map[string]common.CancelOrderResult {
+func (rc *ReserveCore) CancelOrders(orders []common.RequestOrder, exchange common.Exchange) map[string]common.CancelOrderResult {
 	var (
 		logger = rc.l.With("func", caller.GetCurrentFunctionName())
 	)
@@ -85,7 +87,7 @@ func (rc ReserveCore) CancelOrders(orders []common.RequestOrder, exchange common
 }
 
 // Trade token on centralized exchange
-func (rc ReserveCore) Trade(
+func (rc *ReserveCore) Trade(
 	exchange common.Exchange,
 	tradeType string,
 	pair commonv3.TradingPairSymbols,
@@ -170,7 +172,7 @@ func (rc ReserveCore) Trade(
 }
 
 // Deposit deposit token into centralized exchange
-func (rc ReserveCore) Deposit(
+func (rc *ReserveCore) Deposit(
 	exchange common.Exchange,
 	asset commonv3.Asset,
 	amount *big.Int,
@@ -240,7 +242,7 @@ func (rc ReserveCore) Deposit(
 	return uidGenerator(tx.Hash().Hex()), common.CombineActivityStorageErrs(err, sErr)
 }
 
-func (rc ReserveCore) maxGasPrice() float64 {
+func (rc *ReserveCore) maxGasPrice() float64 {
 	// MaxGasPrice will fetch gasPrice from kyber network contract(with cache for configurable seconds)
 	max, err := rc.gasPriceInfo.MaxGas()
 	if err != nil {
@@ -250,8 +252,13 @@ func (rc ReserveCore) maxGasPrice() float64 {
 	}
 	return max
 }
-
-func (rc ReserveCore) doDeposit(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) (tx *types.Transaction, err error) {
+func maxInt64(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+func (rc *ReserveCore) doDeposit(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) (tx *types.Transaction, err error) {
 
 	address, supported := exchange.Address(asset)
 	if !supported {
@@ -269,13 +276,29 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, asset commonv3.Asset, 
 	}
 	// if there is a pending deposit tx, we replace it
 	var (
-		initPrice  *big.Int
-		minedNonce uint64
+		initPrice     *big.Int
+		selectedNonce int64
 	)
-	minedNonce, err = rc.blockchain.GetMinedNonceWithOP(blockchain.DepositOP)
+	minedNonce, err := rc.blockchain.GetMinedNonceWithOP(blockchain.DepositOP)
 	if err != nil {
+		rc.l.Errorw("couldn't get mined nonce of deposit operator", "err", err)
 		return tx, fmt.Errorf("couldn't get mined nonce of deposit operator (%+v)", err)
 	}
+	rc.l.Debugw("mined nonce for deposit account", "nonce", minedNonce)
+	if rc.depositNonce == 0 {
+		maxPendingNonce, err := rc.activityStorage.MaxPendingNonce(common.ActionDeposit)
+		if err != nil || maxPendingNonce == 0 {
+			selectedNonce = int64(minedNonce)
+		} else {
+			selectedNonce = maxPendingNonce + 1
+			rc.l.Debugw("use max pending activity nonce", "nonce", selectedNonce)
+		}
+	} else { // we have a nonce, use it
+		selectedNonce = rc.depositNonce
+	}
+	selectedNonce = maxInt64(int64(minedNonce), selectedNonce) // select the bigger value, just in case our local nonce get delay
+	rc.l.Debugw("selected nonce for deposit", "nonce", selectedNonce)
+
 	/* // we don't support override nonce for deposit due huobi deposit require 2 step
 	// a deposit can stay in pending state when step 1 done, step 2 is processing,
 	// we can't handle this situation at this time.
@@ -314,15 +337,15 @@ func (rc ReserveCore) doDeposit(exchange common.Exchange, asset commonv3.Asset, 
 	}
 	rc.l.Infof("initial deposit tx, init price: %s", initPrice.String())
 
-	if tx, err = rc.blockchain.Send(asset, amount, address, big.NewInt(int64(minedNonce)), initPrice); err != nil {
+	if tx, err = rc.blockchain.Send(asset, amount, address, big.NewInt(selectedNonce), initPrice); err != nil {
 		return nil, err
 	}
-
+	rc.depositNonce = selectedNonce + 1 // increase nonce if we success send a transaction, can be use for next transaction
 	return tx, nil
 }
 
 // Withdraw token from exchange
-func (rc ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) (common.ActivityID, error) {
+func (rc *ReserveCore) Withdraw(exchange common.Exchange, asset commonv3.Asset, amount *big.Int) (common.ActivityID, error) {
 	var err error
 	timepoint := common.NowInMillis()
 	activityRecord := func(id, status string, err error) error {
@@ -412,7 +435,7 @@ func calculateNewGasPrice(initPrice *big.Int, count uint64, highBoundGasPrice fl
 }
 
 // return: old nonce, init price, step, error
-func (rc ReserveCore) pendingActionInfo(minedNonce uint64, activityType string) (*big.Int, *big.Int, uint64, error) {
+func (rc *ReserveCore) pendingActionInfo(minedNonce uint64, activityType string) (*big.Int, *big.Int, uint64, error) {
 	act, count, err := rc.activityStorage.PendingActivityForAction(minedNonce, activityType)
 	if err != nil {
 		return nil, nil, 0, err
@@ -444,7 +467,7 @@ func requireSameLength(tokens []commonv3.Asset, buys, sells, afpMids []*big.Int)
 }
 
 // CancelSetRate create and send a tx with higher gas price to cancel all pending set rate tx
-func (rc ReserveCore) CancelSetRate() (common.ActivityID, error) {
+func (rc *ReserveCore) CancelSetRate() (common.ActivityID, error) {
 	minedNonce, err := rc.blockchain.GetMinedNonceWithOP(blockchain.PricingOP)
 	if err != nil {
 		return common.ActivityID{}, fmt.Errorf("couldn't get mined nonce of set rate operator (%+v)", err)
@@ -517,7 +540,7 @@ func (rc ReserveCore) CancelSetRate() (common.ActivityID, error) {
 }
 
 // GetSetRateResult return result of set rate action
-func (rc ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
+func (rc *ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 	buys, sells, afpMids []*big.Int,
 	block *big.Int) (*types.Transaction, error) {
 	var (
@@ -591,7 +614,7 @@ func (rc ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 }
 
 // SetRates to reserve
-func (rc ReserveCore) SetRates(assets []commonv3.Asset, buys, sells []*big.Int, block *big.Int, afpMids []*big.Int, msgs []string, triggers []bool) (common.ActivityID, error) {
+func (rc *ReserveCore) SetRates(assets []commonv3.Asset, buys, sells []*big.Int, block *big.Int, afpMids []*big.Int, msgs []string, triggers []bool) (common.ActivityID, error) {
 
 	var (
 		tx           *types.Transaction

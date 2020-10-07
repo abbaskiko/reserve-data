@@ -61,7 +61,7 @@ func getTimePoint(c *gin.Context, l *zap.SugaredLogger) uint64 {
 
 // AllPricesVersion return current version of all token
 func (s *Server) AllPricesVersion(c *gin.Context) {
-	s.l.Infow("Getting all prices version")
+	s.l.Debugw("Getting all prices version")
 	data, err := s.app.CurrentPriceVersion(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
@@ -80,7 +80,7 @@ type price struct {
 
 // AllPrices return prices of all tokens
 func (s *Server) AllPrices(c *gin.Context) {
-	s.l.Infow("Getting all prices")
+	s.l.Debugw("Getting all prices")
 	data, err := s.app.GetAllPrices(getTimePoint(c, s.l))
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))

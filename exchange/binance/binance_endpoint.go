@@ -80,7 +80,7 @@ func (ep *Endpoint) GetResponse(
 	req.URL.RawQuery = q.Encode()
 	ep.fillRequest(req, signNeeded, timepoint)
 
-	ep.l.Infof("request to binance: %s", req.URL)
+	ep.l.Debugf("request to binance: %s", req.URL)
 	resp, err := ep.client.Do(req)
 	if err != nil {
 		return respBody, err

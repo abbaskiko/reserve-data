@@ -120,6 +120,10 @@ type testActivityStorage struct {
 	PendingDeposit bool
 }
 
+func (tas testActivityStorage) MaxPendingNonce(action string) (int64, error) {
+	return 0, nil
+}
+
 func (tas testActivityStorage) Record(
 	action string,
 	id common.ActivityID,
