@@ -55,7 +55,7 @@ func (s *Storage) GetExchange(id rtypes.ExchangeID) (common.Exchange, error) {
 		result  common.Exchange
 	)
 
-	s.l.Infow("querying exchange from database", "id", id)
+	s.l.Debugw("querying exchange from database", "id", id)
 	if err := s.stmts.getExchange.Get(&qResult, id); err != nil {
 		if err == sql.ErrNoRows {
 			return common.Exchange{}, common.ErrNotFound
@@ -82,7 +82,7 @@ func (s *Storage) GetExchangeByName(name string) (common.Exchange, error) {
 		qResult = exchangeDB{}
 		result  common.Exchange
 	)
-	s.l.Infow("querying exchange from database", "name", name)
+	s.l.Debugw("querying exchange from database", "name", name)
 	if err := s.stmts.getExchangeByName.Get(&qResult, name); err != nil {
 		if err == sql.ErrNoRows {
 			return result, common.ErrNotFound

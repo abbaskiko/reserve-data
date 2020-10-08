@@ -168,6 +168,7 @@ func CreateDataCore(config *Config,
 	gasInfo := gasinfo.NewGasPriceInfo(gasPriceLimiter, rData, gaspricedataclient.New(httpClient, rcf.GasConfig.GasPriceURL))
 	gasinfo.SetGlobal(gasInfo)
 	rCore := core.NewReserveCore(bc, config.ActivityStorage, config.ContractAddresses, gasInfo)
+	dataFetcher.SetCore(rCore)
 	return rData, rCore, gasInfo
 }
 

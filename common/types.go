@@ -292,6 +292,7 @@ type ActivityResult struct {
 	BlockNumber uint64 `json:"blockNumber,omitempty"`
 	//
 	WithdrawFee float64 `json:"withdraw_fee,omitempty"`
+	TxTime      uint64  `json:"tx_time"` // when the tx was sent, will be update when tx get override to speed up
 }
 
 //NewActivityRecord return an activity record

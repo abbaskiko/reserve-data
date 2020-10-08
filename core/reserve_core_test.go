@@ -63,6 +63,10 @@ func (te testExchange) GetLiveWithdrawFee(asset string) (float64, error) {
 type testBlockchain struct {
 }
 
+func (tbc testBlockchain) SpeedupDeposit(tx ethereum.Hash, gasPrice *big.Int) error {
+	panic("implement me")
+}
+
 func (tbc testBlockchain) BuildSendETHTx(opts blockchain.TxOpts, to ethereum.Address) (*types.Transaction, error) {
 	return nil, errors.New("not supported")
 }
@@ -118,6 +122,10 @@ func (tbc testBlockchain) GetMinedNonceWithOP(string) (uint64, error) {
 
 type testActivityStorage struct {
 	PendingDeposit bool
+}
+
+func (tas testActivityStorage) MaxPendingNonce(action string) (int64, error) {
+	return 0, nil
 }
 
 func (tas testActivityStorage) Record(

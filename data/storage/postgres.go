@@ -423,29 +423,29 @@ func getFirstAndCountPendingAction(
 	for i, act := range pendings {
 		if act.Action == activityType {
 			l.Infof("looking for pending (%s): %+v", activityType, act)
-			nonce := act.Result.Nonce
-			if nonce < minedNonce {
+			avtNonce := act.Result.Nonce
+			if avtNonce < minedNonce {
 				l.Infof("NONCE_ISSUE: stalled pending %s transaction, pending: %d, mined: %d",
-					activityType, nonce, minedNonce)
+					activityType, avtNonce, minedNonce)
 				continue
-			} else if nonce-minedNonce > 1 {
+			} else if avtNonce-minedNonce > 1 {
 				l.Infof("NONCE_ISSUE: pending %s transaction for inconsecutive nonce, mined nonce: %d, request nonce: %d",
-					activityType, minedNonce, nonce)
+					activityType, minedNonce, avtNonce)
 			}
-
+			// find smallest nonce that > minedNonce, count number of activity has this same nonce.
 			gasPrice, err := strconv.ParseUint(act.Result.GasPrice, 10, 64)
 			if err != nil {
 				return nil, 0, err
 			}
-			if nonce == minNonce {
+			if avtNonce == minNonce {
 				if gasPrice < minPrice {
-					minNonce = nonce
+					minNonce = avtNonce
 					result = &pendings[i]
 					minPrice = gasPrice
 				}
 				count++
-			} else if nonce < minNonce {
-				minNonce = nonce
+			} else if avtNonce < minNonce {
+				minNonce = avtNonce
 				result = &pendings[i]
 				minPrice = gasPrice
 				count = 1
@@ -495,6 +495,18 @@ func (ps *PostgresStorage) HasPendingDeposit(token commonv3.Asset, exchange comm
 		}
 	}
 	return false, nil
+}
+
+// MaxPendingNonce return biggest nonce in pending activity for an action
+func (ps *PostgresStorage) MaxPendingNonce(action string) (int64, error) {
+	var v int64
+	if err := ps.db.Get(&v, "SELECT MAX(data->'result'->>'nonce') FROM activity WHERE is_pending IS TRUE AND data->>'action' = $1", action); err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return v, nil
 }
 
 // Record save activity

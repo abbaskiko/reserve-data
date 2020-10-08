@@ -30,7 +30,7 @@ func (tw *TheWorld) getPublic(url string, dst interface{}) error {
 		return err
 	}
 
-	tw.l.Infof("%s fetch %s", caller, url)
+	tw.l.Debugf("%s fetch %s", caller, url)
 
 	req.Header.Add("Accept", "application/json")
 	resp, err := client.Do(req)

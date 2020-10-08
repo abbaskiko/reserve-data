@@ -11,6 +11,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/blockchain"
+	"github.com/KyberNetwork/reserve-data/core"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 )
 
@@ -31,6 +32,7 @@ type Fetcher struct {
 	simulationMode         bool
 	contractAddressConf    *common.ContractAddressConfiguration
 	l                      *zap.SugaredLogger
+	reserveCore            *core.ReserveCore
 }
 
 func NewFetcher(
@@ -83,12 +85,12 @@ func (f *Fetcher) Run() error {
 
 func (f *Fetcher) RunGlobalDataFetcher() {
 	for {
-		f.l.Info("waiting for signal from global data channel")
+		f.l.Debug("waiting for signal from global data channel")
 		t := <-f.runner.GetGlobalDataTicker()
-		f.l.Infof("got signal in global data channel with timestamp %d", common.TimeToMillis(t))
+		f.l.Debugf("got signal in global data channel with timestamp %d", common.TimeToMillis(t))
 		timepoint := common.TimeToMillis(t)
 		f.FetchGlobalData(timepoint)
-		f.l.Info("fetched block from blockchain")
+		f.l.Debug("fetched block from blockchain")
 	}
 }
 
@@ -129,7 +131,7 @@ func (f *Fetcher) RunBlockFetcher() {
 	for {
 		f.l.Info("waiting for signal from block channel")
 		t := <-f.runner.GetBlockTicker()
-		f.l.Infof("got signal in block channel with timestamp %d", common.TimeToMillis(t))
+		f.l.Debugf("got signal in block channel with timestamp %d", common.TimeToMillis(t))
 		timepoint := common.TimeToMillis(t)
 		f.FetchCurrentBlock(timepoint)
 		f.l.Info("fetched block from blockchain")
@@ -138,11 +140,11 @@ func (f *Fetcher) RunBlockFetcher() {
 
 func (f *Fetcher) RunRateFetcher() {
 	for {
-		f.l.Infof("waiting for signal from runner rate channel")
+		f.l.Debugf("waiting for signal from runner rate channel")
 		t := <-f.runner.GetRateTicker()
-		f.l.Infof("got signal in rate channel with timestamp %d", common.TimeToMillis(t))
+		f.l.Debugf("got signal in rate channel with timestamp %d", common.TimeToMillis(t))
 		f.FetchRate(common.TimeToMillis(t))
-		f.l.Infof("fetched rates from blockchain")
+		f.l.Debugf("fetched rates from blockchain")
 	}
 }
 
@@ -168,7 +170,7 @@ func (f *Fetcher) FetchRate(timepoint uint64) {
 		return
 	}
 
-	f.l.Infof("Got rates from blockchain: %+v", data)
+	f.l.Debugf("Got rates from blockchain: %+v", data)
 	if err = f.storage.StoreRate(data, timepoint); err != nil {
 		f.l.Errorw("Storing rates failed", "err", err)
 	}
@@ -176,13 +178,13 @@ func (f *Fetcher) FetchRate(timepoint uint64) {
 
 func (f *Fetcher) RunAuthDataFetcher() {
 	for {
-		f.l.Infof("waiting for signal from runner auth data channel")
+		f.l.Debug("waiting for signal from runner auth data channel")
 		t := <-f.runner.GetAuthDataTicker()
-		f.l.Infof("got signal in auth data channel with timestamp %d", common.TimeToMillis(t))
+		f.l.Debugf("got signal in auth data channel with timestamp %d", common.TimeToMillis(t))
 		start := time.Now()
 		f.FetchAllAuthData(common.TimeToMillis(t))
 		totalSecs := time.Since(start).Seconds()
-		f.l.Infow("fetched data from exchanges", "time_taken_secs", totalSecs)
+		f.l.Debugw("fetched data from exchanges", "time_taken_secs", totalSecs)
 	}
 }
 
@@ -204,6 +206,24 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 		f.l.Errorw("Getting pending activities failed", "err", err)
 		return
 	}
+	startCheckDeposit := time.Now()
+	speedDeposit := 0
+	pendingTimeMillis := uint64(45000) // TODO: to make this configurable
+	for _, av := range pendings {
+		if av.Action == common.ActionDeposit && (common.TimeToMillis(time.Now())-av.Result.TxTime) > pendingTimeMillis {
+			speedDeposit++
+			newGas, err := f.reserveCore.SpeedupDeposit(ethereum.HexToHash(av.Result.Tx))
+			if err != nil {
+				f.l.Errorw("sending speed up tx failed", "err", err, "tx", av.Result.Tx)
+				continue
+			}
+			f.l.Infow("speed up deposit", "tx", av.Result.Tx, "new_gas", newGas.String())
+			av.Result.TxTime = common.TimeToMillis(time.Now()) // update TxTime so next time we can check it again
+			av.Result.GasPrice = newGas.Text(10)
+		}
+	}
+	f.l.Debugw("finish check override deposit", "duration", time.Since(startCheckDeposit).Seconds(),
+		"speed_up_count", speedDeposit)
 	wait := sync.WaitGroup{}
 	for _, exchange := range f.exchanges {
 		wait.Add(1)
@@ -545,7 +565,7 @@ func (f *Fetcher) PersistSnapshot(
 		activity := activity
 		f.updateActivitywithExchangeStatus(&activity, estatuses, snapshot)
 		f.updateActivitywithBlockchainStatus(&activity, bstatuses, snapshot)
-		f.l.Infof("Aggregate statuses, final activity: %+v", activity)
+		f.l.Debugf("Aggregate statuses, final activity: %+v", activity)
 		if activity.IsPending() {
 			pendingActivities = append(pendingActivities, activity)
 		}
@@ -669,7 +689,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				assetID := activity.Params.Asset
 
 				status, err = exchange.DepositStatus(id, txHash, assetID, amount, timepoint)
-				f.l.Infow("Got deposit status for tx %s - %v: (%s), error(%v)", txHash, activity, status, err)
+				f.l.Infof("Got deposit status for tx %s - %v: (%s), error(%v)", txHash, activity, status, err)
 			case common.ActionWithdraw:
 				amount := activity.Params.Amount
 				assetID := activity.Params.Asset
@@ -711,11 +731,11 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 
 func (f *Fetcher) RunOrderbookFetcher() {
 	for {
-		f.l.Infof("waiting for signal from runner orderbook channel")
+		f.l.Debugf("waiting for signal from runner orderbook channel")
 		t := <-f.runner.GetOrderbookTicker()
-		f.l.Infof("got signal in orderbook channel with timestamp %d", common.TimeToMillis(t))
+		f.l.Debugf("got signal in orderbook channel with timestamp %d", common.TimeToMillis(t))
 		f.FetchOrderbook(common.TimeToMillis(t))
-		f.l.Info("fetched data from exchanges")
+		f.l.Debug("fetched data from exchanges")
 	}
 }
 
@@ -750,9 +770,9 @@ func (f *Fetcher) fetchPriceFromExchange(wg *sync.WaitGroup, exchange Exchange, 
 // RunFetchExchangeHistory starts a fetcher to get exchange trade history
 func (f *Fetcher) RunFetchExchangeHistory() {
 	for ; ; <-f.runner.GetExchangeHistoryTicker() {
-		f.l.Info("got signal in orderbook channel with exchange-history")
+		f.l.Debugf("got signal in orderbook channel with exchange-history")
 		f.fetchExchangeTradeHistory()
-		f.l.Info("fetched data from exchanges")
+		f.l.Debug("fetched data from exchanges")
 	}
 }
 
@@ -766,4 +786,8 @@ func (f *Fetcher) fetchExchangeTradeHistory() {
 		}(exchange)
 	}
 	wait.Wait()
+}
+
+func (f *Fetcher) SetCore(core *core.ReserveCore) {
+	f.reserveCore = core
 }
