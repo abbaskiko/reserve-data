@@ -57,7 +57,7 @@ func (s *Storage) GetAssetExchangeBySymbol(exchangeID rtypes.ExchangeID, symbol 
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 
-	logger.Info("getting asset exchange")
+	logger.Debug("getting asset exchange")
 	err = tx.Stmtx(s.stmts.getAssetExchangeBySymbol).Get(&result, exchangeID, symbol)
 	switch err {
 	case sql.ErrNoRows:

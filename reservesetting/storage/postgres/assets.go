@@ -858,7 +858,7 @@ func (s *Storage) GetAsset(id rtypes.AssetID) (common.Asset, error) {
 		feeds[feed.Feed] = feed.Weight
 	}
 
-	s.l.Infow("getting asset", "id", id)
+	s.l.Debugw("getting asset", "id", id)
 	err = tx.Stmtx(s.stmts.getAsset).Get(&assetDBResult, id, nil)
 	switch err {
 	case sql.ErrNoRows:
@@ -888,7 +888,7 @@ func (s *Storage) GetAssetBySymbol(symbol string) (common.Asset, error) {
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 
-	s.l.Infow("getting assetBySymbol", "symbol", symbol)
+	s.l.Debugw("getting assetBySymbol", "symbol", symbol)
 	err = tx.Stmtx(s.stmts.getAssetBySymbol).Get(&result, symbol)
 	switch err {
 	case sql.ErrNoRows:

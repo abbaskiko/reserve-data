@@ -522,7 +522,8 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID rtype
 	h.l.Infof("Huobi Status for Tx1 was %s at block %d ", status, blockno)
 	if status == common.MiningStatusMined {
 		//if it is mined, send 2nd tx.
-		h.l.Infof("Found a new deposit status, which deposit %f %d. Procceed to send it to Huobi", sentAmount, assetID)
+		h.l.Infof("Found a new mined deposit for %s, which deposit %f %d. Procceed to send it to Huobi",
+			tx1Hash, sentAmount, assetID)
 		//check if the asset is supported, the asset can be active or inactivee
 		asset, err := h.sr.GetAsset(assetID)
 		if err != nil {
@@ -542,7 +543,7 @@ func (h *Huobi) process1stTx(id common.ActivityID, tx1Hash string, assetID rtype
 		}
 		tx2, err := h.Send2ndTransaction(sentAmount, asset, exchangeAddress)
 		if err != nil {
-			h.l.Infof("Huobi Trying to send 2nd tx failed, error: %s. Will retry next time", err.Error())
+			h.l.Infow("Huobi Trying to send 2nd tx failed, error, will retry next time", "err", err)
 			return "", nil
 		}
 		//store tx2 to pendingIntermediateTx
@@ -578,6 +579,7 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID rtyp
 		//if not found, meaning there is no tx2 yet, process 1st Tx and send 2nd Tx.
 		return h.process1stTx(id, tx1Hash, assetID, sentAmount)
 	}
+
 	var data common.TXEntry
 	// if there is tx2Entry, check it blockchain status and handle the status accordingly:
 	miningStatus, _, err := h.blockchain.TxStatus(ethereum.HexToHash(tx2Entry.Hash))
@@ -595,6 +597,8 @@ func (h *Huobi) DepositStatus(id common.ActivityID, tx1Hash string, assetID rtyp
 			"",
 			sentAmount,
 			common.GetTimestamp())
+		// as auth data will call DepositStatus more than 1 time, store pending tx can be call multiple times,
+		// so we handle it as on conflict update ...
 		if uErr := h.storage.StorePendingIntermediateTx(id, data); uErr != nil {
 			h.l.Warnw("Huobi Trying to store intermediate tx to huobi storage, error. Ignore it and try later", "err", uErr)
 			return "", nil
@@ -708,7 +712,7 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 		mu       sync.Mutex
 	)
 	if pair.BaseSymbol == "" {
-		logger.Info("No pair token provided, get open orders for all token")
+		logger.Debug("No pair token provided, get open orders for all token")
 		pairs, err = h.TokenPairs()
 		if err != nil {
 			return nil, err
@@ -720,7 +724,7 @@ func (h *Huobi) OpenOrders(pair commonv3.TradingPairSymbols) ([]common.Order, er
 		errGroup.Go(
 			func(pair commonv3.TradingPairSymbols) func() error {
 				return func() error {
-					logger.Infow("get open orders for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
+					logger.Debugw("get open orders for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
 					orders, err := h.interf.OpenOrdersForOnePair(pair)
 					if err != nil {
 						return err

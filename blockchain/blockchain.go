@@ -260,6 +260,12 @@ func (bc *Blockchain) Send(
 		amount,
 		dest)
 	if err != nil {
+		bc.l.Errorw("failed to create tx", "err", err,
+			"from", bc.MustGetOperator(blockchain.DepositOP).Address.String(),
+			"asset", asset.Address.String(),
+			"amount", amount.String(),
+			"dest", dest.String(),
+		)
 		return nil, err
 	}
 	return bc.SignAndBroadcast(tx, blockchain.DepositOP)
