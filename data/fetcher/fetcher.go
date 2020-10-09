@@ -401,6 +401,8 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 					expiredDuration = 15 * time.Minute / time.Millisecond
 					txFailed        = false
 				)
+				// we have a delay to check tx status and consider it as lost,
+				// because tx might not found if node need sometimes to show it up in wait-to-mine queue
 				if nonceValidator(activity) {
 					txFailed = true
 				} else {
@@ -418,7 +420,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 						blockNum,
 						common.MiningStatusFailed,
 						0,
-						err,
+						fmt.Errorf("tx not found"),
 					)
 				}
 			default:
@@ -447,68 +449,68 @@ func unchanged(pre, post map[common.ActivityID]common.ActivityStatus) bool {
 	return true
 }
 
-func (f *Fetcher) updateActivitywithBlockchainStatus(activity *common.ActivityRecord, bstatuses *sync.Map, snapshot *common.AuthDataSnapshot) {
-	status, ok := bstatuses.Load(activity.ID)
+func (f *Fetcher) updateActivityWithBlockchainStatus(record *common.ActivityRecord, bstatuses *sync.Map, snapshot *common.AuthDataSnapshot) {
+	status, ok := bstatuses.Load(record.ID)
 	if !ok || status == nil {
-		f.l.Infof("block chain status for %s is nil or not existed ", activity.ID.String())
+		f.l.Infof("block chain status for %s is nil or not existed ", record.ID.String())
 		return
 	}
 
-	activityStatus, ok := status.(common.ActivityStatus)
+	sts, ok := status.(common.ActivityStatus)
 	if !ok {
 		f.l.Errorw("ERROR: status cannot be asserted to common.ActivityStatus", "status", status)
 		return
 	}
-	f.l.Infof("In PersistSnapshot: blockchain activity status for %+v: %+v", activity.ID, activityStatus)
-	if activity.IsBlockchainPending() {
-		activity.MiningStatus = activityStatus.MiningStatus
+	f.l.Infof("In PersistSnapshot: blockchain activity status for %+v: %+v", record.ID, sts)
+	if record.IsBlockchainPending() {
+		record.MiningStatus = sts.MiningStatus
 	}
 
-	if activityStatus.ExchangeStatus == common.ExchangeStatusFailed {
-		activity.ExchangeStatus = activityStatus.ExchangeStatus
+	if sts.ExchangeStatus == common.ExchangeStatusFailed {
+		record.ExchangeStatus = sts.ExchangeStatus
 	}
 
-	if activityStatus.Error != nil {
+	if sts.Error != nil {
 		snapshot.Valid = false
-		snapshot.Error = activityStatus.Error.Error()
-		activity.Result.StatusError = activityStatus.Error.Error()
+		snapshot.Error = sts.Error.Error()
+		record.Result.StatusError = sts.Error.Error()
 	} else {
-		activity.Result.StatusError = ""
+		record.Result.StatusError = ""
 	}
-	activity.Result.BlockNumber = activityStatus.BlockNumber
+	record.Result.BlockNumber = sts.BlockNumber
 }
 
-func (f *Fetcher) updateActivitywithExchangeStatus(activity *common.ActivityRecord, estatuses *sync.Map, snapshot *common.AuthDataSnapshot) {
-	status, ok := estatuses.Load(activity.ID)
+func (f *Fetcher) updateActivityWithExchangeStatus(record *common.ActivityRecord, estatuses *sync.Map, snapshot *common.AuthDataSnapshot) {
+	status, ok := estatuses.Load(record.ID)
 	if !ok || status == nil {
-		f.l.Infof("exchange status for %s is nil or not existed ", activity.ID.String())
+		f.l.Infof("exchange status for %s is nil or not existed ", record.ID.String())
 		return
 	}
-	activityStatus, ok := status.(common.ActivityStatus)
+	sts, ok := status.(common.ActivityStatus)
 	if !ok {
 		f.l.Errorw("ERROR: status cannot be asserted to common.ActivityStatus", "status", status)
 		return
 	}
-	f.l.Infof("In PersistSnapshot: exchange activity status for %+v: %+v", activity.ID, activityStatus)
-	if activity.IsExchangePending() {
-		activity.ExchangeStatus = activityStatus.ExchangeStatus
-	} else if activityStatus.ExchangeStatus == common.ExchangeStatusFailed {
-		activity.ExchangeStatus = activityStatus.ExchangeStatus
-		activity.Result.WithdrawFee = activityStatus.WithdrawFee
+	f.l.Infof("In PersistSnapshot: exchange activity status for %+v: %+v", record.ID, sts)
+	if record.IsExchangePending() { // fill exchange status
+		record.ExchangeStatus = sts.ExchangeStatus
+	} else if sts.ExchangeStatus == common.ExchangeStatusFailed {
+		record.ExchangeStatus = sts.ExchangeStatus
+		record.Result.WithdrawFee = sts.WithdrawFee
 	}
 
-	if activity.Result.Tx == "" {
-		activity.Result.Tx = activityStatus.Tx
+	if record.Result.Tx == "" { // for a withdraw, we set tx into result tx(that is when cex process request and return tx id so we can monitor), deposit should already has tx when created.
+		record.Result.Tx = sts.Tx
 	}
 
-	if activityStatus.Error != nil {
+	if sts.Error != nil {
 		snapshot.Valid = false
-		snapshot.Error = activityStatus.Error.Error()
-		activity.Result.StatusError = activityStatus.Error.Error()
-		activity.Result.WithdrawFee = activityStatus.WithdrawFee
+		snapshot.Error = sts.Error.Error()
+		record.Result.StatusError = sts.Error.Error()
+		record.Result.WithdrawFee = sts.WithdrawFee
 	} else {
-		activity.Result.StatusError = ""
-		activity.Result.WithdrawFee = activityStatus.WithdrawFee
+		record.Result.StatusError = ""
+		record.Result.WithdrawFee = sts.WithdrawFee
 	}
 }
 
@@ -563,8 +565,8 @@ func (f *Fetcher) PersistSnapshot(
 	pendingActivities := []common.ActivityRecord{}
 	for _, activity := range pendings {
 		activity := activity
-		f.updateActivitywithExchangeStatus(&activity, estatuses, snapshot)
-		f.updateActivitywithBlockchainStatus(&activity, bstatuses, snapshot)
+		f.updateActivityWithExchangeStatus(&activity, estatuses, snapshot)
+		f.updateActivityWithBlockchainStatus(&activity, bstatuses, snapshot)
 		f.l.Debugf("Aggregate statuses, final activity: %+v", activity)
 		if activity.IsPending() {
 			pendingActivities = append(pendingActivities, activity)
@@ -718,6 +720,8 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				f.l.Infof("Activity %+v has invalid timestamp. Just ignore it.", activity)
 				continue
 			}
+			f.l.Warnw("activity with exchange done but still in pending list",
+				"activity", activity.ID, "EID", activity.EID, "activityTime", common.MillisToTime(timepoint))
 			if activity.ExchangeStatus == common.ExchangeStatusDone &&
 				common.NowInMillis()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 				// the activity is still pending but its exchange status is done and it is stuck there for more than
