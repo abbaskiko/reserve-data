@@ -10,3 +10,4 @@ CREATE TABLE "fetch_data"
 ) PARTITION BY RANGE (created);
 
 CREATE TABLE fetch_data_default PARTITION OF fetch_data DEFAULT;
+CREATE INDEX "fetch_data_created_index" ON "fetch_data" (created);
