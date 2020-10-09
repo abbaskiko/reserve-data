@@ -440,7 +440,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 						blockNum,
 						common.MiningStatusFailed,
 						0, // default withdraw fee
-						err,
+						fmt.Errorf("tx not found"),
 					)
 				}
 			default:
