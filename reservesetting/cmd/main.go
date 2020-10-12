@@ -130,7 +130,7 @@ func run(c *cli.Context) error {
 
 	binanceSigner := binance.NewSigner(c.String(binanceAPIKeyFlag), c.String(binanceSecretKeyFlag))
 	httpClient := &http.Client{Timeout: time.Second * 30}
-	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient, rtypes.Binance, "", "", "")
+	binanceEndpoint := binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient, rtypes.Binance, "", "", "", nil)
 	hi := configuration.NewhuobiInterfaceFromContext(c)
 
 	// dummy signer as live infos does not need to sign

@@ -20,6 +20,7 @@ import (
 	binanceStorage "github.com/KyberNetwork/reserve-data/exchange/binance/storage"
 	"github.com/KyberNetwork/reserve-data/exchange/huobi"
 	huobiStorage "github.com/KyberNetwork/reserve-data/exchange/huobi/storage"
+	authhttp "github.com/KyberNetwork/reserve-data/lib/auth-http"
 	rtypes "github.com/KyberNetwork/reserve-data/lib/rtypes"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
 )
@@ -179,9 +180,9 @@ func NewExchangePool(
 				accountID = rcf.BinanceAccount2ID
 				binanceSigner = binance.NewSigner(rcf.Binance2Key, rcf.Binance2Secret)
 			}
-			accountDataBaseURL := strings.TrimSuffix(rcf.AccountDataBaseURL, "/")
+			accountDataBaseURL := strings.TrimSuffix(rcf.AccountData.BaseURL, "/")
 			be = binance.NewBinanceEndpoint(binanceSigner, bi, dpl, httpClient, exparam,
-				marketDataBaseURL, accountDataBaseURL, accountID)
+				marketDataBaseURL, accountDataBaseURL, accountID, authhttp.NewAuthHTTP(rcf.AccountData.AccessKey, rcf.AccountData.AccessSecret))
 			binancestorage, err := binanceStorage.NewPostgresStorage(db)
 			if err != nil {
 				return nil, fmt.Errorf("cannot create Binance storage: (%s)", err.Error())
