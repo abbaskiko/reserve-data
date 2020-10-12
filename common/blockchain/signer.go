@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -15,7 +16,8 @@ type Signer interface {
 }
 
 type EthereumSigner struct {
-	opts *bind.TransactOpts
+	opts    *bind.TransactOpts
+	chainID *big.Int
 }
 
 func (es EthereumSigner) GetAddress() ethereum.Address {
@@ -23,10 +25,10 @@ func (es EthereumSigner) GetAddress() ethereum.Address {
 }
 
 func (es EthereumSigner) Sign(tx *types.Transaction) (*types.Transaction, error) {
-	return es.opts.Signer(types.HomesteadSigner{}, es.GetAddress(), tx)
+	return es.opts.Signer(types.NewEIP155Signer(es.chainID), es.GetAddress(), tx)
 }
 
-func NewEthereumSigner(keyPath string, passphrase string) *EthereumSigner {
+func NewEthereumSigner(keyPath string, passphrase string, chainID *big.Int) *EthereumSigner {
 	key, err := os.Open(keyPath)
 	if err != nil {
 		panic(err)
@@ -35,5 +37,5 @@ func NewEthereumSigner(keyPath string, passphrase string) *EthereumSigner {
 	if err != nil {
 		panic(err)
 	}
-	return &EthereumSigner{opts: auth}
+	return &EthereumSigner{opts: auth, chainID: chainID}
 }
