@@ -3,6 +3,7 @@ package configuration
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -150,6 +151,7 @@ func NewExchangePool(
 	bi binance.Interface,
 	hi huobi.Interface,
 	assetStorage storage.Interface,
+	chainID *big.Int,
 ) (*ExchangePool, error) {
 	exchanges := map[rtypes.ExchangeID]interface{}{}
 	var (
@@ -202,7 +204,7 @@ func NewExchangePool(
 			if err != nil {
 				return nil, fmt.Errorf("cannot create Binance storage: (%s)", err.Error())
 			}
-			intermediatorSigner := blockchaincommon.NewEthereumSigner(rcf.IntermediatorKeystore, rcf.IntermediatorPassphrase)
+			intermediatorSigner := blockchaincommon.NewEthereumSigner(rcf.IntermediatorKeystore, rcf.IntermediatorPassphrase, chainID)
 			intermediatorNonce := nonce.NewTimeWindow(intermediatorSigner.GetAddress(), 10000)
 			hb, err = exchange.NewHuobi(
 				he,

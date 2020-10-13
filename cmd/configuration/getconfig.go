@@ -1,6 +1,8 @@
 package configuration
 
 import (
+	"context"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -56,9 +58,12 @@ func GetConfig(
 		ContractAddresses:       contractAddressConf,
 		SettingStorage:          settingStorage,
 	}
-
+	chainID, err := mainNode.ChainID(context.Background())
+	if err != nil {
+		return nil, err
+	}
 	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
-	if err := config.AddCoreConfig(cliCtx, rcf, bi, hi, settingStorage); err != nil {
+	if err := config.AddCoreConfig(cliCtx, rcf, bi, hi, settingStorage, chainID); err != nil {
 		return nil, err
 	}
 	return config, nil
