@@ -37,7 +37,7 @@ type Endpoint struct {
 	marketDataBaseURL  string
 	accountDataBaseURL string
 	accountID          string
-	ah                 *authhttp.AuthHTTP
+	authHTTP           *authhttp.AuthHTTP
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
@@ -161,8 +161,10 @@ func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, ra
 		"quantity":    strconv.FormatFloat(amount, 'f', -1, 64),
 		"price":       strconv.FormatFloat(rate, 'f', -1, 64),
 	}
-	respBody, err := ep.ah.DoReq(fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
-		http.MethodPost, params)
+	respBody, err := ep.authHTTP.DoReq(
+		fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
+		http.MethodPost,
+		params)
 	if err != nil {
 		return result, err
 	}
@@ -222,8 +224,10 @@ func (ep *Endpoint) GetAccountTradeHistory(
 // WithdrawHistory get withdraw history from binance
 func (ep *Endpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawithdrawals, error) {
 	result := exchange.Binawithdrawals{}
-	respBody, err := ep.ah.DoReq(fmt.Sprintf("%s/wapi/v3/withdrawHistory/%s", ep.accountDataBaseURL, ep.accountID),
-		http.MethodGet, map[string]string{
+	respBody, err := ep.authHTTP.DoReq(
+		fmt.Sprintf("%s/wapi/v3/withdrawHistory/%s", ep.accountDataBaseURL, ep.accountID),
+		http.MethodGet,
+		map[string]string{
 			"startTime": fmt.Sprintf("%d", startTime),
 			"endTime":   fmt.Sprintf("%d", endTime),
 		})
@@ -309,8 +313,10 @@ func (ep *Endpoint) CancelAllOrders(symbol string) ([]exchange.Binaorder, error)
 // OrderStatus return status of orders
 func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, error) {
 	result := exchange.Binaorder{}
-	respBody, err := ep.ah.DoReq(fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
-		http.MethodGet, map[string]string{
+	respBody, err := ep.authHTTP.DoReq(
+		fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
+		http.MethodGet,
+		map[string]string{
 			"symbol":  symbol,
 			"orderId": fmt.Sprintf("%d", id),
 		})
@@ -334,7 +340,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 		}
 	}
 	result := exchange.Binawithdraw{}
-	respBody, err := ep.ah.DoReq(
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/wapi/v3/withdraw/%s", ep.accountDataBaseURL, ep.accountID),
 		http.MethodPost,
 		map[string]string{
@@ -358,7 +364,7 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 // GetInfo return binance exchange info
 func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	result := exchange.Binainfo{}
-	respBody, err := ep.ah.DoReq(
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/api/v3/account/%s", ep.accountDataBaseURL, ep.accountID),
 		http.MethodGet,
 		map[string]string{})
@@ -384,7 +390,7 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair *commonv3.TradingPairSymbols) (exc
 		logger.Infow("getting open order for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
 		params["symbol"] = pair.BaseSymbol + pair.QuoteSymbol
 	}
-	respBody, err := ep.ah.DoReq(
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/api/v3/openOrders/%s", ep.accountDataBaseURL, ep.accountID),
 		http.MethodGet,
 		params)
@@ -497,7 +503,7 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 
 // NewBinanceEndpoint return new endpoint instance for using binance
 func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client, exparam rtypes.ExchangeID,
-	marketDataBaseURL, accountDataBaseURL, accountID string, ah *authhttp.AuthHTTP) *Endpoint {
+	marketDataBaseURL, accountDataBaseURL, accountID string, authHTTP *authhttp.AuthHTTP) *Endpoint {
 	l := zap.S()
 	endpoint := &Endpoint{
 		signer:             signer,
@@ -508,7 +514,7 @@ func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployme
 		marketDataBaseURL:  marketDataBaseURL,
 		accountDataBaseURL: accountDataBaseURL,
 		accountID:          accountID,
-		ah:                 ah,
+		authHTTP:           authHTTP,
 	}
 	switch dpl {
 	case deployment.Simulation:

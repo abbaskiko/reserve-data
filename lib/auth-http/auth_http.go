@@ -3,7 +3,6 @@ package authhttp
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -62,10 +61,7 @@ func (ah *AuthHTTP) DoReq(url string, method string, params map[string]string) (
 		for k, v := range params {
 			q.Add(k, v)
 		}
-		fmt.Println(q.Encode())
 		req.URL.RawQuery = q.Encode()
-
-		fmt.Println(req.URL.String())
 	default:
 		return nil, errors.Errorf("invalid method %s", httpMethod)
 	}
