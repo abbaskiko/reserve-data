@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/urfave/cli"
@@ -50,8 +51,8 @@ type Config struct {
 }
 
 // AddCoreConfig add config for core
-func (c *Config) AddCoreConfig(cliCtx *cli.Context, rcf common.RawConfig, bi binance.Interface,
-	hi huobi.Interface, settingStore storagev3.Interface) error {
+func (c *Config) AddCoreConfig(cliCtx *cli.Context, rcf common.RawConfig, bi binance.Interface, hi huobi.Interface,
+	settingStore storagev3.Interface, chainID *big.Int) error {
 	l := zap.S()
 	db, err := NewDBFromContext(cliCtx)
 	if err != nil {
@@ -93,8 +94,8 @@ func (c *Config) AddCoreConfig(cliCtx *cli.Context, rcf common.RawConfig, bi bin
 	c.FetcherGlobalStorage = dataStorage
 	c.FetcherRunner = fetcherRunner
 	c.DataControllerRunner = dataControllerRunner
-	c.BlockchainSigner = blockchain.NewEthereumSigner(rcf.PricingKeystore, rcf.PricingPassphrase)
-	c.DepositSigner = blockchain.NewEthereumSigner(rcf.DepositKeystore, rcf.DepositPassphrase)
+	c.BlockchainSigner = blockchain.NewEthereumSigner(rcf.PricingKeystore, rcf.PricingPassphrase, chainID)
+	c.DepositSigner = blockchain.NewEthereumSigner(rcf.DepositKeystore, rcf.DepositPassphrase, chainID)
 
 	// create Exchange pool
 	exchangePool, err := NewExchangePool(
@@ -105,6 +106,7 @@ func (c *Config) AddCoreConfig(cliCtx *cli.Context, rcf common.RawConfig, bi bin
 		bi,
 		hi,
 		settingStore,
+		chainID,
 	)
 	if err != nil {
 		l.Errorw("Can not create exchangePool", "err", err)
