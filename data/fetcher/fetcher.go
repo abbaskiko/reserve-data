@@ -188,6 +188,16 @@ func (f *Fetcher) RunAuthDataFetcher() {
 	}
 }
 
+func getLatestTxTimeByNonce(pendings []common.ActivityRecord, nonce uint64) uint64 {
+	var result uint64
+	for _, act := range pendings {
+		if act.Result.Nonce == nonce && act.Result.TxTime > result {
+			result = act.Result.TxTime
+		}
+	}
+	return result
+}
+
 func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	snapshot := common.AuthDataSnapshot{
 		Valid:             true,
@@ -210,7 +220,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	speedDeposit := 0
 	pendingTimeMillis := uint64(45000) // TODO: to make this configurable
 	for _, av := range pendings {
-		if av.Action == common.ActionDeposit && (common.TimeToMillis(time.Now())-av.Result.TxTime) > pendingTimeMillis {
+		if av.Action == common.ActionDeposit && (common.TimeToMillis(time.Now())-getLatestTxTimeByNonce(pendings, av.Result.Nonce)) > pendingTimeMillis {
 			speedDeposit++
 			newGas, err := f.reserveCore.SpeedupDeposit(av)
 			if err != nil {
@@ -218,13 +228,17 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 				continue
 			}
 			f.l.Infow("speed up deposit", "tx", av.Result.Tx, "new_gas", newGas.String())
-			av.Result.TxTime = common.TimeToMillis(time.Now()) // update TxTime so next time we can check it again
-			av.Result.GasPrice = newGas.Text(10)
 		}
 	}
 	f.l.Debugw("finish check override deposit", "duration", time.Since(startCheckDeposit).Seconds(),
 		"speed_up_count", speedDeposit)
 	wait := sync.WaitGroup{}
+	// update pendings activity again in case there is override tx
+	pendings, err = f.storage.GetPendingActivities()
+	if err != nil {
+		f.l.Errorw("Getting pending activities failed", "err", err)
+		return
+	}
 	for _, exchange := range f.exchanges {
 		wait.Add(1)
 		go f.FetchAuthDataFromExchange(
