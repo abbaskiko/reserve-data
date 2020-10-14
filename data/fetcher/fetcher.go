@@ -188,14 +188,19 @@ func (f *Fetcher) RunAuthDataFetcher() {
 	}
 }
 
-func getLatestTxTimeByNonce(pendings []common.ActivityRecord, nonce uint64) uint64 {
-	var result uint64
+// return true if the activity is the latest one between txs have the same nonce
+func getLatestTxTimeByNonce(pendings []common.ActivityRecord, ac common.ActivityRecord) (bool, uint64) {
+	var (
+		result uint64
+		id     string
+	)
 	for _, act := range pendings {
-		if act.Result.Nonce == nonce && act.Result.TxTime > result {
+		if act.Result.Nonce == ac.Result.Nonce && act.Result.TxTime > result {
 			result = act.Result.TxTime
+			id = act.EID
 		}
 	}
-	return result
+	return id == ac.EID, result
 }
 
 func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
@@ -220,14 +225,17 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	speedDeposit := 0
 	pendingTimeMillis := uint64(45000) // TODO: to make this configurable
 	for _, av := range pendings {
-		if av.Action == common.ActionDeposit && (common.TimeToMillis(time.Now())-getLatestTxTimeByNonce(pendings, av.Result.Nonce)) > pendingTimeMillis {
-			speedDeposit++
-			newGas, err := f.reserveCore.SpeedupDeposit(av)
-			if err != nil {
-				f.l.Errorw("sending speed up tx failed", "err", err, "tx", av.Result.Tx)
-				continue
+		if av.Action == common.ActionDeposit {
+			// among txs with same nonce, only override the latest one
+			if ok, latestTime := getLatestTxTimeByNonce(pendings, av); ok && (common.TimeToMillis(time.Now())-latestTime) > pendingTimeMillis {
+				speedDeposit++
+				newGas, err := f.reserveCore.SpeedupDeposit(av)
+				if err != nil {
+					f.l.Errorw("sending speed up tx failed", "err", err, "tx", av.Result.Tx)
+					continue
+				}
+				f.l.Infow("speed up deposit", "tx", av.Result.Tx, "new_gas", newGas.String())
 			}
-			f.l.Infow("speed up deposit", "tx", av.Result.Tx, "new_gas", newGas.String())
 		}
 	}
 	f.l.Debugw("finish check override deposit", "duration", time.Since(startCheckDeposit).Seconds(),
