@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -677,7 +678,7 @@ func (rc *ReserveCore) SetRates(assets []commonv3.Asset, buys, sells []*big.Int,
 }
 
 // SpeedupDeposit send a new tx with same info, with higher gas
-func (rc *ReserveCore) SpeedupDeposit(tx ethereum.Hash) (*big.Int, error) {
+func (rc *ReserveCore) SpeedupDeposit(act common.ActivityRecord) (*big.Int, error) {
 	newGas, err := rc.gasPriceInfo.GetCurrentGas()
 	if err != nil {
 		return nil, fmt.Errorf("speedup deposit failed due can't get gas price, %w", err)
@@ -690,8 +691,42 @@ func (rc *ReserveCore) SpeedupDeposit(tx ethereum.Hash) (*big.Int, error) {
 		newGas = maxGas
 	}
 	gasPrice := common.GweiToWei(newGas)
-	err = rc.blockchain.SpeedupDeposit(tx, gasPrice)
-	return gasPrice, err
+	tx := ethereum.HexToHash(act.Result.Tx)
+	hash, err := rc.blockchain.SpeedupDeposit(tx, gasPrice)
+	if err != nil {
+		return gasPrice, fmt.Errorf("failed to speedup deposit tx, %w", err)
+	}
+
+	// store new act to storage
+	replaceUID := func(actID common.ActivityID, txhex string) common.ActivityID {
+		parts := strings.Split(actID.EID, "|")
+		if len(parts) != 3 {
+			return actID // uid somehow malform
+		}
+		id := fmt.Sprintf("%s|%s|%s",
+			txhex,
+			parts[1],
+			parts[2],
+		)
+		return timebasedID(id)
+	}
+	activityResult := common.ActivityResult{
+		Tx:       hash.Hex(),
+		Nonce:    act.Result.Nonce,
+		GasPrice: gasPrice.String(),
+		Error:    "",
+		TxTime:   common.TimeToMillis(time.Now()),
+	}
+	return gasPrice, rc.activityStorage.Record(
+		common.ActionDeposit,
+		replaceUID(act.ID, hash.Hex()),
+		act.Params.Exchange.String(),
+		*act.Params,
+		activityResult,
+		"",
+		common.MiningStatusSubmitted,
+		common.TimeToMillis(time.Now()),
+	)
 }
 
 func sanityCheck(buys, afpMid, sells []*big.Int, l *zap.SugaredLogger) error {
