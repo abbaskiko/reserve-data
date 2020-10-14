@@ -188,6 +188,21 @@ func (f *Fetcher) RunAuthDataFetcher() {
 	}
 }
 
+// return true if the activity is the latest one between txs have the same nonce
+func getLatestTxTimeByNonce(pendings []common.ActivityRecord, ac common.ActivityRecord) (bool, uint64) {
+	var (
+		result uint64
+		id     string
+	)
+	for _, act := range pendings {
+		if act.Result.Nonce == ac.Result.Nonce && act.Result.TxTime > result {
+			result = act.Result.TxTime
+			id = act.EID
+		}
+	}
+	return id == ac.EID, result
+}
+
 func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	snapshot := common.AuthDataSnapshot{
 		Valid:             true,
@@ -210,21 +225,28 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	speedDeposit := 0
 	pendingTimeMillis := uint64(45000) // TODO: to make this configurable
 	for _, av := range pendings {
-		if av.Action == common.ActionDeposit && (common.TimeToMillis(time.Now())-av.Result.TxTime) > pendingTimeMillis {
-			speedDeposit++
-			newGas, err := f.reserveCore.SpeedupDeposit(ethereum.HexToHash(av.Result.Tx))
-			if err != nil {
-				f.l.Errorw("sending speed up tx failed", "err", err, "tx", av.Result.Tx)
-				continue
+		if av.Action == common.ActionDeposit {
+			// among txs with same nonce, only override the latest one
+			if ok, latestTime := getLatestTxTimeByNonce(pendings, av); ok && (common.TimeToMillis(time.Now())-latestTime) > pendingTimeMillis {
+				speedDeposit++
+				newGas, err := f.reserveCore.SpeedupDeposit(av)
+				if err != nil {
+					f.l.Errorw("sending speed up tx failed", "err", err, "tx", av.Result.Tx)
+					continue
+				}
+				f.l.Infow("speed up deposit", "tx", av.Result.Tx, "new_gas", newGas.String())
 			}
-			f.l.Infow("speed up deposit", "tx", av.Result.Tx, "new_gas", newGas.String())
-			av.Result.TxTime = common.TimeToMillis(time.Now()) // update TxTime so next time we can check it again
-			av.Result.GasPrice = newGas.Text(10)
 		}
 	}
 	f.l.Debugw("finish check override deposit", "duration", time.Since(startCheckDeposit).Seconds(),
 		"speed_up_count", speedDeposit)
 	wait := sync.WaitGroup{}
+	// update pendings activity again in case there is override tx
+	pendings, err = f.storage.GetPendingActivities()
+	if err != nil {
+		f.l.Errorw("Getting pending activities failed", "err", err)
+		return
+	}
 	for _, exchange := range f.exchanges {
 		wait.Add(1)
 		go f.FetchAuthDataFromExchange(
@@ -341,7 +363,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 		// this check only works with set rate transaction as:
 		//   - account nonce is record in result field of activity
 		//   - the GetMinedNonceWithOP method is available
-		if act.Action != common.ActionSetRate {
+		if act.Action != common.ActionSetRate && act.Action != common.ActionDeposit {
 			return false
 		}
 		return act.Result.Nonce < minedNonce

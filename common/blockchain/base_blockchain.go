@@ -118,27 +118,28 @@ func (b *BaseBlockchain) SignAndBroadcast(tx *types.Transaction, from string) (*
 	return signedTx, nil
 }
 
-func (b *BaseBlockchain) SpeedupDeposit(tx ethereum.Hash, gasPrice *big.Int) error {
+// SpeedupDeposit speed up tx deposit which is pending for too long
+func (b *BaseBlockchain) SpeedupDeposit(tx ethereum.Hash, gasPrice *big.Int) (ethereum.Hash, error) {
 	pendingTx, pending, err := b.client.TransactionByHash(context.Background(), tx)
 	if err != nil {
-		return err
+		return ethereum.Hash{}, err
 	}
 	if !pending {
-		return fmt.Errorf("override tx no longer pending")
+		return ethereum.Hash{}, fmt.Errorf("override tx no longer pending")
 	}
 	if pendingTx.To() == nil {
-		return fmt.Errorf("pending tx has no To()")
+		return ethereum.Hash{}, fmt.Errorf("pending tx has no To()")
 	}
 	b.l.Debugw("try to replace deposit tx", "current_price", pendingTx.GasPrice().String(), "new_price", gasPrice.String())
 	if pendingTx.GasPrice().Cmp(gasPrice) > 0 {
-		return fmt.Errorf("abort replace deposit tx due lower price %s / %s", pendingTx.GasPrice().String(), gasPrice.String())
+		return ethereum.Hash{}, fmt.Errorf("abort replace deposit tx due lower price %s / %s", pendingTx.GasPrice().String(), gasPrice.String())
 	}
 	overrideTx := types.NewTransaction(pendingTx.Nonce(), *pendingTx.To(), pendingTx.Value(), pendingTx.Gas(), gasPrice, pendingTx.Data())
 	_, err = b.SignAndBroadcast(overrideTx, DepositOP)
 	if err != nil {
 		b.l.Errorw("sending override deposit tx failed", "err", err, "tx", tx)
 	}
-	return err
+	return overrideTx.Hash(), err
 }
 
 func (b *BaseBlockchain) Call(timeOut time.Duration, opts CallOpts, contract *Contract, result interface{}, method string, params ...interface{}) error {
