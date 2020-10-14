@@ -212,7 +212,7 @@ func (f *Fetcher) FetchAllAuthData(timepoint uint64) {
 	for _, av := range pendings {
 		if av.Action == common.ActionDeposit && (common.TimeToMillis(time.Now())-av.Result.TxTime) > pendingTimeMillis {
 			speedDeposit++
-			newGas, err := f.reserveCore.SpeedupDeposit(ethereum.HexToHash(av.Result.Tx))
+			newGas, err := f.reserveCore.SpeedupDeposit(av)
 			if err != nil {
 				f.l.Errorw("sending speed up tx failed", "err", err, "tx", av.Result.Tx)
 				continue
@@ -341,7 +341,7 @@ func (f *Fetcher) newNonceValidator() func(common.ActivityRecord) bool {
 		// this check only works with set rate transaction as:
 		//   - account nonce is record in result field of activity
 		//   - the GetMinedNonceWithOP method is available
-		if act.Action != common.ActionSetRate {
+		if act.Action != common.ActionSetRate && act.Action != common.ActionDeposit {
 			return false
 		}
 		return act.Result.Nonce < minedNonce
