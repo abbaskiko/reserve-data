@@ -1,6 +1,7 @@
 module github.com/KyberNetwork/reserve-data
 
 require (
+	github.com/DataDog/zstd v1.4.5
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/KyberNetwork/cclog v1.0.0
 	github.com/KyberNetwork/httpsign-utils v0.1.1
@@ -46,6 +47,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kataras/iris v11.1.1+incompatible // indirect
+	github.com/klauspost/compress v1.9.0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/oschwald/maxminddb-golang v1.3.1 // indirect

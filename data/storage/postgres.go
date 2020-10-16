@@ -10,10 +10,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-data/common"
+	"github.com/KyberNetwork/reserve-data/lib/caller"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
@@ -38,7 +40,10 @@ const (
 	usdDataType                        // usd
 )
 
-var ErrorNotFound = errors.New("record not found")
+var (
+	// ErrorNotFound record not found error
+	ErrorNotFound = errors.New("record not found")
+)
 
 // PostgresStorage struct
 type PostgresStorage struct {
@@ -82,7 +87,11 @@ func (ps *PostgresStorage) storeFetchData(data interface{}, timepoint uint64) er
 		return err
 	}
 	dataType := getDataType(data)
-	if _, err := ps.db.Exec(query, timestamp, dataJSON, dataType); err != nil {
+	dataCompressed, err := zstd.CompressLevel(nil, dataJSON, 9)
+	if err != nil {
+		return err
+	}
+	if _, err := ps.db.Exec(query, timestamp, dataCompressed, dataType); err != nil {
 		return err
 	}
 	return nil
@@ -122,12 +131,19 @@ WHERE
 
 func (ps *PostgresStorage) getData(o interface{}, v common.Version) error {
 	var (
-		data []byte
+		dataCompress []byte
+		logger       = ps.l.With("func", caller.GetCurrentFunctionName())
 	)
 	ts := common.MillisToTime(uint64(v))
 	dataType := getDataType(o)
 	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE created = $1 AND type = $2`, fetchDataTable)
-	if err := ps.db.Get(&data, query, ts, dataType); err != nil {
+	if err := ps.db.Get(&dataCompress, query, ts, dataType); err != nil {
+		logger.Errorw("failed to get data from fetchData table", "error", err)
+		return err
+	}
+	data, err := zstd.Decompress(nil, dataCompress)
+	if err != nil {
+		logger.Errorw("failed to decompress data", "error", err)
 		return err
 	}
 	return json.Unmarshal(data, o)
