@@ -1,3 +1,5 @@
+# github.com/DataDog/zstd v1.4.5
+github.com/DataDog/zstd
 # github.com/Knetic/govaluate v3.0.0+incompatible
 github.com/Knetic/govaluate
 # github.com/KyberNetwork/cclog v1.0.0
