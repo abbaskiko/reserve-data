@@ -17,6 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/exchange"
+	authhttp "github.com/KyberNetwork/reserve-data/lib/auth-http"
 	"github.com/KyberNetwork/reserve-data/lib/caller"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
@@ -36,6 +37,7 @@ type Endpoint struct {
 	marketDataBaseURL  string
 	accountDataBaseURL string
 	accountID          string
+	authHTTP           *authhttp.AuthHTTP
 }
 
 func (ep *Endpoint) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
@@ -159,13 +161,10 @@ func (ep *Endpoint) Trade(tradeType string, pair commonv3.TradingPairSymbols, ra
 		"quantity":    strconv.FormatFloat(amount, 'f', -1, 64),
 		"price":       strconv.FormatFloat(rate, 'f', -1, 64),
 	}
-	respBody, err := ep.GetResponse(
-		"POST",
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
-		params,
-		false,
-		common.NowInMillis(),
-	)
+		http.MethodPost,
+		params)
 	if err != nil {
 		return result, err
 	}
@@ -225,16 +224,13 @@ func (ep *Endpoint) GetAccountTradeHistory(
 // WithdrawHistory get withdraw history from binance
 func (ep *Endpoint) WithdrawHistory(startTime, endTime uint64) (exchange.Binawithdrawals, error) {
 	result := exchange.Binawithdrawals{}
-	respBody, err := ep.GetResponse(
-		http.MethodGet,
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/wapi/v3/withdrawHistory/%s", ep.accountDataBaseURL, ep.accountID),
+		http.MethodGet,
 		map[string]string{
 			"startTime": fmt.Sprintf("%d", startTime),
 			"endTime":   fmt.Sprintf("%d", endTime),
-		},
-		true,
-		common.NowInMillis(),
-	)
+		})
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
 			return result, err
@@ -317,16 +313,13 @@ func (ep *Endpoint) CancelAllOrders(symbol string) ([]exchange.Binaorder, error)
 // OrderStatus return status of orders
 func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, error) {
 	result := exchange.Binaorder{}
-	respBody, err := ep.GetResponse(
-		"GET",
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/api/v3/order/%s", ep.accountDataBaseURL, ep.accountID),
+		http.MethodGet,
 		map[string]string{
 			"symbol":  symbol,
 			"orderId": fmt.Sprintf("%d", id),
-		},
-		false,
-		common.NowInMillis(),
-	)
+		})
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
 			return result, err
@@ -347,18 +340,15 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 		}
 	}
 	result := exchange.Binawithdraw{}
-	respBody, err := ep.GetResponse(
-		"POST",
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/wapi/v3/withdraw/%s", ep.accountDataBaseURL, ep.accountID),
+		http.MethodPost,
 		map[string]string{
 			"asset":   symbol,
 			"address": address.Hex(),
 			"name":    "reserve",
 			"amount":  strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
-		},
-		true,
-		common.NowInMillis(),
-	)
+		})
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
 			return "", err
@@ -374,13 +364,10 @@ func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethe
 // GetInfo return binance exchange info
 func (ep *Endpoint) GetInfo() (exchange.Binainfo, error) {
 	result := exchange.Binainfo{}
-	respBody, err := ep.GetResponse(
-		"GET",
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/api/v3/account/%s", ep.accountDataBaseURL, ep.accountID),
-		map[string]string{},
-		false,
-		common.NowInMillis(),
-	)
+		http.MethodGet,
+		map[string]string{})
 	if err == nil {
 		if err = json.Unmarshal(respBody, &result); err != nil {
 			return result, err
@@ -403,13 +390,10 @@ func (ep *Endpoint) OpenOrdersForOnePair(pair *commonv3.TradingPairSymbols) (exc
 		logger.Infow("getting open order for pair", "pair", pair.BaseSymbol+pair.QuoteSymbol)
 		params["symbol"] = pair.BaseSymbol + pair.QuoteSymbol
 	}
-	respBody, err := ep.GetResponse(
-		"GET",
+	respBody, err := ep.authHTTP.DoReq(
 		fmt.Sprintf("%s/api/v3/openOrders/%s", ep.accountDataBaseURL, ep.accountID),
-		params,
-		false,
-		common.NowInMillis(),
-	)
+		http.MethodGet,
+		params)
 	if err != nil {
 		return result, err
 	}
@@ -519,7 +503,7 @@ func (ep *Endpoint) UpdateTimeDelta() error {
 
 // NewBinanceEndpoint return new endpoint instance for using binance
 func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployment, client *http.Client, exparam rtypes.ExchangeID,
-	marketDataBaseURL, accountDataBaseURL, accountID string) *Endpoint {
+	marketDataBaseURL, accountDataBaseURL, accountID string, authHTTP *authhttp.AuthHTTP) *Endpoint {
 	l := zap.S()
 	endpoint := &Endpoint{
 		signer:             signer,
@@ -530,6 +514,7 @@ func NewBinanceEndpoint(signer Signer, interf Interface, dpl deployment.Deployme
 		marketDataBaseURL:  marketDataBaseURL,
 		accountDataBaseURL: accountDataBaseURL,
 		accountID:          accountID,
+		authHTTP:           authHTTP,
 	}
 	switch dpl {
 	case deployment.Simulation:
