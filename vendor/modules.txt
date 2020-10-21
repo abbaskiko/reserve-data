@@ -7,6 +7,7 @@ github.com/KyberNetwork/cclog/lib/client
 github.com/KyberNetwork/cclog/lib/common
 # github.com/KyberNetwork/httpsign-utils v0.1.1
 github.com/KyberNetwork/httpsign-utils/authenticator
+github.com/KyberNetwork/httpsign-utils/sign
 # github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6
 github.com/StackExchange/wmi
 # github.com/TheZeroSlave/zapsentry v1.5.0

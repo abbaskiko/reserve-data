@@ -1,6 +1,10 @@
 {
   "market_data_base_url": "http://market-data.com",
-  "account_data_base_url": "http://account-data.com",
+  "account_data": {
+    "base_url": "http://account-data.com",
+    "access_key": "accesskey",
+    "access_secret": "accesssecret"
+  },
   "fetcher_delay": {
     "order_book": "7s",
     "auth_data": "5s",
