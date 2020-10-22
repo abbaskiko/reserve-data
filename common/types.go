@@ -813,9 +813,13 @@ type RawConfig struct {
 	IntermediatorKeystore   string `json:"keystore_intermediator_path"`
 	IntermediatorPassphrase string `json:"passphrase_intermediate_account"`
 
-	MigrationPath      string `json:"migration_folder_path"`
-	MarketDataBaseURL  string `json:"market_data_base_url"`
-	AccountDataBaseURL string `json:"account_data_base_url"`
+	MigrationPath     string `json:"migration_folder_path"`
+	MarketDataBaseURL string `json:"market_data_base_url"`
+	AccountData       struct {
+		BaseURL      string `json:"base_url"`
+		AccessKey    string `json:"access_key"`
+		AccessSecret string `json:"access_secret"`
+	} `json:"account_data"`
 }
 
 // FeedProviderResponse ...
