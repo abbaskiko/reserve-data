@@ -329,14 +329,15 @@ func (rc *ReserveCore) doDeposit(exchange common.Exchange, asset commonv3.Asset,
 
 	recommendedPrice, err := rc.gasPriceInfo.GetCurrentGas()
 	if err != nil {
-		rc.l.Errorw("failed to get gas price, use default", "err", err)
+		rc.l.Errorw("deposit failed to get gas price, use default", "err", err)
+		return nil, fmt.Errorf("failed to get gas: %w", err)
 	}
 	highBoundGasPrice := rc.maxGasPrice()
 	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
-		initPrice = common.GweiToWei(10)
-	} else {
-		initPrice = common.GweiToWei(recommendedPrice)
+		rc.l.Errorw("deposit failed due gasprice invalid", "gas", recommendedPrice, "highbound", highBoundGasPrice)
+		return nil, fmt.Errorf("gasprice invalid, current price %v, highbound %v", recommendedPrice, highBoundGasPrice)
 	}
+	initPrice = common.GweiToWei(recommendedPrice)
 	rc.l.Infof("initial deposit tx, init price: %s", initPrice.String())
 
 	if tx, err = rc.blockchain.Send(asset, amount, address, big.NewInt(selectedNonce), initPrice); err != nil {
