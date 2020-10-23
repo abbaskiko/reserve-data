@@ -1,9 +1,6 @@
 package authhttp
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -37,34 +34,16 @@ func NewAuthHTTP(accessKey, accessSecret string) *AuthHTTP {
 func (ah *AuthHTTP) DoReq(url string, method string, params map[string]string) ([]byte, error) {
 	var (
 		httpMethod = strings.ToUpper(method)
-		body       io.Reader
 	)
-	if method != http.MethodGet {
-		data, err := json.Marshal(params)
-		if err != nil {
-			return nil, err
-		}
-		if len(data) > 0 {
-			body = bytes.NewBuffer(data)
-		}
-	}
-	req, err := http.NewRequest(httpMethod, url, body)
+	req, err := http.NewRequest(httpMethod, url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create get request")
 	}
-
-	switch httpMethod {
-	case http.MethodPost, http.MethodPut:
-		req.Header.Add("Content-Type", "application/json")
-	case http.MethodGet:
-		q := req.URL.Query()
-		for k, v := range params {
-			q.Add(k, v)
-		}
-		req.URL.RawQuery = q.Encode()
-	default:
-		return nil, errors.Errorf("invalid method %s", httpMethod)
+	q := req.URL.Query()
+	for k, v := range params {
+		q.Add(k, v)
 	}
+	req.URL.RawQuery = q.Encode()
 
 	if ah.accessKey != "" && ah.accessSecret != "" {
 		req, err = sign.Sign(req, ah.accessKey, ah.accessSecret)
