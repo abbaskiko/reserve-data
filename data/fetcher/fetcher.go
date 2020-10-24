@@ -393,7 +393,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 
 			switch status {
 			case common.MiningStatusPending:
-				f.l.Infof("TX_STATUS: tx (%s) status is pending", tx)
+				f.l.Infof("TX_STATUS: tx (%s) status is pending", tx.String())
 			case common.MiningStatusMined:
 				if activity.Action == common.ActionSetRate {
 					f.l.Infof("TX_STATUS set rate transaction is mined, id: %s", activity.ID.EID)
@@ -407,7 +407,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 					err,
 				)
 			case common.MiningStatusFailed:
-				f.l.Warnw("transaction failed to mine", "tx", tx)
+				f.l.Warnw("transaction failed to mine", "tx", tx.String())
 				result[activity.ID] = common.NewActivityStatus(
 					activity.ExchangeStatus,
 					txStr,
@@ -425,9 +425,14 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 				)
 				// we have a delay to check tx status and consider it as lost,
 				// because tx might not found if node need sometimes to show it up in wait-to-mine queue
+
+				// update: we found case where node report tx not found, but tx then show up(maybe it was put in queue)
+				// so we only consider tx was lost/replaced if avt.nonce < account nonce
+				// this change only target on deposit as deposit action got issue with its nonce, if a nonce
+				// of lost tx appear back, it will prevent all follow tx get stuck as pending.
 				if nonceValidator(activity) {
 					txFailed = true
-				} else {
+				} else if activity.Action != common.ActionDeposit {
 					elapsed := common.NowInMillis() - activity.Timestamp.Millis()
 					if elapsed > uint64(expiredDuration) {
 						f.l.Infof("TX_STATUS: tx(%s) is lost, elapsed time: %d", txStr, elapsed)

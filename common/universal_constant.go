@@ -18,3 +18,8 @@ const (
 	ActionSetRate           = "set_rates"
 	ActionCancelSetRate     = "cancel_set_rates"
 )
+
+const (
+	// maxGasPrice this value only use when it can't receive value from network contract
+	HighBoundGasPrice float64 = 200.0
+)
