@@ -425,9 +425,14 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 				)
 				// we have a delay to check tx status and consider it as lost,
 				// because tx might not found if node need sometimes to show it up in wait-to-mine queue
+
+				// update: we found case where node report tx not found, but tx then show up(maybe it was put in queue)
+				// so we only consider tx was lost/replaced if avt.nonce < account nonce
+				// this change only target on deposit as deposit action got issue with its nonce, if a nonce
+				// of lost tx appear back, it will prevent all follow tx get stuck as pending.
 				if nonceValidator(activity) {
 					txFailed = true
-				} else {
+				} else if activity.Action != common.ActionDeposit {
 					elapsed := common.NowInMillis() - activity.Timestamp.Millis()
 					if elapsed > uint64(expiredDuration) {
 						f.l.Infof("TX_STATUS: tx(%s) is lost, elapsed time: %d", txStr, elapsed)
