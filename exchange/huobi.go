@@ -397,19 +397,20 @@ func (h *Huobi) Send2ndTransaction(amount float64, asset commonv3.Asset, exchang
 	}
 	recommendedPrice, err := gasInfo.GetCurrentGas()
 	if err != nil {
-		h.l.Errorw("failed to get gas price, use default", "err", err)
+		h.l.Errorw("failed to get gas price", "err", err)
+		return nil, fmt.Errorf("can not get gas, retry later")
 	}
 	var gasPrice *big.Int
 	highBoundGasPrice, err := gasInfo.MaxGas()
 	if err != nil {
 		h.l.Errorw("failed to receive high bound gas, use default", "err", err)
-		highBoundGasPrice = 100.0
+		highBoundGasPrice = common.HighBoundGasPrice
 	}
 	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
-		gasPrice = common.GweiToWei(10)
-	} else {
-		gasPrice = common.GweiToWei(recommendedPrice)
+		h.l.Errorw("gas price invalid", "gas", recommendedPrice, "highBound", highBoundGasPrice)
+		return nil, fmt.Errorf("gas price invalid (gas=%v, highBound=%v), retry later", recommendedPrice, highBoundGasPrice)
 	}
+	gasPrice = common.GweiToWei(recommendedPrice)
 	h.l.Infof("Send2ndTransaction, gas price: %s", gasPrice.String())
 	if asset.Symbol == "ETH" {
 		tx, err = h.blockchain.SendETHFromAccountToExchange(IAmount, exchangeAddress, gasPrice)

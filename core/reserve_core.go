@@ -22,11 +22,6 @@ import (
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
 )
 
-const (
-	// maxGasPrice this value only use when it can't receive value from network contract
-	maxGasPrice float64 = 100.1
-)
-
 // ReserveCore instance
 type ReserveCore struct {
 	blockchain      Blockchain
@@ -231,8 +226,12 @@ func (rc *ReserveCore) Deposit(
 		}
 		return common.ActivityID{}, common.CombineActivityStorageErrs(err, sErr)
 	}
-	rc.l.Infow("deposit initialized", "exchange", exchange.ID().String(), "asset",
-		asset.Address.String(), "name", asset.Name, "amount", amount.String())
+	gasPrice := ""
+	if tx.GasPrice() != nil {
+		gasPrice = tx.GasPrice().String()
+	}
+	rc.l.Infow("deposit_initialized", "exchange", exchange.ID().String(), "asset",
+		asset.Address.String(), "name", asset.Name, "amount", amount.String(), "nonce", tx.Nonce(), "gas_price", gasPrice)
 
 	sErr := recordActivity(
 		common.MiningStatusSubmitted,
@@ -249,8 +248,8 @@ func (rc *ReserveCore) maxGasPrice() float64 {
 	max, err := rc.gasPriceInfo.MaxGas()
 	if err != nil {
 		rc.l.Errorw("failed to receive maxGasPrice from network, fallback to hard code value",
-			"err", err, "maxGasPrice", maxGasPrice)
-		return maxGasPrice
+			"err", err, "maxGasPrice", common.HighBoundGasPrice)
+		return common.HighBoundGasPrice
 	}
 	return max
 }
@@ -601,12 +600,15 @@ func (rc *ReserveCore) GetSetRateResult(tokens []commonv3.Asset,
 	recommendedPrice, err := rc.gasPriceInfo.GetCurrentGas()
 	if err != nil {
 		rc.l.Errorw("failed to get gas price, use default", "err", err)
+		return nil, fmt.Errorf("setrate failed to get gas price %w", err)
 	}
 	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
-		initPrice = common.GweiToWei(10)
-	} else {
-		initPrice = common.GweiToWei(recommendedPrice)
+		rc.l.Errorw("failed to get gas price", "err", err, "gas",
+			recommendedPrice, "highBound", highBoundGasPrice)
+		return nil, fmt.Errorf("setrate failed to query gas price got value %v highBound %v",
+			recommendedPrice, highBoundGasPrice)
 	}
+	initPrice = common.GweiToWei(recommendedPrice)
 	rc.l.Infof("initial set rate tx, init price: %s", initPrice.String())
 	tx, err = rc.blockchain.SetRates(
 		tokenAddrs, buys, sells, block,
@@ -686,7 +688,7 @@ func (rc *ReserveCore) SpeedupDeposit(act common.ActivityRecord) (*big.Int, erro
 	}
 	maxGas, err := rc.gasPriceInfo.MaxGas()
 	if err != nil {
-		maxGas = maxGasPrice
+		maxGas = common.HighBoundGasPrice
 	}
 	if newGas > maxGas {
 		newGas = maxGas
