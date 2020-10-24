@@ -393,7 +393,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 
 			switch status {
 			case common.MiningStatusPending:
-				f.l.Infof("TX_STATUS: tx (%s) status is pending", tx)
+				f.l.Infof("TX_STATUS: tx (%s) status is pending", tx.String())
 			case common.MiningStatusMined:
 				if activity.Action == common.ActionSetRate {
 					f.l.Infof("TX_STATUS set rate transaction is mined, id: %s", activity.ID.EID)
@@ -407,7 +407,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 					err,
 				)
 			case common.MiningStatusFailed:
-				f.l.Warnw("transaction failed to mine", "tx", tx)
+				f.l.Warnw("transaction failed to mine", "tx", tx.String())
 				result[activity.ID] = common.NewActivityStatus(
 					activity.ExchangeStatus,
 					txStr,
