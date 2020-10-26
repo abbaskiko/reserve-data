@@ -41,6 +41,7 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 
 		g.GET("/addresses", coreProxyMW)
 		g.GET("/token-rate-trigger", coreProxyMW)
+		g.POST("/transfer-self,", coreProxyMW)
 
 		return nil
 	}

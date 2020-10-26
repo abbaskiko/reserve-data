@@ -3,6 +3,8 @@ package reserve
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	commonv3 "github.com/KyberNetwork/reserve-data/reservesetting/common"
@@ -73,4 +75,5 @@ type Core interface {
 	// blockchain related action
 	SetRates(tokens []commonv3.Asset, buys, sells []*big.Int, block *big.Int, afpMid []*big.Int, msgs []string, triggers []bool) (common.ActivityID, error)
 	CancelSetRate() (common.ActivityID, error)
+	TransferToSelf(op string, nonce uint64, withGasPrice float64) (*types.Transaction, error)
 }
