@@ -528,7 +528,7 @@ func (ps *PostgresStorage) MaxPendingNonce(action string) (int64, error) {
 // Record save activity
 func (ps *PostgresStorage) Record(action string, id common.ActivityID, destination string,
 	params common.ActivityParams, result common.ActivityResult,
-	estatus string, mstatus string, timepoint uint64) error {
+	estatus string, mstatus string, timepoint uint64, isPending bool) error {
 	record := common.NewActivityRecord(
 		action,
 		id,
@@ -545,7 +545,7 @@ func (ps *PostgresStorage) Record(action string, id common.ActivityID, destinati
 	if err != nil {
 		return err
 	}
-	if _, err := ps.db.Exec(query, timestamp, data, true, id.Timepoint, id.EID); err != nil {
+	if _, err := ps.db.Exec(query, timestamp, data, isPending, id.Timepoint, id.EID); err != nil {
 		return err
 	}
 	return nil
