@@ -63,6 +63,10 @@ func (te testExchange) GetLiveWithdrawFee(asset string) (float64, error) {
 type testBlockchain struct {
 }
 
+func (tbc testBlockchain) TransferToSelf(op string, gasPrice *big.Int, nonce *big.Int) (*types.Transaction, error) {
+	panic("implement me")
+}
+
 func (tbc testBlockchain) SpeedupDeposit(tx ethereum.Hash, gasPrice *big.Int) (ethereum.Hash, error) {
 	panic("implement me")
 }

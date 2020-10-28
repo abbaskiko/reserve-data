@@ -271,6 +271,25 @@ func (bc *Blockchain) Send(
 	return bc.SignAndBroadcast(tx, blockchain.DepositOP)
 }
 
+// TransferToSelf use to override nonce
+func (bc *Blockchain) TransferToSelf(op string, gasPrice *big.Int, nonce *big.Int) (*types.Transaction, error) {
+	opAcc := bc.MustGetOperator(op)
+	tx, err := bc.BuildSendETHTx(blockchain.TxOpts{
+		Operator: opAcc,
+		Nonce:    nonce,
+		Value:    big.NewInt(0),
+		GasPrice: gasPrice,
+		GasLimit: 0,
+	}, opAcc.Address)
+	if err != nil {
+		bc.l.Errorw("failed to create tx", "err", err,
+			"from", opAcc.Address.String(),
+		)
+		return nil, err
+	}
+	return bc.SignAndBroadcast(tx, op)
+}
+
 //====================== Readonly calls ============================
 
 // FetchBalanceData return token balance on reserve
