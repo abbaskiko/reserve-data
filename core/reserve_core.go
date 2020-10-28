@@ -175,6 +175,67 @@ func (rc *ReserveCore) Trade(
 	return uid, done, remaining, finished, common.CombineActivityStorageErrs(err, sErr)
 }
 
+// TransferToSelf utility func to override nonce, this trigger manual in case core can't resolve account nonce automatically.
+func (rc *ReserveCore) TransferToSelf(op string, nonce uint64, recommendedPrice float64) (*types.Transaction, error) {
+	var action string
+	switch op {
+	case blockchain.DepositOP:
+		action = common.ActionDeposit
+	case blockchain.PricingOP:
+		action = common.ActionSetRate
+	default:
+		return nil, fmt.Errorf("op %s is invalid", op)
+	}
+	l := rc.l.With("op", op, "nonce", nonce, "gas_price", recommendedPrice)
+	// transfer to self use to override tx with nonce in rage (minedNonce, maxPendingNonce]
+	err := rc.validateNonceInRange(op, nonce, action)
+	if err != nil {
+		l.Errorw("check nonce to override tx", "err", err)
+		return nil, err
+	}
+
+	if recommendedPrice == 0 {
+		recommendedPrice, err = rc.gasPriceInfo.GetCurrentGas()
+		if err != nil {
+			l.Errorw("transfer-self to get gas price", "err", err)
+			return nil, fmt.Errorf("failed to get gas: %w", err)
+		}
+	}
+	highBoundGasPrice := rc.maxGasPrice()
+	if recommendedPrice == 0 || recommendedPrice > highBoundGasPrice {
+		l.Errorw("transfer-self failed due gasprice invalid", "gas", recommendedPrice, "highbound", highBoundGasPrice)
+		return nil, fmt.Errorf("gasprice invalid, current price %v, highbound %v", recommendedPrice, highBoundGasPrice)
+	}
+	gasPrice := common.GweiToWei(recommendedPrice)
+	tx, err := rc.blockchain.TransferToSelf(op, gasPrice, big.NewInt(0).SetUint64(nonce))
+	if err != nil {
+		l.Errorw("transfer-self failed", "err", err, "op", op, "gasPrice", gasPrice.String(), "nonce", nonce)
+	} else {
+		l.Infow("transfer-self", "tx", tx.Hash().String(), "op", op, "gasPrice", gasPrice.String(), "nonce", nonce)
+	}
+	return tx, err
+}
+
+func (rc *ReserveCore) validateNonceInRange(op string, nonce uint64, action string) error {
+	minedNonce, err := rc.blockchain.GetMinedNonceWithOP(op)
+	if err != nil {
+		return fmt.Errorf("couldn't get mined nonce, %w", err)
+	}
+	rc.l.Debugw("mined nonce account", "op", op, "nonce", minedNonce)
+	if nonce <= minedNonce {
+		return fmt.Errorf("override nonce must greater than minedNonce %v", minedNonce)
+	}
+
+	maxPendingNonce, err := rc.activityStorage.MaxPendingNonce(action)
+	if err != nil || maxPendingNonce == 0 {
+		maxPendingNonce = int64(minedNonce)
+	}
+	if nonce > uint64(maxPendingNonce) {
+		return fmt.Errorf("cannot override for nonce > maxPendingNonce %v", maxPendingNonce)
+	}
+	return nil
+}
+
 // Deposit deposit token into centralized exchange
 func (rc *ReserveCore) Deposit(
 	exchange common.Exchange,
