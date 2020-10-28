@@ -1,8 +1,8 @@
 package authhttp
 
 import (
+	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
@@ -28,6 +28,10 @@ func NewAuthHTTP(accessKey, accessSecret string) *AuthHTTP {
 		accessKey:    accessKey,
 		accessSecret: accessSecret,
 	}
+}
+
+type errorResponse struct {
+	Msg string `json:"msg"`
 }
 
 // DoReq do request
@@ -57,15 +61,19 @@ func (ah *AuthHTTP) DoReq(url string, method string, params map[string]string) (
 		return nil, errors.Wrap(err, "failed to do get req")
 	}
 
-	defer func() {
-		if cErr := rsp.Body.Close(); cErr != nil {
-			log.Printf("failed to close body: %s", cErr.Error())
-		}
-	}()
-
-	if rsp.StatusCode != 200 {
-		return nil, errors.Errorf("receive unexpected code, actual code: %d", rsp.StatusCode)
+	body, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot read response's body")
 	}
-
-	return ioutil.ReadAll(rsp.Body)
+	if err := rsp.Body.Close(); err != nil {
+		return nil, errors.Wrap(err, "cannot close response's body")
+	}
+	if rsp.StatusCode != 200 {
+		var er errorResponse
+		if err := json.Unmarshal(body, &er); err != nil {
+			return nil, errors.Wrap(err, "cannot unmarshal response data")
+		}
+		return nil, errors.Errorf("receive unexpected code, actual code: %d, err: %s", rsp.StatusCode, er.Msg)
+	}
+	return body, nil
 }
