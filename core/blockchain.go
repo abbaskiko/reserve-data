@@ -19,6 +19,7 @@ type Blockchain interface {
 		address ethereum.Address,
 		nonce *big.Int,
 		gasPrice *big.Int) (*types.Transaction, error)
+	TransferToSelf(op string, gasPrice *big.Int, nonce *big.Int) (*types.Transaction, error)
 	SetRates(
 		tokens []ethereum.Address,
 		buys []*big.Int,

@@ -181,6 +181,32 @@ func (s *Server) GetRates(c *gin.Context) {
 	}
 }
 
+// TransferSelfRequest form
+type TransferSelfRequest struct {
+	Nonce    uint64 `json:"nonce" binding:"required"`
+	Op       string `json:"op" binding:"required"`
+	GasPrice uint64 `json:"gas_price" binding:"numeric,min=0,max=1000"`
+}
+
+// Trade create an order in cexs
+func (s *Server) transferSelf(c *gin.Context) {
+	var request TransferSelfRequest
+	var err error
+	if err := c.ShouldBindJSON(&request); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	tx, err := s.core.TransferToSelf(request.Op, request.Nonce, float64(request.GasPrice))
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithMultipleFields(gin.H{
+		"tx": tx.Hash().String(),
+	}))
+}
+
 // GetRate return rate of a token
 func (s *Server) GetRate(c *gin.Context) {
 	s.l.Infow("Getting all rates")
@@ -552,6 +578,7 @@ func (s *Server) register() {
 		g.POST("/deposit", s.Deposit)
 		g.POST("/withdraw", s.Withdraw)
 		g.POST("/trade", s.Trade)
+		g.POST("/transfer-self", s.transferSelf)
 		g.POST("/setrates", s.SetRate)
 		g.POST("/cancel-setrates", s.cancelSetRate)
 		g.GET("/tradehistory", s.GetTradeHistory)
