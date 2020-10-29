@@ -383,3 +383,8 @@ type GeneralData struct {
 type PreferGasSource struct {
 	Name string `json:"name" binding:"required"`
 }
+
+// AdditionalDataReturn ...
+type AdditionalDataReturn struct {
+	AddedTradingPairs []rtypes.TradingPairID
+}

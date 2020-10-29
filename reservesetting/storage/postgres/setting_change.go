@@ -141,77 +141,80 @@ func (s *Storage) RejectSettingChange(id rtypes.SettingChangeID) error {
 	return nil
 }
 
-func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntry) error {
+func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntry, adr *common.AdditionalDataReturn) error {
 	var err error
 	switch e := entry.Data.(type) {
 	case *common.ChangeAssetAddressEntry:
 		err = s.changeAssetAddress(tx, e.ID, e.Address)
 		if err != nil {
-			s.l.Infow("change asset address", "index", i, "err", err)
+			s.l.Errorw("change asset address", "index", i, "err", err)
 			return err
 		}
 	case *common.CreateAssetEntry:
-		_, err = s.createAsset(tx, e.Symbol, e.Name, e.Address, e.Decimals, e.Transferable, e.SetRate, e.Rebalance,
+		_, tradingPairIDs, err := s.createAsset(tx, e.Symbol, e.Name, e.Address, e.Decimals, e.Transferable, e.SetRate, e.Rebalance,
 			e.IsQuote, e.IsEnabled, e.PWI, e.RebalanceQuadratic, e.Exchanges, e.Target, e.StableParam, e.FeedWeight,
 			e.NormalUpdatePerPeriod, e.MaxImbalanceRatio, e.OrderDurationMillis)
 		if err != nil {
-			s.l.Infow("create asset", "index", i, "err", err)
+			s.l.Errorw("create asset", "index", i, "err", err)
 			return err
 		}
+		adr.AddedTradingPairs = append(adr.AddedTradingPairs, tradingPairIDs...)
 	case *common.CreateAssetExchangeEntry:
-		_, err = s.createAssetExchange(tx, e.ExchangeID, e.AssetID, e.Symbol, e.DepositAddress, e.MinDeposit,
+		_, tradingPairIDs, err := s.createAssetExchange(tx, e.ExchangeID, e.AssetID, e.Symbol, e.DepositAddress, e.MinDeposit,
 			e.WithdrawFee, e.TargetRecommended, e.TargetRatio, e.TradingPairs)
 		if err != nil {
-			s.l.Infow("create asset exchange", "index", i, "err", err)
+			s.l.Errorw("create asset exchange", "index", i, "err", err)
 			return err
 		}
+		adr.AddedTradingPairs = append(adr.AddedTradingPairs, tradingPairIDs...)
 	case *common.CreateTradingPairEntry:
-		_, err = s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
+		tpID, err := s.createTradingPair(tx, e.ExchangeID, e.Base, e.Quote, e.PricePrecision, e.AmountPrecision, e.AmountLimitMin,
 			e.AmountLimitMax, e.PriceLimitMin, e.PriceLimitMax, e.MinNotional, e.AssetID)
 		if err != nil {
-			s.l.Infow("create trading pair", "index", i, "err", err)
+			s.l.Errorw("create trading pair", "index", i, "err", err)
 			return err
 		}
+		adr.AddedTradingPairs = append(adr.AddedTradingPairs, tpID)
 	case *common.UpdateAssetEntry:
 		err = s.updateAsset(tx, e.AssetID, *e)
 		if err != nil {
-			s.l.Infow("update asset", "index", i, "err", err)
+			s.l.Errorw("update asset", "index", i, "err", err)
 			return err
 		}
 	case *common.UpdateAssetExchangeEntry:
 		err = s.updateAssetExchange(tx, e.ID, *e)
 		if err != nil {
-			s.l.Infow("update asset exchange", "index", i, "err", err)
+			s.l.Errorw("update asset exchange", "index", i, "err", err)
 			return err
 		}
 	case *common.UpdateExchangeEntry:
 		err = s.updateExchange(tx, e.ExchangeID, *e)
 		if err != nil {
-			s.l.Infow("update exchange", "index", i, "err", err)
+			s.l.Errorw("update exchange", "index", i, "err", err)
 			return err
 		}
 	case *common.DeleteAssetExchangeEntry:
 		err = s.deleteAssetExchange(tx, e.AssetExchangeID)
 		if err != nil {
-			s.l.Infow("delete asset exchange", "index", i, "err", err)
+			s.l.Errorw("delete asset exchange", "index", i, "err", err)
 			return err
 		}
 	case *common.DeleteTradingPairEntry:
 		err = s.deleteTradingPair(tx, e.TradingPairID)
 		if err != nil {
-			s.l.Infow("delete trading pair", "index", i, "err", err)
+			s.l.Errorw("delete trading pair", "index", i, "err", err)
 			return err
 		}
 	case *common.UpdateStableTokenParamsEntry:
 		err = s.updateStableTokenParams(tx, e.Params)
 		if err != nil {
-			s.l.Infow("update stable token params", "index", i, "err", err)
+			s.l.Errorw("update stable token params", "index", i, "err", err)
 			return err
 		}
 	case *common.SetFeedConfigurationEntry:
 		err = s.setFeedConfiguration(tx, *e)
 		if err != nil {
-			s.l.Infow("set feed configuration", "index", i, "err", err)
+			s.l.Errorw("set feed configuration", "index", i, "err", err)
 			return err
 		}
 	default:
@@ -221,34 +224,37 @@ func (s *Storage) applyChange(tx *sqlx.Tx, i int, entry common.SettingChangeEntr
 }
 
 // ConfirmSettingChange apply setting change with a given id
-func (s *Storage) ConfirmSettingChange(id rtypes.SettingChangeID, commit bool) error {
+func (s *Storage) ConfirmSettingChange(id rtypes.SettingChangeID, commit bool) (*common.AdditionalDataReturn, error) {
+	adr := &common.AdditionalDataReturn{
+		AddedTradingPairs: []rtypes.TradingPairID{},
+	}
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return errors.Wrap(err, "create transaction error")
+		return nil, errors.Wrap(err, "create transaction error")
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 	changeObj, err := s.getSettingChange(tx, id)
 	if err != nil {
-		return errors.Wrap(err, "get setting change error")
+		return nil, errors.Wrap(err, "get setting change error")
 	}
 
 	for i, change := range changeObj.ChangeList {
-		if err = s.applyChange(tx, i, change); err != nil {
-			return err
+		if err = s.applyChange(tx, i, change, adr); err != nil {
+			return nil, err
 		}
 	}
 	_, err = tx.Stmtx(s.stmts.updateSettingChangeStatus).Exec(id, common.ChangeStatusAccepted.String())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if commit {
 		if err := tx.Commit(); err != nil {
 			s.l.Infow("setting change has been failed to confirm", "id", id, "err", err)
-			return err
+			return nil, err
 		}
 		s.l.Infow("setting change has been confirmed successfully", "id", id)
-		return nil
+		return adr, nil
 	}
 	s.l.Infow("setting change will be reverted due commit flag not set", "id", id)
-	return nil
+	return nil, nil
 }

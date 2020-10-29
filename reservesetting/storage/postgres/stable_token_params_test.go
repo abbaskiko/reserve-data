@@ -33,7 +33,8 @@ func TestStorage_GetStableTokenParams(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.NoError(t, s.ConfirmSettingChange(id, true))
+	_, err = s.ConfirmSettingChange(id, true)
+	require.NoError(t, err)
 	outputParams, err := s.GetStableTokenParams()
 	require.NoError(t, err)
 	t.Log(outputParams)
