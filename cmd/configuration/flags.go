@@ -180,10 +180,11 @@ func NewConfigurationFromContext(c *cli.Context, rcf common.RawConfig, store *po
 	hi := huobi.NewRealInterface(rcf.ExchangeEndpoints.Houbi.URL)
 
 	contractAddressConf := &common.ContractAddressConfiguration{
-		Reserve: rcf.ContractAddresses.Reserve,
-		Proxy:   rcf.ContractAddresses.Proxy,
-		Wrapper: rcf.ContractAddresses.Wrapper,
-		Pricing: rcf.ContractAddresses.Pricing,
+		Reserve:         rcf.ContractAddresses.Reserve,
+		Proxy:           rcf.ContractAddresses.Proxy,
+		Wrapper:         rcf.ContractAddresses.Wrapper,
+		Pricing:         rcf.ContractAddresses.Pricing,
+		RateQueryHelper: rcf.ContractAddresses.RateQueryHelper,
 	}
 
 	ethereumNodeConf := NewEthereumNodeConfiguration(rcf.Nodes.Main, rcf.Nodes.Backup)

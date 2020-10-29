@@ -521,6 +521,11 @@ func (bc *Blockchain) GetReserveAddress() ethereum.Address {
 	return bc.contractAddress.Reserve
 }
 
+// GetRateQueryHelperAddress return rateQueryHelperAddress
+func (bc *Blockchain) GetRateQueryHelperAddress() ethereum.Address {
+	return bc.contractAddress.RateQueryHelper
+}
+
 func (bc *Blockchain) getListedTokens() ([]ethereum.Address, error) {
 	opts := bc.GetCallOpts(0)
 	return bc.GeneratedGetListedTokens(opts)

@@ -15,5 +15,6 @@ type Blockchain interface {
 	GetWrapperAddress() ethereum.Address
 	GetProxyAddress() ethereum.Address
 	GetReserveAddress() ethereum.Address
+	GetRateQueryHelperAddress() ethereum.Address
 	ListedTokens() []ethereum.Address
 }

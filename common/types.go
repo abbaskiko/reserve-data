@@ -362,23 +362,25 @@ func (ar ActivityRecord) IsPending() bool {
 
 // ActivityStatus is status of an activity
 type ActivityStatus struct {
-	ExchangeStatus string
-	Tx             string
-	BlockNumber    uint64
-	MiningStatus   string
-	WithdrawFee    float64
-	Error          error
+	ExchangeStatus         string
+	Tx                     string
+	BlockNumber            uint64
+	MiningStatus           string
+	WithdrawFee            float64
+	Error                  error
+	OrderExecutedRemaining float64
 }
 
 // NewActivityStatus creates a new ActivityStatus instance.
-func NewActivityStatus(exchangeStatus, tx string, blockNumber uint64, miningStatus string, withdrawFee float64, err error) ActivityStatus {
+func NewActivityStatus(exchangeStatus, tx string, blockNumber uint64, miningStatus string, withdrawFee, orderRemaining float64, err error) ActivityStatus {
 	return ActivityStatus{
-		ExchangeStatus: exchangeStatus,
-		Tx:             tx,
-		BlockNumber:    blockNumber,
-		MiningStatus:   miningStatus,
-		WithdrawFee:    withdrawFee,
-		Error:          err,
+		ExchangeStatus:         exchangeStatus,
+		Tx:                     tx,
+		BlockNumber:            blockNumber,
+		MiningStatus:           miningStatus,
+		WithdrawFee:            withdrawFee,
+		Error:                  err,
+		OrderExecutedRemaining: orderRemaining,
 	}
 }
 
@@ -733,10 +735,11 @@ type WorldEndpoints struct {
 
 // ContractAddresses ...
 type ContractAddresses struct {
-	Proxy   ethereum.Address `json:"proxy"`
-	Reserve ethereum.Address `json:"reserve"`
-	Wrapper ethereum.Address `json:"wrapper"`
-	Pricing ethereum.Address `json:"pricing"`
+	Proxy           ethereum.Address `json:"proxy"`
+	Reserve         ethereum.Address `json:"reserve"`
+	Wrapper         ethereum.Address `json:"wrapper"`
+	Pricing         ethereum.Address `json:"pricing"`
+	RateQueryHelper ethereum.Address `json:"rate_query_helper"`
 }
 
 // ExchangeEndpoints ...
