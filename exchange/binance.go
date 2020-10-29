@@ -431,23 +431,27 @@ func (bn *Binance) WithdrawStatus(id string, assetID rtypes.AssetID, amount floa
 }
 
 // OrderStatus return status of an order on binance
-func (bn *Binance) OrderStatus(id string, base, quote string) (string, error) {
+func (bn *Binance) OrderStatus(id, base, quote string) (string, float64, error) {
 	orderID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		return "", fmt.Errorf("can not parse orderID (val %s) to uint", id)
+		return "", 0, fmt.Errorf("can not parse orderID (val %s) to uint", id)
 	}
 	symbol := base + quote
 	order, err := bn.interf.OrderStatus(symbol, orderID)
 	if err != nil {
-		return "", err
+		return "", 0, err
+	}
+	qtyLeft, err := remainingQty(order.OrigQty, order.ExecutedQty)
+	if err != nil {
+		bn.l.Errorw("failed to parse amount", "err", err, "order", order)
 	}
 	switch order.Status {
 	case "CANCELED":
-		return common.ExchangeStatusCancelled, nil
+		return common.ExchangeStatusCancelled, qtyLeft, nil
 	case "NEW", "PARTIALLY_FILLED", "PENDING_CANCEL":
-		return "", nil
+		return "", qtyLeft, nil
 	default:
-		return common.ExchangeStatusDone, nil
+		return common.ExchangeStatusDone, qtyLeft, nil
 	}
 }
 

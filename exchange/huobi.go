@@ -677,23 +677,27 @@ func (h *Huobi) WithdrawStatus(
 }
 
 // OrderStatus return order status from Huobi
-func (h *Huobi) OrderStatus(id string, base, quote string) (string, error) {
+func (h *Huobi) OrderStatus(id, base, quote string) (string, float64, error) {
 	orderID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	symbol := base + quote
 	order, err := h.interf.OrderStatus(symbol, orderID)
 	if err != nil {
-		return "", err
+		return "", 0, err
+	}
+	qtyLeft, err := remainingQty(order.Data.OrigQty, order.Data.ExecutedQty)
+	if err != nil {
+		h.l.Errorw("failed to parse amount", "err", err, "order", order)
 	}
 	switch order.Data.State {
 	case "canceled":
-		return common.ExchangeStatusCancelled, nil
+		return common.ExchangeStatusCancelled, qtyLeft, nil
 	case "pre-submitted", "submitting", "submitted", "partial-filled", "partial-canceled":
-		return "", nil
+		return "", qtyLeft, nil
 	default:
-		return common.ExchangeStatusDone, nil
+		return common.ExchangeStatusDone, qtyLeft, nil
 	}
 }
 

@@ -398,24 +398,10 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 				if activity.Action == common.ActionSetRate {
 					f.l.Infof("TX_STATUS set rate transaction is mined, id: %s", activity.ID.EID)
 				}
-				result[activity.ID] = common.NewActivityStatus(
-					activity.ExchangeStatus,
-					txStr,
-					blockNum,
-					common.MiningStatusMined,
-					0,
-					err,
-				)
+				result[activity.ID] = common.NewActivityStatus(activity.ExchangeStatus, txStr, blockNum, common.MiningStatusMined, 0, 0, err)
 			case common.MiningStatusFailed:
 				f.l.Warnw("transaction failed to mine", "tx", tx.String())
-				result[activity.ID] = common.NewActivityStatus(
-					activity.ExchangeStatus,
-					txStr,
-					blockNum,
-					common.MiningStatusFailed,
-					0,
-					err,
-				)
+				result[activity.ID] = common.NewActivityStatus(activity.ExchangeStatus, txStr, blockNum, common.MiningStatusFailed, 0, 0, err)
 			case common.MiningStatusLost:
 				var (
 					// expiredDuration is the amount of time after that if a transaction doesn't appear,
@@ -441,14 +427,7 @@ func (f *Fetcher) FetchStatusFromBlockchain(pendings []common.ActivityRecord) (m
 				}
 
 				if txFailed {
-					result[activity.ID] = common.NewActivityStatus(
-						activity.ExchangeStatus,
-						txStr,
-						blockNum,
-						common.MiningStatusFailed,
-						0,
-						fmt.Errorf("tx not found"),
-					)
+					result[activity.ID] = common.NewActivityStatus(activity.ExchangeStatus, txStr, blockNum, common.MiningStatusFailed, 0, 0, fmt.Errorf("tx not found"))
 				}
 			default:
 				f.l.Infof("TX_STATUS: tx (%s) status is not available. Wait till next try", tx)
@@ -528,6 +507,9 @@ func (f *Fetcher) updateActivityWithExchangeStatus(record *common.ActivityRecord
 
 	if record.Result.Tx == "" { // for a withdraw, we set tx into result tx(that is when cex process request and return tx id so we can monitor), deposit should already has tx when created.
 		record.Result.Tx = sts.Tx
+	}
+	if sts.OrderExecutedRemaining > 0 {
+		record.Result.Remaining = sts.OrderExecutedRemaining
 	}
 
 	if sts.Error != nil {
@@ -699,6 +681,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				status, tx string
 				blockNum   uint64
 				fee        float64
+				remain     float64
 			)
 
 			id := activity.ID
@@ -711,7 +694,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				quote := activity.Params.Quote
 				// we ignore error of order status because it doesn't affect
 				// authdata. Analytic will ignore order status anyway.
-				status, _ = exchange.OrderStatus(orderID, base, quote)
+				status, remain, _ = exchange.OrderStatus(orderID, base, quote)
 			case common.ActionDeposit:
 				txHash := activity.Result.Tx
 				amount := activity.Params.Amount
@@ -736,9 +719,9 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				f.l.Infof("Activity %+v has invalid timestamp. Just ignore it.", activity)
 			} else {
 				if common.NowInMillis()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
-					result[id] = common.NewActivityStatus(common.ExchangeStatusFailed, tx, blockNum, activity.MiningStatus, fee, err)
+					result[id] = common.NewActivityStatus(common.ExchangeStatusFailed, tx, blockNum, activity.MiningStatus, fee, remain, err)
 				} else {
-					result[id] = common.NewActivityStatus(status, tx, blockNum, activity.MiningStatus, fee, err)
+					result[id] = common.NewActivityStatus(status, tx, blockNum, activity.MiningStatus, fee, remain, err)
 				}
 			}
 		} else {
@@ -753,7 +736,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				common.NowInMillis()-timepoint > maxActivityLifeTime*uint64(time.Hour)/uint64(time.Millisecond) {
 				// the activity is still pending but its exchange status is done and it is stuck there for more than
 				// maxActivityLifeTime. This activity is considered failed.
-				result[activity.ID] = common.NewActivityStatus(common.ExchangeStatusFailed, "", 0, activity.MiningStatus, 0, nil)
+				result[activity.ID] = common.NewActivityStatus(common.ExchangeStatusFailed, "", 0, activity.MiningStatus, 0, 0, nil)
 			}
 		}
 	}
