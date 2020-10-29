@@ -74,9 +74,11 @@ func run(c *cli.Context) error {
 
 	rcf := common.RawConfig{}
 	if err := loadConfigFromFile(configFile, &rcf); err != nil {
+		l.Errorw("error load config file", "error", err)
 		return err
 	}
 	if err := loadConfigFromFile(secretConfigFile, &rcf); err != nil {
+		l.Errorw("error load config file", "error", err)
 		return err
 	}
 
@@ -95,14 +97,17 @@ func run(c *cli.Context) error {
 
 	store, err := createStorage(c, rcf.MigrationPath)
 	if err != nil {
+		l.Errorw("failed to create storage", "error", err)
 		return err
 	}
 	if err = schedulePartition(store); err != nil {
+		l.Errorw("failed to schedule partition", "error", err)
 		return err
 	}
 
 	conf, err := configuration.NewConfigurationFromContext(c, rcf, store, mainNode, backupNodes)
 	if err != nil {
+		l.Errorw("failed to new configuration from context", "error", err)
 		return err
 	}
 
