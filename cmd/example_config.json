@@ -25,7 +25,8 @@
     "wrapper": "0x6172AFC8c00c46E0D07ce3AF203828198194620a",
     "network_proxy": "0x818E6FECD516Ecc3849DAf6845e3EC868087B755",
     "pricing": "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B",
-    "reserve": "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
+    "reserve": "0x63825c174ab367968EC60f061753D3bbD36A0D8F",
+    "rate_query_helper": "0x958Ad8223700a4Fa4d77a93e3cfBAF29245eC743"
   },
   "exchange_endpoints": {
     "binance": {

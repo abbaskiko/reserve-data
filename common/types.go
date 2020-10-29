@@ -733,10 +733,11 @@ type WorldEndpoints struct {
 
 // ContractAddresses ...
 type ContractAddresses struct {
-	Proxy   ethereum.Address `json:"proxy"`
-	Reserve ethereum.Address `json:"reserve"`
-	Wrapper ethereum.Address `json:"wrapper"`
-	Pricing ethereum.Address `json:"pricing"`
+	Proxy           ethereum.Address `json:"proxy"`
+	Reserve         ethereum.Address `json:"reserve"`
+	Wrapper         ethereum.Address `json:"wrapper"`
+	Pricing         ethereum.Address `json:"pricing"`
+	RateQueryHelper ethereum.Address `json:"rate_query_helper"`
 }
 
 // ExchangeEndpoints ...
