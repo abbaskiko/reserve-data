@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -220,7 +221,7 @@ func (s *Server) createSettingChange(c *gin.Context, t common.ChangeCatalog) {
 	}
 
 	// test confirm
-	err = s.storage.ConfirmSettingChange(id, false)
+	_, err = s.storage.ConfirmSettingChange(id, false)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(makeFriendlyMessage(err)))
 		// clean up
@@ -311,12 +312,45 @@ func (s *Server) confirmSettingChange(c *gin.Context) {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
-	err := s.storage.ConfirmSettingChange(rtypes.SettingChangeID(input.ID), true)
+	additionalDataReturn, err := s.storage.ConfirmSettingChange(rtypes.SettingChangeID(input.ID), true)
 	if err != nil {
 		httputil.ResponseFailure(c, httputil.WithError(err))
 		return
 	}
+	if s.marketDataClient != nil {
+		// add pair to market data
+		for _, tpID := range additionalDataReturn.AddedTradingPairs {
+			tradingPair, err := s.storage.GetTradingPair(tpID, false)
+			if err != nil {
+				s.l.Errorw("cannot get trading pair", "id", tpID)
+				httputil.ResponseFailure(c, httputil.WithError(err))
+				return
+			}
+			exchange, sourceSymbol, publicSymbol, err := dataForMarketDataByExchange(tradingPair.ExchangeID, tradingPair.BaseSymbol, tradingPair.QuoteSymbol)
+			if err != nil {
+				httputil.ResponseFailure(c, httputil.WithError(err))
+				return
+			}
+			if err := s.marketDataClient.AddFeed(exchange, sourceSymbol, publicSymbol); err != nil {
+				s.l.Errorw("cannot add feed to market data", "err", err, "exchange", exchange, "source symbol", sourceSymbol)
+				httputil.ResponseFailure(c, httputil.WithError(err))
+				return
+			}
+		}
+	}
 	httputil.ResponseSuccess(c)
+}
+
+func dataForMarketDataByExchange(exchangeID rtypes.ExchangeID, base, quote string) (string, string, string, error) {
+	publicSymbol := fmt.Sprintf("%s-%s", base, quote)
+	switch exchangeID {
+	case rtypes.Binance, rtypes.Binance2:
+		return rtypes.Binance.String(), fmt.Sprintf("%s%s", strings.ToLower(base), strings.ToLower(quote)), publicSymbol, nil
+	case rtypes.Huobi:
+		return rtypes.Huobi.String(), fmt.Sprintf("%s%s", strings.ToLower(base), strings.ToLower(quote)), publicSymbol, nil
+	default:
+		return "", "", "", fmt.Errorf("%s exchange is not supported", exchangeID)
+	}
 }
 
 func (s *Server) checkCreateTradingPairParams(createEntry common.CreateTradingPairEntry) (string, string, error) {
