@@ -90,7 +90,7 @@ func (s *Storage) CreateAsset(
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
 
-	id, err := s.createAsset(tx, symbol, name, address, decimals, transferable,
+	id, _, err := s.createAsset(tx, symbol, name, address, decimals, transferable,
 		setRate, rebalance, isQuote, isEnabled, pwi, rb, exchanges, target, stableParam, feedWeight,
 		normalUpdatePerPeriod, maxImbalanceRatio, orderDurationMillis)
 	if err != nil {
@@ -113,7 +113,7 @@ func (s *Storage) CreateAssetExchange(exchangeID rtypes.ExchangeID, assetID rtyp
 		return 0, err
 	}
 	defer pgutil.RollbackUnlessCommitted(tx)
-	id, err := s.createAssetExchange(tx, exchangeID, assetID, symbol, depositAddress, minDeposit, withdrawFee,
+	id, _, err := s.createAssetExchange(tx, exchangeID, assetID, symbol, depositAddress, minDeposit, withdrawFee,
 		targetRecommended, targetRatio, tps)
 	if err != nil {
 		return 0, err
@@ -127,7 +127,7 @@ func (s *Storage) CreateAssetExchange(exchangeID rtypes.ExchangeID, assetID rtyp
 }
 
 func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID rtypes.ExchangeID, assetID rtypes.AssetID, symbol string,
-	depositAddress ethereum.Address, minDeposit, withdrawFee, targetRecommended, targetRatio float64, tps []common.TradingPair) (uint64, error) {
+	depositAddress ethereum.Address, minDeposit, withdrawFee, targetRecommended, targetRatio float64, tps []common.TradingPair) (uint64, []rtypes.TradingPairID, error) {
 	var assetExchangeID uint64
 	var depositAddressParam *string
 
@@ -160,25 +160,26 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID rtypes.ExchangeID,
 	if err != nil {
 		pErr, ok := err.(*pq.Error)
 		if !ok {
-			return 0, fmt.Errorf("unknown returned err=%s", err.Error())
+			return 0, nil, fmt.Errorf("unknown returned err=%s", err.Error())
 		}
 		s.l.Infow("failed to create new asset exchange", "err", pErr.Message)
 		switch pErr.Code {
 		case errForeignKeyViolation:
 			switch pErr.Constraint {
 			case exchangeForeignKeyConstraint:
-				return 0, common.ErrExchangeNotExists
+				return 0, nil, common.ErrExchangeNotExists
 			case assetForeignKeyConstraint:
-				return 0, common.ErrAssetNotExists
+				return 0, nil, common.ErrAssetNotExists
 			}
 		case errCodeUniqueViolation:
 			if pErr.Constraint == exchangeAssetUniqueConstraint {
-				return 0, common.ErrAssetExchangeAlreadyExist
+				return 0, nil, common.ErrAssetExchangeAlreadyExist
 			}
 		}
 	}
+	var tradingPairIDs []rtypes.TradingPairID
 	for _, tradingPair := range tps {
-		_, err = s.createTradingPair(tx, exchangeID,
+		tpID, err := s.createTradingPair(tx, exchangeID,
 			tradingPair.Base,
 			tradingPair.Quote,
 			tradingPair.PricePrecision,
@@ -192,10 +193,11 @@ func (s *Storage) createAssetExchange(tx *sqlx.Tx, exchangeID rtypes.ExchangeID,
 		)
 		if err != nil {
 			s.l.Infow("failed to create trading pair", "err", err)
-			return 0, err
+			return 0, nil, err
 		}
+		tradingPairIDs = append(tradingPairIDs, tpID)
 	}
-	return assetExchangeID, err
+	return assetExchangeID, tradingPairIDs, err
 }
 
 func (s *Storage) updateAssetExchange(tx *sqlx.Tx, id rtypes.AssetExchangeID, updateOpts storage.UpdateAssetExchangeOpts) error {
@@ -263,17 +265,17 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 	symbol, name string, address ethereum.Address, decimals uint64, transferable bool, setRate common.SetRate,
 	rebalance, isQuote, isEnabled bool, pwi *common.AssetPWI, rb *common.RebalanceQuadratic,
 	exchanges []common.AssetExchange, target *common.AssetTarget, stableParam *common.StableParam,
-	feedWeight *common.FeedWeight, normalUpdatePerPeriod, maxImbalanceRatio float64, orderDurationMillis uint64) (rtypes.AssetID, error) {
+	feedWeight *common.FeedWeight, normalUpdatePerPeriod, maxImbalanceRatio float64, orderDurationMillis uint64) (rtypes.AssetID, []rtypes.TradingPairID, error) {
 	// create new asset
 	var assetID rtypes.AssetID
 
 	if transferable && common.IsZeroAddress(address) {
-		return 0, common.ErrAddressMissing
+		return 0, nil, common.ErrAddressMissing
 	}
 
 	for _, exchange := range exchanges {
 		if transferable && common.IsZeroAddress(exchange.DepositAddress) {
-			return 0, common.ErrDepositAddressMissing
+			return 0, nil, common.ErrDepositAddressMissing
 		}
 	}
 
@@ -285,10 +287,10 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 		addressParam = &addressHex
 	}
 	if normalUpdatePerPeriod <= 0 {
-		return 0, common.ErrNormalUpdaterPerPeriodNotPositive
+		return 0, nil, common.ErrNormalUpdaterPerPeriodNotPositive
 	}
 	if maxImbalanceRatio <= 0 {
-		return 0, common.ErrMaxImbalanceRatioNotPositive
+		return 0, nil, common.ErrMaxImbalanceRatioNotPositive
 	}
 	arg := createAssetParams{
 		Symbol:                symbol,
@@ -321,17 +323,17 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 	if rebalance {
 		if rb == nil {
 			s.l.Infow("rebalance is enabled but rebalance quadratic is invalid", "symbol", symbol)
-			return 0, common.ErrRebalanceQuadraticMissing
+			return 0, nil, common.ErrRebalanceQuadraticMissing
 		}
 
 		if len(exchanges) == 0 {
 			s.l.Infow("rebalance is enabled but no exchange configuration is provided", "symbol", symbol)
-			return 0, common.ErrAssetExchangeMissing
+			return 0, nil, common.ErrAssetExchangeMissing
 		}
 
 		if target == nil {
 			s.l.Infow("rebalance is enabled but target configuration is invalid", "symbol", symbol)
-			return 0, common.ErrAssetTargetMissing
+			return 0, nil, common.ErrAssetTargetMissing
 		}
 	}
 
@@ -362,7 +364,7 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 	if err := tx.NamedStmt(s.stmts.newAsset).Get(&assetID, arg); err != nil {
 		pErr, ok := err.(*pq.Error)
 		if !ok {
-			return 0, fmt.Errorf("unknown returned err=%s", err.Error())
+			return 0, nil, fmt.Errorf("unknown returned err=%s", err.Error())
 		}
 
 		s.l.Infow("failed to create new asset", "err", pErr.Message)
@@ -370,18 +372,19 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 		case errCodeUniqueViolation:
 			switch pErr.Constraint {
 			case addressesUniqueConstraint:
-				return 0, common.ErrAddressExists
+				return 0, nil, common.ErrAddressExists
 			case "assets_symbol_key":
-				return 0, common.ErrSymbolExists
+				return 0, nil, common.ErrSymbolExists
 			}
 		case errCodeCheckViolation:
 			if pErr.Constraint == "pwi_check" {
-				return 0, common.ErrPWIMissing
+				return 0, nil, common.ErrPWIMissing
 			}
 		}
-		return 0, pErr
+		return 0, nil, pErr
 	}
 	// create new asset exchange
+	var tradingPairIDs []rtypes.TradingPairID
 	for _, exchange := range exchanges {
 		var (
 			assetExchangeID     rtypes.AssetExchangeID
@@ -412,7 +415,7 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 		})
 
 		if err != nil {
-			return 0, err
+			return 0, nil, err
 		}
 
 		s.l.Infow("asset exchange is created", "id", assetExchangeID)
@@ -426,7 +429,7 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 
 			if baseID != 0 && quoteID != 0 {
 				s.l.Infow("both base and quote are provided asset_symbol=%s exchange_id=%d", symbol, exchange.ExchangeID)
-				return 0, common.ErrBadTradingPairConfiguration
+				return 0, nil, common.ErrBadTradingPairConfiguration
 			}
 
 			if baseID == 0 {
@@ -465,35 +468,35 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 			if err != nil {
 				pErr, ok := err.(*pq.Error)
 				if !ok {
-					return 0, fmt.Errorf("unknown error returned err=%s", err.Error())
+					return 0, nil, fmt.Errorf("unknown error returned err=%s", err.Error())
 				}
 
 				switch pErr.Code {
 				case errForeignKeyViolation:
 					s.l.Infow("failed to create trading pair as assertion failed", "symbol", symbol,
 						"exchange_id", exchange.ExchangeID, "err", pErr.Message)
-					return 0, common.ErrBadTradingPairConfiguration
+					return 0, nil, common.ErrBadTradingPairConfiguration
 				case errBaseInvalid:
 					s.l.Infow("failed to create trading pair as check base failed", "symbol", symbol,
 						"exchange_id", exchange.ExchangeID, "err", pErr.Message)
-					return 0, common.ErrBaseAssetInvalid
+					return 0, nil, common.ErrBaseAssetInvalid
 				case errQuoteInvalid:
 					s.l.Infow("failed to create trading pair as check quote failed", "symbol", symbol,
 						"exchange_id", exchange.ExchangeID, "err", pErr.Message)
-					return 0, common.ErrQuoteAssetInvalid
+					return 0, nil, common.ErrQuoteAssetInvalid
 				}
 
-				return 0, fmt.Errorf("failed to create trading pair symbol=%s exchange_id=%d err=%s",
+				return 0, nil, fmt.Errorf("failed to create trading pair symbol=%s exchange_id=%d err=%s",
 					symbol,
 					exchange.ExchangeID,
 					pErr.Message,
 				)
 			}
 			s.l.Infow("trading pair created", "id", tradingPairID)
-
+			tradingPairIDs = append(tradingPairIDs, tradingPairID)
 			atpID, err := s.createTradingBy(tx, assetID, tradingPairID)
 			if err != nil {
-				return 0, fmt.Errorf("failed to create asset trading pair for asset %d, tradingpair %d, err=%v",
+				return 0, nil, fmt.Errorf("failed to create asset trading pair for asset %d, tradingpair %d, err=%v",
 					assetID, tradingPairID, err)
 			}
 			s.l.Infow("asset trading by created", "id", atpID)
@@ -501,9 +504,9 @@ func (s *Storage) createAsset(tx *sqlx.Tx,
 	}
 
 	if err := s.createNewFeedWeight(tx, assetID, feedWeight); err != nil {
-		return assetID, err
+		return assetID, nil, err
 	}
-	return assetID, nil
+	return assetID, tradingPairIDs, nil
 }
 
 func (s Storage) createNewFeedWeight(tx *sqlx.Tx, assetID rtypes.AssetID, feedWeight *common.FeedWeight) error {

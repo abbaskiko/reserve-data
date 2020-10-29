@@ -22,6 +22,7 @@ import (
 	libapp "github.com/KyberNetwork/reserve-data/lib/app"
 	coreclient "github.com/KyberNetwork/reserve-data/lib/core-client"
 	"github.com/KyberNetwork/reserve-data/lib/httputil"
+	marketdatacli "github.com/KyberNetwork/reserve-data/lib/market-data"
 	"github.com/KyberNetwork/reserve-data/lib/migration"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	settinghttp "github.com/KyberNetwork/reserve-data/reservesetting/http"
@@ -36,6 +37,8 @@ const (
 	binanceSecretKeyFlag = "binance-secret-key"
 	gasPriceURLFlag      = "gas-price-url"
 	defaultGasPriceURL   = "http://localhost:8088/gas/price"
+	marketDataURLFlag    = "market-data-url"
+	defaultMarketDataURL = "http://localhost:8080"
 
 	intervalUpdateWithdrawFeeDBFlag      = "interval-update-withdraw-fee-db"
 	defaultIntervalUpdateWithdrawFeeDB   = 10 * time.Minute
@@ -87,6 +90,12 @@ func main() {
 			Usage:  "gas price url",
 			EnvVar: "GAS_PRICE_URL",
 			Value:  defaultGasPriceURL,
+		},
+		cli.StringFlag{
+			Name:   marketDataURLFlag,
+			Usage:  "market data url",
+			EnvVar: "MARKET_DATA_URL",
+			Value:  defaultMarketDataURL,
 		},
 	)
 
@@ -163,7 +172,8 @@ func run(c *cli.Context) error {
 	}
 
 	sentryDSN := libapp.SentryDSNFromFlag(c)
-	server := settinghttp.NewServer(sr, host, liveExchanges, sentryDSN, coreClient, gaspricedataclient.New(httpClient, c.String(gasPriceURLFlag)))
+	server := settinghttp.NewServer(sr, host, liveExchanges, sentryDSN, coreClient,
+		gaspricedataclient.New(httpClient, c.String(gasPriceURLFlag)), marketdatacli.NewClient(c.String(marketDataURLFlag)))
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()
 	}
