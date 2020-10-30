@@ -289,10 +289,11 @@ func (ps *PostgresStorage) GetRate(v common.Version) (common.AllRateEntry, error
 // GetRates return rate from time to time
 func (ps *PostgresStorage) GetRates(fromTime, toTime uint64) ([]common.AllRateEntry, error) {
 	var (
-		rates  []common.AllRateEntry
-		data   [][]byte
-		logger = ps.l.With("func", caller.GetCallerFunctionName())
-		err    error
+		rates            []common.AllRateEntry
+		data             [][]byte
+		logger           = ps.l.With("func", caller.GetCallerFunctionName())
+		err              error
+		dataDecompressed []byte
 	)
 	query := fmt.Sprintf(`SELECT data FROM "%s" WHERE type = $1 AND created >= $2 AND created <= $3`, fetchDataTable)
 	from := common.MillisToTime(fromTime)
@@ -304,14 +305,13 @@ func (ps *PostgresStorage) GetRates(fromTime, toTime uint64) ([]common.AllRateEn
 	}
 
 	for _, dataCompress := range data {
-		var data []byte
-		data, err = zstd.Decompress(data, dataCompress)
+		dataDecompressed, err = zstd.Decompress(dataDecompressed, dataCompress)
 		if err != nil {
 			logger.Errorw("failed to decompress data", "error", err)
 			return nil, err
 		}
 		var rate common.AllRateEntry
-		if err := json.Unmarshal(data, &rate); err != nil {
+		if err := json.Unmarshal(dataDecompressed, &rate); err != nil {
 			logger.Errorw("failed to unmarshal rates", "error", err)
 			return nil, err
 		}
