@@ -15,7 +15,7 @@ type Exchange interface {
 	// FetchTradeHistory gets history and save data in the exchange db
 	FetchTradeHistory()
 
-	OrderStatus(id string, base, quote string) (string, error)
+	OrderStatus(id, base, quote string) (string, float64, error)
 	DepositStatus(id common.ActivityID, txHash string, assetID rtypes.AssetID, amount float64, timepoint uint64) (string, error)
 	WithdrawStatus(id string, assetID rtypes.AssetID, amount float64, timepoint uint64) (string, string, float64, error)
 	TokenAddresses() (map[rtypes.AssetID]ethereum.Address, error)

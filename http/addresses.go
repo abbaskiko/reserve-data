@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	pricingOPAddressName      = "pricing_operator"
-	depositOPAddressName      = "deposit_operator"
-	intermediateOPAddressName = "intermediate_operator"
-	wrapper                   = "wrapper"
-	network                   = "network"
-	reserveAddress            = "reserve"
+	pricingOPAddressName       = "pricing_operator"
+	depositOPAddressName       = "deposit_operator"
+	intermediateOPAddressName  = "intermediate_operator"
+	wrapper                    = "wrapper"
+	network                    = "network"
+	reserveAddress             = "reserve"
+	rateQueryHelperAddressName = "rate_query_helper"
 )
 
 // GetAddresses get address config from core
@@ -28,6 +29,7 @@ func (s *Server) GetAddresses(c *gin.Context) {
 	addresses[wrapper] = s.blockchain.GetWrapperAddress()
 	addresses[network] = s.blockchain.GetProxyAddress()
 	addresses[reserveAddress] = s.blockchain.GetReserveAddress()
+	addresses[rateQueryHelperAddressName] = s.blockchain.GetRateQueryHelperAddress()
 	result := common.NewAddressesResponse(addresses)
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }

@@ -12,6 +12,7 @@ import (
 	v1common "github.com/KyberNetwork/reserve-data/common"
 	gaspricedataclient "github.com/KyberNetwork/reserve-data/common/gaspricedata-client"
 	coreclient "github.com/KyberNetwork/reserve-data/lib/core-client"
+	marketdatacli "github.com/KyberNetwork/reserve-data/lib/market-data"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	"github.com/KyberNetwork/reserve-data/reservesetting/common"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage"
@@ -26,11 +27,12 @@ type Server struct {
 	l                  *zap.SugaredLogger
 	coreClient         *coreclient.Client
 	gasClient          gaspricedataclient.Client
+	marketDataClient   *marketdatacli.Client
 }
 
 // NewServer creates new HTTP server for reservesetting APIs.
 func NewServer(storage storage.Interface, host string, supportedExchanges map[rtypes.ExchangeID]v1common.LiveExchange,
-	sentryDSN string, coreClient *coreclient.Client, gasClient gaspricedataclient.Client) *Server {
+	sentryDSN string, coreClient *coreclient.Client, gasClient gaspricedataclient.Client, marketDataClient *marketdatacli.Client) *Server {
 	l := zap.S()
 	r := gin.Default()
 	if sentryDSN != "" {
@@ -50,6 +52,7 @@ func NewServer(storage storage.Interface, host string, supportedExchanges map[rt
 		l:                  l,
 		coreClient:         coreClient,
 		gasClient:          gasClient,
+		marketDataClient:   marketDataClient,
 	}
 	g := r.Group("/v3")
 

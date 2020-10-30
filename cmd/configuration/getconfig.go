@@ -60,10 +60,12 @@ func GetConfig(
 	}
 	chainID, err := mainNode.ChainID(context.Background())
 	if err != nil {
+		l.Errorw("get error get chainID", "error", err)
 		return nil, err
 	}
 	l.Infow("configured endpoint", "endpoint", config.EthereumEndpoint, "backup", config.BackupEthereumEndpoints)
 	if err := config.AddCoreConfig(cliCtx, rcf, bi, hi, settingStorage, chainID); err != nil {
+		l.Errorw("failed to add core config", "error", err)
 		return nil, err
 	}
 	return config, nil

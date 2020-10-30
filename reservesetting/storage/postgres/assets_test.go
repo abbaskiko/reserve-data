@@ -144,7 +144,7 @@ func TestUpdateAsset(t *testing.T) {
 		t.Logf("running test case for: %s", tc.msg)
 		id, err := s.CreateSettingChange(common.ChangeCatalogMain, tc.data)
 		assert.NoError(t, err)
-		err = s.ConfirmSettingChange(id, true)
+		_, err = s.ConfirmSettingChange(id, true)
 		require.NoError(t, err)
 		asset, err := s.GetAsset(assetID)
 		require.NoError(t, err)

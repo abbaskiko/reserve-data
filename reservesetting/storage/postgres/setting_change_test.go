@@ -199,7 +199,7 @@ func initData(t *testing.T, s *Storage) {
 		},
 	}})
 	require.NoError(t, err)
-	err = s.ConfirmSettingChange(id, true)
+	_, err = s.ConfirmSettingChange(id, true)
 	require.NoError(t, err)
 }
 
@@ -687,7 +687,7 @@ func TestStorage_SettingChangeCreate(t *testing.T) {
 		t.Logf("running test case for: %s", tc.msg)
 		id, err := s.CreateSettingChange(common.ChangeCatalogMain, tc.data)
 		assert.NoError(t, err)
-		err = s.ConfirmSettingChange(id, true)
+		_, err = s.ConfirmSettingChange(id, true)
 		tc.assertFn(t, id, err)
 	}
 }
@@ -729,7 +729,7 @@ func TestStorage_DeleteTradingPair(t *testing.T) {
 		Message: "delete trading pair",
 	})
 	require.NoError(t, err)
-	err = s.ConfirmSettingChange(c, true)
+	_, err = s.ConfirmSettingChange(c, true)
 	require.NoError(t, err)
 	_, err = s.GetTradingPair(1, false)
 	require.Error(t, err, common.ErrNotFound)

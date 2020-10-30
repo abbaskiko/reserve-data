@@ -14,4 +14,6 @@ type ContractAddressConfiguration struct {
 	Pricing ethereum.Address
 	// Proxy contract address
 	Proxy ethereum.Address
+	// RateQueryHelper contract address
+	RateQueryHelper ethereum.Address
 }

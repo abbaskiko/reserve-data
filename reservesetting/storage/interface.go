@@ -18,7 +18,7 @@ type Interface interface {
 	GetSettingChange(id rtypes.SettingChangeID) (v3.SettingChangeResponse, error)
 	GetSettingChanges(catalog v3.ChangeCatalog, status v3.ChangeStatus) ([]v3.SettingChangeResponse, error)
 	RejectSettingChange(id rtypes.SettingChangeID) error
-	ConfirmSettingChange(rtypes.SettingChangeID, bool) error
+	ConfirmSettingChange(rtypes.SettingChangeID, bool) (*v3.AdditionalDataReturn, error)
 
 	CreatePriceFactor(v3.PriceFactorAtTime) (uint64, error)
 	GetPriceFactors(uint64, uint64) ([]v3.PriceFactorAtTime, error)
