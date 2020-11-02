@@ -508,9 +508,7 @@ func (f *Fetcher) updateActivityWithExchangeStatus(record *common.ActivityRecord
 	if record.Result.Tx == "" { // for a withdraw, we set tx into result tx(that is when cex process request and return tx id so we can monitor), deposit should already has tx when created.
 		record.Result.Tx = sts.Tx
 	}
-	if sts.OrderExecutedRemaining > 0 {
-		record.Result.Remaining = sts.OrderExecutedRemaining
-	}
+	record.Result.Remaining = sts.OrderExecutedRemaining
 
 	if sts.Error != nil {
 		snapshot.Valid = false
@@ -692,22 +690,25 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 				orderID := id.EID
 				base := activity.Params.Base
 				quote := activity.Params.Quote
+				var ordErr error
 				// we ignore error of order status because it doesn't affect
 				// authdata. Analytic will ignore order status anyway.
-				status, remain, _ = exchange.OrderStatus(orderID, base, quote)
+				status, remain, ordErr = exchange.OrderStatus(orderID, base, quote)
+				f.l.Debugw("order status", "orderID", orderID, "base", base,
+					"quote", quote, "status", status, "remain", remain, "err", ordErr)
 			case common.ActionDeposit:
 				txHash := activity.Result.Tx
 				amount := activity.Params.Amount
 				assetID := activity.Params.Asset
 
 				status, err = exchange.DepositStatus(id, txHash, assetID, amount, timepoint)
-				f.l.Infof("Got deposit status for tx %s - %v: (%s), error(%v)", txHash, activity, status, err)
+				f.l.Debugw("deposit status", "tx", txHash, "activity", activity, "status", status, "err", err)
 			case common.ActionWithdraw:
 				amount := activity.Params.Amount
 				assetID := activity.Params.Asset
 
 				status, tx, fee, err = exchange.WithdrawStatus(id.EID, assetID, amount, timepoint)
-				f.l.Infof("Got withdraw status for %v: (%s), error(%v)", activity, status, err)
+				f.l.Debugw("withdraw status", "activity", activity, "status", status, "err", err)
 			default:
 				continue
 			}
@@ -727,7 +728,7 @@ func (f *Fetcher) FetchStatusFromExchange(exchange Exchange, pendings []common.A
 		} else {
 			timepoint, err1 := strconv.ParseUint(string(activity.Timestamp), 10, 64)
 			if err1 != nil {
-				f.l.Infof("Activity %+v has invalid timestamp. Just ignore it.", activity)
+				f.l.Infow("Activity has invalid timestamp, ignore it.", "activity", activity)
 				continue
 			}
 			f.l.Warnw("activity with exchange done but still in pending list",
