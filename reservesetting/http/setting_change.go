@@ -509,6 +509,7 @@ func (s *Server) checkCreateAssetExchangeParams(createEntry common.CreateAssetEx
 				for _, qae := range quoteAsset.Exchanges {
 					if qae.ExchangeID == createEntry.ExchangeID {
 						quoteAssetExchangeSymbol = qae.Symbol
+						break
 					}
 				}
 				if quoteAssetExchangeSymbol == "" {
@@ -542,6 +543,7 @@ func (s *Server) checkCreateAssetExchangeParams(createEntry common.CreateAssetEx
 				for _, bae := range baseAsset.Exchanges {
 					if bae.ExchangeID == createEntry.ExchangeID {
 						baseAssetExchangeSymbol = bae.Symbol
+						break
 					}
 				}
 				if baseAssetExchangeSymbol == "" {
@@ -680,6 +682,7 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 					for _, qae := range quoteAsset.Exchanges {
 						if qae.ExchangeID == exchange.ExchangeID {
 							quoteAssetExchangeSymbol = qae.Symbol
+							break
 						}
 					}
 					if quoteAssetExchangeSymbol == "" {
@@ -713,6 +716,7 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 					for _, bae := range baseAsset.Exchanges {
 						if bae.ExchangeID == exchange.ExchangeID {
 							baseAssetExchangeSymbol = bae.Symbol
+							break
 						}
 					}
 					if baseAssetExchangeSymbol == "" {
