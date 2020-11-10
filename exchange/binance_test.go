@@ -23,6 +23,10 @@ func TestBinance(t *testing.T) {
 type binanceTestInterface struct {
 }
 
+func (bi *binanceTestInterface) Transfer(fromAccount string, toAccount string, asset commonv3.Asset, amount *big.Int) (string, error) {
+	return "tid", nil
+}
+
 func (bi *binanceTestInterface) GetDepthOnePair(baseID, quoteID string) (Binaresp, error) {
 	panic("implement me")
 }

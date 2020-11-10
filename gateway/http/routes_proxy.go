@@ -42,6 +42,8 @@ func WithCoreEndpoint(coreEndpoint string) Option {
 		g.GET("/addresses", coreProxyMW)
 		g.GET("/token-rate-trigger", coreProxyMW)
 		g.POST("/transfer-self,", coreProxyMW)
+		g.POST("/cex-transfer", coreProxyMW)
+		g.GET("/binance/main", coreProxyMW)
 
 		return nil
 	}

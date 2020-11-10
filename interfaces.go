@@ -69,7 +69,7 @@ type Core interface {
 		exchange common.Exchange,
 		token commonv3.Asset,
 		amount *big.Int) (common.ActivityID, error)
-
+	Transfer(fromAccount, toAccount string, asset commonv3.Asset, amount *big.Int, exchange common.Exchange) (string, error)
 	CancelOrders(orders []common.RequestOrder, exchange common.Exchange) map[string]common.CancelOrderResult
 
 	// blockchain related action

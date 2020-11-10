@@ -79,6 +79,7 @@ func TestGetActivities(t *testing.T) {
 		nil,                    // blockchain
 		nil,                    // storage
 		nil,
+		nil,
 	)
 
 	sv.register()

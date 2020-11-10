@@ -156,14 +156,14 @@ curl -X POST "http://gateway.local/v3/cancel-all-orders"
 
 ```json
 {
-    "success": true,
+    "success": true
 }
 ```  
 or  
 ```json
 {
     "success": false,
-    "error": "cannot cancel order",
+    "error": "cannot cancel order"
 }
 ```
 
@@ -187,7 +187,7 @@ curl -X POST "https://gateway.local/v3/withdraw"
 -d '{
     "exchange": 1,
     "amount": 41.42342,
-    "asset": "ETH"
+    "asset": 1
 }'
 ```
 
@@ -210,6 +210,67 @@ Params | Type | Required | Default | Description
 exchange | uint64(int) | true | nil | id of exchange
 amount | string(big int) | true | nil | amount we want to withdraw
 asset | uint64 (asset id) | true | nil | asset we want to withdraw
+
+## CEX Transfer between account
+
+```shell
+curl -X POST "https://gateway.local/v3/cex-transfer"
+-H 'Content-type: application/json'
+-d '{
+    "exchange": 1,
+    "amount": 1000000000000000000,
+    "asset": 1,
+    "from_account": "main",
+    "to_account": "account_1"
+}'
+```
+
+> sample response
+
+```json
+{
+    "success": true,
+    "id": 1432423
+}
+```
+
+## Binance main account info
+
+```shell
+curl "https://gateway.local/v3/binance/main"
+```
+
+> sample response
+
+```json
+{
+    "success": true,
+    "data": {
+      "balances": [
+        {
+          "asset": "BTC",
+          "free": 0.02066858,
+          "locked": 0
+        },
+        {
+          "asset": "LTC",
+          "free": 0,
+          "locked": 0
+        },
+        {
+          "asset": "ETH",
+          "free": 0.15406002,
+          "locked": 0
+        }
+      ]
+    }
+}
+```
+
+### HTTP Request
+
+`GET https://gateway.local/v3/binance/main`
+<aside class="notice">All keys are accepted</aside>
 
 
 ## Deposit

@@ -39,6 +39,10 @@ type Huobi struct {
 	HuobiLive
 }
 
+func (h *Huobi) Transfer(fromAccount string, toAccount string, asset commonv3.Asset, amount *big.Int) (string, error) {
+	return "", errors.New("not supported")
+}
+
 // TokenAddresses return deposit of all token supported by Huobi
 func (h *Huobi) TokenAddresses() (map[rtypes.AssetID]ethereum.Address, error) {
 	result, err := h.sr.GetDepositAddresses(rtypes.Huobi)

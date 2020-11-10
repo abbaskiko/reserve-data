@@ -88,28 +88,29 @@ func (ep *Endpoint) GetResponse(
 	}
 	req.URL.RawQuery = q.Encode()
 	ep.fillRequest(req, signNeeded)
-	var respBody []byte
 	resp, err := ep.client.Do(req)
 	if err != nil {
-		return respBody, err
+		return nil, err
 	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			ep.l.Warnw("response body close failed", "err", cErr)
-		}
-	}()
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response error %w", err)
+	}
+	_ = resp.Body.Close()
 	switch resp.StatusCode {
-	case 429:
-		err = errors.New("breaking Huobi request rate limit")
-	case 500:
-		err = errors.New("500 from Huobi, its fault")
-	case 200:
-		respBody, err = ioutil.ReadAll(resp.Body)
+	case http.StatusTooManyRequests:
+		err = fmt.Errorf("breaking Huobi request rate limit - %s", string(respBody))
+	case http.StatusInternalServerError:
+		err = fmt.Errorf("500 from Huobi - %s", string(respBody))
+	case http.StatusOK:
+		break
+	default:
+		return nil, fmt.Errorf("unexpected status code %d - %s", resp.StatusCode, string(respBody))
 	}
 	return respBody, err
 }
 
-//GetAccounts Get account list for later use
+// GetAccounts Get account list for later use
 func (ep *Endpoint) GetAccounts() (exchange.HuobiAccounts, error) {
 	result := exchange.HuobiAccounts{}
 	resp, err := ep.GetResponse(

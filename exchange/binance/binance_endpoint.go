@@ -331,6 +331,45 @@ func (ep *Endpoint) OrderStatus(symbol string, id uint64) (exchange.Binaorder, e
 	return result, err
 }
 
+type transferResult struct {
+	TxnID   string `json:"txnId"`
+	Success bool   `json:"success"`
+	Msg     string `json:"msg"`
+}
+
+func (ep *Endpoint) Transfer(fromAccount string, toAccount string, asset commonv3.Asset, amount *big.Int) (string, error) {
+	var symbol string
+	for _, exchg := range asset.Exchanges {
+		if exchg.ExchangeID == ep.exchangeID {
+			symbol = exchg.Symbol
+			break
+		}
+	}
+	if symbol == "" {
+		return "", fmt.Errorf("no symbol for asset %v", asset.ID)
+	}
+	result := transferResult{}
+	respBody, err := ep.authHTTP.DoReq(
+		fmt.Sprintf("%s/binance/transfer", ep.accountDataBaseURL),
+		http.MethodPost,
+		map[string]string{
+			"asset":        symbol,
+			"from_account": fromAccount,
+			"to_account":   toAccount,
+			"amount":       strconv.FormatFloat(common.BigToFloat(amount, int64(asset.Decimals)), 'f', -1, 64),
+		})
+	if err != nil {
+		return "", fmt.Errorf("transfer rejected by Binance: %v", err)
+	}
+	if err = json.Unmarshal(respBody, &result); err != nil {
+		return "", fmt.Errorf("unmarshal error %+v - %s", err, string(respBody))
+	}
+	if !result.Success {
+		return "", errors.New(result.Msg)
+	}
+	return result.TxnID, nil
+}
+
 // Withdraw token from binance
 func (ep *Endpoint) Withdraw(asset commonv3.Asset, amount *big.Int, address ethereum.Address) (string, error) {
 	var symbol string

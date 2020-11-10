@@ -36,6 +36,7 @@ type Exchange interface {
 	GetTradeHistory(fromTime, toTime uint64) (ExchangeTradeHistory, error)
 
 	LiveExchange
+	Transfer(fromAccount string, toAccount string, asset common.Asset, amount *big.Int) (string, error)
 }
 
 // LiveExchange interface
@@ -66,23 +67,4 @@ func GetExchange(name string) (Exchange, error) {
 		return ex, fmt.Errorf("exchange %s is not supported", name)
 	}
 	return ex, nil
-}
-
-// ExchangeSetting contain the composition of settings necessary for an exchange
-// It is use mainly to group all the setting for DB operations
-type ExchangeSetting struct {
-	DepositAddress ExchangeAddresses   `json:"deposit_address"`
-	MinDeposit     ExchangesMinDeposit `json:"min_deposit"`
-	Fee            ExchangeFees        `json:"fee"`
-	Info           ExchangeInfo        `json:"info"`
-}
-
-// NewExchangeSetting returns a pointer to A newly created ExchangeSetting instance
-func NewExchangeSetting(depoAddr ExchangeAddresses, minDep ExchangesMinDeposit, fee ExchangeFees, info ExchangeInfo) *ExchangeSetting {
-	return &ExchangeSetting{
-		DepositAddress: depoAddr,
-		MinDeposit:     minDep,
-		Fee:            fee,
-		Info:           info,
-	}
 }
