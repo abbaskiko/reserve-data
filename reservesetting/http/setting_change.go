@@ -392,10 +392,10 @@ func (s *Server) checkCreateTradingPairParams(createEntry common.CreateTradingPa
 		}
 		isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
 		if err != nil {
-			return "", "", errors.Wrapf(err, "cannot validate symbol, symbol: %s", symbol)
+			return "", "", errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
 		}
 		if !isValidSymbol {
-			return "", "", errors.New(fmt.Sprintf("symbol %s is not valid on exchange %s", symbol, exchange))
+			return "", "", errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
 		}
 	}
 	return baseAssetEx.Symbol, quoteAssetEx.Symbol, nil
@@ -521,10 +521,10 @@ func (s *Server) checkCreateAssetExchangeParams(createEntry common.CreateAssetEx
 				}
 				isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
 				if err != nil {
-					return errors.Wrapf(err, "cannot validate symbol, symbol: %s", symbol)
+					return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
 				}
 				if !isValidSymbol {
-					return errors.New(fmt.Sprintf("symbol %s is not valid on exchange %s", symbol, exchange))
+					return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
 				}
 			}
 		}
@@ -555,10 +555,10 @@ func (s *Server) checkCreateAssetExchangeParams(createEntry common.CreateAssetEx
 				}
 				isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
 				if err != nil {
-					return errors.Wrapf(err, "cannot validate symbol, symbol: %s", symbol)
+					return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
 				}
 				if !isValidSymbol {
-					return errors.New(fmt.Sprintf("symbol %s is not valid on exchange %s", symbol, exchange))
+					return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
 				}
 			}
 		}
@@ -694,10 +694,10 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 					}
 					isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
 					if err != nil {
-						return errors.Wrapf(err, "cannot validate symbol, symbol: %s", symbol)
+						return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
 					}
 					if !isValidSymbol {
-						return errors.New(fmt.Sprintf("symbol %s is not valid on exchange %s", symbol, exchange))
+						return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
 					}
 				}
 			}
@@ -728,10 +728,10 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 					}
 					isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
 					if err != nil {
-						return errors.Wrapf(err, "cannot validate symbol, symbol: %s", symbol)
+						return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
 					}
 					if !isValidSymbol {
-						return errors.New(fmt.Sprintf("symbol %s is not valid on exchange %s", symbol, exchange))
+						return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
 					}
 				}
 			}
