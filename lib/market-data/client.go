@@ -92,3 +92,19 @@ func (c *Client) AddFeed(exchange, sourceSymbol, publicSymbol string) error {
 	c.l.Infow("response data", "data", respData)
 	return nil
 }
+
+// IsValidSymbol ...
+func (c *Client) IsValidSymbol(exchange, symbol string) (bool, error) {
+	url := fmt.Sprintf("%s/is-valid-symbol?source=%s&symbol=%s", c.url, exchange, symbol)
+	resp, err := c.doReq(url, http.MethodGet, nil)
+	if err != nil {
+		return false, err
+	}
+	var respData struct {
+		IsValid bool `json:"is_valid"`
+	}
+	if err := json.Unmarshal(resp, &respData); err != nil {
+		return false, err
+	}
+	return respData.IsValid, nil
+}
