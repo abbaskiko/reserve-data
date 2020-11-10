@@ -812,7 +812,7 @@ type RawConfig struct {
 	Binance2Key       string `json:"binance_2_key"`
 	Binance2Secret    string `json:"binance_2_secret"`
 
-	BinanceMainAccountID string `json:"binance_main_account_id"`
+	BinanceAccountMainID string `json:"binance_account_main_id"`
 
 	HoubiKey    string `json:"huobi_key"`
 	HoubiSecret string `json:"huobi_secret"`
