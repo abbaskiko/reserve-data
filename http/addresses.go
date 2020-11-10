@@ -6,6 +6,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
+	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 )
 
 const (
@@ -25,7 +26,9 @@ func (s *Server) GetAddresses(c *gin.Context) {
 	)
 	addresses[pricingOPAddressName] = s.blockchain.GetPricingOPAddress()
 	addresses[depositOPAddressName] = s.blockchain.GetDepositOPAddress()
-	addresses[intermediateOPAddressName] = s.blockchain.GetIntermediatorOPAddress()
+	if h := common.SupportedExchanges[rtypes.Huobi]; h != nil {
+		addresses[intermediateOPAddressName] = s.blockchain.GetIntermediatorOPAddress()
+	}
 	addresses[wrapper] = s.blockchain.GetWrapperAddress()
 	addresses[network] = s.blockchain.GetProxyAddress()
 	addresses[reserveAddress] = s.blockchain.GetReserveAddress()

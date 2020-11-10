@@ -132,7 +132,6 @@ func CreateBlockchain(config *Config) (*blockchain.Blockchain, error) {
 func CreateDataCore(config *Config,
 	dpl deployment.Deployment,
 	bc *blockchain.Blockchain,
-	l *zap.SugaredLogger,
 	kyberNetworkProxy *blockchain.NetworkProxy,
 	rcf common.RawConfig,
 	httpClient *http.Client) (*data.ReserveData, *core.ReserveCore, *gasinfo.GasPriceInfo) {
@@ -145,6 +144,7 @@ func CreateDataCore(config *Config,
 		dpl == deployment.Simulation,
 		config.ContractAddresses,
 	)
+
 	for _, ex := range config.FetcherExchanges {
 		dataFetcher.AddExchange(ex)
 	}

@@ -52,6 +52,11 @@ func timebasedID(id string) common.ActivityID {
 	return common.NewActivityID(uint64(time.Now().UnixNano()), id)
 }
 
+// Transfer move fund between main and sub account
+func (rc *ReserveCore) Transfer(fromAccount, toAccount string, asset commonv3.Asset, amount *big.Int, exchange common.Exchange) (string, error) {
+	return exchange.Transfer(fromAccount, toAccount, asset, amount)
+}
+
 // CancelOrders cancel orders on centralized exchanges
 func (rc *ReserveCore) CancelOrders(orders []common.RequestOrder, exchange common.Exchange) map[string]common.CancelOrderResult {
 	var (

@@ -20,6 +20,7 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/gasinfo"
+	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	"github.com/KyberNetwork/reserve-data/http/httputil"
 	"github.com/KyberNetwork/reserve-data/lib/caller"
 	"github.com/KyberNetwork/reserve-data/lib/rtypes"
@@ -33,14 +34,15 @@ const (
 
 // Server struct for http package
 type Server struct {
-	app            reserve.Data
-	core           reserve.Core
-	host           string
-	r              *gin.Engine
-	blockchain     Blockchain
-	settingStorage storage.Interface
-	l              *zap.SugaredLogger
-	gasInfo        *gasinfo.GasPriceInfo
+	app                reserve.Data
+	core               reserve.Core
+	host               string
+	r                  *gin.Engine
+	blockchain         Blockchain
+	settingStorage     storage.Interface
+	l                  *zap.SugaredLogger
+	gasInfo            *gasinfo.GasPriceInfo
+	binanceMainAccount *binance.Endpoint
 }
 
 func getTimePoint(c *gin.Context, l *zap.SugaredLogger) uint64 {
@@ -390,6 +392,53 @@ func (s *Server) Withdraw(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithField("id", id))
 }
 
+type transferRequest struct {
+	ExchangeID  rtypes.ExchangeID `json:"exchange"`
+	Asset       rtypes.AssetID    `json:"asset"`
+	Amount      *big.Int          `json:"amount"`
+	FromAccount string            `json:"from_account"`
+	ToAccount   string            `json:"to_account"`
+}
+
+// Withdraw asset to reserve from cex
+func (s *Server) cexTransfer(c *gin.Context) {
+	var request transferRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+
+	exh, ok := common.SupportedExchanges[request.ExchangeID]
+	if !ok {
+		httputil.ResponseFailure(c, httputil.WithError(errors.Errorf("exchange %v is not supported", request.ExchangeID)))
+		return
+	}
+
+	asset, err := s.settingStorage.GetAsset(request.Asset)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	s.l.Infow("cexTransfer", "amount", request.Amount.Text(10), "asset_id", asset.ID,
+		"asset_symbol", asset.Symbol, "exchange", exh.ID().String(), "from_account", request.FromAccount,
+		"to_account", request.ToAccount)
+	id, err := s.core.Transfer(request.FromAccount, request.ToAccount, asset, request.Amount, exh)
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithField("id", id))
+}
+
+func (s *Server) getBinanceMainAccountInfo(c *gin.Context) {
+	resp, err := s.binanceMainAccount.GetInfo()
+	if err != nil {
+		httputil.ResponseFailure(c, httputil.WithError(err))
+		return
+	}
+	httputil.ResponseSuccess(c, httputil.WithField("data", resp))
+}
+
 // DepositRequest type
 type DepositRequest struct {
 	ExchangeID rtypes.ExchangeID `json:"exchange"`
@@ -594,6 +643,8 @@ func (s *Server) register() {
 		g.PUT("/update-token-indice", s.updateTokenIndice)
 		g.GET("/check-token-indice", s.checkTokenIndice)
 		g.GET("/token-rate-trigger", s.getTriggers)
+		g.POST("/cex-transfer", s.cexTransfer)
+		g.GET("/binance/main", s.getBinanceMainAccountInfo)
 	}
 }
 
@@ -619,6 +670,7 @@ func NewHTTPServer(
 	bc Blockchain,
 	settingStorage storage.Interface,
 	gasInfo *gasinfo.GasPriceInfo,
+	binanceMainAccount *binance.Endpoint,
 ) *Server {
 	r := gin.Default()
 	sentryCli, err := raven.NewWithTags(
@@ -636,13 +688,14 @@ func NewHTTPServer(
 	))
 
 	return &Server{
-		app:            app,
-		core:           core,
-		host:           host,
-		r:              r,
-		blockchain:     bc,
-		settingStorage: settingStorage,
-		l:              zap.S(),
-		gasInfo:        gasInfo,
+		app:                app,
+		core:               core,
+		host:               host,
+		r:                  r,
+		blockchain:         bc,
+		settingStorage:     settingStorage,
+		l:                  zap.S(),
+		gasInfo:            gasInfo,
+		binanceMainAccount: binanceMainAccount,
 	}
 }
