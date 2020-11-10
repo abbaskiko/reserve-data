@@ -142,7 +142,7 @@ func run(c *cli.Context) error {
 
 	binanceMainClient := binance.NewBinanceEndpoint(binance.NewSigner("", ""),
 		binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL), deployment.Production, httpClient, rtypes.Binance,
-		rcf.MarketDataBaseURL, rcf.AccountData.BaseURL, rcf.BinanceMainAccountID,
+		rcf.MarketDataBaseURL, rcf.AccountData.BaseURL, rcf.BinanceAccountMainID,
 		authhttp.NewAuthHTTP(rcf.AccountData.AccessKey, rcf.AccountData.AccessSecret))
 
 	host := rcf.HTTPAPIAddr
