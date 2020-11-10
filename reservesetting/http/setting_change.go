@@ -385,6 +385,19 @@ func (s *Server) checkCreateTradingPairParams(createEntry common.CreateTradingPa
 	if quoteAssetEx, ok = getAssetExchangeByExchangeID(quote, createEntry.ExchangeID); !ok {
 		return "", "", errors.Wrap(common.ErrQuoteAssetInvalid, "quote asset not config on exchange")
 	}
+	if s.marketDataClient != nil {
+		exchange, symbol, _, err := dataForMarketDataByExchange(createEntry.ExchangeID, baseAssetEx.Symbol, quoteAssetEx.Symbol)
+		if err != nil {
+			return "", "", errors.Wrap(err, "cannot create params for market data client")
+		}
+		isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
+		if err != nil {
+			return "", "", errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
+		}
+		if !isValidSymbol {
+			return "", "", errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
+		}
+	}
 	return baseAssetEx.Symbol, quoteAssetEx.Symbol, nil
 }
 
@@ -491,16 +504,62 @@ func (s *Server) checkCreateAssetExchangeParams(createEntry common.CreateAssetEx
 			if !quoteAsset.IsQuote {
 				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
 			}
+			if s.marketDataClient != nil {
+				var quoteAssetExchangeSymbol string
+				for _, qae := range quoteAsset.Exchanges {
+					if qae.ExchangeID == createEntry.ExchangeID {
+						quoteAssetExchangeSymbol = qae.Symbol
+						break
+					}
+				}
+				if quoteAssetExchangeSymbol == "" {
+					return errors.New(fmt.Sprintf("quote asset didn't have asset exchange, quote id: %v", tradingPair.Quote))
+				}
+				exchange, symbol, _, err := dataForMarketDataByExchange(createEntry.ExchangeID, createEntry.Symbol, quoteAssetExchangeSymbol)
+				if err != nil {
+					return errors.Wrap(err, "cannot create params for market data client")
+				}
+				isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
+				if err != nil {
+					return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
+				}
+				if !isValidSymbol {
+					return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
+				}
+			}
 		}
 
 		if tradingPair.Quote == 0 {
-			_, err := s.storage.GetAsset(tradingPair.Base)
+			baseAsset, err := s.storage.GetAsset(tradingPair.Base)
 			if err != nil {
 				return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", tradingPair.Base)
 			}
 
 			if !asset.IsQuote {
 				return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+			}
+			if s.marketDataClient != nil {
+				var baseAssetExchangeSymbol string
+				for _, bae := range baseAsset.Exchanges {
+					if bae.ExchangeID == createEntry.ExchangeID {
+						baseAssetExchangeSymbol = bae.Symbol
+						break
+					}
+				}
+				if baseAssetExchangeSymbol == "" {
+					return errors.New(fmt.Sprintf("base asset didn't have asset exchange, base id: %v", tradingPair.Base))
+				}
+				exchange, symbol, _, err := dataForMarketDataByExchange(createEntry.ExchangeID, baseAssetExchangeSymbol, createEntry.Symbol)
+				if err != nil {
+					return errors.Wrap(err, "cannot create params for market data client")
+				}
+				isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
+				if err != nil {
+					return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
+				}
+				if !isValidSymbol {
+					return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
+				}
 			}
 		}
 	}
@@ -618,16 +677,62 @@ func (s *Server) checkCreateAssetParams(createEntry common.CreateAssetEntry) err
 				if !quoteAsset.IsQuote {
 					return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
 				}
+				if s.marketDataClient != nil {
+					var quoteAssetExchangeSymbol string
+					for _, qae := range quoteAsset.Exchanges {
+						if qae.ExchangeID == exchange.ExchangeID {
+							quoteAssetExchangeSymbol = qae.Symbol
+							break
+						}
+					}
+					if quoteAssetExchangeSymbol == "" {
+						return errors.New(fmt.Sprintf("quote asset didn't have asset exchange, quote id: %v", tradingPair.Quote))
+					}
+					exchange, symbol, _, err := dataForMarketDataByExchange(exchange.ExchangeID, exchange.Symbol, quoteAssetExchangeSymbol)
+					if err != nil {
+						return errors.Wrap(err, "cannot create params for market data client")
+					}
+					isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
+					if err != nil {
+						return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
+					}
+					if !isValidSymbol {
+						return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
+					}
+				}
 			}
 
 			if tradingPair.Quote == 0 {
-				_, err := s.storage.GetAsset(tradingPair.Base)
+				baseAsset, err := s.storage.GetAsset(tradingPair.Base)
 				if err != nil {
 					return errors.Wrapf(common.ErrBaseAssetInvalid, "base id: %v", tradingPair.Base)
 				}
 
 				if !createEntry.IsQuote {
 					return errors.Wrapf(common.ErrQuoteAssetInvalid, "quote id: %v", tradingPair.Quote)
+				}
+				if s.marketDataClient != nil {
+					var baseAssetExchangeSymbol string
+					for _, bae := range baseAsset.Exchanges {
+						if bae.ExchangeID == exchange.ExchangeID {
+							baseAssetExchangeSymbol = bae.Symbol
+							break
+						}
+					}
+					if baseAssetExchangeSymbol == "" {
+						return errors.New(fmt.Sprintf("base asset didn't have asset exchange, base id: %v", tradingPair.Base))
+					}
+					exchange, symbol, _, err := dataForMarketDataByExchange(exchange.ExchangeID, baseAssetExchangeSymbol, exchange.Symbol)
+					if err != nil {
+						return errors.Wrap(err, "cannot create params for market data client")
+					}
+					isValidSymbol, err := s.marketDataClient.IsValidSymbol(exchange, symbol)
+					if err != nil {
+						return errors.Wrapf(err, "failed to verify pair %s on %s", symbol, exchange)
+					}
+					if !isValidSymbol {
+						return errors.New(fmt.Sprintf("pair %s does not exists on %s", symbol, exchange))
+					}
 				}
 			}
 		}
