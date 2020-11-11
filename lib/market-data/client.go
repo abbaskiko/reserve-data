@@ -46,8 +46,9 @@ func (c *Client) doReq(url, method string, data interface{}) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to create get request")
 	}
 	switch httpMethod {
-	case http.MethodPost, http.MethodPut:
+	case http.MethodPost, http.MethodPut, http.MethodDelete:
 		req.Header.Add("Content-Type", "application/json")
+	case http.MethodGet:
 	default:
 		return nil, errors.Errorf("invalid method %s", httpMethod)
 	}
