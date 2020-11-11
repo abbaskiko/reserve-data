@@ -342,12 +342,16 @@ func (s *Server) confirmSettingChange(c *gin.Context) {
 }
 
 func dataForMarketDataByExchange(exchangeID rtypes.ExchangeID, base, quote string) (string, string, string, error) {
-	publicSymbol := fmt.Sprintf("%s-%s", base, quote)
+	var (
+		lowerBase  = strings.ToLower(base)
+		lowerQuote = strings.ToLower(quote)
+	)
+	publicSymbol := fmt.Sprintf("%s-%s", lowerBase, lowerQuote)
 	switch exchangeID {
 	case rtypes.Binance, rtypes.Binance2:
-		return rtypes.Binance.String(), fmt.Sprintf("%s%s", strings.ToLower(base), strings.ToLower(quote)), publicSymbol, nil
+		return rtypes.Binance.String(), fmt.Sprintf("%s%s", lowerBase, lowerQuote), publicSymbol, nil
 	case rtypes.Huobi:
-		return rtypes.Huobi.String(), fmt.Sprintf("%s%s", strings.ToLower(base), strings.ToLower(quote)), publicSymbol, nil
+		return rtypes.Huobi.String(), fmt.Sprintf("%s%s", lowerBase, lowerQuote), publicSymbol, nil
 	default:
 		return "", "", "", fmt.Errorf("%s exchange is not supported", exchangeID)
 	}
