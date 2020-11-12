@@ -13,6 +13,10 @@ import (
 type TestExchange struct {
 }
 
+func (te TestExchange) Transfer(fromAccount string, toAccount string, asset common.Asset, amount *big.Int) (string, error) {
+	return "tid", nil
+}
+
 // ID return exchange id
 func (te TestExchange) ID() rtypes.ExchangeID {
 	return rtypes.Binance

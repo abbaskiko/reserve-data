@@ -2,6 +2,7 @@ package authhttp
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -71,7 +72,7 @@ func (ah *AuthHTTP) DoReq(url string, method string, params map[string]string) (
 	if rsp.StatusCode != 200 {
 		var er errorResponse
 		if err := json.Unmarshal(body, &er); err != nil {
-			return nil, errors.Wrap(err, "cannot unmarshal response data")
+			return nil, fmt.Errorf("cannot unmarshal response data: %+v - %s", err, string(body))
 		}
 		return nil, errors.Errorf("receive unexpected code, actual code: %d, err: %s", rsp.StatusCode, er.Msg)
 	}

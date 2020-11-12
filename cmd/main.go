@@ -17,9 +17,12 @@ import (
 	"github.com/KyberNetwork/reserve-data/cmd/deployment"
 	"github.com/KyberNetwork/reserve-data/common"
 	"github.com/KyberNetwork/reserve-data/common/profiler"
+	"github.com/KyberNetwork/reserve-data/exchange/binance"
 	apphttp "github.com/KyberNetwork/reserve-data/http"
 	"github.com/KyberNetwork/reserve-data/lib/app"
+	authhttp "github.com/KyberNetwork/reserve-data/lib/auth-http"
 	"github.com/KyberNetwork/reserve-data/lib/migration"
+	"github.com/KyberNetwork/reserve-data/lib/rtypes"
 	"github.com/KyberNetwork/reserve-data/reservesetting/storage/postgres"
 )
 
@@ -119,7 +122,7 @@ func run(c *cli.Context) error {
 
 	dryRun := configuration.NewDryRunFromContext(c)
 
-	rData, rCore, gasInfo := configuration.CreateDataCore(conf, dpl, bc, l, kyberNetworkProxy, rcf, httpClient)
+	rData, rCore, gasInfo := configuration.CreateDataCore(conf, dpl, bc, kyberNetworkProxy, rcf, httpClient)
 	if !dryRun {
 		if dpl != deployment.Simulation {
 			if err = rData.RunStorageController(); err != nil {
@@ -137,6 +140,11 @@ func run(c *cli.Context) error {
 		common.SupportedExchanges[ex.ID()] = ex
 	}
 
+	binanceMainClient := binance.NewBinanceEndpoint(binance.NewSigner("", ""),
+		binance.NewRealInterface(rcf.ExchangeEndpoints.Binance.URL), deployment.Production, httpClient, rtypes.Binance,
+		rcf.MarketDataBaseURL, rcf.AccountData.BaseURL, rcf.BinanceAccountMainID,
+		authhttp.NewAuthHTTP(rcf.AccountData.AccessKey, rcf.AccountData.AccessSecret))
+
 	host := rcf.HTTPAPIAddr
 	server := apphttp.NewHTTPServer(
 		rData, rCore,
@@ -145,6 +153,7 @@ func run(c *cli.Context) error {
 		bc,
 		conf.SettingStorage,
 		gasInfo,
+		binanceMainClient,
 	)
 	if profiler.IsEnableProfilerFromContext(c) {
 		server.EnableProfiler()

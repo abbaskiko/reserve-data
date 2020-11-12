@@ -46,8 +46,9 @@ func (c *Client) doReq(url, method string, data interface{}) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to create get request")
 	}
 	switch httpMethod {
-	case http.MethodPost, http.MethodPut:
+	case http.MethodPost, http.MethodPut, http.MethodDelete:
 		req.Header.Add("Content-Type", "application/json")
+	case http.MethodGet:
 	default:
 		return nil, errors.Errorf("invalid method %s", httpMethod)
 	}
@@ -91,4 +92,20 @@ func (c *Client) AddFeed(exchange, sourceSymbol, publicSymbol string) error {
 	}
 	c.l.Infow("response data", "data", respData)
 	return nil
+}
+
+// IsValidSymbol ...
+func (c *Client) IsValidSymbol(exchange, symbol string) (bool, error) {
+	url := fmt.Sprintf("%s/is-valid-symbol?source=%s&symbol=%s", c.url, exchange, symbol)
+	resp, err := c.doReq(url, http.MethodGet, nil)
+	if err != nil {
+		return false, err
+	}
+	var respData struct {
+		IsValid bool `json:"is_valid"`
+	}
+	if err := json.Unmarshal(resp, &respData); err != nil {
+		return false, err
+	}
+	return respData.IsValid, nil
 }

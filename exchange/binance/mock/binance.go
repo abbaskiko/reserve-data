@@ -18,6 +18,10 @@ func init() {
 // BinanceTestExchange is the mock implementation of binance exchange, for testing purpose.
 type BinanceTestExchange struct{}
 
+func (bte *BinanceTestExchange) Transfer(fromAccount string, toAccount string, asset commonv3.Asset, amount *big.Int) (string, error) {
+	return "transfer-id", nil
+}
+
 // Address return address of token
 func (bte *BinanceTestExchange) Address(_ commonv3.Asset) (address ethereum.Address, supported bool) {
 	return ethereum.Address{}, true

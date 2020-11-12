@@ -138,6 +138,10 @@ func (bn *Binance) Withdraw(asset commonv3.Asset, amount *big.Int, address ether
 	return tx, err
 }
 
+func (bn *Binance) Transfer(fromAccount string, toAccount string, asset commonv3.Asset, amount *big.Int) (string, error) {
+	return bn.interf.Transfer(fromAccount, toAccount, asset, amount)
+}
+
 // CancelOrder cancel order on binance
 func (bn *Binance) CancelOrder(id, symbol string) error {
 	idNo, err := strconv.ParseUint(id, 10, 64)
